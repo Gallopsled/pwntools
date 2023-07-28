@@ -406,7 +406,13 @@ def readline(_size=-1, prompt='', float=True, priority=10):
                         history.insert(0, buffer)
                     return force_to_bytes(buffer)
             except KeyboardInterrupt:
-                control_c()
+                do_raise = False
+                try:
+                    control_c()
+                except KeyboardInterrupt:
+                    do_raise = True
+                if do_raise:
+                    raise
     finally:
         line = buffer_left + buffer_right + '\n'
         buffer_handle.update(line)

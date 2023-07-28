@@ -4,7 +4,7 @@
 
 from pwn import *
 
-splash()
+#splash()
 
 h = log.waitfor("You wrote", status = "--")
 

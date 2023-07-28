@@ -55,6 +55,7 @@ class WinchLock(object):
     def __enter__(self):
         return self.lock.__enter__()
     def __exit__(self, tp, val, tb):
+        #open('cellz.log', 'a').write(repr(list(cells)) + '\n')
         try:
             return self.lock.__exit__(tp, val, tb)
         finally:
@@ -239,46 +240,60 @@ class Cell(object):
     def __init__(self, value, float, priority):
         self.value = value
         self.float = float
-        self.draw()
 
     def draw(self):
         self.pos = get_position()
         self.born = epoch
+        #put('{' + self.value.replace('\33', 'E').replace('', '.') + '}')
         put(self.value)
 
     def update(self, value):
-        global epoch
         with rlock, winchlock:
+            el = len(value) < len(self.value)
             self.value = value
-            if self.born != epoch:
+            self.update_locked(el=el)
+
+    def update_locked(self, goto_only=False, el=False):
+        global epoch
+        if self.born != epoch:
+            if goto_only: return
+            for cell in cells:
+                cell.draw()
+        else:
+            saved = get_position()
+            if saved < self.pos or saved == (1, 1):
+                epoch += 1
+                if goto_only: return
                 for cell in cells:
                     cell.draw()
+                flush()
+                return
+            goto(self.pos)
+            if goto_only: return
+            if el:
+                do('el')
+            #put('{' + self.value.replace('\33', 'E').replace('', '.') + '}')
+            put(self.value)
+            it = iter(cells)
+            for cell in it:
+                if cell == self:
+                    break
+            for cell in it:
+                pos = get_position()
+                if cell.pos == pos and (not el or pos[0] != self.pos[0]):
+                    break
+                if pos[1] < cell.pos[1] and not el:
+                    do('el')
+                    el = True
+                cell.draw()
             else:
-                saved = get_position()
-                if saved < self.pos or saved == (1, 1):
-                    epoch += 1
-                    for cell in cells:
-                        cell.draw()
-                    flush()
-                    return
-                goto(self.pos)
-                put(value)
-                it = iter(cells)
-                for cell in it:
-                    if cell == self:
-                        break
-                first = True
-                for cell in it:
-                    pos = get_position()
-                    if cell.pos == pos:
-                        break
-                    if pos[1] < cell.pos[1] and first:
-                        do('el')
-                        first = False
-                    cell.draw()
-                if saved > get_position():
-                    goto(saved)
-            flush()
+                if cell.float:
+                    do('ed')
+            if saved > get_position():
+                goto(saved)
+        flush()
+    def __repr__(self):
+        return '{}({!r}, float={}, pos={})'.format(self.__class__.__name__, self.value, self.float, self.pos)
 
 
 class WeakCellList(object):
@@ -286,20 +301,35 @@ class WeakCellList(object):
         self.cells = []
         self.floats = []
 
-    def __iter__(self):
-        for iref in self.cells[:]:
-            i = iref()
-            if i is None:
-                self.cells.remove(iref)
-            else:
-                yield i
+    def iter_field(self, *Ls):
+        for L in Ls:
+            for iref in L[:]:
+                i = iref()
+                if i is None:
+                    L.remove(iref)
+                else:
+                    yield i
 
-        for iref in self.floats[:]:
-            i = iref()
-            if i is None:
-                self.floats.remove(iref)
-            else:
-                yield i
+    def __iter__(self):
+        return self.iter_field(self.cells, self.floats)
+
+    def insert(self, v, before):
+        if v.float:
+            for i, e in enumerate(self.iter_field(self.floats)):
+                if e == before:
+                    self.floats.insert(i, weakref.ref(v))
+                    return
+        else:
+            for i, e in enumerate(self.iter_field(self.cells)):
+                if e == before:
+                    self.cells.insert(i, weakref.ref(v))
+                    return
+            for e in self.iter_field(self.floats):
+                if e == before:
+                    self.cells.append(weakref.ref(v))
+                    return
+                break
+        raise IndexError(f'output({v=}, {before=})')
 
     def append(self, v):
         if v.float:
@@ -316,7 +346,7 @@ def get_position():
     if cached_pos:
         return tuple(cached_pos)
 
-    # we start with one empty cell at the current cursor position
+    #do('u7')
     fd.write('\x1b[6n')
     fd.flush()
     s = os.read(fd.fileno(), 6)
@@ -338,13 +368,31 @@ def get_position():
     return tuple(cached_pos)
 
 
-def output(s='', float=False, priority=10, frozen=False, indent=0):
+def output(s='', float=False, priority=10, frozen=False, indent=0, before=None):
     with rlock, winchlock:
         if isinstance(s, bytes):
             s = s.decode('utf-8', 'backslashreplace')
         if frozen:
-            return put(s)
+            for f in cells.iter_field(cells.floats):
+                f.update_locked(goto_only=True)
+                break
+            ret = put(s)
+            for f in cells.iter_field(cells.floats):
+                f.draw()
+            return ret
 
         c = Cell(s, float, priority)
-        cells.append(c)
+        if before is None:
+            cells.append(c)
+            c.draw()
+        else:
+            before.update_locked(goto_only=True)
+            cells.insert(c, before)
+            c.draw()
+            it = iter(cells)
+            for f in it:
+                if f == c:
+                    break
+            for f in it:
+                f.draw()
         return c
