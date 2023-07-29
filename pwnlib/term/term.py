@@ -33,6 +33,7 @@ on_winch = []
 
 cached_pos = None
 settings = None
+setup_done = False
 epoch = 0
 
 fd = sys.stdout
@@ -101,11 +102,11 @@ def handler_sigstop(signum, stack):
     os.kill(os.getpid(), signal.SIGSTOP)
 
 def handler_sigcont(signum, stack):
-    global epoch, cached_pos, scroll
+    global epoch, cached_pos, scroll, setup_done
     epoch += 1
     cached_pos = None
     scroll = 0
-    setupterm()
+    setup_done = False
 
 def setupterm():
     global settings
@@ -123,17 +124,20 @@ def setupterm():
     termios.tcsetattr(fd, termios.TCSADRAIN, mode)
 
 def resetterm():
+    global settings, setup_done
     if settings:
         termios.tcsetattr(fd.fileno(), termios.TCSADRAIN, settings)
-    show_cursor()
-    do('rmkx')
-    fd.write(' \x08') # XXX: i don't know why this is needed...
-                      #      only necessary when suspending the process
-    fd.flush()
+        settings = None
+    if setup_done:
+        setup_done = False
+        show_cursor()
+        do('rmkx')
+        fd.write(' \x08') # XXX: i don't know why this is needed...
+                          #      only necessary when suspending the process
+        fd.flush()
 
 def init():
     atexit.register(resetterm)
-    setupterm()
     signal.signal(signal.SIGWINCH, handler_sigwinch)
     signal.signal(signal.SIGTSTP, handler_sigstop)
     signal.signal(signal.SIGCONT, handler_sigcont)
@@ -376,10 +380,13 @@ cells = WeakCellList()
 
 
 def get_position():
-    global cached_pos
+    global cached_pos, setup_done
     if cached_pos:
         return tuple(cached_pos)
 
+    if not setup_done:
+        setup_done = True
+        setupterm()
     #do('u7')
     fd.write('\x1b[6n')
     fd.flush()
