@@ -67,17 +67,20 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 ## 4.12.0 (`dev`)
+
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
 - [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
 - [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
+- [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
 [2221]: https://github.com/Gallopsled/pwntools/pull/2221
 [2219]: https://github.com/Gallopsled/pwntools/pull/2219
 [2212]: https://github.com/Gallopsled/pwntools/pull/2212
+[2242]: https://github.com/Gallopsled/pwntools/pull/2242
 
 ## 4.11.0 (`beta`)
 

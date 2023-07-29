@@ -7,7 +7,6 @@ import os
 import re
 import shutil
 import signal
-import six
 import struct
 import sys
 import threading
@@ -207,7 +206,7 @@ def put(s):
             else:
                 # normal character, nothing to see here
                 cached_pos[1] += 1
-    fd.write(s.translate(tmap))
+    return fd.write(s.translate(tmap))
 
 def flush(): fd.flush()
 
