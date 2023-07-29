@@ -487,7 +487,10 @@ def init():
         def __init__(self, fd):
             self._fd = fd
         def readline(self, size = None):
-            return readline(size)
+            r = readline(size)
+            if isinstance(self._fd, io.TextIOWrapper):
+                r = r.decode(encoding=self._fd.encoding, errors=self._fd.errors)
+            return r
         def __getattr__(self, k):
             return getattr(self._fd, k)
     sys.stdin = Wrapper(sys.stdin)

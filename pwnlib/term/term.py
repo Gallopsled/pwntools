@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
 
 import atexit
 import errno
@@ -17,8 +18,9 @@ if sys.platform != 'win32':
     import fcntl
     import termios
 
-from pwnlib.context import ContextType
-from pwnlib.term import termcap
+from ..context import ContextType
+from . import termcap
+from .. import py2compat
 
 __all__ = ['output', 'init']
 
@@ -37,7 +39,7 @@ setup_done = False
 epoch = 0
 
 fd = sys.stdout
-winchretry = []
+winchretry = False
 rlock = threading.RLock()
 
 class WinchLock(object):
@@ -58,11 +60,7 @@ class WinchLock(object):
         try:
             return self.lock.__exit__(tp, val, tb)
         finally:
-            try:
-                winchretry.pop()
-            except IndexError:
-                pass
-            else:
+            if winchretry:
                 handler_sigwinch(signal.SIGWINCH, None)
 
 winchlock = WinchLock()
@@ -78,23 +76,20 @@ def update_geometry():
     width, height = shutil.get_terminal_size()
 
 def handler_sigwinch(signum, stack):
-    global cached_pos
+    global cached_pos, winchretry
     with rlock:
         while True:
             if not winchlock.acquire(False):
-                winchretry.append(0)
+                winchretry = True
                 return
 
+            winchretry = False
             cached_pos = None
             update_geometry()
             for cb in on_winch:
                 cb()
             winchlock.release()
-            try:
-                winchretry.pop()
-            except IndexError:
-                break
-            del winchretry[:]
+            if not winchretry: break
 
 
 def handler_sigstop(signum, stack):
@@ -250,6 +245,8 @@ class Cell(object):
         self.pos_after = get_position()
 
     def update(self, value):
+        if isinstance(value, bytes):
+            value = value.decode('utf-8', 'backslashreplace')
         with rlock, winchlock:
             want_erase_line = len(value) < len(self.value) and '\n' in value
             self.value = value
