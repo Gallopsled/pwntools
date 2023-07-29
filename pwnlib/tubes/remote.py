@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import socket
-import socks
 
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
@@ -97,11 +96,12 @@ class remote(sock):
                 self.sock = ssl_context.wrap_socket(self.sock,**ssl_args)
 
     def _connect(self, fam, typ):
-        sock    = None
+        err = None
+        sock = None
         timeout = self.timeout
 
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
-            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ):
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
@@ -119,11 +119,13 @@ class remote(sock):
 
                 try:
                     sock.connect(sockaddr)
+                    err = None  # break ref cycle
                     return sock
-                except socks.ProxyError:
-                    raise
-                except socket.error:
-                    pass
+                except IOError as e:
+                    if err is None:
+                        err = e
+            if err is not None:
+                raise err
             self.error("Could not connect to %s on port %s", self.rhost, self.rport)
 
     @classmethod

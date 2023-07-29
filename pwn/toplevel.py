@@ -6,7 +6,6 @@ import operator
 import os
 import platform
 import re
-import socks
 import signal
 import string
 import struct
@@ -84,12 +83,18 @@ info    = log.info
 debug   = log.debug
 success = log.success
 
+# optional deps
 try:
     import colored_traceback
 except ImportError:
     pass
 else:
     colored_traceback.add_hook()
+
+try:
+    import socks
+except ImportError:
+    pass
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
