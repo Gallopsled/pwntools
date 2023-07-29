@@ -87,7 +87,7 @@ terminal_size = namedtuple('terminal_size', 'columns lines')
 termsize = Struct('HHHH')
 
 @py2_monkey_patch(os)
-def get_terminal_size(fd):
+def get_terminal_size(fd):  # pylint: disable=function-redefined
     arr = b'\0' * termsize.size
     arr = fcntl.ioctl(fd, termios.TIOCGWINSZ, arr)
     lines, columns, xpixel, ypixel = termsize.unpack(arr)
