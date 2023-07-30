@@ -1037,10 +1037,6 @@ class ROP(object):
 
         return stack
 
-
-    def find_stack_adjustment(self, slots):
-        return self.search(move=slots * context.bytes)
-
     def chain(self, base=None):
         """Build the ROP chain
         
