@@ -102,7 +102,8 @@ RUN mkdir /etc/qemu-binfmt && \
     ln -sf /usr/lib/mipsel-linux-gnu    /etc/qemu-binfmt/mipsel && \
     ln -sf /usr/lib/powerpc-linux-gnu   /etc/qemu-binfmt/powerpc && \
     ln -sf /usr/lib/powerpc-linux-gnu64 /etc/qemu-binfmt/powerpc64 && \
-    ln -sf /usr/lib/sparc64-linux-gnu   /etc/qemu-binfmt/sparc64
+    ln -sf /usr/lib/sparc64-linux-gnu   /etc/qemu-binfmt/sparc64 && \
+    ln -sf /usr/lib/riscv64-linux-gnu   /etc/qemu-binfmt/riscv64
 
 # Create the Travis user
 USER root
