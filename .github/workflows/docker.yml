@@ -10,15 +10,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            pwntools/pwntools
-          tags: |
-            type=ref,event=branch
-
       # Required for subdirectories in Git context
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -43,8 +34,7 @@ jobs:
         with:
           context: "{{defaultContext}}:extra/docker/stable"
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: pwntools/pwntools:stable
 
       - name: Build and push beta image
         uses: docker/build-push-action@v4
@@ -52,8 +42,7 @@ jobs:
         with:
           context: "{{defaultContext}}:extra/docker/beta"
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: pwntools/pwntools:beta
 
       - name: Build and push dev image
         uses: docker/build-push-action@v4
@@ -61,8 +50,9 @@ jobs:
         with:
           context: "{{defaultContext}}:extra/docker/dev"
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            pwntools/pwntools:dev
+            pwntools/pwntools:latest
 
       - name: Build and push ci image
         uses: docker/build-push-action@v4
@@ -71,4 +61,3 @@ jobs:
           context: "{{defaultContext}}:travis/docker"
           push: true
           tags: pwntools/pwntools:ci
-          labels: ${{ steps.meta.outputs.labels }}
