@@ -182,12 +182,12 @@ jobs:
       run: |
         python -m build
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: packages
         path: dist/
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: .coverage*
