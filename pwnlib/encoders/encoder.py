@@ -31,7 +31,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     """
     orig_avoid = avoid
 
-    avoid = byteset(avoid or '')
+    avoid = byteset(avoid or b'')
 
     if expr:
         for char in all_chars:
@@ -72,7 +72,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     elif expr:
         avoid_errmsg = repr(expr)
     else:
-        avoid_errmsg = repr(bytes(avoid))
+        avoid_errmsg = repr(b''.join(avoid))
 
     args = (context.arch, avoid_errmsg, hexdump(raw_bytes))
     msg = "No encoders for %s which can avoid %s for\n%s" % args
@@ -80,11 +80,11 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     log.error(msg)
 
 all_chars        = list(bytes([i]) for i in range(256))
-re_alphanumeric  = r'[^A-Za-z0-9]'
-re_printable     = r'[^\x21-\x7e]'
-re_whitespace    = r'\s'
-re_null          = r'\x00'
-re_line          = r'[\s\x00]'
+re_alphanumeric  = br'[^A-Za-z0-9]'
+re_printable     = br'[^\x21-\x7e]'
+re_whitespace    = br'\s'
+re_null          = br'\x00'
+re_line          = br'[\s\x00]'
 
 @LocalContext
 def null(raw_bytes, *a, **kw):

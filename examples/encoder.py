@@ -16,7 +16,7 @@ def go():
 
     with context.silent:
         io = ELF.from_bytes(enc).process()
-        io.sendline('whoami')
+        io.sendline(b'whoami')
 
     try:
         info('%r', io.recvline() == b'pwntools\n')

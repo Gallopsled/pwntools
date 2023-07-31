@@ -96,12 +96,13 @@ class AsciiShellcodeEncoder(Encoder):
                 b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
         else:
             required_chars = byteset(b'\\-%TXP')
-            allowed = byteset(all_chars)
+            allowed = set(all_chars)
+            avoid = byteset(avoid)
             if avoid.intersection(required_chars):
                 raise RuntimeError(
                     '''These characters ({}) are required because they assemble
                     into instructions used to unpack the shellcode'''.format(
-                        str(required_chars, 'ascii')))
+                        str(b''.join(required_chars), 'ascii')))
             allowed.difference_update(avoid)
             vocab = bytearray(map(ord, allowed))
 

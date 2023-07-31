@@ -614,6 +614,7 @@ def python_2_bytes_compatible(klass):
     return klass
 
 def byteset(b=b''):
+    # type: (bytes|bytearray) -> set[bytes]
     """
     Converts a ``bytes`` object into a ``set`` of ``bytes``.
 
@@ -626,10 +627,10 @@ def byteset(b=b''):
     This class normalizes the behavior, so that the ``set`` return always contains
     objects of the ``bytes`` class.
 
-    >>> sorted(byteset(b'asdf'))
+    >>> sorted(byteset(b'asdfasdf'))
     [b'a', b'd', b'f', b's']
     """
-    if not isinstance(b, bytes):
+    if not isinstance(b, (bytes, bytearray)):
         log.error("byteset only accepts type bytes")
 
     if six.PY2:
