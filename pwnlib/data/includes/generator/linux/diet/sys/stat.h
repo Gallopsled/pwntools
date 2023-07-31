@@ -8,6 +8,7 @@
 __BEGIN_DECLS
 
 #if defined(__i386__)
+
 struct stat {
 	uint32_t	st_dev;
 	unsigned long	st_ino;
@@ -177,6 +178,55 @@ struct stat64 {
         unsigned long   st_ctime;
         unsigned long   st_ctime_nsec;
         long            __unused[3];
+};
+
+#elif defined(__mips64__)
+
+/* The memory layout is the same as of struct stat64 of the 32-bit kernel.  */
+struct stat {
+	unsigned int	st_dev;
+	unsigned int	st_pad0[3]; /* Reserved for st_dev expansion */
+	unsigned long	st_ino;
+	uint32_t	st_mode;
+	uint32_t	st_nlink;
+	uint32_t	st_uid;
+	uint32_t	st_gid;
+	unsigned int	st_rdev;
+	unsigned int	st_pad1[3]; /* Reserved for st_rdev expansion */
+	long		st_size;
+	/* WTF? the mips64 kernel interface uses 32bit unsigned int for time_t? */
+	unsigned int	st_atime;
+	unsigned int	st_atime_nsec;
+	unsigned int	st_mtime;
+	unsigned int	st_mtime_nsec;
+	unsigned int	st_ctime;
+	unsigned int	st_ctime_nsec;
+	unsigned int	st_blksize;
+	unsigned int	st_pad2;
+	unsigned long	st_blocks;
+};
+
+/* Define struct stat64 to be identical, even though the kernel only knows struct stat. */
+struct stat64 {
+	unsigned int	st_dev;
+	unsigned int	st_pad0[3];
+	unsigned long	st_ino;
+	uint32_t	st_mode;
+	uint32_t	st_nlink;
+	uint32_t	st_uid;
+	uint32_t	st_gid;
+	unsigned int	st_rdev;
+	unsigned int	st_pad1[3];
+	long		st_size;
+	unsigned int	st_atime;
+	unsigned int	st_atime_nsec;
+	unsigned int	st_mtime;
+	unsigned int	st_mtime_nsec;
+	unsigned int	st_ctime;
+	unsigned int	st_ctime_nsec;
+	unsigned int	st_blksize;
+	unsigned int	st_pad2;
+	unsigned long	st_blocks;
 };
 
 #elif defined(__mips__)
@@ -361,6 +411,54 @@ __extension__	long long	st_size;
 
 __extension__	unsigned long long	st_ino;
 };
+#elif defined(__aarch64__)
+
+struct stat {
+	unsigned long	st_dev;
+	unsigned long	st_ino;
+	unsigned int	st_mode;
+	unsigned int	st_nlink;
+	unsigned int	st_uid;
+	unsigned int	st_gid;
+	unsigned long	st_rdev;
+	unsigned long	__pad1;
+	long		st_size;
+	int		st_blksize;
+	int		__pad2;
+	long		st_blocks;
+	time_t	 	st_atime;
+	long		st_atime_nsec;
+	time_t	 	st_mtime;
+	long		st_mtime_nsec;
+	time_t	 	st_ctime;
+	long		st_ctime_nsec;
+	int		__unused1;
+	int		__unused2;
+};
+
+struct stat64 {
+	unsigned long	st_dev;
+	unsigned long	st_ino;
+	unsigned int	st_mode;
+	unsigned int	st_nlink;
+	unsigned int	st_uid;
+	unsigned int	st_gid;
+	unsigned long	st_rdev;
+	unsigned long	__pad1;
+	long		st_size;
+	int		st_blksize;
+	int		__pad2;
+	long		st_blocks;
+	time_t	 	st_atime;
+	long		st_atime_nsec;
+	time_t	 	st_mtime;
+	long		st_mtime_nsec;
+	time_t	 	st_ctime;
+	long		st_ctime_nsec;
+	int		__unused1;
+	int		__unused2;
+};
+
 #elif defined(__s390__)
 #if defined(__s390x__)
 struct stat {
@@ -489,7 +587,7 @@ struct stat64 {
 	unsigned long long st_ino;
 };
 
-#elif defined(__x86_64__)
+#elif defined(__x86_64__) && !defined(__ILP32__)
 
 struct stat {
 	unsigned long	st_dev;
@@ -510,6 +608,24 @@ struct stat {
 	time_t		st_ctime;
 	unsigned long	st_ctime_nsec;
 	long		__unused[3];
+};
+
+#elif defined(__x86_64__)
+
+/* for X32 */
+
+struct stat {
+	uint64_t	st_dev, st_ino, st_nlink;
+	uint32_t	st_mode, st_uid, st_gid, __pad0;
+	uint64_t	st_rdev;
+	int64_t		st_size, st_blksize, st_blocks;
+	time_t		st_atime;
+	uint64_t	st_atime_nsec;
+	time_t		st_mtime;
+	uint64_t	st_mtime_nsec;
+	time_t		st_ctime;
+	uint64_t	st_ctime_nsec;
+	uint64_t	__unused[3];
 };
 
 #elif defined(__ia64__)
@@ -576,7 +692,7 @@ extern int stat(const char *__file, struct stat *__buf) __THROW;
 extern int fstat(int __fd, struct stat *__buf) __THROW;
 extern int lstat(const char *__file, struct stat *__buf) __THROW;
 
-#if __WORDSIZE == 64
+#if (__WORDSIZE == 64) || defined(__OFF_T_MATCHES_OFF64_T)
 #define __NO_STAT64
 #else
 extern int stat64(const char *__file, struct stat64 *__buf) __THROW;

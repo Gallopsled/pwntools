@@ -64,7 +64,7 @@ Args:
 <%
 original = string
 if isinstance(string, six.text_type):
-    string   = packing._encode(string)
+    string = packing._need_bytes(string, 2, 0x80)
 else:
     string = packing.flat(string)
 

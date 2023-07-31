@@ -15,7 +15,7 @@ Arguments:
     bus(unsigned): bus
     dfn(unsigned): dfn
     off(unsigned): off
-    len(unsigned): len
+    length(unsigned): length
     buf(void*): buf
 Returns:
     int

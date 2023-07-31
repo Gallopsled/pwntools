@@ -27,9 +27,20 @@ jobs:
         key: ${{ matrix.os }}-cache-pip
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      if: matrix.python-version != '2.7'
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Set up Python 2.7
+      if: matrix.python-version == '2.7'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python2.7 python2.7-dev python2-pip-whl
+        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+        sudo --preserve-env=PYTHONPATH python2.7 -m pip install --upgrade pip setuptools wheel
+        sudo ln -sf python2.7 /usr/bin/python
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -59,8 +70,9 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
-
+          libc6-dbg \
+          elfutils
+      
     - name: Install RPyC for GDB
       run: |
         sudo apt-get install -y python3-pip
@@ -72,7 +84,7 @@ jobs:
         ulimit -c unlimited
         cat /proc/sys/kernel/core_pattern
         cat /proc/sys/kernel/core_uses_pid
-        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash;) || true
+        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core*) || true
 
     - name: Set up SSH
       run: |
@@ -81,6 +93,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
+        pip install --upgrade wheel
         pip install --upgrade flake8 appdirs
         python setup.py egg_info
         pip install --upgrade --editable .
@@ -89,7 +102,7 @@ jobs:
       run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
-      run:  pip install -r docs/requirements.txt
+      run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
       run:  pip install unicorn==1.0.2rc3
@@ -156,6 +169,10 @@ jobs:
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
 
+        pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
+        pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
+        pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
+
     - name: Build source and wheel distributions
       run: |
         python setup.py sdist
@@ -192,6 +209,8 @@ jobs:
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
@@ -201,10 +220,7 @@ jobs:
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R

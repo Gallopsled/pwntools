@@ -39,7 +39,7 @@ class Gadget(object):
     move = 0
 
     def __init__(self, address, insns, regs, move):
-        self.address = address
+        self.address = int(address)
         self.insns   = insns
         self.regs    = regs
         self.move    = move

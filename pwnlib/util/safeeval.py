@@ -6,6 +6,7 @@ _const_codes = [
     'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
     'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
     'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
+    'COPY', 'RESUME',
     ]
 
 _expr_codes = _const_codes + [
@@ -15,6 +16,7 @@ _expr_codes = _const_codes + [
     'BINARY_MODULO','BINARY_ADD','BINARY_SUBTRACT',
     'BINARY_LSHIFT','BINARY_RSHIFT','BINARY_AND','BINARY_XOR',
     'BINARY_OR',
+    'BINARY_OP',
     ]
 
 _values_codes = _expr_codes + ['LOAD_NAME']
@@ -57,7 +59,7 @@ def test_expr(expr, allowed_codes):
     try:
         c = compile(expr, "", "eval")
     except SyntaxError:
-        raise ValueError("%s is not a valid expression" % expr)
+        raise ValueError("%r is not a valid expression" % expr)
     codes = _get_opcodes(c)
     for code in codes:
         if code not in allowed_codes:

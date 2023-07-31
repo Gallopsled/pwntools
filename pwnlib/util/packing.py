@@ -441,7 +441,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
 def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
-    Creates a unpacker by "freezing" the given arguments.
+    Creates an unpacker by "freezing" the given arguments.
 
     Semantically calling ``make_unpacker(w, e, s)(data)`` is equivalent to calling
     ``unpack(data, w, e, s)``. If word_size is one of 8, 16, 32 or 64, it is however
@@ -521,7 +521,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
             if k >= large_key:
                 k = fill(pack(k))
         elif isinstance(k, (six.text_type, bytearray, bytes)):
-            k = fill(_encode(k))
+            k = fill(_need_bytes(k, stacklevel, 0x80))
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
         if k in pieces_:
@@ -836,7 +836,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
     values from offset `seek` in `src` to offset `skip` in `dst`.  If `count` is
     0, all of ``src[seek:]`` is copied.
 
-    If `dst` is a mutable type it will be updated.  Otherwise a new instance of
+    If `dst` is a mutable type it will be updated.  Otherwise, a new instance of
     the same type will be created.  In either case the result is returned.
 
     `src` can be an iterable of characters or integers, a unicode string or a
@@ -1009,14 +1009,15 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     return dst
 
-def _need_bytes(s, level=1):
+def _need_bytes(s, level=1, min_wrong=0):
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 
     encoding = context.encoding
     errors = 'strict'
+    worst = -1
     if encoding == 'auto':
-        worst = max(map(ord, s))
+        worst = s and max(map(ord, s)) or 0
         if worst > 255:
             encoding = 'UTF-8'
             errors = 'surrogateescape'
@@ -1025,20 +1026,24 @@ def _need_bytes(s, level=1):
         else:
             encoding = 'ASCII'
 
-    warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                  .format(encoding), BytesWarning, level + 2)
+    if worst >= min_wrong:
+        warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
+                      .format(encoding), BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
 def _need_text(s, level=1):
     if isinstance(s, (str, six.text_type)):
         return s   # already text
 
+    if not isinstance(s, (bytes, bytearray)):
+        return repr(s)
+
     encoding = context.encoding
     errors = 'strict'
     if encoding == 'auto':
         for encoding in 'ASCII', 'UTF-8', 'ISO-8859-1':
             try:
-                s = s.decode(encoding)
+                s.decode(encoding)
             except UnicodeDecodeError:
                 pass
             else:

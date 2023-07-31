@@ -14,7 +14,7 @@ See 'man 2 getsockname' for more information.
 Arguments:
     fd(int): fd
     addr(SOCKADDR_ARG): addr
-    len(socklen_t*): len
+    length(socklen_t*): length
 Returns:
     int
 </%docstring>

@@ -384,6 +384,9 @@ class AdbDevice(Device):
             >>> adb.getprop(property) == device.getprop(property)
             True
         """
+        if name.startswith('_'):
+            raise AttributeError(name)
+
         with context.local(device=self):
             g = globals()
 
@@ -1513,7 +1516,7 @@ class Partitions(object):
         return iter(names)
 
     def __getattr__(self, attr):
-        if attr.startswith("_"):
+        if attr.startswith('_'):
             raise AttributeError(attr)
 
         for name in self:

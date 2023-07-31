@@ -157,6 +157,12 @@ class dotdict(dict):
         >>> x.bar.baz
         4
     """
+    def __missing__(self, name):
+        if isinstance(name, (bytes, bytearray)):
+            name = packing._decode(name)
+            return self[name]
+        raise KeyError(name)
+
     def __getattr__(self, name):
         if name in self:
             return self[name]
@@ -167,8 +173,7 @@ class dotdict(dict):
 
         if subkeys:
             return dotdict(subkeys)
-
-        return getattr(super(dotdict, self), name)
+        raise AttributeError(name)
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
@@ -220,7 +225,7 @@ class ELF(ELFFile):
         super(ELF,self).__init__(self.mmap)
 
         #: :class:`str`: Path to the file
-        self.path = os.path.abspath(path)
+        self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
         #:
@@ -767,7 +772,7 @@ class ELF(ELFFile):
             >>> for arch in CAT_PROC_MAPS_EXIT:
             ...   context.clear()
             ...   with context.local(arch=arch):
-            ...     sc = shellcraft.cat("/proc/self/maps")
+            ...     sc = shellcraft.cat2("/proc/self/maps")
             ...     sc += shellcraft.exit()
             ...     sc = asm(sc)
             ...     sc = enhex(sc)
@@ -1070,17 +1075,23 @@ class ELF(ELFFile):
             if '-' in version:
                 version, self.build = version.split('-', 1)
 
-            self.version = list(map(int, version.split('.')))
+            self.version = list(map(int, version.rstrip('+').split('.')))
 
         self.config['version'] = self.version
 
     @property
     def libc_start_main_return(self):
-        """
-            Try to find the return address from main into __libc_start_main.
-            The heuristic to find the call to the function pointer of main is
-            to list all calls inside __libc_start_main, find the call to exit
-            after the call to main and select the previous call.
+        """:class:`int`: Address of the return address into __libc_start_main from main.
+
+        >>> bash = ELF(which('bash'))
+        >>> libc = bash.libc
+        >>> libc.libc_start_main_return > 0
+        True
+
+        Try to find the return address from main into __libc_start_main.
+        The heuristic to find the call to the function pointer of main is
+        to list all calls inside __libc_start_main, find the call to exit
+        after the call to main and select the previous call.
         """
         if '__libc_start_main' not in self.functions:
             return 0
@@ -1104,18 +1115,43 @@ class ELF(ELFFile):
             log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
             return 0
         
-        code = self.disasm(self.symbols['__libc_start_main'], self.functions['__libc_start_main'].size)
+        lines = self.functions['__libc_start_main'].disasm().split('\n')
         exit_addr = hex(self.symbols['exit'])
-        lines = code.split('\n')
         calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
-        exit_calls = [index for index, line in enumerate(calls) if exit_addr in line[1]]
-        if len(exit_calls) != 1:
-            return 0
 
-        call_to_main = calls[exit_calls[0] - 1]
-        return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
-        return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
-        return return_from_main
+        def find_ret_main_addr(lines, calls):
+            exit_calls = [index for index, line in enumerate(calls) if exit_addr in line[1]]
+            if len(exit_calls) != 1:
+                return 0
+
+            call_to_main = calls[exit_calls[0] - 1]
+            return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
+            return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
+            return return_from_main
+        
+        # Starting with glibc-2.34 calling `main` is split out into `__libc_start_call_main`
+        ret_addr = find_ret_main_addr(lines, calls)
+        # Pre glibc-2.34 case - `main` is called directly
+        if ret_addr:
+            return ret_addr
+
+        # `__libc_start_main` -> `__libc_start_call_main` -> `main`
+        # Find a direct call which calls `exit` once. That's probably `__libc_start_call_main`.
+        direct_call_pattern = re.compile(r'['+r'|'.join(call_instructions)+r']\s+(0x[0-9a-zA-Z]+)')
+        for line in calls:
+            match = direct_call_pattern.search(line[1])
+            if not match:
+                continue
+            
+            target_addr = int(match.group(1), 0)
+            # `__libc_start_call_main` is usually smaller than `__libc_start_main`, so
+            # we might disassemble a bit too much, but it's a good dynamic estimate.
+            callee_lines = self.disasm(target_addr, self.functions['__libc_start_main'].size).split('\n')
+            callee_calls = [(index, line) for index, line in enumerate(callee_lines) if set(line.split()) & call_instructions]
+            ret_addr = find_ret_main_addr(callee_lines, callee_calls)
+            if ret_addr:
+                return ret_addr
+        return 0
 
     def search(self, needle, writable = False, executable = False):
         """search(needle, writable = False, executable = False) -> generator
@@ -1129,7 +1165,7 @@ class ELF(ELFFile):
             won't work.
 
         Arguments:
-            needle(str): String to search for.
+            needle(bytes): String to search for.
             writable(bool): Search only writable sections.
             executable(bool): Search only executable sections.
 
@@ -1310,7 +1346,7 @@ class ELF(ELFFile):
             count(int): Number of bytes to read
 
         Returns:
-            A :class:`str` object, or :const:`None`.
+            A :class:`bytes` object, or :const:`None`.
 
         Examples:
             The simplest example is just to read the ELF header.
@@ -1471,7 +1507,7 @@ class ELF(ELFFile):
 
     @property
     def data(self):
-        """:class:`str`: Raw data of the ELF file.
+        """:class:`bytes`: Raw data of the ELF file.
 
         See:
             :meth:`get_data`
@@ -1499,7 +1535,7 @@ class ELF(ELFFile):
         This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
-        binary = asm(assembly, vma=address)
+        binary = asm(assembly, vma=address, arch=self.arch, endian=self.endian, bits=self.bits)
         self.write(address, binary)
 
     def bss(self, offset=0):
@@ -1617,7 +1653,7 @@ class ELF(ELFFile):
         .. _page 81: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _DT_BIND_NOW: https://refspecs.linuxbase.org/elf/elf.pdf#page=81
         .. _PT_GNU_RELRO: https://refspecs.linuxbase.org/LSB_3.1.1/LSB-Core-generic/LSB-Core-generic.html#PROGHEADER
-        .. _DF_BIND_NOW: http://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
+        .. _DF_BIND_NOW: https://refspecs.linuxbase.org/elf/gabi4+/ch5.dynamic.html#df_bind_now
 
         >>> path = pwnlib.data.elf.relro.path
         >>> for test in glob(os.path.join(path, 'test-*')):
@@ -1753,7 +1789,7 @@ class ELF(ELFFile):
     @property
     def packed(self):
         """:class:`bool`: Whether the current binary is packed with UPX."""
-        return b'UPX!' in self.get_data()
+        return b'UPX!' in self.get_data()[:0xFF]
 
     @property
     def pie(self):
@@ -1879,7 +1915,7 @@ class ELF(ELFFile):
 
     @property
     def buildid(self):
-        """:class:`str`: GNU Build ID embedded into the binary"""
+        """:class:`bytes`: GNU Build ID embedded into the binary"""
         section = self.get_section_by_name('.note.gnu.build-id')
         if section:
             return section.data()[16:]

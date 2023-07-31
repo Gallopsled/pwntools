@@ -55,8 +55,8 @@ def initialize():
     from pwnlib.log import getLogger
     log = getLogger(__name__)
 
-    xdg_config_home = (os.environ.get('XDG_CONFIG_HOME') or
-                       os.path.expanduser("~/.config"))
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME',
+                                     os.path.expanduser("~/.config"))
 
     c = configparser.ConfigParser()
     c.read(['/etc/pwn.conf',
@@ -65,7 +65,7 @@ def initialize():
 
     for section in c.sections():
         if section not in registered_configs:
-            log.warn("Unknown configuration section %r" % section)
+            log.warn("Unknown configuration section %r", section)
             continue
         settings = dict(c.items(section))
         registered_configs[section](settings)

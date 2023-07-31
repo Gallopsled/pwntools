@@ -13,7 +13,7 @@ readthedocs_. It comes in three primary flavors:
 - Dev_
 
 .. _readthedocs: https://readthedocs.org
-.. _docs.pwntools.com: https://docs.pwntools.com
+.. _docs.pwntools.com: https://docs.pwntools.com/en/latest
 .. _Stable: https://docs.pwntools.com/en/stable
 .. _Beta: https://docs.pwntools.com/en/beta
 .. _Dev: https://docs.pwntools.com/en/dev
@@ -52,7 +52,7 @@ Each of the ``pwntools`` modules is documented here.
    context
    dynelf
    encoders
-   elf
+   elf/*
    exception
    filepointer
    filesystem
@@ -65,7 +65,6 @@ Each of the ``pwntools`` modules is documented here.
    protocols
    qemu
    replacements
-   rop
    rop/*
    runner
    shellcraft
@@ -83,6 +82,7 @@ Each of the ``pwntools`` modules is documented here.
    :hidden:
 
    testexample
+   rop/call
 
 .. only:: not dash
 

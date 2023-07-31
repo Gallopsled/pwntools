@@ -44,7 +44,7 @@ from pwn import *
 # Set up pwntools for the correct architecture
 %endif
 %if ctx.binary:
-exe = context.binary = ELF(${binary_repr})
+exe = context.binary = ELF(args.EXE or ${binary_repr})
 <% binary_repr = 'exe.path' %>
 %else:
 context.update(arch='i386')
@@ -58,7 +58,7 @@ exe = ${binary_repr}
 # for all created processes...
 # ./exploit.py DEBUG NOASLR
 %if host or port or user:
-# ./exploit.py GDB HOST=example.com PORT=4141
+# ./exploit.py GDB HOST=example.com PORT=4141 EXE=/tmp/executable
 %endif
 %endif
 %if host:

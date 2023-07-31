@@ -25,6 +25,7 @@ addons:
     - binutils-sparc64-linux-gnu
     - bash-static
     - python3-pip
+    - elfutils
 cache:
     - pip
     - directories:

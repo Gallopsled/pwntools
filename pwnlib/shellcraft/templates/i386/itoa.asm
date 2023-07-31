@@ -36,14 +36,16 @@ assert v in registers.i386
     ${mov('edi', buffer)}
     ${mov('eax', v)}
     push eax /* save for later */
+    ${mov('ecx', 10)}
 ${size_loop}:
     ${mov('edx', 0)}
-    ${mov('ecx', 10)}
     div ecx
     inc edi
     test eax, eax
     jnz ${size_loop}
-    dec edi
+## null terminate
+    std
+    stosb
 ## Now we begin the actual division process
     pop eax
  ${itoa_loop}:
@@ -55,7 +57,4 @@ ${size_loop}:
     dec  edi
     test eax, eax
     jnz  ${itoa_loop}
-## null terminate
-    ${mov('edx', 0)}
-    mov  BYTE PTR [edi], dl
-    inc  edi
+    cld

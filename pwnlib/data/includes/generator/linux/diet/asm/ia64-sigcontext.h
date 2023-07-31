@@ -2,6 +2,8 @@
 
 #define PC(ctx) (ctx.sc_ip)
 
+#include <signal.h>
+
 struct sigcontext {
 	unsigned long		sc_flags;
 	unsigned long		sc_nat;

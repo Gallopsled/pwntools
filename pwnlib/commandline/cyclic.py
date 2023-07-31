@@ -67,15 +67,21 @@ def main(args):
     if args.lookup:
         pat = args.lookup
 
+        if six.PY3:
+            pat = bytes(pat, encoding='utf-8')
+
         try:
             pat = int(pat, 0)
+            pat = pack(pat, 'all')
         except ValueError:
             pass
         pat = flat(pat, bytes=args.length)
 
-        if len(pat) != subsize:
-            log.critical('Subpattern must be %d bytes' % subsize)
+        if len(pat) < subsize:
+            log.critical('Subpattern must be at least %d bytes' % subsize)
             sys.exit(1)
+        else:
+            pat = pat[:subsize]
 
         if not all(c in alphabet for c in pat):
             log.critical('Pattern contains characters not present in the alphabet')
