@@ -25,7 +25,7 @@ parser.add_argument('--color', help='Print the output in color', choices=['never
 
 def main(args):
     lookup = TemplateLookup(
-        directories      = [os.path.join(pwnlib.data.path, 'templates')],
+        directories      = [os.path.expanduser('.config/pwntools/templates/'), os.path.join(pwnlib.data.path, 'templates')],
         module_directory = None
     )
 
