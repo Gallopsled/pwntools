@@ -20,12 +20,16 @@ parser.add_argument('--user', help='SSH Username')
 parser.add_argument('--pass', '--password', help='SSH Password', dest='password')
 parser.add_argument('--libc', help='Path to libc binary to use')
 parser.add_argument('--path', help='Remote path of file on SSH server')
+parser.add_argument('--templates', help='Path to a custom template directory. Defaults to "~/.config/pwntools/templates"')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
 
 def main(args):
     lookup = TemplateLookup(
-        directories      = [os.path.expanduser('.config/pwntools/templates/'), os.path.join(pwnlib.data.path, 'templates')],
+        directories      = [
+            args.templates or os.path.expanduser('~/.config/pwntools/templates/'),
+            os.path.join(pwnlib.data.path, 'templates')
+        ],
         module_directory = None
     )
 
