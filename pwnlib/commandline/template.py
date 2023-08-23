@@ -23,7 +23,7 @@ parser.add_argument('--path', help='Remote path of file on SSH server')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
 parser.add_argument('--base', help='Path to a custom base template. Defaults to \'~/.config/pwntools/templates/pwnup.mako\'. '
-                                  f'Check \'{os.path.join(pwnlib.data.path, "templates", "pwnup.mako")}\' for the default template shipped with pwntools.')
+                                   'Check \'%s\' for the default template shipped with pwntools.' % os.path.join(pwnlib.data.path, "templates", "pwnup.mako"))
 
 def main(args):
 
