@@ -29,7 +29,7 @@ def main(args):
 
     lookup = TemplateLookup(
         directories      = [
-            os.path.expanduser('~/.config/pwntools/templates/') if not args.base else "None", # Invalid directory will be ignored by mako
+            os.path.expanduser('~/.config/pwntools/templates/'),
             os.path.join(pwnlib.data.path, 'templates')
         ],
         module_directory = None
@@ -54,12 +54,11 @@ def main(args):
         if not args.exe:
             args.exe = os.path.basename(args.path)
 
-    template = lookup.get_template('pwnup.mako')
+    
     if args.base:
-        try:
-            template = Template(filename=args.base)
-        except FileNotFoundError:
-            pass
+        template = Template(filename=args.base) # Failing on invalid file is ok
+    else:
+        template = lookup.get_template('pwnup.mako')
     
     output = template.render(args.exe,
                              args.host,
