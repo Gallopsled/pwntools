@@ -5,7 +5,7 @@ from __future__ import division
 from pwn import *
 from pwnlib.commandline import common
 
-from mako.lookup import TemplateLookup
+from mako.lookup import TemplateLookup, Template
 
 parser = common.parser_commands.add_parser(
     'template',
@@ -20,14 +20,16 @@ parser.add_argument('--user', help='SSH Username')
 parser.add_argument('--pass', '--password', help='SSH Password', dest='password')
 parser.add_argument('--libc', help='Path to libc binary to use')
 parser.add_argument('--path', help='Remote path of file on SSH server')
-parser.add_argument('--templates', help='Path to a custom template directory. Defaults to "~/.config/pwntools/templates"')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
+parser.add_argument('--base', help='Path to a custom base template. Defaults to \'~/.config/pwntools/templates/pwnup.mako\'. '
+                                   'Check \'pwnlib/data/templates/pwnup.mako\' for the default template.')
 
 def main(args):
+
     lookup = TemplateLookup(
         directories      = [
-            args.templates or os.path.expanduser('~/.config/pwntools/templates/'),
+            os.path.expanduser('~/.config/pwntools/templates/') if not args.base else "None", # Invalid directory will be ignored by mako
             os.path.join(pwnlib.data.path, 'templates')
         ],
         module_directory = None
@@ -53,6 +55,12 @@ def main(args):
             args.exe = os.path.basename(args.path)
 
     template = lookup.get_template('pwnup.mako')
+    if args.base:
+        try:
+            template = Template(filename=args.base)
+        except FileNotFoundError:
+            pass
+    
     output = template.render(args.exe,
                              args.host,
                              args.port,
