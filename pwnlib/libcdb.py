@@ -4,15 +4,20 @@ Fetch a LIBC binary based on some heuristics.
 from __future__ import absolute_import
 from __future__ import division
 
+import binascii
 import os
 import six
 import tempfile
 
+from elftools.elf.elffile import ELFFile
+
 from pwnlib.context import context
 from pwnlib.elf import ELF
+from pwnlib.filesystem.path import Path
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex
+from pwnlib.util.hashes import md5filehex, sha1filehex, sha256filehex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import which
 from pwnlib.util.misc import write
@@ -28,6 +33,11 @@ DEBUGINFOD_SERVERS = [
 if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
+
+local_database = {
+    "libc-database": os.environ.get("LOCAL_LIBC_DATABASE", "")
+}
+
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
@@ -100,10 +110,75 @@ def provider_libc_rip(hex_encoded_id, hash_type):
         return None
     return data
 
-PROVIDERS = [provider_libcdb, provider_libc_rip]
+# Search offline https://github.com/niklasb/libc-database for symbols
+def find_local_libc_database(params):
+    if not local_database["libc-database"]:
+        log.warn_once("No environment variable LOCAL_LIBC_DATABASE or parameter libcdb.local_database['libc-database'] are set")
+        return None
+    
+    if not params.get("symbols"):
+        return None
 
-def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
+    res = []
+    db_path = Path(local_database["libc-database"]) / "db"
+
+    for symbols_path in db_path.rglob("*.symbols"):
+        syms = get_libc_symbols(symbols_path)
+
+        matched = 0
+        for name, addr in params["symbols"].items():
+            if isinstance(addr, str):
+                addr = int(addr, 16) 
+
+            if syms.get(name) and syms.get(name) & 0xfff == addr & 0xfff:
+                matched += 1
+
+        if matched == len(params["symbols"]):
+            res.append(get_libc_info(db_path, symbols_path.stem, syms))
+
+    return res
+
+# Offline search https://github.com/niklasb/libc-database for hash type
+def offline_provider_libc_database(hex_encoded_id, hash_type):
+    if not local_database["libc-database"]:
+        log.warn_once("No environment variable LOCAL_LIBC_DATABASE or parameter libcdb.local_database['libc-database'] are set")
+        return None
+
+    db_path = Path(local_database["libc-database"]) / "db"
+    hashfilehex = None
+
+    if hash_type == "build_id":
+        hash_type = "buildid"
+
+    # "buildid" is not in HASHES, so we can correct calculate file hash
+    if hash_type in HASHES:
+        hashfilehex = eval(f"{hash_type}filehex")
+
+    for libc_path in db_path.rglob("*.so"):
+        if hash_type == "buildid" and hex_encoded_id == get_build_id(libc_path):
+            return read(libc_path)
+        elif hashfilehex is not None and hex_encoded_id == hashfilehex(libc_path):
+            return read(libc_path)
+
+    return None
+
+
+PROVIDERS = [provider_libcdb, provider_libc_rip]
+OFFLINE_PROVIDERS = [offline_provider_libc_database]
+
+
+def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=False):
     assert hash_type in HASHES, hash_type
+
+    # Offline search don't use libcdb cache
+    if offline:
+        # offline provider will return libc path, not libc content
+        for provider in OFFLINE_PROVIDERS:
+            path = provider(hex_encoded_id, hash_type)
+            if path:
+                return path
+
+        return None
 
     # Ensure that the libcdb cache directory exists
     cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, hash_type)
@@ -479,7 +554,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -501,6 +576,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         return_as_list(bool):
             Return a list of build ids of all matching libc versions
             instead of a path to a downloaded file.
+        offline(bool):
+            Searching libc on offline libc database.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -512,6 +589,10 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         >>> libc = ELF(filename)
         >>> libc.sym.system == 0x52290
         True
+        >>> local_database['libc-database'] = "/path/to/libc-database"
+        >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1, offline=True)
+        >>> ELF(filename)
+        ELF('/path/to/libc-database/db/libc6_2.31-0ubuntu9.12_amd64.so')
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
         >>> len(matched_libcs) > 1
         True
@@ -524,29 +605,40 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     params = {'symbols': symbols}
     log.debug('Request: %s', params)
-    matching_libcs = query_libc_rip(params)
+
+    if not offline:
+        matching_libcs = query_libc_rip(params)
+    else:
+        matching_libcs = find_local_libc_database(params)
     log.debug('Result: %s', matching_libcs)
     if matching_libcs is None or len(matching_libcs) == 0:
-        log.warn_once("No matching libc for symbols %r on libc.rip", symbols)
+        log.warn_once("No matching libc for symbols %r", symbols)
         return None
 
     if return_as_list:
         return [libc['buildid'] for libc in matching_libcs]
 
-    if len(matching_libcs) == 1:
-        return search_by_build_id(matching_libcs[0]['buildid'], unstrip=unstrip)
+    matched_libc = None
 
-    if select_index is not None:
+    if len(matching_libcs) == 1:
+        matched_libc = matching_libcs[0]
+
+    if select_index is not None and matched_libc is None:
         if select_index > 0 and select_index <= len(matching_libcs):
-            return search_by_build_id(matching_libcs[select_index - 1]['buildid'], unstrip=unstrip)
+            matched_libc = matching_libcs[select_index - 1]
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
             return None
 
-    selected_libc = _handle_multiple_matching_libcs(matching_libcs)
-    return search_by_build_id(selected_libc['buildid'], unstrip=unstrip)
+    if matched_libc is None:
+        matched_libc = _handle_multiple_matching_libcs(matching_libcs)
 
-def search_by_build_id(hex_encoded_id, unstrip=True):
+    if not offline:
+        return search_by_build_id(matched_libc['buildid'], unstrip=unstrip)
+    else:
+        return matched_libc["libc_path"]
+
+def search_by_build_id(hex_encoded_id, unstrip=True, offline=False):
     """
     Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
 
@@ -555,6 +647,8 @@ def search_by_build_id(hex_encoded_id, unstrip=True):
             Hex-encoded Build ID (e.g. 'ABCDEF...') of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline(bool):
+            Searching libc on offline libc database.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -569,9 +663,9 @@ def search_by_build_id(hex_encoded_id, unstrip=True):
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
-    return search_by_hash(hex_encoded_id, 'build_id', unstrip)
+    return search_by_hash(hex_encoded_id, 'build_id', unstrip, offline)
 
-def search_by_md5(hex_encoded_id, unstrip=True):
+def search_by_md5(hex_encoded_id, unstrip=True, offline=False):
     """
     Given a hex-encoded md5sum, attempt to download a matching libc from libcdb.
 
@@ -580,6 +674,8 @@ def search_by_md5(hex_encoded_id, unstrip=True):
             Hex-encoded md5sum (e.g. 'ABCDEF...') of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline(bool):
+            Searching libc on offline libc database.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -594,9 +690,9 @@ def search_by_md5(hex_encoded_id, unstrip=True):
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
-    return search_by_hash(hex_encoded_id, 'md5', unstrip)
+    return search_by_hash(hex_encoded_id, 'md5', unstrip, offline)
 
-def search_by_sha1(hex_encoded_id, unstrip=True):
+def search_by_sha1(hex_encoded_id, unstrip=True, offline=False):
     """
     Given a hex-encoded sha1, attempt to download a matching libc from libcdb.
 
@@ -605,6 +701,8 @@ def search_by_sha1(hex_encoded_id, unstrip=True):
             Hex-encoded sha1sum (e.g. 'ABCDEF...') of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline(bool):
+            Searching libc on offline libc database.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -619,10 +717,9 @@ def search_by_sha1(hex_encoded_id, unstrip=True):
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
-    return search_by_hash(hex_encoded_id, 'sha1', unstrip)
+    return search_by_hash(hex_encoded_id, 'sha1', unstrip, offline)
 
-
-def search_by_sha256(hex_encoded_id, unstrip=True):
+def search_by_sha256(hex_encoded_id, unstrip=True, offline=False):
     """
     Given a hex-encoded sha256, attempt to download a matching libc from libcdb.
 
@@ -631,6 +728,8 @@ def search_by_sha256(hex_encoded_id, unstrip=True):
             Hex-encoded sha256sum (e.g. 'ABCDEF...') of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline(bool):
+            Searching libc on offline libc database.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -645,10 +744,74 @@ def search_by_sha256(hex_encoded_id, unstrip=True):
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
-    return search_by_hash(hex_encoded_id, 'sha256', unstrip)
+    return search_by_hash(hex_encoded_id, 'sha256', unstrip, offline)
 
+def get_libc_symbols(path):
+    """
+    Given symbol file path, the content format is as follows:
+        ...
+        puts 000xxxxx
+        read 0000xxxx
+        write 0000xxxx
+        ...
 
+    Arguments:
+        path(str):
+            symbol file path.
 
+    Retruns:
+        a dictionary of the form: { name : address }, or :const:`{}`
+    """
+
+    syms = {}
+
+    with open(path, "r") as fd:
+        for x in fd.read().strip().split("\n"):
+            name, addr = x.split(" ")
+            syms[name] = int(addr, 16)
+
+    return syms
+
+def get_libc_info(db_path, libs_id, syms, libc_path=None, symbols_path=None, libs_url=None):
+    info = {}
+
+    info["id"] = libs_id
+    info["libc_path"] = os.path.join(db_path, f"{libs_id}.so") if not libc_path else libc_path
+    info["libs_url"] = read(os.path.join(db_path, f"{libs_id}.url")).decode().strip() if not libs_url else libs_url
+    info["symbols_path"] = os.path.join(db_path, f"{libs_id}.symbols") if not symbols_path else symbols_path
+
+    info["buildid"] = get_build_id(info["libc_path"])
+    info["md5"] = md5filehex(info["libc_path"])
+    info["sha1"] = sha1filehex(info["libc_path"])
+    info["sha256"] = sha256filehex(info["libc_path"])
+
+    info["symbols"] = {}
+    info["symbols"]["__libc_start_main_ret"] = hex(syms["__libc_start_main_ret"])
+    info["symbols"]["dup2"] = hex(syms["dup2"])
+    info["symbols"]["open"] = hex(syms["open"])
+    info["symbols"]["printf"] = hex(syms["printf"])
+    info["symbols"]["puts"] = hex(syms["puts"])
+    info["symbols"]["read"] = hex(syms["read"])
+    info["symbols"]["str_bin_sh"] = hex(syms["str_bin_sh"])
+    info["symbols"]["system"] = hex(syms["system"])
+
+    return info
+
+def get_build_id(path):
+    """
+    Arguments:
+        path(str):
+            elf file path.
+
+    Retruns:
+        hexdigital build id, or :const:`None`
+    """
+
+    with open(path, "rb") as fd:
+        section = ELFFile(fd).get_section_by_name('.note.gnu.build-id')
+        if section:
+            return binascii.b2a_hex(section.data()[16:]).decode()
+    return None
 
 def get_build_id_offsets():
     """
@@ -702,4 +865,4 @@ def get_build_id_offsets():
     }.get(context.arch, [])
 
 
-__all__ = ['get_build_id_offsets', 'search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5', 'unstrip_libc', 'search_by_symbol_offsets', 'download_libraries']
+__all__ = ['get_build_id', 'get_build_id_offsets', 'get_libc_info', 'get_libc_symbols','search_by_build_id', 'search_by_sha1', 'search_by_sha256', 'search_by_md5', 'unstrip_libc', 'search_by_symbol_offsets', 'download_libraries']

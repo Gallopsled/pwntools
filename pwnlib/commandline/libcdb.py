@@ -57,6 +57,13 @@ lookup_parser.add_argument(
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
+lookup_parser.add_argument(
+    '--offline',
+    action = 'store_true',
+    default = False,
+    help = 'Search from local libc database.'
+)
+
 hash_parser = libc_commands.add_parser(
     'hash',
     help = 'Display information of a libc version given an unique hash',
@@ -100,6 +107,13 @@ hash_parser.add_argument(
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
+hash_parser.add_argument(
+    '--offline',
+    action = 'store_true',
+    default = False,
+    help = 'Search from local libc database.'
+)
+
 file_parser = libc_commands.add_parser(
     'file',
     help = 'Dump information about a libc binary',
@@ -136,17 +150,45 @@ file_parser.add_argument(
 
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
 
-def find_libc(params):
-    import requests
-    url    = "https://libc.rip/api/find"
-    result = requests.post(url, json=params, timeout=20)
-    log.debug('Request: %s', params)
-    log.debug('Result: %s', result.json())
-    if result.status_code != 200 or len(result.json()) == 0:
-        log.failure("Could not find libc for %s on libc.rip", params)
-        return []
 
-    return result.json()
+def find_libc(params, offline=False):
+    if not offline:
+        import requests
+        url = "https://libc.rip/api/find"
+        result = requests.post(url, json=params, timeout=20)
+        log.debug('Request: %s', params)
+        log.debug('Result: %s', result.json())
+        if result.status_code != 200 or len(result.json()) == 0:
+            log.failure("Could not find libc for %s on libc.rip", params)
+            return []
+        return result.json()
+
+    # lookup parser (offline)
+    if params.get("symbols"):
+        return libcdb.find_local_libc_database(params)
+
+    # hash parser (offline)
+    hash_type, hash_value = list(params.items())[0]
+    db_path = Path(libcdb.local_database["libc-database"]) / "db"
+    libs_id = None
+
+    if hash_type == "id":
+        libs_id = hash_value
+    else:
+        if hash_type == "buildid":
+            hash_type = "build_id"
+        libc_path = libcdb.search_by_hash(hash_value, hash_type, unstrip=False, offline=offline)
+        if libc_path:
+            libs_id = Path(libc_path).stem
+
+    if libs_id:
+        libc_path = db_path / f"{libs_id}.so"
+        symbol_path = db_path / f"{libs_id}.symbols"
+
+        syms = libcdb.get_libc_symbols(symbol_path)
+        return [libcdb.get_libc_info(db_path, libc_path.stem, syms)]
+
+    return []
 
 def print_libc(libc):
     log.info('%s', text.red(libc['id']))
@@ -159,7 +201,6 @@ def print_libc(libc):
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
 def handle_remote_libc(args, libc):
-    print_libc(libc)
     if args.download_libc:
         path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
         if path:
@@ -198,15 +239,19 @@ def main(args):
             return
         
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = find_libc({'symbols': symbols})
+        matched_libcs = find_libc({'symbols': symbols}, args.offline)
         for libc in matched_libcs:
-            handle_remote_libc(args, libc)
+            print_libc(libc)
+            if not args.offline:
+               handle_remote_libc(args, libc)
 
     elif args.libc_command == 'hash':
         for hash_value in args.hash_value:
-            matched_libcs = find_libc({args.hash_type: hash_value})
+            matched_libcs = find_libc({args.hash_type: hash_value}, args.offline)
             for libc in matched_libcs:
-                handle_remote_libc(args, libc)
+                print_libc(libc)
+                if not args.offline:
+                   handle_remote_libc(args, libc)
 
     elif args.libc_command == 'file':
         from hashlib import md5, sha1, sha256
