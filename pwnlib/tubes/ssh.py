@@ -1775,6 +1775,20 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         remote = packing._decode(self.readlink('-f',remote).strip())
         libs[remote] = 0
 
+        if flatten:
+            basenames = dict()
+
+            # If there is a duplicate switch to unflattened download
+            for lib in libs:
+                name = os.path.basename(lib)
+
+                if name in basenames:
+                    self.warning('Duplicate lib name, switching to unflattened file tree: %r' % name)
+                    flatten = False
+                    break
+
+                basenames[lib] = name
+
         if directory is None:
             directory = self.host
 
@@ -1786,7 +1800,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         for lib, addr in libs.items():
             local = os.path.realpath(os.path.join(directory, '.' + os.path.sep \
-                    + (os.path.basename(lib) if flatten else lib)))
+                    + (basenames[lib] if flatten else lib)))
             if not local.startswith(directory):
                 self.warning('This seems fishy: %r' % lib)
                 continue
