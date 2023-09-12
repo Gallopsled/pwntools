@@ -1756,14 +1756,19 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self.sftp.unlink(file)
 
-    def libs(self, remote, directory = None):
+    def libs(self, remote, directory = None, flatten = False):
         """Downloads the libraries referred to by a file.
 
         This is done by running ldd on the remote server, parsing the output
         and downloading the relevant files.
 
         The directory argument specified where to download the files. This defaults
-        to './$HOSTNAME' where $HOSTNAME is the hostname of the remote server."""
+        to './$HOSTNAME' where $HOSTNAME is the hostname of the remote server.
+
+        Arguments:
+            directory(str): Output directory
+            flatten(bool): Flatten the file tree if True (defaults to False)
+        """
 
         libs = self._libs_remote(remote)
 
@@ -1780,7 +1785,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         seen = set()
 
         for lib, addr in libs.items():
-            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + lib))
+            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep \
+                    + (os.path.basename(lib) if flatten else lib)))
             if not local.startswith(directory):
                 self.warning('This seems fishy: %r' % lib)
                 continue
