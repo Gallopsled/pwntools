@@ -1141,8 +1141,8 @@ os.execve(exe, argv, env)
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
-        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
+    def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
+        r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -1162,20 +1162,23 @@ os.execve(exe, argv, env)
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
-            >>> io = s.system('pwd', wd='/tmp')
+            >>> io = s.system('pwd', cwd='/tmp')
             >>> io.recvall()
             b'/tmp\n'
             >>> io.cwd
             '/tmp'
         """
-
-        if wd is None:
-            wd = self.cwd
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.system() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+        if cwd is None:
+            cwd = self.cwd
 
         if timeout is None:
             timeout = self.timeout
 
-        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
+        return ssh_channel(self, process, tty, cwd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
@@ -1211,8 +1214,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
 
-    def run_to_end(self, process, tty = False, wd = None, env = None):
-        r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
+    def run_to_end(self, process, tty = False, cwd = None, env = None, wd = None):
+        r"""run_to_end(process, tty = False, cwd = None, env = None, timeout = Timeout.default) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
@@ -1224,8 +1227,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             (b'Hello\n', 17)
             """
 
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.run_to_end() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, wd = wd, timeout = Timeout.default)
+            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1874,7 +1882,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
-            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
+            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', cwd='.')
             wd = wd.strip()
 
             if status:
