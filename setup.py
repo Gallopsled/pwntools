@@ -47,7 +47,8 @@ for filename in glob.glob('pwnlib/commandline/*'):
 
 install_requires     = ['paramiko>=1.15.2',
                         'mako>=1.0.0',
-                        'pyelftools>=0.2.4',
+                        'pyelftools>=0.24, <0.30; python_version < "3"',
+                        'pyelftools>=0.24; python_version >= "3"',
                         'capstone>=3.0.5rc2', # See Gallopsled/pwntools#971, Gallopsled/pwntools#1160
                         'ropgadget>=5.3',
                         'pyserial>=2.7',
