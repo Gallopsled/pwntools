@@ -99,9 +99,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
 - [#2241][2241] Fix ssh.process not setting ssh_process.cwd attribute
+- [#2261][2261] Fix corefile module after pyelftools update
 
 [2214]: https://github.com/Gallopsled/pwntools/pull/2214
 [2241]: https://github.com/Gallopsled/pwntools/pull/2241
+[2261]: https://github.com/Gallopsled/pwntools/pull/2261
 
 ## 4.10.0
 
