@@ -1767,7 +1767,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Arguments:
             directory(str): Output directory
-            flatten(bool): Flatten the file tree if True (defaults to False)
+            flatten(bool): Flatten the file tree if True (defaults to False). If
+                there are duplicate filenames, fallback to unflattened structure.
         """
 
         libs = self._libs_remote(remote)
