@@ -57,7 +57,7 @@ class ssh_channel(sock):
     #: Command specified for the constructor
     process = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, raw = True, *args, **kwargs):
+    def __init__(self, parent, process = None, tty = False, cwd = None, env = None, raw = True, *args, **kwargs):
         super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
@@ -68,9 +68,9 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
-        self.cwd  = wd or '.'
-        if isinstance(wd, six.text_type):
-            wd = packing._need_bytes(wd, 2, 0x80)
+        self.cwd  = cwd or '.'
+        if isinstance(cwd, six.text_type):
+            cwd = packing._need_bytes(cwd, 2, 0x80)
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
@@ -80,8 +80,8 @@ class ssh_channel(sock):
         if isinstance(process, six.text_type):
             process = packing._need_bytes(process, 2, 0x80)
 
-        if process and wd:
-            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1; ' + process
+        if process and cwd:
+            process = b'cd ' + sh_string(cwd) + b' >/dev/null 2>&1; ' + process
 
         if process and env:
             for name, value in env.items():
@@ -841,8 +841,11 @@ class ssh(Timeout, Logger):
             >>> sh = s.process(executable='/bin/sh')
             >>> str(sh.pid).encode() in s.pidof('sh') # doctest: +SKIP
             True
-            >>> s.process(['pwd'], cwd='/tmp').recvall()
+            >>> io = s.process(['pwd'], cwd='/tmp')
+            >>> io.recvall()
             b'/tmp\n'
+            >>> io.cwd
+            '/tmp'
             >>> p = s.process(['python','-c','import os; os.write(1, os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
@@ -1112,7 +1115,7 @@ raise OSError("execve failed")
 
             script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1182,8 +1185,8 @@ raise OSError("execve failed")
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
-        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
+    def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
+        r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -1195,7 +1198,7 @@ raise OSError("execve failed")
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> py = s.run('python3 -i')
+            >>> py = s.system('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
             >>> py.sendline(b'print(2+2)')
             >>> py.sendline(b'exit()')
@@ -1203,15 +1206,23 @@ raise OSError("execve failed")
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
+            >>> io = s.system('pwd', cwd='/tmp')
+            >>> io.recvall()
+            b'/tmp\n'
+            >>> io.cwd
+            '/tmp'
         """
-
-        if wd is None:
-            wd = self.cwd
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.system() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+        if cwd is None:
+            cwd = self.cwd
 
         if timeout is None:
             timeout = self.timeout
 
-        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
+        return ssh_channel(self, process, tty, cwd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
@@ -1247,8 +1258,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
 
-    def run_to_end(self, process, tty = False, wd = None, env = None):
-        r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
+    def run_to_end(self, process, tty = False, cwd = None, env = None, wd = None):
+        r"""run_to_end(process, tty = False, cwd = None, env = None, timeout = Timeout.default) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
@@ -1260,8 +1271,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             (b'Hello\n', 17)
             """
 
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.run_to_end() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, wd = wd, timeout = Timeout.default)
+            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1891,6 +1907,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> _=s.set_working_directory(symlink=symlink)
             >>> assert b'foo' in s.ls().split(), s.ls().split()
             >>> assert homedir != s.pwd()
+
+            >>> _=s.set_working_directory()
+            >>> io = s.system('pwd')
+            >>> io.recvallS().strip() == io.cwd
+            True
+            >>> io.cwd == s.cwd
+            True
         """
         status = 0
 
@@ -1903,7 +1926,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
-            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
+            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', cwd='.')
             wd = wd.strip()
 
             if status:

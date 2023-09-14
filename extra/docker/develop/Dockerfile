@@ -34,7 +34,7 @@ RUN python2.7 -m pip install -U ipython ipdb \
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ="UTC"
 RUN sudo apt-get update && sudo -E apt-get install -y \
-  tzdata \
+	tzdata \
 	ash \
 	bash \
 	bash-static \

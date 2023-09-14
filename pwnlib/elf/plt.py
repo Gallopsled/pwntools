@@ -122,18 +122,6 @@ def prepare_unicorn_and_context(elf, got, address, data):
 
         uc.mem_write(got, p_magic)
 
-        # Separately, Unicorn is apparently unable to hook unmapped memory
-        # accesses on MIPS.  So we also have to map the page that contains
-        # the magic address.
-        start = magic_addr & (~0xfff)
-        try:
-            uc.mem_map(start, 0x1000)
-        except Exception:
-            # Ignore double-mapping
-            pass
-        trap = packing.p32(0x34000000, endian=elf.endian)
-        uc.mem_write(magic_addr, trap)
-
     return uc, uc.context_save()
 
 

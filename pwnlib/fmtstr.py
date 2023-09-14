@@ -304,14 +304,15 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     i = 0
     out = []
+    end = address + len(data)
     while i < len(data):
         candidate = AtomWrite(address + i, 1, data[i])
-        while i + candidate.size < len(data) and any(x in badbytes for x in pack(candidate.end)):
+        while candidate.end < end and any(x in badbytes for x in pack(candidate.end)):
             candidate = candidate.union(AtomWrite(candidate.end, 1, data[i + candidate.size]))
 
         sz = min([s for s in SPECIFIER if s >= candidate.size] + [float("inf")])
-        if i + sz > len(data):
-            raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %x)" % (i, i + address))
+        if candidate.start + sz > end:
+            raise RuntimeError("impossible to avoid badbytes starting after offset %d (address %#x)" % (i, i + address))
         i += candidate.size
         candidate = candidate.union(AtomWrite(candidate.end, sz - candidate.size, 0, 0))
         out.append(candidate)
@@ -498,7 +499,7 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
         # the best write is the one which sets the largest number of target
         # bytes correctly
         candidate = AtomWrite(atom.start, 0, 0)
-        best = (0, None)
+        best = (atom.size, idx, atom)
         for nextidx, nextatom in enumerate(atoms[idx:], idx):
             # if there is no atom immediately following the current candidate
             # that we haven't written yet, stop
@@ -527,6 +528,8 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
 
         _, nextidx, best_candidate = best
         numbwritten_here += best_candidate.compute_padding(numbwritten_here)
+        if numbwritten_here > maxwritten:
+            maxwritten = numbwritten_here
         offset = 0
 
         # for all atoms that we merged, check if all bytes are written already to update `done``
@@ -799,7 +802,7 @@ def make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes):
         all_atoms += atoms
     return all_atoms
 
-def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset()):
+def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), no_dollars=False):
     """
     Build a format string like fmtstr_payload but return the string and data separately.
     """
@@ -813,7 +816,7 @@ def fmtstr_split(offset, writes, numbwritten=0, write_size='byte', write_size_ma
     szmax = WRITE_SIZE[write_size_max]
     atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
-    return make_payload_dollar(offset, atoms, numbwritten)
+    return make_payload_dollar(offset, atoms, numbwritten, no_dollars=no_dollars)
 
 def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_max='long', overflows=16, strategy="small", badbytes=frozenset(), offset_bytes=0, no_dollars=False):
     r"""fmtstr_payload(offset, writes, numbwritten=0, write_size='byte') -> str
@@ -844,6 +847,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
         b'%190c%7$lln%85c%8$hhn%36c%9$hhn%131c%10$hhnaaaab\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        >>> fmtstr_payload(6, {0x8: 0x55d15d2004a0}, badbytes=b'\n')
+        b'%1184c%14$lln%49c%15$hhn%6963c%16$hn%81c%17$hhn%8c%18$hhnaaaabaa\x08\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%5$na\x00\x00\x00\x00'
@@ -900,11 +905,12 @@ class FmtStr(object):
 
     """
 
-    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0):
+    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset()):
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen
         self.numbwritten = numbwritten
+        self.badbytes = badbytes
 
         if self.offset is None:
             self.offset, self.padlen = self.find_offset()
@@ -968,7 +974,7 @@ class FmtStr(object):
 
         """
         fmtstr = randoms(self.padlen).encode()
-        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, write_size='byte')
+        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, write_size='byte')
         self.execute_fmt(fmtstr)
         self.writes = {}
 

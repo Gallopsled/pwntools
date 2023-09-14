@@ -5,13 +5,16 @@ from __future__ import division
 from pwn import *
 from pwnlib.commandline import common
 
-from mako.lookup import TemplateLookup
+from mako.lookup import TemplateLookup, Template
 
 parser = common.parser_commands.add_parser(
     'template',
     help = 'Generate an exploit template',
     description = 'Generate an exploit template'
 )
+
+# change path to hardcoded one when building the documentation
+printable_data_path = "pwnlib/data" if 'sphinx' in sys.modules else pwnlib.data.path
 
 parser.add_argument('exe', nargs='?', help='Target binary')
 parser.add_argument('--host', help='Remote host / SSH server')
@@ -22,10 +25,17 @@ parser.add_argument('--libc', help='Path to libc binary to use')
 parser.add_argument('--path', help='Remote path of file on SSH server')
 parser.add_argument('--quiet', help='Less verbose template comments', action='store_true')
 parser.add_argument('--color', help='Print the output in color', choices=['never', 'always', 'auto'], default='auto')
+parser.add_argument('--template', help='Path to a custom template. Tries to use \'~/.config/pwntools/templates/pwnup.mako\', if it exists. '
+                                   'Check \'%s\' for the default template shipped with pwntools.' % 
+                                        os.path.join(printable_data_path, "templates", "pwnup.mako"))
 
 def main(args):
+
     lookup = TemplateLookup(
-        directories      = [os.path.join(pwnlib.data.path, 'templates')],
+        directories      = [
+            os.path.expanduser('~/.config/pwntools/templates/'),
+            os.path.join(pwnlib.data.path, 'templates')
+        ],
         module_directory = None
     )
 
@@ -48,7 +58,12 @@ def main(args):
         if not args.exe:
             args.exe = os.path.basename(args.path)
 
-    template = lookup.get_template('pwnup.mako')
+    
+    if args.template:
+        template = Template(filename=args.template) # Failing on invalid file is ok
+    else:
+        template = lookup.get_template('pwnup.mako')
+    
     output = template.render(args.exe,
                              args.host,
                              args.port,
@@ -77,3 +92,4 @@ def main(args):
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)
+    
