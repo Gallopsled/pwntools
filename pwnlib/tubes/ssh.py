@@ -917,6 +917,9 @@ class ssh(Timeout, Logger):
             self.error("executable / argv[0] must be a string: %r" % executable)
         executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 
+        # Validate that all key of env do not contain '=' 
+        # This is necessary since we are using a ctypes, which does not do any sa
+
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
         stdin  = handles.get(stdin, stdin)
@@ -1048,10 +1051,15 @@ except Exception:
 %(func_src)s
 %(func_name)s(*%(func_args)r)
 
-# os.execve does not allow us to pass empty argv[0]
-# Therefore we use ctypes to call execve directly
-# os.execve(exe, argv, env)
-        
+""" % locals()  
+
+        if len(argv) > 0 and len(argv[0]) > 0:
+            script += r"os.execve(exe, argv, env) " 
+
+        # os.execve does not allow us to pass empty argv[0]
+        # Therefore we use ctypes to call execve directly
+        else:
+            script += r"""
 # Transform envp from dict to list
 env_list = [key + b"=" + value for key, value in env.items()]
 
@@ -1064,14 +1072,14 @@ c_argv = to_carray(argv)
 c_env = to_carray(env_list)
 
 # Call execve
-libc = ctypes.CDLL(None)
+libc = ctypes.CDLL('libc.so.6')
 libc.execve(exe, c_argv, c_env)
 
 # We should never get here, since we sanitized argv and env,
 # but just in case, indicate that something went wrong.
 libc.perror(b"execve")
 raise OSError("execve failed")
-""" % locals()  # """
+""" % locals()
 
         script = script.strip()
 
