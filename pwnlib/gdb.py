@@ -524,11 +524,22 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
         
         Start a new process with modified argv[0]
-        >>> io = gdb.debug("/bin/sh", 'continue', argv=[b'\xde\xad\xbe\xef'])
+        >>> io = gdb.debug(argv=[b'\xde\xad\xbe\xef'], executable="/bin/sh")
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \xde\xad\xbe\xef\n'
         >>> io.close()
+
+        Demonstrate that LD_PRELOAD is respected
+        >>> io = process(["grep", "libc.so.6", "/proc/self/maps"])
+        >>> real_libc_path = io.recvline().split()[-1]
+        >>> import shutil
+        >>> shutil.copy(real_libc_path, "./libc.so.6") # make a copy of libc to demonstrate that it is loaded
+        >>> io = gdb.debug(["grep", "libc.so.6", "/proc/self/maps"], env={"LD_PRELOAD": "./libc.so.6"})
+        >>> io.recvline().split()[-1]
+        b"./libc.so.6"
+        >>> os.remove("./libc.so.6") # cleanup
+
 
     Using GDB Python API:
 
