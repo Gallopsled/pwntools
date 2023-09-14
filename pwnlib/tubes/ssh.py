@@ -917,9 +917,6 @@ class ssh(Timeout, Logger):
             self.error("executable / argv[0] must be a string: %r" % executable)
         executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 
-        # Validate that all key of env do not contain '=' 
-        # This is necessary since we are using a ctypes, which does not do any sa
-
         # Allow passing in sys.stdin/stdout/stderr objects
         handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
         stdin  = handles.get(stdin, stdin)
