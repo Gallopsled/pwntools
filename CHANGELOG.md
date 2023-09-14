@@ -72,13 +72,15 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
 - [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
 - [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
-- [#2225][2225] Fix bug at ssh.py:process() - empty argv[0] Error
+- [#2257][2257] Allow creation of custom templates for `pwn template` command
+- [#2225][2225] Allow empty argv in ssh.process()
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
 [2221]: https://github.com/Gallopsled/pwntools/pull/2221
 [2219]: https://github.com/Gallopsled/pwntools/pull/2219
 [2212]: https://github.com/Gallopsled/pwntools/pull/2212
+[2257]: https://github.com/Gallopsled/pwntools/pull/2257
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
 
 ## 4.11.0 (`beta`)
@@ -95,12 +97,15 @@ The table below shows which release corresponds to each branch, and what date th
 [2186]: https://github.com/Gallopsled/pwntools/pull/2186
 [2129]: https://github.com/Gallopsled/pwntools/pull/2129
 
-
 ## 4.10.1 (`stable`) 
 
 - [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
+- [#2241][2241] Fix ssh.process not setting ssh_process.cwd attribute
+- [#2261][2261] Fix corefile module after pyelftools update
 
 [2214]: https://github.com/Gallopsled/pwntools/pull/2214
+[2241]: https://github.com/Gallopsled/pwntools/pull/2241
+[2261]: https://github.com/Gallopsled/pwntools/pull/2261
 
 ## 4.10.0
 
