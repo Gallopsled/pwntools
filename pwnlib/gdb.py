@@ -623,12 +623,16 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
-        # GDBServer is limited in it's ability to manipulate argv[0]
-        # but can use the ``--wrapper`` option to execute commands and catches
-        # ``execve`` calls.
-        # Therefore, we use a wrapper script to execute the target binary
-        script = _execve_script(args, executable=exe, env=env, ssh=ssh)
-        args = _gdbserver_args(args=args, which=which, env=env, python_wrapper_script=script)
+        if len(args) > 0 and which(packing._decode(args[0])) == packing._encode(exe):
+            args = _gdbserver_args(args=args, which=which, env=env)
+        
+        else:
+            # GDBServer is limited in it's ability to manipulate argv[0]
+            # but can use the ``--wrapper`` option to execute commands and catches
+            # ``execve`` calls.
+            # Therefore, we use a wrapper script to execute the target binary
+            script = _execve_script(args, executable=exe, env=env, ssh=ssh)
+            args = _gdbserver_args(args=args, which=which, env=env, python_wrapper_script=script)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
@@ -651,10 +655,6 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     if not which(args[0]):
         log.error("%s is not installed" % args[0])
 
-    if not ssh:
-        exe = exe or which(orig_args[0])
-        if not (exe and os.path.exists(exe)):
-            log.error("%s does not exist" % exe)
 
     # Start gdbserver/qemu
     # (Note: We override ASLR here for the gdbserver process itself.)
