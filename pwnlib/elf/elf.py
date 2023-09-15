@@ -82,7 +82,7 @@ from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util.fiddling import unhex
-from pwnlib.util.misc import align, align_down
+from pwnlib.util.misc import align, align_down, which
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -2246,3 +2246,122 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
+    
+    @staticmethod
+    def set_runpath(exepath, runpath):
+        r"""set_runpath(str, str) -> ELF
+
+        Patches the RUNPATH of the ELF to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        The dynamic loader will look for any needed shared libraries in the given path first,
+        before trying the system library paths. This is useful to run a binary with a different
+        libc binary.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            runpath(str): Path containing the needed libraries.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_runpath(ls_path, './libs')
+            >>> e.runpath == b'./libs'
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-rpath', runpath, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching RUNPATH failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def set_interpreter(exepath, interpreter_path):
+        r"""set_interpreter(str, str) -> ELF
+
+        Patches the interpreter of the ELF to the given binary using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        When running the binary, the new interpreter will be used to load the ELF.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            interpreter_path(str): Path to the ld.so dynamic loader.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_interpreter(ls_path, '/tmp/correct_ld.so')
+            >>> e.linker == b'/tmp/correct_ld.so'
+            True
+        """
+        # patch the interpreter
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-interpreter', interpreter_path, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching interpreter failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def patch_custom_libraries(exe_path, custom_library_path, create_copy=True, suffix='_remotelibc'):
+        r"""patch_custom_libraries(str, str, bool, str) -> ELF
+
+        Looks for the interpreter binary in the given path and patches the binary to use
+        it if available. Also patches the RUNPATH to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        Arguments:
+            exe_path(str): Path to the binary to patch.
+            custom_library_path(str): Path to a folder containing the libraries.
+            create_copy(bool): Create a copy of the binary and apply the patches to the copy.
+            suffix(str): Suffix to append to the filename when creating the copy to patch.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> linker_path = os.path.join(tmpdir, 'ld-mock.so')
+            >>> write(linker_path, b'loader')
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.patch_custom_libraries(ls_path, tmpdir)
+            >>> e.runpath.decode() == tmpdir
+            True
+            >>> e.linker.decode() == linker_path
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        
+        # Create a copy of the ELF to patch instead of the original file.
+        if create_copy:
+            import shutil
+            patched_path = exe_path + suffix
+            shutil.copy2(exe_path, patched_path)
+            exe_path = patched_path
+
+        # Set interpreter in ELF to the one in the library path.
+        interpreter_name = [filename for filename in os.listdir(custom_library_path) if filename.startswith('ld-')]
+        if interpreter_name:
+            interpreter_path = os.path.realpath(os.path.join(custom_library_path, interpreter_name[0]))
+            ELF.set_interpreter(exe_path, interpreter_path)
+        else:
+            log.warn("Couldn't find ld.so in library path. Interpreter not set.")
+
+        # Set RUNPATH to library path in order to find other libraries.
+        return ELF.set_runpath(exe_path, custom_library_path)
