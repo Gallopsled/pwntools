@@ -357,16 +357,19 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
     if pid:
         gdbserver_args += ['--once', '--attach']
 
-    if python_wrapper_script:
-        gdbserver_args += ['--wrapper', python_wrapper_script, '--']
-
-    elif env is not None:
-        env_args = []
+    env_args = []
+    if env is not None:
         for key in tuple(env):
+            # Special case for LD_ environment variables, so gdbserver
+            # starts with the native libraries
             if key.startswith(b'LD_'): # LD_PRELOAD / LD_LIBRARY_PATH etc.
                 env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
                 env_args.append(b'%s=%s' % (key, env[key]))
+    
+    if python_wrapper_script is not None:
+        gdbserver_args += ['--wrapper', python_wrapper_script, '--']
+    else:
         gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
