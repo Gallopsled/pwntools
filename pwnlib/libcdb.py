@@ -41,7 +41,7 @@ local_database = {
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
-def provider_libcdb(hex_encoded_id, hash_type):
+def online_provider_libcdb(hex_encoded_id, hash_type):
     # Deferred import because it's slow
     import requests
     from six.moves import urllib
@@ -85,7 +85,7 @@ def query_libc_rip(params):
         return None
 
 # https://libc.rip/
-def provider_libc_rip(hex_encoded_id, hash_type):
+def online_provider_libc_rip(hex_encoded_id, hash_type):
     # Build the request for the hash type
     # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
     if hash_type == 'build_id':
@@ -111,7 +111,7 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     return data
 
 # Search offline https://github.com/niklasb/libc-database for symbols
-def find_local_libc_database(params):
+def find_local_libc(params):
     if not local_database["libc-database"]:
         log.warn_once("No environment variable LOCAL_LIBC_DATABASE or parameter libcdb.local_database['libc-database'] are set")
         return None
@@ -163,7 +163,7 @@ def offline_provider_libc_database(hex_encoded_id, hash_type):
     return None
 
 
-PROVIDERS = [provider_libcdb, provider_libc_rip]
+ONLINE_PROVIDERS = [online_provider_libcdb, online_provider_libc_rip]
 OFFLINE_PROVIDERS = [offline_provider_libc_database]
 
 
@@ -186,7 +186,7 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=F
         return cache
 
     # Run through all available libc database providers to see if we have a match.
-    for provider in PROVIDERS:
+    for provider in ONLINE_PROVIDERS:
         data = provider(hex_encoded_id, hash_type)
         if data and data.startswith(b'\x7FELF'):
             break
@@ -609,7 +609,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     if not offline:
         matching_libcs = query_libc_rip(params)
     else:
-        matching_libcs = find_local_libc_database(params)
+        matching_libcs = find_local_libc(params)
     log.debug('Result: %s', matching_libcs)
     if matching_libcs is None or len(matching_libcs) == 0:
         log.warn_once("No matching libc for symbols %r", symbols)
