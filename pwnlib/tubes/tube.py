@@ -1035,7 +1035,11 @@ class tube(Timeout, Logger):
             >>> context.clear()
         """
         with context.local(log_level='debug'):
-            return self.clean(timeout)
+            cached_data = self.buffer.get()
+            if cached_data:
+                self.debug('Received %#x bytes:' % len(cached_data))
+                self.maybe_hexdump(cached_data, level=logging.DEBUG)
+            return cached_data + self.clean(timeout)
 
     def connect_input(self, other):
         """connect_input(other)
