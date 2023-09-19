@@ -576,7 +576,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline=False):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline=False, raw=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -652,6 +652,9 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
             return None
 
+    if raw:
+        return matching_libcs
+    
     if matched_libc is None:
         matched_libc = _handle_multiple_matching_libcs(matching_libcs)
 
