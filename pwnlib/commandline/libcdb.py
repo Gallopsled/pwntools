@@ -151,25 +151,31 @@ file_parser.add_argument(
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
 
 
-def find_libc(params, offline=False):
-    if not offline:
-        import requests
-        url = "https://libc.rip/api/find"
-        result = requests.post(url, json=params, timeout=20)
-        log.debug('Request: %s', params)
-        log.debug('Result: %s', result.json())
-        if result.status_code != 200 or len(result.json()) == 0:
-            log.failure("Could not find libc for %s on libc.rip", params)
-            return []
-        return result.json()
+def find_in_online_mode(params):
+    import requests
+    url = "https://libc.rip/api/find"
+    result = requests.post(url, json=params, timeout=20)
+    log.debug('Request: %s', params)
+    log.debug('Result: %s', result.json())
+    if result.status_code != 200 or len(result.json()) == 0:
+        log.failure("Could not find libc for %s on libc.rip", params)
+        return []
+    return result.json()
 
-    # lookup parser (offline)
+
+def find_in_offline_mode(params):
+    # lookup parser
     if params.get("symbols"):
-        return libcdb.find_local_libc_database(params)
+        matching_libcs = libcdb.find_local_libc(params)
+        return matching_libcs if matching_libcs else []
 
-    # hash parser (offline)
+    # hash parser
     hash_type, hash_value = list(params.items())[0]
-    db_path = Path(libcdb.local_database["libc-database"]) / "db"
+
+    local_db = libcdb._check_local_database()
+    if not local_db:
+        return []
+    db_path = Path(local_db) / "db"
     libs_id = None
 
     if hash_type == "id":
@@ -189,6 +195,14 @@ def find_libc(params, offline=False):
         return [libcdb.get_libc_info(db_path, libc_path.stem, syms)]
 
     return []
+
+
+def find_libc(params, offline=False):
+    if offline:
+        return find_in_offline_mode(params)
+    else:
+        return find_in_online_mode(params)
+
 
 def print_libc(libc):
     log.info('%s', text.red(libc['id']))

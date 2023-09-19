@@ -11,6 +11,8 @@ import tempfile
 
 from elftools.elf.elffile import ELFFile
 
+from pwnlib.args import args
+from pwnlib.config import register_config
 from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
@@ -34,9 +36,17 @@ if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
-local_database = {
-    "libc-database": os.environ.get("LOCAL_LIBC_DATABASE", "")
-}
+local_database_conf = None
+
+def read_libcdb_config(settings):
+    for key, value in settings.items():
+        if key == 'local_db':
+            global local_database_conf
+            local_database_conf = value
+        else:
+            log.warn("Unknown configuration option %r in section %r" % (key, 'libcdb'))
+
+register_config('libcdb', read_libcdb_config)
 
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
@@ -112,15 +122,15 @@ def online_provider_libc_rip(hex_encoded_id, hash_type):
 
 # Search offline https://github.com/niklasb/libc-database for symbols
 def find_local_libc(params):
-    if not local_database["libc-database"]:
-        log.warn_once("No environment variable LOCAL_LIBC_DATABASE or parameter libcdb.local_database['libc-database'] are set")
+    local_db = _check_local_database()
+    if not local_db:
         return None
-    
+
     if not params.get("symbols"):
         return None
 
     res = []
-    db_path = Path(local_database["libc-database"]) / "db"
+    db_path = Path(local_db) / "db"
 
     for symbols_path in db_path.rglob("*.symbols"):
         syms = get_libc_symbols(symbols_path)
@@ -140,11 +150,11 @@ def find_local_libc(params):
 
 # Offline search https://github.com/niklasb/libc-database for hash type
 def offline_provider_libc_database(hex_encoded_id, hash_type):
-    if not local_database["libc-database"]:
-        log.warn_once("No environment variable LOCAL_LIBC_DATABASE or parameter libcdb.local_database['libc-database'] are set")
+    local_db = _check_local_database()
+    if not local_db:
         return None
 
-    db_path = Path(local_database["libc-database"]) / "db"
+    db_path = Path(local_db) / "db"
     hashfilehex = None
 
     if hash_type == "build_id":
@@ -271,6 +281,18 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
 
     log.info_once("Using cached data from %r", cache)
     return cache, True
+
+def _check_local_database():
+    if context.local_libcdb:
+        return context.local_libcdb
+    elif args.LOCAL_LIBCDB:
+        return args.LOCAL_LIBCDB
+    elif local_database_conf:
+        return local_database_conf
+    else:
+        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
+
+    return None
 
 def unstrip_libc(filename):
     """
@@ -589,7 +611,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         >>> libc = ELF(filename)
         >>> libc.sym.system == 0x52290
         True
-        >>> local_database['libc-database'] = "/path/to/libc-database"
+        >>> context.local_libcdb = "/path/to/libc-database"
         >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1, offline=True)
         >>> ELF(filename)
         ELF('/path/to/libc-database/db/libc6_2.31-0ubuntu9.12_amd64.so')
