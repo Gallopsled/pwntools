@@ -20,9 +20,7 @@ from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex
 from pwnlib.util.hashes import md5filehex, sha1filehex, sha256filehex
-from pwnlib.util.misc import read
-from pwnlib.util.misc import which
-from pwnlib.util.misc import write
+from pwnlib.util.misc import read, write, which
 from pwnlib.util.web import wget
 
 log = getLogger(__name__)
@@ -122,8 +120,9 @@ def online_provider_libc_rip(hex_encoded_id, hash_type):
 
 # Search offline https://github.com/niklasb/libc-database for symbols
 def find_local_libc(params):
-    local_db = _check_local_database()
+    local_db = _fetch_local_database_path()
     if not local_db:
+        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
         return None
 
     if not params.get("symbols"):
@@ -150,8 +149,9 @@ def find_local_libc(params):
 
 # Offline search https://github.com/niklasb/libc-database for hash type
 def offline_provider_libc_database(hex_encoded_id, hash_type):
-    local_db = _check_local_database()
+    local_db = _fetch_local_database_path()
     if not local_db:
+        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
         return None
 
     db_path = Path(local_db) / "db"
@@ -177,8 +177,12 @@ ONLINE_PROVIDERS = [online_provider_libcdb, online_provider_libc_rip]
 OFFLINE_PROVIDERS = [offline_provider_libc_database]
 
 
-def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=False):
+def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=-1):
     assert hash_type in HASHES, hash_type
+
+    # Automatically modifying the "offline" parameter to enable offline mode.
+    if offline == -1:
+        offline = _check_offline_mode()
 
     # Offline search don't use libcdb cache
     if offline:
@@ -282,7 +286,17 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
     log.info_once("Using cached data from %r", cache)
     return cache, True
 
-def _check_local_database():
+def _check_offline_mode():
+    is_offline = False
+    if _fetch_local_database_path():
+        is_offline = True
+
+    log.debug("Switch libcdb to %s search mode." % ("offline" if is_offline else "online"))
+
+    return is_offline
+
+def _fetch_local_database_path(quite=False):
+    # Returning the configuration from `PWNLIB_LOCAL_LIBCDB`, `context.local_libcdb`, or `pwn.conf`.
     if context.local_libcdb:
         return context.local_libcdb
     elif args.LOCAL_LIBCDB:
@@ -290,9 +304,7 @@ def _check_local_database():
     elif local_database_conf:
         return local_database_conf
     else:
-        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
-
-    return None
+        return None
 
 def unstrip_libc(filename):
     """
@@ -576,7 +588,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline=False, raw=False):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline=-1, raw=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -600,6 +612,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             instead of a path to a downloaded file.
         offline(bool):
             Searching libc on offline libc database.
+            `-1` indicates that this parameter is left to be automatically controlled by libcdb.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -628,6 +641,10 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     params = {'symbols': symbols}
     log.debug('Request: %s', params)
 
+    # Automatically modifying the "offline" parameter to enable offline mode.
+    if offline == -1:
+        offline = _check_offline_mode()
+ 
     if not offline:
         matching_libcs = query_libc_rip(params)
     else:
@@ -663,7 +680,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     else:
         return matched_libc["libc_path"]
 
-def search_by_build_id(hex_encoded_id, unstrip=True, offline=False):
+def search_by_build_id(hex_encoded_id, unstrip=True, offline=-1):
     """
     Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
 
@@ -690,7 +707,7 @@ def search_by_build_id(hex_encoded_id, unstrip=True, offline=False):
     """
     return search_by_hash(hex_encoded_id, 'build_id', unstrip, offline)
 
-def search_by_md5(hex_encoded_id, unstrip=True, offline=False):
+def search_by_md5(hex_encoded_id, unstrip=True, offline=-1):
     """
     Given a hex-encoded md5sum, attempt to download a matching libc from libcdb.
 
@@ -701,6 +718,7 @@ def search_by_md5(hex_encoded_id, unstrip=True, offline=False):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline(bool):
             Searching libc on offline libc database.
+            `-1` indicates that this parameter is left to be automatically controlled by libcdb.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -717,7 +735,7 @@ def search_by_md5(hex_encoded_id, unstrip=True, offline=False):
     """
     return search_by_hash(hex_encoded_id, 'md5', unstrip, offline)
 
-def search_by_sha1(hex_encoded_id, unstrip=True, offline=False):
+def search_by_sha1(hex_encoded_id, unstrip=True, offline=-1):
     """
     Given a hex-encoded sha1, attempt to download a matching libc from libcdb.
 
@@ -728,6 +746,7 @@ def search_by_sha1(hex_encoded_id, unstrip=True, offline=False):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline(bool):
             Searching libc on offline libc database.
+            `-1` indicates that this parameter is left to be automatically controlled by libcdb.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -744,7 +763,7 @@ def search_by_sha1(hex_encoded_id, unstrip=True, offline=False):
     """
     return search_by_hash(hex_encoded_id, 'sha1', unstrip, offline)
 
-def search_by_sha256(hex_encoded_id, unstrip=True, offline=False):
+def search_by_sha256(hex_encoded_id, unstrip=True, offline=-1):
     """
     Given a hex-encoded sha256, attempt to download a matching libc from libcdb.
 
@@ -755,6 +774,7 @@ def search_by_sha256(hex_encoded_id, unstrip=True, offline=False):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline(bool):
             Searching libc on offline libc database.
+            `-1` indicates that this parameter is left to be automatically controlled by libcdb.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.

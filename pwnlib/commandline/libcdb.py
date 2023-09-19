@@ -59,8 +59,9 @@ lookup_parser.add_argument(
 
 lookup_parser.add_argument(
     '--offline',
-    action = 'store_true',
-    default = False,
+    action = 'store',
+    default = -1,
+    type = int,
     help = 'Search from local libc database.'
 )
 
@@ -109,8 +110,9 @@ hash_parser.add_argument(
 
 hash_parser.add_argument(
     '--offline',
-    action = 'store_true',
-    default = False,
+    action = 'store',
+    default = -1,
+    type = int,
     help = 'Search from local libc database.'
 )
 
@@ -172,8 +174,9 @@ def find_in_offline_mode(params):
     # hash parser
     hash_type, hash_value = list(params.items())[0]
 
-    local_db = libcdb._check_local_database()
+    local_db = libcdb._fetch_local_database_path()
     if not local_db:
+        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
         return []
     db_path = Path(local_db) / "db"
     libs_id = None
@@ -183,7 +186,7 @@ def find_in_offline_mode(params):
     else:
         if hash_type == "buildid":
             hash_type = "build_id"
-        libc_path = libcdb.search_by_hash(hash_value, hash_type, unstrip=False, offline=offline)
+        libc_path = libcdb.search_by_hash(hash_value, hash_type, unstrip=False, offline=True)
         if libc_path:
             libs_id = Path(libc_path).stem
 
@@ -197,7 +200,12 @@ def find_in_offline_mode(params):
     return []
 
 
-def find_libc(params, offline=False):
+def find_libc(params, offline=-1):
+    # Automatically modifying the "offline" parameter to enable offline mode
+
+    if offline == -1:
+        offline = libcdb._check_offline_mode()
+
     if offline:
         return find_in_offline_mode(params)
     else:
@@ -215,6 +223,10 @@ def print_libc(libc):
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
 def handle_remote_libc(args, libc):
+    # 
+    if args.offline == -1 and libcdb._check_offline_mode():
+        return None
+
     if args.download_libc:
         path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
         if path:
@@ -251,7 +263,7 @@ def main(args):
         if len(pairs) % 2 != 0:
             log.failure('Uneven number of arguments. Please provide "symbol offset" pairs')
             return
-        
+
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
         matched_libcs = find_libc({'symbols': symbols}, args.offline)
         for libc in matched_libcs:
