@@ -360,6 +360,7 @@ class ContextType(object):
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
+        'local_libcdb': None,
         'log_level': logging.INFO,
         'log_file': _devnull(),
         'log_console': sys.stdout,
@@ -1069,6 +1070,10 @@ class ContextType(object):
         if isinstance(stream, str):
             stream = open(stream, 'wt')
         return stream
+
+    @_validator
+    def local_libcdb(self, path):
+        return path
 
     @property
     def mask(self):
