@@ -178,6 +178,7 @@ def find_in_offline_mode(params):
     if not local_db:
         log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
         return []
+
     db_path = Path(local_db) / "db"
     libs_id = None
 
@@ -186,9 +187,10 @@ def find_in_offline_mode(params):
     else:
         if hash_type == "buildid":
             hash_type = "build_id"
+
         libc_path = libcdb.search_by_hash(hash_value, hash_type, unstrip=False, offline=True)
         if libc_path:
-            libs_id = Path(libc_path).stem
+            libs_id = read(libc_path + ".id").decode()
 
     if libs_id:
         libc_path = db_path / f"{libs_id}.so"
@@ -201,8 +203,7 @@ def find_in_offline_mode(params):
 
 
 def find_libc(params, offline=-1):
-    # Automatically modifying the "offline" parameter to enable offline mode
-
+    # Automatically modifying the "offline" parameter.
     if offline == -1:
         offline = libcdb._check_offline_mode()
 

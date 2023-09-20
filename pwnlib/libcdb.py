@@ -74,7 +74,8 @@ def online_provider_libcdb(hex_encoded_id, hash_type):
                 url = urllib.parse.urljoin(url.encode('utf-8'), data)
     except requests.RequestException as e:
         log.warn_once("Failed to fetch libc for %s %s from libcdb: %s", hash_type, hex_encoded_id, e)
-    return data
+
+    return data, ""
 
 def query_libc_rip(params):
     # Deferred import because it's slow
@@ -103,7 +104,7 @@ def online_provider_libc_rip(hex_encoded_id, hash_type):
     libc_match = query_libc_rip(params)
     if not libc_match:
         log.warn_once("Could not find libc info for %s %s on libc.rip", hash_type, hex_encoded_id)
-        return None
+        return None, ""
 
     if len(libc_match) > 1:
         log.debug("Received multiple matches. Choosing the first match and discarding the others.")
@@ -115,8 +116,9 @@ def online_provider_libc_rip(hex_encoded_id, hash_type):
 
     if not data:
         log.warn_once("Could not fetch libc binary for %s %s from libc.rip", hash_type, hex_encoded_id)
-        return None
-    return data
+        return None, ""
+
+    return data, libc_match[0]['id']
 
 # Search offline https://github.com/niklasb/libc-database for symbols
 def find_local_libc(params):
@@ -152,7 +154,7 @@ def offline_provider_libc_database(hex_encoded_id, hash_type):
     local_db = _fetch_local_database_path()
     if not local_db:
         log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
-        return None
+        return None, ""
 
     db_path = Path(local_db) / "db"
     hashfilehex = None
@@ -166,13 +168,14 @@ def offline_provider_libc_database(hex_encoded_id, hash_type):
 
     for libc_path in db_path.rglob("*.so"):
         if hash_type == "buildid" and hex_encoded_id == get_build_id(libc_path):
-            return read(libc_path)
+            return read(libc_path), libc_path.stem
         elif hashfilehex is not None and hex_encoded_id == hashfilehex(libc_path):
-            return read(libc_path)
+            return read(libc_path), libc_path.stem
 
-    return None
+    return None, ""
 
 
+# The provider function will return both the libc content and the libs_id.
 ONLINE_PROVIDERS = [online_provider_libcdb, online_provider_libc_rip]
 OFFLINE_PROVIDERS = [offline_provider_libc_database]
 
@@ -180,19 +183,9 @@ OFFLINE_PROVIDERS = [offline_provider_libc_database]
 def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=-1):
     assert hash_type in HASHES, hash_type
 
-    # Automatically modifying the "offline" parameter to enable offline mode.
+    # Automatically modifying the "offline" parameter.
     if offline == -1:
         offline = _check_offline_mode()
-
-    # Offline search don't use libcdb cache
-    if offline:
-        # offline provider will return libc path, not libc content
-        for provider in OFFLINE_PROVIDERS:
-            path = provider(hex_encoded_id, hash_type)
-            if path:
-                return path
-
-        return None
 
     # Ensure that the libcdb cache directory exists
     cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, hash_type)
@@ -200,8 +193,9 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=-
         return cache
 
     # Run through all available libc database providers to see if we have a match.
-    for provider in ONLINE_PROVIDERS:
-        data = provider(hex_encoded_id, hash_type)
+    providers = OFFLINE_PROVIDERS if offline else ONLINE_PROVIDERS
+    for provider in providers:
+        data, libs_id = provider(hex_encoded_id, hash_type)
         if data and data.startswith(b'\x7FELF'):
             break
 
@@ -209,7 +203,8 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline=-
         log.warn_once("Could not find libc for %s %s anywhere", hash_type, hex_encoded_id)
 
     # Save whatever we got to the cache
-    write(cache, data or b'')
+    write(cache, data or b"")
+    write(cache + ".id", libs_id.encode() or b"")
 
     # Return ``None`` if we did not get a valid ELF file
     if not data or not data.startswith(b'\x7FELF'):
@@ -283,10 +278,16 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
         log.info_once("Skipping unavailable ELF %s", hex_encoded_id)
         return cache, False
 
+    libs_id = read(cache + ".id")
+    if not libs_id:
+        log.info_once("Skipping empty libs id %s", hex_encoded_id)
+        return cache, False
+
     log.info_once("Using cached data from %r", cache)
     return cache, True
 
 def _check_offline_mode():
+    # Determine whether to enter offline mode based on user configuration.
     is_offline = False
     if _fetch_local_database_path():
         is_offline = True
@@ -641,7 +642,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     params = {'symbols': symbols}
     log.debug('Request: %s', params)
 
-    # Automatically modifying the "offline" parameter to enable offline mode.
+    # Automatically modifying the "offline" parameter.
     if offline == -1:
         offline = _check_offline_mode()
  
@@ -676,9 +677,17 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         matched_libc = _handle_multiple_matching_libcs(matching_libcs)
 
     if not offline:
-        return search_by_build_id(matched_libc['buildid'], unstrip=unstrip)
+        return search_by_build_id(matched_libc['buildid'], unstrip=unstrip, offline=False)
     else:
-        return matched_libc["libc_path"]
+        cache, cache_valid = _check_elf_cache('libcdb', matched_libc['buildid'], 'buildid')
+        if not cache_valid:
+            write(cache, read(matched_libc["libc_path"]) or b"")
+            write(cache + ".id", matched_libc["id"].encode() or b"")
+
+        if unstrip:
+            unstrip_libc(cache)
+
+        return cache
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline=-1):
     """
@@ -823,22 +832,19 @@ def get_libc_info(db_path, libs_id, syms, libc_path=None, symbols_path=None, lib
     info["id"] = libs_id
     info["libc_path"] = os.path.join(db_path, f"{libs_id}.so") if not libc_path else libc_path
     info["libs_url"] = read(os.path.join(db_path, f"{libs_id}.url")).decode().strip() if not libs_url else libs_url
-    info["symbols_path"] = os.path.join(db_path, f"{libs_id}.symbols") if not symbols_path else symbols_path
 
     info["buildid"] = get_build_id(info["libc_path"])
     info["md5"] = md5filehex(info["libc_path"])
     info["sha1"] = sha1filehex(info["libc_path"])
     info["sha256"] = sha256filehex(info["libc_path"])
 
+    sym_list = [
+        "__libc_start_main_ret", "dup2", "open", "printf", "puts", "read", "system", "str_bin_sh"
+    ]
+
     info["symbols"] = {}
-    info["symbols"]["__libc_start_main_ret"] = hex(syms["__libc_start_main_ret"])
-    info["symbols"]["dup2"] = hex(syms["dup2"])
-    info["symbols"]["open"] = hex(syms["open"])
-    info["symbols"]["printf"] = hex(syms["printf"])
-    info["symbols"]["puts"] = hex(syms["puts"])
-    info["symbols"]["read"] = hex(syms["read"])
-    info["symbols"]["str_bin_sh"] = hex(syms["str_bin_sh"])
-    info["symbols"]["system"] = hex(syms["system"])
+    for name in sym_list:
+        info["symbols"][name] = hex(syms[name])
 
     return info
 
