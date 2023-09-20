@@ -176,7 +176,7 @@ def offline_provider_libc_database(hex_encoded_id, hash_type):
 
 
 # The provider function will return both the libc content and the libs_id.
-ONLINE_PROVIDERS = [online_provider_libcdb, online_provider_libc_rip]
+ONLINE_PROVIDERS = [online_provider_libc_rip, online_provider_libcdb]
 OFFLINE_PROVIDERS = [offline_provider_libc_database]
 
 
