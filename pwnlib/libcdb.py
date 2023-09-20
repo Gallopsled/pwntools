@@ -651,6 +651,10 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     else:
         matching_libcs = find_local_libc(params)
     log.debug('Result: %s', matching_libcs)
+
+    if raw:
+        return matching_libcs
+
     if matching_libcs is None or len(matching_libcs) == 0:
         log.warn_once("No matching libc for symbols %r", symbols)
         return None
@@ -670,9 +674,6 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
             return None
 
-    if raw:
-        return matching_libcs
-    
     if matched_libc is None:
         matched_libc = _handle_multiple_matching_libcs(matching_libcs)
 
