@@ -369,7 +369,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
     
     if python_wrapper_script is not None:
         gdbserver_args += ['--wrapper', python_wrapper_script, '--']
-    else:
+    elif env is not None:
         gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
     gdbserver_args += ['localhost:0']
