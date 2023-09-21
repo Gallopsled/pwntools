@@ -267,8 +267,8 @@ def _execve_script(argv, executable, env, ssh):
     Returns:
         The filename of the created script.
     """
-    # Make sure args are bytes, not str or bytearray.
-    argv = [bytes(packing._encode(arg)) for arg in argv]
+    # Make sure args are bytes not bytearray.
+    argv = [bytes(arg) for arg in argv]
     executable = packing._encode(executable)
     if ssh:
         # ssh.process creates the script for us
@@ -295,8 +295,14 @@ def to_carray(py_list):
 c_argv = to_carray({argv!r})
 c_env = to_carray({env_list!r})
 # Call execve
-execve = ctypes.CDLL(None).execve
-execve({executable!r}, c_argv, c_env)""".format(**locals())
+execve = ctypes.CDLL('libc.so.6').execve
+execve({executable!r}, c_argv, c_env)
+
+# We should never get here, since we sanitized argv and env,
+# but just in case, indicate that something went wrong.
+libc.perror(b"execve")
+raise OSError("execve failed")
+""".format(**locals())
     script = script.strip()
     # Create a temporary file to hold the script
     tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwn', suffix='.py', delete=False)
@@ -527,7 +533,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
         
         Start a new process with modified argv[0]
-        >>> io = gdb.debug(argv=[b'\xde\xad\xbe\xef'], executable="/bin/sh")
+        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], executable="/bin/sh")
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \xde\xad\xbe\xef\n'
@@ -595,15 +601,15 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.interactive() # doctest: +SKIP
         >>> io.close()
 
-        Using a modified argv[0] on a remote process
-        >>> io = gdb.debug("/bin/sh", 'continue', argv=[b'\xde\xad\xbe\xef'], ssh=shell)
+        Using a modified args[0] on a remote process
+        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'],  gdbscript='continue', exe="/bin/sh",  ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \xde\xad\xbe\xef\n'
         >>> io.close()
 
-        Using an empty argv[0] on a remote process
-        >>> io = gdb.debug("/bin/sh", 'continue', argv=[], ssh=shell)
+        Using an empty args[0] on a remote process
+        >>> io = gdb.debug(args=[],  gdbscript='continue', exe="/bin/sh",  ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \n'
@@ -1188,13 +1194,12 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     gdbscript = pre + (gdbscript or '')
 
     if gdbscript:
-        tmp = tempfile.NamedTemporaryFile(prefix = 'pwn', suffix = '.gdb',
-                                          delete = False, mode = 'w+')
-        log.debug('Wrote gdb script to %r\n%s', tmp.name, gdbscript)
-        gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
+        with tempfile.NamedTemporaryFile(prefix = 'pwnlib-execve-', suffix = '.gdb',
+                                          delete = False, mode = 'w+') as tmp:
+            log.debug('Wrote gdb script to %r\n%s', tmp.name, gdbscript)
+            gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
 
-        tmp.write(gdbscript)
-        tmp.close()
+            tmp.write(gdbscript)
         cmd += ['-x', tmp.name]
 
     log.info('running in new terminal: %s', cmd)
