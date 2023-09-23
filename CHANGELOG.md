@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.12.0](#4120)  | `dev`    |
-| [4.11.0](#4110)  | `beta`   |
-| [4.10.0](#4100)  | `stable` | May 21, 2023
+| [4.13.0](#4130-dev)  | `dev`    |
+| [4.12.0](#4120-beta)  | `beta`   |
+| [4.11.0](#4110-stable)  | `stable` | Sep 15, 2023
+| [4.10.0](#4100)  |          | May 21, 2023
 | [4.9.0](#490)    |          | Dec 29, 2022
 | [4.8.0](#480)    |          | Apr 21, 2022
 | [4.7.1](#471)    |          | Apr 20, 2022
@@ -66,43 +67,48 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.12.0 (`dev`)
+## 4.13.0 (`dev`)
 
+- [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
+
+[2242]: https://github.com/Gallopsled/pwntools/pull/2242
+
+## 4.12.0 (`beta`)
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
 - [#2219][2219] Fix passing arguments on the stack in shellcraft syscall template
 - [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
-- [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
+- [#2257][2257] Allow creation of custom templates for `pwn template` command
+- [#2225][2225] Allow empty argv in ssh.process()
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
 [2221]: https://github.com/Gallopsled/pwntools/pull/2221
 [2219]: https://github.com/Gallopsled/pwntools/pull/2219
 [2212]: https://github.com/Gallopsled/pwntools/pull/2212
-[2242]: https://github.com/Gallopsled/pwntools/pull/2242
+[2257]: https://github.com/Gallopsled/pwntools/pull/2257
+[2225]: https://github.com/Gallopsled/pwntools/pull/2225
 
-## 4.11.0 (`beta`)
+## 4.11.0 (`stable`)
 
 - [#2185][2185] make fmtstr module able to create payload without $ notation 
 - [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
 - [#2177][2177] Support for RISC-V 64-bit architecture
 - [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`
 - [#2129][2129] Handle `context.newline` correctly when typing in `tube.interactive()`
+- [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
+- [#2241][2241] Fix ssh.process not setting ssh_process.cwd attribute
+- [#2261][2261] Fix corefile module after pyelftools update
 
 [2185]: https://github.com/Gallopsled/pwntools/pull/2185
 [2103]: https://github.com/Gallopsled/pwntools/pull/2103
 [2177]: https://github.com/Gallopsled/pwntools/pull/2177
 [2186]: https://github.com/Gallopsled/pwntools/pull/2186
 [2129]: https://github.com/Gallopsled/pwntools/pull/2129
-
-## 4.10.1 (`stable`)
-
-- [#2214][2214] Fix bug at ssh.py:`download` and `download_file` with relative paths
-- [#2241][2241] Fix ssh.process not setting ssh_process.cwd attribute
-
 [2214]: https://github.com/Gallopsled/pwntools/pull/2214
 [2241]: https://github.com/Gallopsled/pwntools/pull/2241
+[2261]: https://github.com/Gallopsled/pwntools/pull/2261
 
 ## 4.10.0
 

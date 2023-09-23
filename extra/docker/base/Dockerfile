@@ -26,6 +26,7 @@ RUN apt-get update \
         python3 \
         python3-pip \
         python3-dev \
+        python-is-python3 \
         qemu-user-static \
         binutils-arm-linux-gnueabihf \
         binutils-aarch64-linux-gnu \
@@ -34,6 +35,7 @@ RUN apt-get update \
         binutils-powerpc-linux-gnu \
         binutils-powerpc64-linux-gnu \
         binutils-sparc64-linux-gnu \
+        binutils-riscv64-linux-gnu \
         tmux \
         patchelf \
     && locale-gen en_US.UTF-8 \

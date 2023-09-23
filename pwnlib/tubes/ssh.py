@@ -882,6 +882,23 @@ class ssh(Timeout, Logger):
             >>> io = s.process(['cat'], timeout=5)
             >>> io.recvline()
             b''
+
+            >>> # Testing that empty argv works
+            >>> io = s.process([], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+            >>> # Make sure that we have a shell
+            >>> io.sendline(b'echo hello')
+            >>> io.recvline()
+            b'$ hello\n'
+
+            >>> # Testing that empty argv[0] works
+            >>> io = s.process([''], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -945,7 +962,7 @@ if env is not None:
     os.environ.clear()
     environ.update(env)
 else:
-    env = os.environ
+    env = environ
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -1034,8 +1051,35 @@ except Exception:
 %(func_src)s
 %(func_name)s(*%(func_args)r)
 
-os.execve(exe, argv, env)
-""" % locals()  # """
+""" % locals()  
+
+        if len(argv) > 0 and len(argv[0]) > 0:
+            script += r"os.execve(exe, argv, env) " 
+
+        # os.execve does not allow us to pass empty argv[0]
+        # Therefore we use ctypes to call execve directly
+        else:
+            script += r"""
+# Transform envp from dict to list
+env_list = [key + b"=" + value for key, value in env.items()]
+
+# ctypes helper to convert a python list to a NULL-terminated C array
+def to_carray(py_list):
+    py_list += [None] # NULL-terminated
+    return (ctypes.c_char_p * len(py_list))(*py_list)
+
+c_argv = to_carray(argv)
+c_env = to_carray(env_list)
+
+# Call execve
+libc = ctypes.CDLL('libc.so.6')
+libc.execve(exe, c_argv, c_env)
+
+# We should never get here, since we sanitized argv and env,
+# but just in case, indicate that something went wrong.
+libc.perror(b"execve")
+raise OSError("execve failed")
+""" % locals()
 
         script = script.strip()
 
@@ -1054,7 +1098,7 @@ os.execve(exe, argv, env)
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
                                                   'os.environ'
-                                                  if (env in (None, os.environ))
+                                                  if (env in (None, getattr(os, "environb", os.environ))) 
                                                   else env)
             # Avoid spamming the screen
             if self.isEnabledFor(logging.DEBUG) and len(execve_repr) > 512:
@@ -1141,8 +1185,8 @@ os.execve(exe, argv, env)
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
-        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
+    def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
+        r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -1162,20 +1206,23 @@ os.execve(exe, argv, env)
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
-            >>> io = s.system('pwd', wd='/tmp')
+            >>> io = s.system('pwd', cwd='/tmp')
             >>> io.recvall()
             b'/tmp\n'
             >>> io.cwd
             '/tmp'
         """
-
-        if wd is None:
-            wd = self.cwd
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.system() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+        if cwd is None:
+            cwd = self.cwd
 
         if timeout is None:
             timeout = self.timeout
 
-        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
+        return ssh_channel(self, process, tty, cwd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
@@ -1211,8 +1258,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
 
-    def run_to_end(self, process, tty = False, wd = None, env = None):
-        r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
+    def run_to_end(self, process, tty = False, cwd = None, env = None, wd = None):
+        r"""run_to_end(process, tty = False, cwd = None, env = None, timeout = Timeout.default) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
@@ -1224,8 +1271,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             (b'Hello\n', 17)
             """
 
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.run_to_end() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, wd = wd, timeout = Timeout.default)
+            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1874,7 +1926,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
-            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
+            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', cwd='.')
             wd = wd.strip()
 
             if status:
