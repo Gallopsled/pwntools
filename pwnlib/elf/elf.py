@@ -54,7 +54,7 @@ from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
 from elftools.elf.gnuversions import GNUVerDefSection
-from elftools.elf.relocation import RelocationSection
+from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
 
@@ -923,9 +923,10 @@ class ELF(ELFFile):
         if self.statically_linked:
             return
 
+        revsymbols = {addr: name for name, addr in self.symbols.items()}
         for section in self.sections:
             # We are only interested in relocations
-            if not isinstance(section, RelocationSection):
+            if not isinstance(section, (RelocationSection, RelrRelocationSection)):
                 continue
 
             # Only get relocations which link to another section (for symbols)
@@ -937,7 +938,13 @@ class ELF(ELFFile):
             for rel in section.iter_relocations():
                 sym_idx  = rel.entry.r_info_sym
 
-                if not sym_idx:
+                if not sym_idx and rel.is_RELA():
+                    # TODO: actually resolve relocations
+                    relocated = rel.entry.r_addend  # sufficient for now
+
+                    symname = revsymbols.get(relocated)
+                    if symname:
+                        self.got[symname] = rel.entry.r_offset
                     continue
 
                 symbol = symbols.get_symbol(sym_idx)
