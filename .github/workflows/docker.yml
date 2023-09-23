@@ -22,7 +22,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Build and push base image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         if: github.event_name == 'workflow_dispatch'
         with:
           context: "{{defaultContext}}:extra/docker/base"
@@ -30,7 +30,7 @@ jobs:
           tags: pwntools/pwntools:base
 
       - name: Build and push stable image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/stable')
         with:
           context: "{{defaultContext}}:extra/docker/stable"
@@ -38,7 +38,7 @@ jobs:
           tags: pwntools/pwntools:stable
 
       - name: Build and push beta image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/beta')
         with:
           context: "{{defaultContext}}:extra/docker/beta"
@@ -46,7 +46,7 @@ jobs:
           tags: pwntools/pwntools:beta
 
       - name: Build and push dev image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
         with:
           context: "{{defaultContext}}:extra/docker/dev"
@@ -56,7 +56,7 @@ jobs:
             pwntools/pwntools:latest
 
       - name: Build and push ci image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/dev')
         with:
           context: "{{defaultContext}}:travis/docker"
