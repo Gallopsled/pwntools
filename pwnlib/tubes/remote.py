@@ -40,7 +40,7 @@ class remote(sock):
         >>> r = remote('127.0.0.1', 1)
         Traceback (most recent call last):
         ...
-        PwnlibException: Could not connect to 127.0.0.1 on port 1
+        ConnectionRefusedError: [Errno 111] Connection refused
 
         You can also use :meth:`.remote.fromsocket` to wrap an existing socket.
 
