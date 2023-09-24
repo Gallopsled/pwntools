@@ -27,7 +27,7 @@ jobs:
       run: |
         set -x
         pip install pylint
-        pip install --upgrade -e .
+        pip install --upgrade -e .[full]
         pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- > current.txt
         git fetch origin
         git checkout origin/"$GITHUB_BASE_REF"
