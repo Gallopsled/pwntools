@@ -1065,6 +1065,9 @@ def _encode(s):
     return s.encode(context.encoding)
 
 def _decode(b):
+    if isinstance(b, (str, six.text_type)):
+        return b   # already text
+
     if context.encoding == 'auto':
         try:
             return b.decode('utf-8')
