@@ -44,11 +44,7 @@ from pwn import *
 %if not quiet:
 # Set up pwntools for the correct architecture
 %endif
-%if ctx.binary:
 exe = context.binary = ELF(args.EXE or ${binary_repr})
-%else:
-exe = context.binary = ELF(${binary_repr})
-%endif
 <% binary_repr = 'exe.path' %>
 
 %if not quiet:
