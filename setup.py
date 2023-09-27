@@ -46,12 +46,14 @@ for filename in glob.glob('pwnlib/commandline/*'):
 
 compat = {}
 if sys.version_info < (3, 4):
+    import site
+
     import toml
     project = toml.load('pyproject.toml')['project']
     compat['install_requires'] = project['dependencies']
     compat['name'] = project['name']
-    if '--user' in sys.argv:
-        sys.argv.remove('--user')
+    # https://github.com/pypa/pip/issues/7953
+    site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 
 
 # Check that the user has installed the Python development headers
@@ -62,7 +64,7 @@ if not os.path.exists(PythonH):
     sys.exit(-1)
 
 setup(
-    version              = '4.12.0dev',
+    version              = '4.13.0dev',
     data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

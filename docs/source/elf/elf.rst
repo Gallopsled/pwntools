@@ -3,6 +3,7 @@
    from pwn import *
    from glob import glob
    from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
+   import shutil
 
 :mod:`pwnlib.elf.elf` --- ELF Files
 ===========================================================
