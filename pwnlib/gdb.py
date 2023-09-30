@@ -305,7 +305,7 @@ raise OSError("execve failed")
 """.format(**locals())
     script = script.strip()
     # Create a temporary file to hold the script
-    tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwn', suffix='.py', delete=False)
+    tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwnlib-execve-', suffix='.py', delete=False)
     tmp.write(script)
     # Make script executable
     os.fchmod(tmp.fileno(), 0o755)
@@ -643,7 +643,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         return runner(args, executable=exe, env=env)
 
     if ssh or context.native or (context.os == 'android'):
-        if len(args) > 0 and which(packing._decode(args[0])) == packing._encode(exe):
+        if len(args) > 0 and which(packing._decode(args[0])) == packing._decode(exe):
             args = _gdbserver_args(args=args, which=which, env=env)
         
         else:
