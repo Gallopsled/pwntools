@@ -1194,7 +1194,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     gdbscript = pre + (gdbscript or '')
 
     if gdbscript:
-        with tempfile.NamedTemporaryFile(prefix = 'pwnlib-execve-', suffix = '.gdb',
+        with tempfile.NamedTemporaryFile(prefix = 'pwnlib-gdbscript-', suffix = '.gdb',
                                           delete = False, mode = 'w+') as tmp:
             log.debug('Wrote gdb script to %r\n%s', tmp.name, gdbscript)
             gdbscript = 'shell rm %s\n%s' % (tmp.name, gdbscript)
