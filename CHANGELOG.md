@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.13.0](#4130-dev)  | `dev`    |
 | [4.12.0](#4120-beta)  | `beta`   |
-| [4.11.0](#4110-stable)  | `stable` | Sep 15, 2023
+| [4.11.1](#4111-stable)  | `stable` |
+| [4.11.0](#4110)  |          | Sep 15, 2023
 | [4.10.0](#4100)  |          | May 21, 2023
 | [4.9.0](#490)    |          | Dec 29, 2022
 | [4.8.0](#480)    |          | Apr 21, 2022
@@ -89,7 +90,13 @@ The table below shows which release corresponds to each branch, and what date th
 [2257]: https://github.com/Gallopsled/pwntools/pull/2257
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
 
-## 4.11.0 (`stable`)
+## 4.11.1 (`stable`)
+
+- [#2281][2281] FIX: Getting right amount of data for search fix
+
+[2281]: https://github.com/Gallopsled/pwntools/pull/2281
+
+## 4.11.0
 
 - [#2185][2185] make fmtstr module able to create payload without $ notation 
 - [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
