@@ -1195,9 +1195,10 @@ class ELF(ELFFile):
         for seg in segments:
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
-            zeroed = memsz - seg.header.p_filesz
+            filesz = seg.header.p_filesz
+            zeroed = memsz - filesz
             offset = seg.header.p_offset
-            data   = self.mmap[offset:offset+memsz]
+            data   = self.mmap[offset:offset+filesz]
             data   += b'\x00' * zeroed
             offset = 0
             while True:
