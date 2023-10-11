@@ -1784,7 +1784,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 name = os.path.basename(lib)
 
                 if name in basenames.values():
-                    self.warning('Duplicate lib name, switching to unflattened file tree: %r' % name)
+                    duplicate = [key for key, value in basenames.items() if
+                                 value == name][0]
+                    self.warning('Duplicate lib name, switching to unflattened file tree: %r / %4r' % (lib, duplicate))
                     flatten = False
                     break
 
