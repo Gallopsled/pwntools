@@ -291,7 +291,7 @@ class process(tube):
         self.executable = executable_val
 
         #: Environment passed on envp
-        self.env = dict(os.environ) if env is None else env_val
+        self.env = dict(os.environ if env is None else env_val)
 
         #: Add environmemnt variables as needed
         self.env.update(env_add)
