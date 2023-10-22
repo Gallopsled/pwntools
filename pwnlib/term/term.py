@@ -35,6 +35,7 @@ on_winch = []
 
 cached_pos = None
 settings = None
+need_scroll_update = -1
 setup_done = False
 epoch = 0
 
@@ -63,7 +64,7 @@ class WinchLock(object):
             if winchretry:
                 handler_sigwinch(signal.SIGWINCH, None)
 
-winchlock = WinchLock()
+wlock = WinchLock()
 
 def show_cursor():
     do('cnorm')
@@ -76,25 +77,25 @@ def update_geometry():
     width, height = shutil.get_terminal_size()
 
 def handler_sigwinch(signum, stack):
-    global cached_pos, winchretry
+    global cached_pos, winchretry, need_scroll_update
     with rlock:
         while True:
-            if not winchlock.acquire(False):
+            if not wlock.acquire(False):
                 winchretry = True
                 return
 
             winchretry = False
-            cached_pos = None
+            need_scroll_update = epoch
             update_geometry()
             for cb in on_winch:
                 cb()
-            winchlock.release()
+            wlock.release()
             if not winchretry: break
 
 
 def handler_sigstop(signum, stack):
     resetterm()
-    os.kill(os.getpid(), signal.SIGSTOP)
+    os.kill(0, signal.SIGSTOP)
 
 def handler_sigcont(signum, stack):
     global epoch, cached_pos, scroll, setup_done
@@ -108,7 +109,7 @@ def setupterm():
     hide_cursor()
     update_geometry()
     do('smkx') # keypad mode
-    mode = termios.tcgetattr(fd.fileno())
+    mode = termios.tcgetattr(fd)
     IFLAG, OFLAG, CFLAG, LFLAG, ISPEED, OSPEED, CC = range(7)
     if not settings:
         settings = mode[:]
@@ -121,15 +122,12 @@ def setupterm():
 def resetterm():
     global settings, setup_done
     if settings:
-        termios.tcsetattr(fd.fileno(), termios.TCSADRAIN, settings)
+        termios.tcsetattr(fd, termios.TCSADRAIN, settings)
         settings = None
     if setup_done:
         setup_done = False
         show_cursor()
         do('rmkx')
-        fd.write(' \x08') # XXX: i don't know why this is needed...
-                          #      only necessary when suspending the process
-        fd.flush()
 
 def init():
     atexit.register(resetterm)
@@ -155,16 +153,13 @@ def init():
     # freeze all cells if an exception is thrown
     orig_hook = sys.excepthook
     def hook(*args):
+        sys.stderr = sys.__stderr__
         resetterm()
         cells.clear()
         if orig_hook:
             orig_hook(*args)
         else:
             traceback.print_exception(*args)
-        # this is a bit esoteric
-        # look here for details: https://stackoverflow.com/questions/12790328/how-to-silence-sys-excepthook-is-missing-error
-        if fd.fileno() == 2:
-            os.close(fd.fileno())
     sys.excepthook = hook
 
 tmap = {c: '\\x{:02x}'.format(c) for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
@@ -207,30 +202,45 @@ def put(s):
                 cached_pos[1] += 1
     return fd.write(s.translate(tmap))
 
-def flush(): fd.flush()
-
 def do(c, *args):
     s = termcap.get(c, *args)
     if s:
         fd.write(s.decode('utf-8'))
 
 def goto(rc):
-    global cached_pos
+    global cached_pos, scroll
     r, c = rc
-    nowr, nowc = cached_pos or (-999, -999)
+    nowr, nowc = cached_pos or (None, None)
     cached_pos = [r, c]
+    # common cases: we can just go up/down a couple rows
+    if c == 0:
+        if r == nowr + 1:
+            fd.write('\n')
+            return
+        if r == nowr:
+            if c != nowc:
+                fd.write('\r')
+            return
+
     if nowc == c:
-        # common case: we can just go up/down a couple rows
         if r == nowr - 1:
             do('cuu1')
-        elif r == nowr + 1:
-            do('cud1')
         elif r < nowr:
             do('cuu', nowr - r)
         elif r > nowr:
             do('cud', r - nowr)
-    else:
-        do('cup', r - scroll, c)
+        return
+
+    if r == nowr:
+        do('hpa', c)
+        return
+
+    if need_scroll_update == epoch and nowr is not None:
+        cached_pos = None
+        diffr, diffc = get_position()
+        scroll += nowr - diffr
+        cached_pos = [r, c]
+    do('cup', r - scroll, c)
 
 
 class Cell(object):
@@ -247,11 +257,11 @@ class Cell(object):
     def update(self, value):
         if isinstance(value, bytes):
             value = value.decode('utf-8', 'backslashreplace')
-        with rlock, winchlock:
+        with wlock:
             want_erase_line = len(value) < len(self.value) and '\n' in value
             self.value = value
             self.update_locked(erase_line=want_erase_line)
-            flush()
+            fd.flush()
 
     def prepare_redraw(self):
         global epoch
@@ -302,7 +312,7 @@ class Cell(object):
 
             if pos[1] < cell.pos[1]:
                 # the cell moved left, it must be same line as self; erase if not yet erased
-                if not erase_line:
+                if not erase_line and erased_line != pos[0]:
                     do('el')
                     erased_line = pos[0]
 
@@ -377,7 +387,7 @@ cells = WeakCellList()
 
 
 def get_position():
-    global cached_pos, setup_done
+    global cached_pos, setup_done, need_scroll_update
     if cached_pos:
         return tuple(cached_pos)
 
@@ -385,21 +395,23 @@ def get_position():
         setup_done = True
         setupterm()
     #do('u7')
-    fd.write('\x1b[6n')
-    fd.flush()
-    s = os.read(fd.fileno(), 6)
-    while True:
-        if s[-1:] == b'R':
-            mat = re.findall(b'\x1b' + br'\[(\d*);(\d*)R', s)
-            if mat:
-                [[row, col]] = mat
-                break
-        try:
-            s += os.read(fd.fileno(), 1)
-        except OSError as e:
-            if e.errno != errno.EINTR:
-                raise
-            continue
+    with rlock:
+        fd.write('\x1b[6n')
+        fd.flush()
+        s = os.read(fd.fileno(), 6)
+        while True:
+            if s[-1:] == b'R':
+                mat = re.findall(b'\x1b' + br'\[(\d*);(\d*)R', s)
+                if mat:
+                    [[row, col]] = mat
+                    break
+            try:
+                s += os.read(fd.fileno(), 1)
+            except OSError as e:
+                if e.errno != errno.EINTR:
+                    raise
+                continue
+    need_scroll_update = -1
     row = int(row) + scroll - 1
     col = int(col) - 1
     cached_pos = [row, col]
@@ -407,7 +419,7 @@ def get_position():
 
 
 def output(s='', float=False, priority=10, frozen=False, indent=0, before=None):
-    with rlock, winchlock:
+    with wlock:
         if before:
             float = before.float
 
