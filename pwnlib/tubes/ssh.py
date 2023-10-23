@@ -1769,6 +1769,16 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             directory(str): Output directory
             flatten(bool): Flatten the file tree if True (defaults to False). If
                 there are duplicate filenames, fallback to unflattened structure.
+
+        Examples:
+            >>> s =  ssh(host='example.pwnme')
+            >>> s.cwd = f'{pwnlib.data.elf.path}/ssh_libs'
+            >>> s.libs("duplicate", "out_duplicate") # doctest: +ELLIPSIS
+            {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
+            >>> s.libs("duplicate", "out_duplicate_flatten", flatten = True) # doctest: +ELLIPSIS
+            {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
+            >>> s.libs("no_duplicate", "out_noduplicate_flatten", flatten = True) # doctest: +ELLIPSIS
+            {'.../out_noduplicate_flatten/lib.so': ..., '.../out_noduplicate_flatten/lib2.so': ..., '.../out_noduplicate_flatten/duplicate': ...}
         """
 
         libs = self._libs_remote(remote)
