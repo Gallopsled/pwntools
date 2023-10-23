@@ -45,6 +45,7 @@ rlock = threading.RLock()
 
 class WinchLock(object):
     def __init__(self):
+        self.guard = threading.RLock()
         self.lock = threading.Lock()
 
     @property
@@ -56,6 +57,7 @@ class WinchLock(object):
         return self.lock.release
 
     def __enter__(self):
+        self.guard.acquire()
         return self.lock.__enter__()
     def __exit__(self, tp, val, tb):
         try:
@@ -63,6 +65,7 @@ class WinchLock(object):
         finally:
             if winchretry:
                 handler_sigwinch(signal.SIGWINCH, None)
+            self.guard.release()
 
 wlock = WinchLock()
 
@@ -78,7 +81,7 @@ def update_geometry():
 
 def handler_sigwinch(signum, stack):
     global cached_pos, winchretry, need_scroll_update
-    with rlock:
+    with wlock.guard:
         while True:
             if not wlock.acquire(False):
                 winchretry = True
