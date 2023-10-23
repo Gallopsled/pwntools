@@ -1766,6 +1766,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         to './$HOSTNAME' where $HOSTNAME is the hostname of the remote server.
 
         Arguments:
+            remote(str): Remote file path
             directory(str): Output directory
             flatten(bool): Flatten the file tree if True (defaults to False). If
                 there are duplicate filenames, fallback to unflattened structure.
