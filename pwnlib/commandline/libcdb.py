@@ -58,11 +58,17 @@ lookup_parser.add_argument(
 )
 
 lookup_parser.add_argument(
-    '--offline',
-    action = 'store',
-    default = -1,
-    type = int,
-    help = 'Search from local libc database.'
+    '--no-offline',
+    action = 'store_true',
+    default = False,
+    help = 'Disable offline libcdb search mode'
+)
+
+lookup_parser.add_argument(
+    '--no-online',
+    action = 'store_true',
+    default = False,
+    help = 'Disable online libcdb search mode'
 )
 
 hash_parser = libc_commands.add_parser(
@@ -109,11 +115,17 @@ hash_parser.add_argument(
 )
 
 hash_parser.add_argument(
-    '--offline',
-    action = 'store',
-    default = -1,
-    type = int,
-    help = 'Search from local libc database.'
+    '--no-offline',
+    action = 'store_true',
+    default = False,
+    help = 'Disable offline libcdb search mode'
+)
+
+hash_parser.add_argument(
+    '--no-online',
+    action = 'store_true',
+    default = False,
+    help = 'Disable online libcdb search mode'
 )
 
 file_parser = libc_commands.add_parser(
@@ -193,8 +205,8 @@ def find_in_offline_mode(params):
             libs_id = read(libc_path + ".id").decode()
 
     if libs_id:
-        libc_path = db_path / f"{libs_id}.so"
-        symbol_path = db_path / f"{libs_id}.symbols"
+        libc_path = db_path / ("%s.so" % libs_id)
+        symbol_path = db_path / ("%s.symbols" % libs_id)
 
         syms = libcdb.get_libc_symbols(symbol_path)
         return [libcdb.get_libc_info(db_path, libc_path.stem, syms)]
@@ -202,15 +214,19 @@ def find_in_offline_mode(params):
     return []
 
 
-def find_libc(params, offline=-1):
-    # Automatically modifying the "offline" parameter.
-    if offline == -1:
-        offline = libcdb._check_offline_mode()
+def find_libc(params, offline=True, online=True):
+    offline_matching = find_in_offline_mode(params) if offline else []
+    online_matching = find_in_online_mode(params) if online else []
+    log.debug("Offline result: %s, Online result: %s", offline_matching, online_matching)
 
-    if offline:
-        return find_in_offline_mode(params)
-    else:
-        return find_in_online_mode(params)
+    matching_id = []
+    matching_libcs = []
+    for x in offline_matching + online_matching:
+        if x["id"] not in matching_id:
+            matching_id.append(x["id"])
+            matching_libcs.append(x)
+
+    return matching_libcs
 
 
 def print_libc(libc):
@@ -223,16 +239,10 @@ def print_libc(libc):
     for symbol in libc['symbols'].items():
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
-def handle_remote_libc(args, libc):
-    # 
-    if args.offline == -1 and libcdb._check_offline_mode():
-        return None
-
+def fetch_libc(args, libc):
     if args.download_libc:
-        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
+        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip, not args.no_offline, not args.no_online)
         if path:
-            if args.unstrip:
-                libcdb.unstrip_libc(path)
             shutil.copy(path, './{}.so'.format(libc['id']))
 
 def translate_offset(offs, args, exe):
@@ -266,19 +276,17 @@ def main(args):
             return
 
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = find_libc({'symbols': symbols}, args.offline)
+        matched_libcs = find_libc({'symbols': symbols}, not args.no_offline, not args.no_online)
         for libc in matched_libcs:
             print_libc(libc)
-            if not args.offline:
-               handle_remote_libc(args, libc)
+            fetch_libc(args, libc)
 
     elif args.libc_command == 'hash':
         for hash_value in args.hash_value:
             matched_libcs = find_libc({args.hash_type: hash_value}, args.offline)
             for libc in matched_libcs:
                 print_libc(libc)
-                if not args.offline:
-                   handle_remote_libc(args, libc)
+                fetch_libc(args, libc)
 
     elif args.libc_command == 'file':
         from hashlib import md5, sha1, sha256
@@ -286,7 +294,7 @@ def main(args):
             if not os.path.exists(file) or not os.path.isfile(file):
                 log.failure('File does not exist %s', args.file)
                 continue
-            
+
             if args.unstrip:
                 libcdb.unstrip_libc(file)
 
