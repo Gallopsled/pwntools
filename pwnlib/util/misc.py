@@ -382,7 +382,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 import os
 os.execve({argv0!r}, {argv!r}, os.environ)
 '''
-        script = script.format(executable=sys.executable,
+        script = script.format(executable='/bin/env ' * (' ' in sys.executable) + sys.executable,
                                argv=command,
                                argv0=which(command[0]))
         script = script.lstrip()
