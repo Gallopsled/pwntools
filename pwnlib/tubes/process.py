@@ -58,9 +58,9 @@ class process(tube):
         cwd(str):
             Working directory.  Uses the current working directory by default.
         env(dict):
-            Environment variables.  By default, inherits from Python's environment.
-        env_add(dict):
             Environment variables to add to the environment.
+        ignore_environ(bool):
+            Ignore Python's environment.  By default use Python's environment iff env not specified.
         stdin(int):
             File object or file descriptor number to use for ``stdin``.
             By default, a pipe is used.  A pty can be used instead by setting
@@ -226,7 +226,7 @@ class process(tube):
                  executable = None,
                  cwd = None,
                  env = None,
-                 env_add = {},
+                 ignore_environ = None,
                  stdin  = PIPE,
                  stdout = PTY,
                  stderr = STDOUT,
@@ -258,7 +258,7 @@ class process(tube):
         original_env = env
 
         if shell:
-            executable_val, argv_val, env_val = executable, argv, env
+            executable_val, argv_val, env_val = executable or '/bin/sh', argv, env
         else:
             executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
@@ -290,17 +290,14 @@ class process(tube):
         #: Full path to the executable
         self.executable = executable_val
 
+        if ignore_environ is None:
+            ignore_environ = env is not None  # compat
+
         #: Environment passed on envp
-        self.env = dict(os.environ if env is None else env_val)
+        self.env = {} if ignore_environ else dict(getattr(os, "environb", os.environ))
 
-        #: Add environmemnt variables as needed
-        self.env.update(env_add)
-
-        if self.executable is None:
-            if shell:
-                self.executable = '/bin/sh'
-            else:
-                self.executable = which(self.argv[0], path=self.env.get('PATH'))
+        # Add environmemnt variables as needed
+        self.env.update(env_val or {})
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
 
