@@ -91,8 +91,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.11.1 (`stable`)
 
+- [#2272][2272] Fix `tube.clean_and_log` not logging buffered data
 - [#2281][2281] FIX: Getting right amount of data for search fix
 
+[2272]: https://github.com/Gallopsled/pwntools/pull/2272
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 
 ## 4.11.0
