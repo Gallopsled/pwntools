@@ -264,7 +264,7 @@ def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
     def match(c):
         laddrs = sockinfos(c.laddr, c.family, c.type)
         raddrs = sockinfos(c.raddr, c.family, c.type)
-        if not (raddrs & remote):
+        if not (laddrs & remote):
             return False
         if local is None:
             return True
