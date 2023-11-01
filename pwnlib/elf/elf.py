@@ -511,6 +511,29 @@ class ELF(ELFFile):
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
 
+    def iter_notes(self):
+        """ 
+        Yields:
+            All the notes in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``n_name``, ``n_type``, and ``n_desc`` fields, amongst
+            others.
+        """
+        for seg in self.iter_segments_by_type('PT_NOTE'):
+            for note in seg.iter_notes():
+                yield note
+
+    def iter_properties(self):
+        """
+        Yields:
+            All the GNU properties in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``pr_type``, ``pr_datasz``, and ``pr_data`` fields.
+        """
+        for note in self.iter_notes():
+            if note.n_type != 'NT_GNU_PROPERTY_TYPE_0':
+                continue
+            for prop in note.n_desc:
+                yield prop
+                
     def get_segment_for_address(self, address, size=1):
         """get_segment_for_address(address, size=1) -> Segment
 
@@ -2131,14 +2154,10 @@ class ELF(ELFFile):
         Shadow Stack (``SHSTK``)"""
         if self.arch not in ['i386', 'amd64']:
             return False
-        for seg in self.iter_segments_by_type('PT_NOTE'):
-            for note in seg.iter_notes():
-                if note.n_type != 'NT_GNU_PROPERTY_TYPE_0':
-                    continue
-                for prop in note.n_desc:
-                    if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
-                        continue
-                    return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_SHSTK'] > 0
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_SHSTK'] > 0
         return False
 
     @property
@@ -2147,14 +2166,10 @@ class ELF(ELFFile):
         Indirect Branch Tracking (``IBT``)"""
         if self.arch not in ['i386', 'amd64']:
             return False
-        for seg in self.iter_segments_by_type('PT_NOTE'):
-            for note in seg.iter_notes():
-                if note.n_type != 'NT_GNU_PROPERTY_TYPE_0':
-                    continue
-                for prop in note.n_desc:
-                    if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
-                        continue
-                    return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_IBT'] > 0
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_IBT'] > 0
         return False
 
 
