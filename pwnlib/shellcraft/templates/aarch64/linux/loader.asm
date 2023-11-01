@@ -107,14 +107,14 @@ PT_LOAD  = 1
     mov x3, sp
     stp  x2, x3, [sp, #-16]!
 
-    /* argc, argv[0], argv[1], envp */
+    /* argc, argv[0], argv[1], envp; x0 must be zero! */
     /* ideally these could all be empty, but unfortunately
        we have to keep the stack aligned.  it's easier to
        just push an extra argument than care... */
     stp  x0, x1, [sp, #-16]! /* argv[1] = NULL, envp = NULL */
-    mov  x0, 1
-    mov  x1, sp
-    stp  x0, x1, [sp, #-16]! /* argc = 1, argv[0] = "" */
+    mov  x2, 1
+    mov  x3, sp
+    stp  x2, x3, [sp, #-16]! /* argc = 1, argv[0] = "" */
 
     br x8
 
