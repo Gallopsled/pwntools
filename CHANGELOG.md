@@ -94,10 +94,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2271][2271] FIX: Generated shebang with path to python invalid if path contains spaces
 - [#2272][2272] Fix `tube.clean_and_log` not logging buffered data
 - [#2281][2281] FIX: Getting right amount of data for search fix
+- [#2294][2294] Fix atexit SEGV in aarch64 loader
 
 [2271]: https://github.com/Gallopsled/pwntools/pull/2271
 [2272]: https://github.com/Gallopsled/pwntools/pull/2272
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
+[2294]: https://github.com/Gallopsled/pwntools/pull/2294
 
 ## 4.11.0
 
