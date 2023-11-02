@@ -17,6 +17,7 @@ import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -2150,7 +2151,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _cpuinfo(self):
         if self._cpuinfo_cache is None:
             with context.quiet:
-                self._cpuinfo_cache = self.read('/proc/cpuinfo')
+                try:
+                    self._cpuinfo_cache = self.read('/proc/cpuinfo')
+                except PwnlibException:
+                    self._cpuinfo_cache = b''
         return self._cpuinfo_cache
 
     @property
