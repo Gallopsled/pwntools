@@ -23,7 +23,6 @@ from pwnlib.tubes.remote import remote
 from pwnlib.util.lists import group
 from pwnlib.util.misc import size
 from pwnlib.util.packing import p32
-from pwnlib.util.proc import pidof
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
