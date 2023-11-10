@@ -70,6 +70,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.13.0 (`dev`)
 - [#2281][2281] FIX: Getting right amount of data for search fix
+- [#2297][2297] Recognize retguard in OpenBSD ELF binaries
 
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 
