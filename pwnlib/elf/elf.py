@@ -47,7 +47,7 @@ import tempfile
 
 from six import BytesIO
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
@@ -917,13 +917,22 @@ class ELF(ELFFile):
             self.symbols['got.' + symbol] = address
 
     def _populate_got(self):
-        """Loads the symbols for all relocations"""
+        """Loads the symbols for all relocations.
+
+            >>> libc = ELF(which('bash')).libc
+            >>> assert 'strchrnul' in libc.got
+            >>> assert 'memcpy' in libc.got
+            >>> assert libc.got.strchrnul != libc.got.memcpy
+        """
         # Statically linked implies no relocations, since there is no linker
         # Could always be self-relocating like Android's linker *shrug*
         if self.statically_linked:
             return
 
-        revsymbols = {addr: name for name, addr in self.symbols.items()}
+        revsymbols = defaultdict(list)
+        for name, addr in self.symbols.items():
+            revsymbols[addr].append(name)
+
         for section in self.sections:
             # We are only interested in relocations
             if not isinstance(section, (RelocationSection, RelrRelocationSection)):
@@ -942,8 +951,8 @@ class ELF(ELFFile):
                     # TODO: actually resolve relocations
                     relocated = rel.entry.r_addend  # sufficient for now
 
-                    symname = revsymbols.get(relocated)
-                    if symname:
+                    symnames = revsymbols[relocated]
+                    for symname in symnames:
                         self.got[symname] = rel.entry.r_offset
                     continue
 
