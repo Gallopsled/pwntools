@@ -17,6 +17,7 @@ import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -613,6 +614,9 @@ class ssh(Timeout, Logger):
         self._platform_info = {}
         self._aslr = None
         self._aslr_ulimit = None
+        self._cpuinfo_cache = None
+        self._user_shstk = None
+        self._ibt = None
 
         misc.mkdir_p(self._cachedir)
 
@@ -2144,6 +2148,57 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self._aslr_ulimit
 
+    def _cpuinfo(self):
+        if self._cpuinfo_cache is None:
+            with context.quiet:
+                try:
+                    self._cpuinfo_cache = self.read('/proc/cpuinfo')
+                except PwnlibException:
+                    self._cpuinfo_cache = b''
+        return self._cpuinfo_cache
+
+    @property
+    def user_shstk(self):
+        """:class:`bool`: Whether userspace shadow stack is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.user_shstk
+            False
+        """
+        if self._user_shstk is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for userspace shadow stack checks.")
+                self._user_shstk = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._user_shstk = b' user_shstk' in cpuinfo
+        return self._user_shstk
+
+    @property
+    def ibt(self):
+        """:class:`bool`: Whether kernel indirect branch tracking is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.ibt
+            False
+        """
+        if self._ibt is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for kernel indirect branch tracking checks.")
+                self._ibt = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._ibt = b' ibt ' in cpuinfo or b' ibt\n' in cpuinfo
+        return self._ibt
+
     def _checksec_cache(self, value=None):
         path = self._get_cachefile('%s-%s' % (self.host, self.port))
 
@@ -2180,7 +2235,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             "ASLR:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
-            }[self.aslr]
+            }[self.aslr],
+            "SHSTK:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.user_shstk],
+            "IBT:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.ibt],
         ]
 
         if self.aslr_ulimit:
