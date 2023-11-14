@@ -1506,14 +1506,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with open(local, 'wb') as fd:
             fd.write(data)
 
-    def _download_to_cache(self, remote, p):
+    def _download_to_cache(self, remote, p, fingerprint=True):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
         if not hasattr(remote, 'encode'):
             remote = remote.decode('utf-8')
 
-        fingerprint = self._get_fingerprint(remote)
+        fingerprint = fingerprint and self._get_fingerprint(remote) or None
         if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
@@ -1535,7 +1535,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return local
 
-    def download_data(self, remote):
+    def download_data(self, remote, fingerprint=True):
         """Downloads a file from the remote server and returns it as a string.
 
         Arguments:
@@ -1556,7 +1556,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         """
         with self.progress('Downloading %r' % remote) as p:
-            with open(self._download_to_cache(remote, p), 'rb') as fd:
+            with open(self._download_to_cache(remote, p, fingerprint), 'rb') as fd:
                 return fd.read()
 
     def download_file(self, remote, local = None):
@@ -2152,7 +2152,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if self._cpuinfo_cache is None:
             with context.quiet:
                 try:
-                    self._cpuinfo_cache = self.read('/proc/cpuinfo')
+                    self._cpuinfo_cache = self.download_data('/proc/cpuinfo', fingerprint=False)
                 except PwnlibException:
                     self._cpuinfo_cache = b''
         return self._cpuinfo_cache
