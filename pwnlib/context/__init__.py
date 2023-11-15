@@ -360,7 +360,7 @@ class ContextType(object):
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
-        'local_libcdb': "",
+        'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
         'log_file': _devnull(),
         'log_console': sys.stdout,
