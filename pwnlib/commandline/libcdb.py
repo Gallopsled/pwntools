@@ -46,15 +46,8 @@ lookup_parser.add_argument(
 lookup_parser.add_argument(
     '--unstrip',
     action = 'store_true',
-    default = True,
+    default = False,
     help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
-)
-
-lookup_parser.add_argument(
-    '--no-unstrip',
-    action = 'store_false',
-    dest = 'unstrip',
-    help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
 lookup_parser.add_argument(
@@ -103,15 +96,8 @@ hash_parser.add_argument(
 hash_parser.add_argument(
     '--unstrip',
     action = 'store_true',
-    default = True,
+    default = False,
     help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
-)
-
-hash_parser.add_argument(
-    '--no-unstrip',
-    action = 'store_false',
-    dest = 'unstrip',
-    help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
 hash_parser.add_argument(
