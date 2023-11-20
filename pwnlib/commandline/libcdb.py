@@ -221,7 +221,7 @@ def main(args):
             exe = ELF(file, checksec=False)
             log.info('%s', text.red(os.path.basename(file)))
 
-            libc_version = re.search(b'libc[ -](\d+\.\d+)', exe.data)
+            libc_version = re.search(b'libc[ -](\\d+\\.\\d+)', exe.data)
             if libc_version:
                 log.indented('%-20s %s', text.green('Version:'), libc_version.group(1).decode())
 
