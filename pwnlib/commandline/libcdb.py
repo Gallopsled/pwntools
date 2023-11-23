@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import re
 import shutil
 import sys
@@ -51,17 +52,10 @@ lookup_parser.add_argument(
 )
 
 lookup_parser.add_argument(
-    '--no-offline',
+    '--offline',
     action = 'store_true',
     default = False,
     help = 'Disable offline libcdb search mode'
-)
-
-lookup_parser.add_argument(
-    '--no-online',
-    action = 'store_true',
-    default = False,
-    help = 'Disable online libcdb search mode'
 )
 
 hash_parser = libc_commands.add_parser(
@@ -101,17 +95,10 @@ hash_parser.add_argument(
 )
 
 hash_parser.add_argument(
-    '--no-offline',
+    '--offline',
     action = 'store_true',
     default = False,
     help = 'Disable offline libcdb search mode'
-)
-
-hash_parser.add_argument(
-    '--no-online',
-    action = 'store_true',
-    default = False,
-    help = 'Disable online libcdb search mode'
 )
 
 file_parser = libc_commands.add_parser(
@@ -148,71 +135,26 @@ file_parser.add_argument(
     help = 'Attempt to unstrip the libc binary inplace with debug symbols from a debuginfod server'
 )
 
+download_parser = libc_commands.add_parser(
+    'download',
+    help = 'Download the libc-database repository',
+    description = 'Lookup a libc version by function offsets'
+)
+
+download_parser.add_argument(
+    'categories',
+    metavar = 'categories',
+    nargs = '+',
+    help = 'Fetch the required libc category and symbol offsets. The parameter is the same as https://github.com/niklasb/libc-database/blob/master/get',
+)
+
+download_parser.add_argument(
+    '--save-path',
+    type = str,
+    help = 'Set the save path for libc-database.',
+)
+
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
-
-
-def find_in_online_mode(params):
-    import requests
-    url = "https://libc.rip/api/find"
-    result = requests.post(url, json=params, timeout=20)
-    log.debug('Request: %s', params)
-    log.debug('Result: %s', result.json())
-    if result.status_code != 200 or len(result.json()) == 0:
-        log.failure("Could not find libc for %s on libc.rip", params)
-        return []
-    return result.json()
-
-
-def find_in_offline_mode(params):
-    # lookup parser
-    if params.get("symbols"):
-        matching_libcs = libcdb.find_local_libc(params)
-        return matching_libcs if matching_libcs else []
-
-    # hash parser
-    hash_type, hash_value = list(params.items())[0]
-
-    local_db = libcdb._fetch_local_database_path()
-    if not local_db:
-        log.warn_once("The environment variable `PWNLIB_LOCAL_LIBCDB` or `context.local_libcdb` is not configured.")
-        return []
-
-    db_path = Path(local_db) / "db"
-    libs_id = None
-
-    if hash_type == "id":
-        libs_id = hash_value
-    else:
-        if hash_type == "buildid":
-            hash_type = "build_id"
-
-        libc_path = libcdb.search_by_hash(hash_value, hash_type, unstrip=False, offline=True)
-        if libc_path:
-            libs_id = read(libc_path + ".id").decode()
-
-    if libs_id:
-        libc_path = db_path / ("%s.so" % libs_id)
-        symbol_path = db_path / ("%s.symbols" % libs_id)
-
-        syms = libcdb.get_libc_symbols(symbol_path)
-        return [libcdb.get_libc_info(db_path, libc_path.stem, syms)]
-
-    return []
-
-
-def find_libc(params, offline=True, online=True):
-    offline_matching = find_in_offline_mode(params) if offline else []
-    online_matching = find_in_online_mode(params) if online else []
-    log.debug("Offline result: %s, Online result: %s", offline_matching, online_matching)
-
-    matching_id = []
-    matching_libcs = []
-    for x in offline_matching + online_matching:
-        if x["id"] not in matching_id:
-            matching_id.append(x["id"])
-            matching_libcs.append(x)
-
-    return matching_libcs
 
 
 def print_libc(libc):
@@ -227,7 +169,7 @@ def print_libc(libc):
 
 def fetch_libc(args, libc):
     if args.download_libc:
-        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip, not args.no_offline, not args.no_online)
+        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip, args.offline)
         if path:
             shutil.copy(path, './{}.so'.format(libc['id']))
 
@@ -250,6 +192,14 @@ def collect_synthetic_symbols(exe):
 
     return available_symbols
 
+def dump_basic_symbols(exe, custom_symbols):
+    synthetic_symbols = collect_synthetic_symbols(exe)
+
+    symbols = common_symbols + (custom_symbols or []) + synthetic_symbols
+    symbols.sort()
+
+    return symbols
+
 def main(args):
     if len(sys.argv) < 3:
         parser.print_usage()
@@ -262,17 +212,37 @@ def main(args):
             return
 
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = find_libc({'symbols': symbols}, not args.no_offline, not args.no_online)
+        matched_libcs = libcdb.search_by_symbol_offsets(symbols, raw=True, unstrip=args.unstrip, offline=args.offline)
         for libc in matched_libcs:
             print_libc(libc)
             fetch_libc(args, libc)
 
     elif args.libc_command == 'hash':
         for hash_value in args.hash_value:
-            matched_libcs = find_libc({args.hash_type: hash_value}, args.offline)
-            for libc in matched_libcs:
-                print_libc(libc)
-                fetch_libc(args, libc)
+            libs_id = None
+            hash_type = args.hash_type if args.hash_type != "buildid" else "build_id"
+
+            # Search and download libc
+            exe_path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
+
+            if exe_path:
+                libs_id = read(exe_path + ".id").decode()
+
+            if not libs_id:
+                continue
+
+            # Dump common symbols
+            exe = ELF(exe_path, checksec=False)
+            symbols = {}
+            for symbol in dump_basic_symbols(exe, []):
+                if symbol in exe.symbols:
+                    symbols[symbol] = exe.symbols[symbol]
+                else:
+                    symbols[symbol] = 0
+                    log.warn('%25s is not found', symbol)
+
+            libc = libcdb._pack_libs_info(exe_path, libs_id, "", symbols)
+            print_libc(libc)
 
     elif args.libc_command == 'file':
         from hashlib import md5, sha1, sha256
@@ -299,10 +269,8 @@ def main(args):
 
             # Always dump the basic list of common symbols
             log.indented('%s', text.green('Symbols:'))
-            synthetic_symbols = collect_synthetic_symbols(exe)
+            symbols = dump_basic_symbols(exe, args.symbols)
 
-            symbols = common_symbols + (args.symbols or []) + synthetic_symbols
-            symbols.sort()
             for symbol in symbols:
                 if symbol not in exe.symbols:
                     log.indented('%25s = %s', symbol, text.red('not found'))
