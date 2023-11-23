@@ -168,9 +168,15 @@ def print_libc(libc):
     for symbol in libc['symbols'].items():
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
-def fetch_libc(args, libc):
+def fetch_libc(args, libc, hash_type="build_id"):
+    hash_value = libc.get("buildid") or libc.get("build_id")
+
     if args.download_libc:
-        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip, args.offline)
+        if hash_type == "buildid":
+            hash_type = "build_id"
+
+        path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
+
         if path:
             shutil.copy(path, './{}.so'.format(libc['id']))
 
@@ -223,7 +229,7 @@ def main(args):
             libs_id = None
             hash_type = args.hash_type if args.hash_type != "buildid" else "build_id"
 
-            # search and download libc
+            # Search and download libc
             exe_path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
 
             if exe_path:
@@ -240,10 +246,11 @@ def main(args):
                     symbols[symbol] = exe.symbols[symbol]
                 else:
                     symbols[symbol] = 0
-                    log.warn('%25s is not found', symbol)
+                    log.warn('%s is not found', symbol)
 
             libc = libcdb._pack_libs_info(exe_path, libs_id, "", symbols)
             print_libc(libc)
+            fetch_libc(args, libc, hash_type)
 
     elif args.libc_command == 'file':
         from hashlib import md5, sha1, sha256
