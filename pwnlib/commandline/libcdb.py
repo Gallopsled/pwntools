@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 import pwnlib.args
@@ -222,7 +223,7 @@ def main(args):
             libs_id = None
             hash_type = args.hash_type if args.hash_type != "buildid" else "build_id"
 
-            # Search and download libc
+            # search and download libc
             exe_path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
 
             if exe_path:
@@ -276,6 +277,22 @@ def main(args):
                     log.indented('%25s = %s', symbol, text.red('not found'))
                 else:
                     log.indented('%25s = %#x', symbol, translate_offset(exe.symbols[symbol], args, exe))
+
+    elif args.libc_command == 'download':
+        if args.save_path:
+            save_path = os.path.abspath(args.save_path)
+        else:
+            save_path = context.local_libcdb
+ 
+        if not os.path.exists(save_path):
+            log.info("Download libc-database to %s", save_path)
+            process = subprocess.Popen(["git", "clone", "https://github.com/niklasb/libc-database", save_path])
+            process.wait()
+
+        log.info("Fetch libc categories and symbol offsets")
+        process = subprocess.Popen(["./get", *args.categories], cwd=save_path)
+        process.wait()
+
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__)
