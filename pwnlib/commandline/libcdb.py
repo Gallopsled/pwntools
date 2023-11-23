@@ -290,7 +290,7 @@ def main(args):
             process.wait()
 
         log.info("Fetch libc categories and symbol offsets")
-        process = subprocess.Popen(["./get", *args.categories], cwd=save_path)
+        process = subprocess.Popen(["./get"] + args.categories, cwd=save_path)
         process.wait()
 
 
