@@ -594,7 +594,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         >>> libc.sym.system == 0x52290
         True
         >>> context.local_libcdb = "/path/to/libc-database"
-        >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1, online=False)
+        >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1, offline=True)
         >>> ELF(filename)
         ELF('/path/to/libc-database/db/libc6_2.31-0ubuntu9.12_amd64.so')
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
