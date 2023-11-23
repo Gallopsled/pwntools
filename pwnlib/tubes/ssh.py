@@ -1776,10 +1776,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> s.cwd = f'{pwnlib.data.elf.path}/ssh_libs'
             >>> s.libs("duplicate", "out_duplicate") # doctest: +ELLIPSIS
             {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
-            >>> s.libs("duplicate", "out_duplicate_flatten", flatten = True) # doctest: +ELLIPSIS
-            {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
             >>> s.libs("no_duplicate", "out_noduplicate_flatten", flatten = True) # doctest: +ELLIPSIS
-            {'.../out_noduplicate_flatten/lib.so': ..., '.../out_noduplicate_flatten/lib2.so': ..., '.../out_noduplicate_flatten/duplicate': ...}
+            {'.../out_noduplicate_flatten/lib.so': ..., '.../out_noduplicate_flatten/lib2.so': ..., '.../out_noduplicate_flatten/no_duplicate': ...}
+            >>> s.libs("duplicate", "out_duplicate_flatten", flatten = True) # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            ...
+            PwnlibException: Duplicate lib name: ...
         """
 
         libs = self._libs_remote(remote)
@@ -1797,9 +1799,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 if name in basenames.values():
                     duplicate = [key for key, value in basenames.items() if
                                  value == name][0]
-                    self.warning('Duplicate lib name, switching to unflattened file tree: %r / %4r' % (lib, duplicate))
-                    flatten = False
-                    break
+                    self.error('Duplicate lib name: %r / %4r' % (lib, duplicate))
 
                 basenames[lib] = name
 
