@@ -17,6 +17,7 @@ import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -57,7 +58,7 @@ class ssh_channel(sock):
     #: Command specified for the constructor
     process = None
 
-    def __init__(self, parent, process = None, tty = False, wd = None, env = None, env_add = {},raw = True, *args, **kwargs):
+    def __init__(self, parent, process = None, tty = False, cwd = None, env = None, env_add = {}, raw = True, *args, **kwargs):
         super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
@@ -68,9 +69,9 @@ class ssh_channel(sock):
         self.tty  = tty
         self.env  = env
         self.process = process
-        self.cwd  = wd or '.'
-        if isinstance(wd, six.text_type):
-            wd = packing._need_bytes(wd, 2, 0x80)
+        self.cwd  = cwd or '.'
+        if isinstance(cwd, six.text_type):
+            cwd = packing._need_bytes(cwd, 2, 0x80)
 
         env = env or {}
         msg = 'Opening new channel: %r' % (process or 'shell')
@@ -80,8 +81,8 @@ class ssh_channel(sock):
         if isinstance(process, six.text_type):
             process = packing._need_bytes(process, 2, 0x80)
 
-        if process and wd:
-            process = b'cd ' + sh_string(wd) + b' >/dev/null 2>&1; ' + process
+        if process and cwd:
+            process = b'cd ' + sh_string(cwd) + b' >/dev/null 2>&1; ' + process
 
         if process and env:
             for name, value in env.items():
@@ -613,6 +614,9 @@ class ssh(Timeout, Logger):
         self._platform_info = {}
         self._aslr = None
         self._aslr_ulimit = None
+        self._cpuinfo_cache = None
+        self._user_shstk = None
+        self._ibt = None
 
         misc.mkdir_p(self._cachedir)
 
@@ -843,8 +847,11 @@ class ssh(Timeout, Logger):
             >>> sh = s.process(executable='/bin/sh')
             >>> str(sh.pid).encode() in s.pidof('sh') # doctest: +SKIP
             True
-            >>> s.process(['pwd'], cwd='/tmp').recvall()
+            >>> io = s.process(['pwd'], cwd='/tmp')
+            >>> io.recvall()
             b'/tmp\n'
+            >>> io.cwd
+            '/tmp'
             >>> p = s.process(['python','-c','import os; os.write(1, os.read(2, 1024))'], stderr=0)
             >>> p.send(b'hello')
             >>> p.recv()
@@ -881,6 +888,23 @@ class ssh(Timeout, Logger):
             >>> io = s.process(['cat'], timeout=5)
             >>> io.recvline()
             b''
+
+            >>> # Testing that empty argv works
+            >>> io = s.process([], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+            >>> # Make sure that we have a shell
+            >>> io.sendline(b'echo hello')
+            >>> io.recvline()
+            b'$ hello\n'
+
+            >>> # Testing that empty argv[0] works
+            >>> io = s.process([''], executable='sh')
+            >>> io.sendline(b'echo $0')
+            >>> io.recvline()
+            b'$ \n'
+
         """
         if not argv and not executable:
             self.error("Must specify argv or executable")
@@ -944,7 +968,7 @@ if env is not None:
     os.environ.clear()
     environ.update(env)
 else:
-    env = os.environ
+    env = environ
 
 env.update(%(env_add)r)
 
@@ -1035,8 +1059,35 @@ except Exception:
 %(func_src)s
 %(func_name)s(*%(func_args)r)
 
-os.execve(exe, argv, env)
-""" % locals()  # """
+""" % locals()  
+
+        if len(argv) > 0 and len(argv[0]) > 0:
+            script += r"os.execve(exe, argv, env) " 
+
+        # os.execve does not allow us to pass empty argv[0]
+        # Therefore we use ctypes to call execve directly
+        else:
+            script += r"""
+# Transform envp from dict to list
+env_list = [key + b"=" + value for key, value in env.items()]
+
+# ctypes helper to convert a python list to a NULL-terminated C array
+def to_carray(py_list):
+    py_list += [None] # NULL-terminated
+    return (ctypes.c_char_p * len(py_list))(*py_list)
+
+c_argv = to_carray(argv)
+c_env = to_carray(env_list)
+
+# Call execve
+libc = ctypes.CDLL('libc.so.6')
+libc.execve(exe, c_argv, c_env)
+
+# We should never get here, since we sanitized argv and env,
+# but just in case, indicate that something went wrong.
+libc.perror(b"execve")
+raise OSError("execve failed")
+""" % locals()
 
         script = script.strip()
 
@@ -1055,7 +1106,7 @@ os.execve(exe, argv, env)
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
                                                   'os.environ'
-                                                  if (env in (None, os.environ))
+                                                  if (env in (None, getattr(os, "environb", os.environ))) 
                                                   else env)
             # Avoid spamming the screen
             if self.isEnabledFor(logging.DEBUG) and len(execve_repr) > 512:
@@ -1070,9 +1121,9 @@ os.execve(exe, argv, env)
 
         with self.progress(msg) as h:
 
-            script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(which $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
+            script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1135,15 +1186,15 @@ os.execve(exe, argv, env)
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; which %s' % program).recvall().strip().decode()
+        result = self.run('export PATH=$PATH:$PWD; command -v %s' % program).recvall().strip().decode()
 
         if ('/%s' % program) not in result:
             return None
 
         return result
 
-    def system(self, process, tty = True, wd = None, env = None, timeout = None, raw = True):
-        r"""system(process, tty = True, wd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
+    def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
+        r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
 
         Open a new channel with a specific process inside. If `tty` is True,
         then a TTY is requested on the remote server.
@@ -1155,7 +1206,7 @@ os.execve(exe, argv, env)
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> py = s.run('python3 -i')
+            >>> py = s.system('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
             >>> py.sendline(b'print(2+2)')
             >>> py.sendline(b'exit()')
@@ -1163,15 +1214,23 @@ os.execve(exe, argv, env)
             b'4\n'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
+            >>> io = s.system('pwd', cwd='/tmp')
+            >>> io.recvall()
+            b'/tmp\n'
+            >>> io.cwd
+            '/tmp'
         """
-
-        if wd is None:
-            wd = self.cwd
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.system() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+        if cwd is None:
+            cwd = self.cwd
 
         if timeout is None:
             timeout = self.timeout
 
-        return ssh_channel(self, process, tty, wd, env, timeout = timeout, level = self.level, raw = raw)
+        return ssh_channel(self, process, tty, cwd, env, timeout = timeout, level = self.level, raw = raw)
 
     #: Backward compatibility.  Use :meth:`system`
     run = system
@@ -1192,7 +1251,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 ''' % variable
 
         with context.local(log_level='error'):
-            python = self.which('python')
+            python = self.which('python') or self.which('python2.7') or self.which('python3')
 
             if not python:
                 self.error("Python is not installed on the remote system.")
@@ -1207,8 +1266,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
 
-    def run_to_end(self, process, tty = False, wd = None, env = None):
-        r"""run_to_end(process, tty = False, timeout = Timeout.default, env = None) -> str
+    def run_to_end(self, process, tty = False, cwd = None, env = None, wd = None):
+        r"""run_to_end(process, tty = False, cwd = None, env = None, timeout = Timeout.default) -> str
 
         Run a command on the remote server and return a tuple with
         (data, exit_status). If `tty` is True, then the command is run inside
@@ -1220,8 +1279,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             (b'Hello\n', 17)
             """
 
+        if wd is not None:
+            self.warning_once("The 'wd' argument to ssh.run_to_end() is deprecated.  Use 'cwd' instead.")
+            if cwd is None:
+                cwd = wd
+
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, wd = wd, timeout = Timeout.default)
+            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1446,14 +1510,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with open(local, 'wb') as fd:
             fd.write(data)
 
-    def _download_to_cache(self, remote, p):
+    def _download_to_cache(self, remote, p, fingerprint=True):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
         if not hasattr(remote, 'encode'):
             remote = remote.decode('utf-8')
 
-        fingerprint = self._get_fingerprint(remote)
+        fingerprint = fingerprint and self._get_fingerprint(remote) or None
         if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
@@ -1471,11 +1535,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             self._download_raw(remote, local, p)
 
             if not self._verify_local_fingerprint(fingerprint):
-                p.error('Could not download file %r' % remote)
+                self.error('Could not download file %r', remote)
 
         return local
 
-    def download_data(self, remote):
+    def download_data(self, remote, fingerprint=True):
         """Downloads a file from the remote server and returns it as a string.
 
         Arguments:
@@ -1496,7 +1560,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         """
         with self.progress('Downloading %r' % remote) as p:
-            with open(self._download_to_cache(remote, p), 'rb') as fd:
+            with open(self._download_to_cache(remote, p, fingerprint), 'rb') as fd:
                 return fd.read()
 
     def download_file(self, remote, local = None):
@@ -1506,16 +1570,24 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         calling the function twice has little overhead.
 
         Arguments:
-            remote(str): The remote filename to download
+            remote(str/bytes): The remote filename to download
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
+        
+        Examples:
+            >>> with open('/tmp/foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> _ = s.set_working_directory(wd='/tmp')
+            >>> _ = s.download_file('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            Hello, world
         """
 
 
         if not local:
             local = os.path.basename(os.path.normpath(remote))
-
-        if os.path.basename(remote) == remote:
-            remote = os.path.join(self.cwd, remote)
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1698,6 +1770,18 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             file_or_directory(str): Path to the file or directory to download.
             local(str): Local path to store the data.
                 By default, uses the current directory.
+        
+
+        Examples:
+            >>> with open('/tmp/foobar','w+') as f:
+            ...     _ = f.write('Hello, world')
+            >>> s =  ssh(host='example.pwnme',
+            ...         cache=False)
+            >>> _ = s.set_working_directory('/tmp')
+            >>> _ = s.download('foobar', 'barfoo')
+            >>> with open('barfoo','r') as f:
+            ...     print(f.read())
+            Hello, world
         """
         file_or_directory = packing._encode(file_or_directory)
         with self.system(b'test -d ' + sh_string(file_or_directory)) as io:
@@ -1773,7 +1857,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         if self.cwd != '.':
             cmd = 'cd ' + sh_string(self.cwd)
-            s.sendline(cmd)
+            s.sendline(packing._need_bytes(cmd, 2, 0x80))
 
         s.interactive()
         s.close()
@@ -1831,6 +1915,13 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> _=s.set_working_directory(symlink=symlink)
             >>> assert b'foo' in s.ls().split(), s.ls().split()
             >>> assert homedir != s.pwd()
+
+            >>> _=s.set_working_directory()
+            >>> io = s.system('pwd')
+            >>> io.recvallS().strip() == io.cwd
+            True
+            >>> io.cwd == s.cwd
+            True
         """
         status = 0
 
@@ -1843,7 +1934,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:
-            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', wd='.')
+            wd, status = self.run_to_end('x=$(mktemp -d) && cd $x && chmod +x . && echo $PWD', cwd='.')
             wd = wd.strip()
 
             if status:
@@ -2061,6 +2152,57 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self._aslr_ulimit
 
+    def _cpuinfo(self):
+        if self._cpuinfo_cache is None:
+            with context.quiet:
+                try:
+                    self._cpuinfo_cache = self.download_data('/proc/cpuinfo', fingerprint=False)
+                except PwnlibException:
+                    self._cpuinfo_cache = b''
+        return self._cpuinfo_cache
+
+    @property
+    def user_shstk(self):
+        """:class:`bool`: Whether userspace shadow stack is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.user_shstk
+            False
+        """
+        if self._user_shstk is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for userspace shadow stack checks.")
+                self._user_shstk = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._user_shstk = b' user_shstk' in cpuinfo
+        return self._user_shstk
+
+    @property
+    def ibt(self):
+        """:class:`bool`: Whether kernel indirect branch tracking is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.ibt
+            False
+        """
+        if self._ibt is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for kernel indirect branch tracking checks.")
+                self._ibt = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._ibt = b' ibt ' in cpuinfo or b' ibt\n' in cpuinfo
+        return self._ibt
+
     def _checksec_cache(self, value=None):
         path = self._get_cachefile('%s-%s' % (self.host, self.port))
 
@@ -2097,7 +2239,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             "ASLR:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
-            }[self.aslr]
+            }[self.aslr],
+            "SHSTK:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.user_shstk],
+            "IBT:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.ibt],
         ]
 
         if self.aslr_ulimit:

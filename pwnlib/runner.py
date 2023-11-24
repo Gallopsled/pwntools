@@ -39,14 +39,14 @@ def run_shellcode(bytes, **kw):
 
     Example:
 
-        >>> bytes = asm('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
-        >>> p = run_shellcode(bytes)
+        >>> insn_bytes = asm('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
+        >>> p = run_shellcode(insn_bytes)
         >>> p.wait_for_close()
         >>> p.poll()
         3
 
-        >>> bytes = asm('mov r0, #12; mov r7, #1; svc #0', arch='arm')
-        >>> p = run_shellcode(bytes, arch='arm')
+        >>> insn_bytes = asm('mov r0, #12; mov r7, #1; svc #0', arch='arm')
+        >>> p = run_shellcode(insn_bytes, arch='arm')
         >>> p.wait_for_close()
         >>> p.poll()
         12
@@ -84,8 +84,8 @@ def run_shellcode_exitcode(bytes):
 
     Example:
 
-        >>> bytes = asm('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
-        >>> run_shellcode_exitcode(bytes)
+        >>> insn_bytes = asm('mov ebx, 3; mov eax, SYS_exit; int 0x80;')
+        >>> run_shellcode_exitcode(insn_bytes)
         3
     """
     p = run_shellcode(bytes)

@@ -717,15 +717,20 @@ class ROP(object):
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
-                moved += context.bytes
-                if r in registers:
-                    stack.append((registers[r], r))
-                else:
-                    stack.append((Padding('<pad %s>' % r), r))
+                if isinstance(r, str):
+                    if r in registers:
+                        stack.append((registers[r], r))
+                    else:
+                        stack.append((Padding('<pad %s>' % r), r))
+                    moved += context.bytes
+                    continue
 
-            for slot in range(moved, gadget.move, context.bytes):
-                left = gadget.move - slot
-                stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                for slot in range(moved, moved + r, context.bytes):
+                    left = gadget.move - slot
+                    stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                    moved += context.bytes
+
+            assert moved == gadget.move
 
         return stack
 
@@ -1036,10 +1041,6 @@ class ROP(object):
             slot_address += _slot_len(slot)
 
         return stack
-
-
-    def find_stack_adjustment(self, slots):
-        self.search(move=slots * context.bytes)
 
     def chain(self, base=None):
         """Build the ROP chain
@@ -1393,9 +1394,7 @@ class ROP(object):
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
-                    while arg >= context.bytes:
-                        regs.append(hex(arg))
-                        arg -= context.bytes
+                    regs.append(arg)
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
@@ -1544,22 +1543,17 @@ class ROP(object):
         # Prioritise non-PIE binaries so we can use _fini
         exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
 
-        nonpie = csu = None
+        csu = None
         for elf in exes:
-            if not elf.pie:
-                if '__libc_csu_init' in elf.symbols:
-                    break
-                nonpie = elf
-            elif '__libc_csu_init' in elf.symbols:
+            if '__libc_csu_init' in elf.symbols:
                 csu = elf
+                if not elf.pie:
+                    break
+
+        if csu:
+            elf = csu
         else:
             log.error('No non-library binaries in [elfs]')
-
-        if elf.pie:
-            if nonpie:
-                elf = nonpie
-            elif csu:
-                elf = csu
 
         from .ret2csu import ret2csu
         ret2csu(self, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call)
