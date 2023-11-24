@@ -58,7 +58,7 @@ class ssh_channel(sock):
     #: Command specified for the constructor
     process = None
 
-    def __init__(self, parent, process = None, tty = False, cwd = None, env = None, env_add = {}, raw = True, *args, **kwargs):
+    def __init__(self, parent, process = None, tty = False, cwd = None, env = None, raw = True, *args, **kwargs):
         super(ssh_channel, self).__init__(*args, **kwargs)
 
         # keep the parent from being garbage collected in some cases
@@ -760,7 +760,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, env_add={}, timeout=Timeout.default, run=True,
+    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, ignore_environ=None, timeout=Timeout.default, run=True,
                 stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), raw=True, aslr=None, setuid=None,
                 shell=False):
         r"""
@@ -788,10 +788,9 @@ class ssh(Timeout, Logger):
                 Working directory.  If :const:`None`, uses the working directory specified
                 on :attr:`cwd` or set via :meth:`set_working_directory`.
             env(dict):
-                Environment variables to set in the child.  If :const:`None`, inherits the
-                default environment.
-            env_add(dict):
-                Environment variables to ADD in the child, in addition to those it inherits.
+                Environment variables to add to the environment.
+            ignore_environ(bool):
+                Ignore default environment.  By default use default environment iff env not specified.
             timeout(int):
                 Timeout to set on the `tube` created to interact with the process.
             run(bool):
@@ -911,6 +910,9 @@ class ssh(Timeout, Logger):
 
         aslr      = aslr if aslr is not None else context.aslr
 
+        if ignore_environ is None:
+            ignore_environ = env is not None  # compat
+
         argv, env = misc.normalize_argv_env(argv, env, self)
 
         if shell:
@@ -961,16 +963,15 @@ env   = %(env)r
 
 os.chdir(%(cwd)r)
 
+if %(ignore_environ)r:
+    os.environ.clear()
 environ = getattr(os, 'environb', os.environ)
 
 if env is not None:
     env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
-    os.environ.clear()
     environ.update(env)
 else:
     env = environ
-
-env.update(%(env_add)r)
 
 def is_exe(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
