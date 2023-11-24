@@ -229,6 +229,10 @@ def normalize_argv_env(argv, env, log, level=2):
         for k,v in env_items:
             if not isinstance(k, (bytes, six.text_type)):
                 log.error('Environment keys must be strings: %r' % k)
+            # Check if = is in the key, Required check since we sometimes call ctypes.execve directly
+            # https://github.com/python/cpython/blob/025995feadaeebeef5d808f2564f0fd65b704ea5/Modules/posixmodule.c#L6476
+            if b'=' in packing._encode(k):
+                log.error('Environment keys may not contain "=": %r' % (k))
             if not isinstance(v, (bytes, six.text_type)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
@@ -382,7 +386,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 import os
 os.execve({argv0!r}, {argv!r}, os.environ)
 '''
-        script = script.format(executable=sys.executable,
+        script = script.format(executable='/bin/env ' * (' ' in sys.executable) + sys.executable,
                                argv=command,
                                argv0=which(command[0]))
         script = script.lstrip()
