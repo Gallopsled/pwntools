@@ -296,7 +296,7 @@ class process(tube):
         #: Environment passed on envp
         self.env = {} if ignore_environ else dict(getattr(os, "environb", os.environ))
 
-        # Add environmemnt variables as needed
+        # Add environment variables as needed
         self.env.update(env_val or {})
 
         self._cwd = os.path.realpath(cwd or os.path.curdir)
