@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.13.0](#4130-dev)  | `dev`    |
 | [4.12.0](#4120-beta)  | `beta`   |
-| [4.11.0](#4110-stable)  | `stable` | Sep 15, 2023
+| [4.11.1](#4111-stable)  | `stable` | Nov 14, 2023
+| [4.11.0](#4110)  |          | Sep 15, 2023
 | [4.10.0](#4100)  |          | May 21, 2023
 | [4.9.0](#490)    |          | Dec 29, 2022
 | [4.8.0](#480)    |          | Apr 21, 2022
@@ -69,9 +70,16 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.13.0 (`dev`)
 
+- [#2277][2277] elf: Resolve more relocations into GOT entries
+- [#2281][2281] FIX: Getting right amount of data for search fix
+- [#2293][2293] Add x86 CET status to checksec output
 
+[2277]: https://github.com/Gallopsled/pwntools/pull/2277
+[2281]: https://github.com/Gallopsled/pwntools/pull/2281
+[2293]: https://github.com/Gallopsled/pwntools/pull/2293
 
 ## 4.12.0 (`beta`)
+
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
 - [#2221][2221] Add shellcraft.sleep template wrapping SYS_nanosleep
@@ -90,7 +98,21 @@ The table below shows which release corresponds to each branch, and what date th
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
 [2227]: https://github.com/Gallopsled/pwntools/pull/2227
 
-## 4.11.0 (`stable`)
+## 4.11.1 (`stable`)
+
+- [#2271][2271] FIX: Generated shebang with path to python invalid if path contains spaces
+- [#2272][2272] Fix `tube.clean_and_log` not logging buffered data
+- [#2281][2281] FIX: Getting right amount of data for search fix
+- [#2287][2287] Fix `_countdown_handler` not invoking `timeout_change`
+- [#2294][2294] Fix atexit SEGV in aarch64 loader
+
+[2271]: https://github.com/Gallopsled/pwntools/pull/2271
+[2272]: https://github.com/Gallopsled/pwntools/pull/2272
+[2281]: https://github.com/Gallopsled/pwntools/pull/2281
+[2287]: https://github.com/Gallopsled/pwntools/pull/2287
+[2294]: https://github.com/Gallopsled/pwntools/pull/2294
+
+## 4.11.0
 
 - [#2185][2185] make fmtstr module able to create payload without $ notation 
 - [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`

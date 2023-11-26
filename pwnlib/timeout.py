@@ -30,9 +30,11 @@ class _countdown_handler(object):
             self.obj._stop = min(self.obj._stop, self.old_stop)
 
         self.obj._timeout = self.timeout
+        self.obj.timeout_change()
     def __exit__(self, *a):
         self.obj._timeout = self.old_timeout
         self.obj._stop    = self.old_stop
+        self.obj.timeout_change()
 
 class _local_handler(object):
     def __init__(self, obj, timeout):
@@ -157,7 +159,7 @@ class Timeout(object):
         else:
             value = float(value)
 
-            if value is value < 0:
+            if value < 0:
                 raise AttributeError("timeout: Timeout cannot be negative")
 
             if value > self.maximum:
