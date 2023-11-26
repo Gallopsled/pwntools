@@ -621,7 +621,7 @@ def python_2_bytes_compatible(klass):
 
 
 
-def create_execve_script(argv=None, executable=None, cwd=None, env=None,
+def create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
         shell=False):
     """
@@ -637,14 +637,9 @@ def create_execve_script(argv=None, executable=None, cwd=None, env=None,
             Working directory.  If :const:`None`, uses the working directory specified
             on :attr:`cwd` or set via :meth:`set_working_directory`.
         env(dict):
-            Environment variables to set in the child.  If :const:`None`, inherits the
-            default environment.
-        timeout(int):
-            Timeout to set on the `tube` created to interact with the process.
-        run(bool):
-            Set to :const:`True` to run the program (default).
-            If :const:`False`, returns the path to an executable Python script on the
-            remote server which, when executed, will do it.
+            Environment variables to add to the environment.
+        ignore_environ(bool):
+            Ignore default environment.  By default use default environment iff env not specified.
         stdin(int, str):
             If an integer, replace stdin with the numbered file descriptor.
             If a string, a open a file with the specified path and replace
@@ -675,6 +670,9 @@ def create_execve_script(argv=None, executable=None, cwd=None, env=None,
         log.error("Must specify argv or executable")
 
     aslr      = aslr if aslr is not None else context.aslr
+
+    if ignore_environ is None:
+        ignore_environ = env is not None  # compat
 
     argv, env = normalize_argv_env(argv, env, log)
 
@@ -726,6 +724,9 @@ argv  = [bytes(a) for a in %(argv)r]
 env   = %(env)r
 
 os.chdir(%(cwd)r)
+
+if %(ignore_environ)r:
+    os.environ.clear()
 
 environ = getattr(os, 'environb', os.environ)
 
