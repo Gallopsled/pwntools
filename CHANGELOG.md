@@ -70,11 +70,13 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.13.0 (`dev`)
 
+- [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
 - [#2277][2277] elf: Resolve more relocations into GOT entries
 - [#2281][2281] FIX: Getting right amount of data for search fix
 - [#2293][2293] Add x86 CET status to checksec output
 - [#1763][1763] Allow to add to the existing environment in `process` instead of replacing it
 
+[2308]: https://github.com/Gallopsled/pwntools/pull/2308
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 [2293]: https://github.com/Gallopsled/pwntools/pull/2293

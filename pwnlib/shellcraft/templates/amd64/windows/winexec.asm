@@ -7,6 +7,7 @@
 
 Args:
     cmd (str): The program to execute.
+    cmd_show (int): nCmdShow parameter.
 </%docstring>
 <%page args="cmd, cmd_show = 0"/>
 <%
@@ -18,6 +19,6 @@ pad = align(8, len(cmd) + 1) // 8 % 2 ^ 1 * 8
     ${amd64.pushstr(cmd)}
     mov rcx, rsp
     sub rsp, ${pretty(0x30+pad)}
-    mov rdx, {cmd_show}
+    mov rdx, ${cmd_show}
     call rsi
     add rsp, ${pretty(0x30+align(8, len(cmd)+1)+pad)}
