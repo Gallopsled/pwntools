@@ -12,6 +12,8 @@ import string
 import subprocess
 import sys
 import tempfile
+import inspect
+import types
 
 from pwnlib import atexit
 from pwnlib.context import context
@@ -616,3 +618,240 @@ def python_2_bytes_compatible(klass):
         if '__str__' not in klass.__dict__:
             klass.__str__ = klass.__bytes__
     return klass
+
+
+
+def create_execve_script(argv=None, executable=None, cwd=None, env=None,
+        stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
+        shell=False):
+    """
+    Creates a python wrapper script that triggers the syscall `execve` directly.
+
+    Arguments:
+        argv(list):
+            List of arguments to pass into the process
+        executable(str):
+            Path to the executable to run.
+            If :const:`None`, ``argv[0]`` is used.
+        cwd(str):
+            Working directory.  If :const:`None`, uses the working directory specified
+            on :attr:`cwd` or set via :meth:`set_working_directory`.
+        env(dict):
+            Environment variables to set in the child.  If :const:`None`, inherits the
+            default environment.
+        timeout(int):
+            Timeout to set on the `tube` created to interact with the process.
+        run(bool):
+            Set to :const:`True` to run the program (default).
+            If :const:`False`, returns the path to an executable Python script on the
+            remote server which, when executed, will do it.
+        stdin(int, str):
+            If an integer, replace stdin with the numbered file descriptor.
+            If a string, a open a file with the specified path and replace
+            stdin with its file descriptor.  May also be one of ``sys.stdin``,
+            ``sys.stdout``, ``sys.stderr``.  If :const:`None`, the file descriptor is closed.
+        stdout(int, str):
+            See ``stdin``.
+        stderr(int, str):
+            See ``stdin``.
+        preexec_fn(callable):
+            Function which is executed on the remote side before execve().
+            This **MUST** be a self-contained function -- it must perform
+            all of its own imports, and cannot refer to variables outside
+            its scope.
+        preexec_args(object):
+            Argument passed to ``preexec_fn``.
+            This **MUST** only consist of native Python objects.
+        aslr(bool):
+            See :class:`pwnlib.tubes.process.process` for more information.
+        setuid(bool):
+            See :class:`pwnlib.tubes.process.process` for more information.
+        shell(bool):
+            Pass the command-line arguments to the shell.
+
+    Returns:
+    """
+    if not argv and not executable:
+        log.error("Must specify argv or executable")
+
+    aslr      = aslr if aslr is not None else context.aslr
+
+    argv, env = normalize_argv_env(argv, env, log)
+
+    if shell:
+        if len(argv) != 1:
+            log.error('Cannot provide more than 1 argument if shell=True')
+        argv = [bytearray(b'/bin/sh'), bytearray(b'-c')] + argv
+
+    executable = executable or argv[0]
+    cwd        = cwd or '.'
+
+    # Validate, since failures on the remote side will suck.
+    if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
+        log.error("executable / argv[0] must be a string: %r" % executable)
+    executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
+
+    # Allow passing in sys.stdin/stdout/stderr objects
+    handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
+    stdin  = handles.get(stdin, stdin)
+    stdout = handles.get(stdout, stdout)
+    stderr = handles.get(stderr, stderr)
+
+    # Allow the user to provide a self-contained function to run
+    def func(): pass
+    func      = preexec_fn or func
+    func_args = preexec_args
+
+    if not isinstance(func, types.FunctionType):
+        log.error("preexec_fn must be a function")
+
+    func_name = func.__name__
+    if func_name == (lambda: 0).__name__:
+        log.error("preexec_fn cannot be a lambda")
+
+    func_src  = inspect.getsource(func).strip()
+    setuid = True if setuid is None else bool(setuid)
+
+
+    script = r"""
+#!/usr/bin/env python
+import os, sys, ctypes, resource, platform, stat
+from collections import OrderedDict
+try:
+    integer_types = int, long
+except NameError:
+    integer_types = int,
+exe   = bytes(%(executable)r)
+argv  = [bytes(a) for a in %(argv)r]
+env   = %(env)r
+
+os.chdir(%(cwd)r)
+
+environ = getattr(os, 'environb', os.environ)
+
+if env is not None:
+    env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
+    os.environ.clear()
+    environ.update(env)
+else:
+    env = environ
+
+def is_exe(path):
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
+PATH = environ.get(b'PATH',b'').split(os.pathsep.encode())
+
+if os.path.sep.encode() not in exe and not is_exe(exe):
+    for path in PATH:
+        test_path = os.path.join(path, exe)
+        if is_exe(test_path):
+            exe = test_path
+            break
+
+if not is_exe(exe):
+    sys.stderr.write('3\n')
+    sys.stderr.write("{!r} is not executable or does not exist in $PATH: {!r}".format(exe,PATH))
+    sys.exit(-1)
+
+if not %(setuid)r:
+    PR_SET_NO_NEW_PRIVS = 38
+    result = ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+
+    if result != 0:
+        sys.stdout.write('3\n')
+        sys.stdout.write("Could not disable setuid: prctl(PR_SET_NO_NEW_PRIVS) failed")
+        sys.exit(-1)
+
+try:
+    PR_SET_PTRACER = 0x59616d61
+    PR_SET_PTRACER_ANY = -1
+    ctypes.CDLL('libc.so.6').prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0)
+except Exception:
+    pass
+
+# Determine what UID the process will execute as
+# This is used for locating apport core dumps
+suid = os.getuid()
+sgid = os.getgid()
+st = os.stat(exe)
+if %(setuid)r:
+    if (st.st_mode & stat.S_ISUID):
+        suid = st.st_uid
+    if (st.st_mode & stat.S_ISGID):
+        sgid = st.st_gid
+
+if sys.argv[-1] == 'check':
+    sys.stdout.write("1\n")
+    sys.stdout.write(str(os.getpid()) + "\n")
+    sys.stdout.write(str(os.getuid()) + "\n")
+    sys.stdout.write(str(os.getgid()) + "\n")
+    sys.stdout.write(str(suid) + "\n")
+    sys.stdout.write(str(sgid) + "\n")
+    getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
+    sys.stdout.flush()
+
+for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
+    if newfd is None:
+        os.close(fd)
+    elif isinstance(newfd, (str, bytes)):
+        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
+        os.dup2(newfd, fd)
+        os.close(newfd)
+    elif isinstance(newfd, integer_types) and newfd != fd:
+        os.dup2(fd, newfd)
+
+if not %(aslr)r:
+    if platform.system().lower() == 'linux' and %(setuid)r is not True:
+        ADDR_NO_RANDOMIZE = 0x0040000
+        ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
+
+    resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+
+# Attempt to dump ALL core file regions
+try:
+    with open('/proc/self/coredump_filter', 'w') as core_filter:
+        core_filter.write('0x3f\n')
+except Exception:
+    pass
+
+# Assume that the user would prefer to have core dumps.
+try:
+    resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+except Exception:
+    pass
+
+%(func_src)s
+%(func_name)s(*%(func_args)r)
+
+""" % locals()  
+
+    if len(argv) > 0 and len(argv[0]) > 0:
+        script += r"os.execve(exe, argv, env) " 
+
+    # os.execve does not allow us to pass empty argv[0]
+    # Therefore we use ctypes to call execve directly
+    else:
+        script += r"""
+# Transform envp from dict to list
+env_list = [key + b"=" + value for key, value in env.items()]
+
+# ctypes helper to convert a python list to a NULL-terminated C array
+def to_carray(py_list):
+    py_list += [None] # NULL-terminated
+    return (ctypes.c_char_p * len(py_list))(*py_list)
+
+c_argv = to_carray(argv)
+c_env = to_carray(env_list)
+
+# Call execve
+libc = ctypes.CDLL('libc.so.6')
+libc.execve(exe, c_argv, c_env)
+
+# We should never get here, since we sanitized argv and env,
+# but just in case, indicate that something went wrong.
+libc.perror(b"execve")
+raise OSError("execve failed")
+""" % locals()
+    script = script.strip()
+
+    return script

@@ -271,38 +271,10 @@ def _execve_script(argv, executable, env, ssh):
     argv = [bytes(arg) for arg in argv]
     executable = packing._encode(executable)
     if ssh:
-        # ssh.process creates the script for us
+        # ssh.process with run=false creates the script for us
         return ssh.process(argv, executable=executable, env=env, run=False)
 
-    # Convert environment to a list of key=value strings
-    if env is None:
-        env_list = []
-    else:
-        env_list = [bytes(key) + b"=" + bytes(value) for key, value in env.items()]
-
-    # Create a python script that calls execve
-    # This script uses ctypes to call execve directly, instead of using os.execve
-    # since os.execve doesn't allow an empty argv[0] 
-    exe = sys.executable
-    script = """
-#!{exe!s}
-import ctypes
-
-# ctypes helper to convert a python list to a NULL-terminated C array
-def to_carray(py_list):
-    py_list += [None] # NULL-terminated
-    return (ctypes.c_char_p * len(py_list))(*py_list)
-c_argv = to_carray({argv!r})
-c_env = to_carray({env_list!r})
-# Call execve
-execve = ctypes.CDLL('libc.so.6').execve
-execve({executable!r}, c_argv, c_env)
-
-# We should never get here, since we sanitized argv and env,
-# but just in case, indicate that something went wrong.
-libc.perror(b"execve")
-raise OSError("execve failed")
-""".format(**locals())
+    script=misc.create_execve_script(argv=argv, executable=executable, env=env)
     script = script.strip()
     # Create a temporary file to hold the script
     tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwnlib-execve-', suffix='.py', delete=False)
