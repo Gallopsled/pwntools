@@ -291,6 +291,8 @@ class process(tube):
             self.suid = self.uid = None
             self.sgid = self.gid = None
             internal_preexec_fn = None
+
+            self._libs = None
         else:
             # Determine which descriptors will be attached to a new PTY
             handles = (stdin, stdout, stderr)
@@ -566,7 +568,10 @@ class process(tube):
             '/proc'
         """
         try:
-            self._cwd = os.readlink('/proc/%i/cwd' % self.pid)
+            if IS_WINDOWS:
+                self._cwd = self.win_process.peb.ProcessParameters.contents.CurrentDirectory.DosPath.str
+            else:
+                self._cwd = os.readlink('/proc/%i/cwd' % self.pid)
         except Exception:
             pass
 
@@ -917,6 +922,13 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
+        if IS_WINDOWS:
+            if not self._check_initialized():
+                raise Exception("PEB not initialized while getting the loaded modules")
+            if not self._libs:
+                self._libs = {module.name.lower(): module.baseaddr for module in self.win_process.peb.modules if module.name}
+            return self._libs
+
         try:
             maps_raw = open('/proc/%d/maps' % self.pid).read()
         except IOError:
@@ -1050,6 +1062,11 @@ class process(tube):
             >>> p.leak(e.address, 4)
             b'\x7fELF'
         """
+        if IS_WINDOWS:
+            if not self._check_initialized():
+                self.error("PEB not initialized while reading memory")
+            return self.win_process.read_memory(address, count)
+
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
             self.error("Cannot use leaker on binaries under QEMU.")
@@ -1095,6 +1112,10 @@ class process(tube):
             >>> io.recvall()
             b'aaaabaaacaaadaaaeaaafaaagaaahaaa'
         """
+        if IS_WINDOWS:
+            if not self._check_initialized():
+                self.error("PEB not initialized while writing memory")
+            return self.win_process.write_memory(address, data)
 
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
             self.error("Cannot use leaker on binaries under QEMU.")
