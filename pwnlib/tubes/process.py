@@ -6,16 +6,23 @@ import ctypes
 import errno
 import logging
 import os
-import platform
 import select
 import signal
-import six
 import stat
 import subprocess
 import sys
 import time
 
-if sys.platform != 'win32':
+IS_WINDOWS = sys.platform.startswith('win')
+
+if IS_WINDOWS:
+    import queue
+    import threading
+    import windows
+    from windows.generated_def.winstructs import CREATE_SUSPENDED
+    from windows.generated_def import ntstatus
+    ntstatus_names = {int(v):k for k,v in ntstatus.__dict__.items() if k.startswith('STATUS') and v}
+else:
     import fcntl
     import pty
     import resource
@@ -116,6 +123,8 @@ class process(tube):
             List of arguments to display, instead of the main executable name.
         alarm(int):
             Set a SIGALRM alarm timeout on the process.
+        creationflags(int):
+            Windows only.  Flags to pass to ``CreateProcess``.
 
     Examples:
 
@@ -228,7 +237,7 @@ class process(tube):
                  env = None,
                  ignore_environ = None,
                  stdin  = PIPE,
-                 stdout = PTY,
+                 stdout = PTY if not IS_WINDOWS else PIPE,
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
@@ -238,6 +247,7 @@ class process(tube):
                  where = 'local',
                  display = None,
                  alarm = None,
+                 creationflags = 0,
                  *args,
                  **kwargs
                  ):
@@ -250,6 +260,8 @@ class process(tube):
             else:
                 raise TypeError('Must provide argv or set context.binary')
 
+        if IS_WINDOWS and PTY in (stdin, stdout, stderr):
+            raise NotImplementedError("ConPTY isn't implemented yet")
 
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
@@ -258,7 +270,12 @@ class process(tube):
         original_env = env
 
         if shell:
-            executable_val, argv_val, env_val = executable or '/bin/sh', argv, env
+            executable_val, argv_val, env_val = executable, argv, env
+            if executable is None:
+                if IS_WINDOWS:
+                    executable_val = os.environ.get('ComSpec', 'cmd.exe')
+                else:
+                    executable_val = '/bin/sh'
         else:
             executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
@@ -266,23 +283,34 @@ class process(tube):
         if stderr is STDOUT:
             stderr = stdout
 
-        # Determine which descriptors will be attached to a new PTY
-        handles = (stdin, stdout, stderr)
+        if IS_WINDOWS:
+            self.pty = None
+            self.raw = False
+            self.aslr = True
+            self._setuid = False
+            self.suid = self.uid = None
+            self.sgid = self.gid = None
+            internal_preexec_fn = None
+        else:
+            # Determine which descriptors will be attached to a new PTY
+            handles = (stdin, stdout, stderr)
 
-        #: Which file descriptor is the controlling TTY
-        self.pty          = handles.index(PTY) if PTY in handles else None
+            #: Which file descriptor is the controlling TTY
+            self.pty          = handles.index(PTY) if PTY in handles else None
 
-        #: Whether the controlling TTY is set to raw mode
-        self.raw          = raw
+            #: Whether the controlling TTY is set to raw mode
+            self.raw          = raw
 
-        #: Whether ASLR should be left on
-        self.aslr         = aslr if aslr is not None else context.aslr
+            #: Whether ASLR should be left on
+            self.aslr         = aslr if aslr is not None else context.aslr
 
-        #: Whether setuid is permitted
-        self._setuid      = setuid if setuid is None else bool(setuid)
+            #: Whether setuid is permitted
+            self._setuid      = setuid if setuid is None else bool(setuid)
 
-        # Create the PTY if necessary
-        stdin, stdout, stderr, master, slave = self._handles(*handles)
+            # Create the PTY if necessary
+            stdin, stdout, stderr, master, slave = self._handles(*handles)
+
+            internal_preexec_fn = self.__preexec_fn
 
         #: Arguments passed on argv
         self.argv = argv_val
@@ -341,7 +369,8 @@ class process(tube):
                                                  stdout = stdout,
                                                  stderr = stderr,
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn)
+                                                 preexec_fn = internal_preexec_fn,
+                                                 creationflags = creationflags)
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
@@ -349,6 +378,28 @@ class process(tube):
                     prefixes.append(self.__on_enoexec(exception))
 
             p.success('pid %i' % self.pid)
+
+        if IS_WINDOWS:
+            class winprocess(windows.winobject.process.WinProcess):
+                def __del__(self):
+                    # sys.path is not None -> check if python shutdown
+                    # workaround crash on shutdown trying to delete invalid WinProcess object
+                    if hasattr(sys, "path") and sys.path is not None:
+                        super(winprocess, self).__del__()
+
+            #: :class:`windows.winobject.process.WinProcess` object that provides insight into the process
+            self.win_process = winprocess(pid=self.pid)
+            self._read_thread = None
+            self._read_queue = queue.Queue()
+            if self.proc.stdout:
+                # Read from stdout in a thread
+                self._read_thread = threading.Thread(target=_read_in_thread, args=(self._read_queue, self.proc.stdout))
+                self._read_thread.daemon = True
+                self._read_thread.start()
+
+            if (creationflags & CREATE_SUSPENDED) == 0:
+                self._wait_initialized()
+            return
 
         if self.pty is not None:
             if stdin is slave:
@@ -470,6 +521,18 @@ class process(tube):
         # If we get here, we couldn't run the binary directly, and
         # we don't have a qemu which can run it.
         self.exception(exception)
+
+    def _check_initialized(self):
+        # Accessing PEB until WinProcess is done initializing.
+        try:
+            self.win_process.peb.modules[1]
+            return True
+        except:
+            return False
+
+    def _wait_initialized(self):
+        while not self._check_initialized() and not self.win_process.is_exit:
+            time.sleep(0.05)
 
     @property
     def program(self):
@@ -647,8 +710,12 @@ class process(tube):
         if returncode is not None and not self._stop_noticed:
             self._stop_noticed = time.time()
             signame = ''
-            if returncode < 0:
-                signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
+            if IS_WINDOWS:
+                if returncode in ntstatus_names:
+                    signame = ' (%s)' % (ntstatus_names[returncode])
+            else:
+                if returncode < 0:
+                    signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
 
             self.info("Process %r stopped with exit code %d%s (pid %i)" % (self.display,
                                                                   returncode,
@@ -675,6 +742,19 @@ class process(tube):
 
         if not self.can_recv_raw(self.timeout):
             return ''
+
+        if IS_WINDOWS:
+            data = b''
+            count = 0
+            while count < numb:
+                if self._read_queue.empty():
+                    break
+                # FIXME: Just read all data available without waiting for more.
+                #        The timeout should be handled in can_recv_raw.
+                last_byte = self._read_queue.get(block=self.timeout is not None, timeout=self.timeout)
+                data += last_byte
+                count += 1
+            return data
 
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
@@ -712,6 +792,10 @@ class process(tube):
     def can_recv_raw(self, timeout):
         if not self.connected_raw('recv'):
             return False
+
+        if IS_WINDOWS:
+            # FIXME: Wait for data for `timeout` seconds.
+            return not self._read_queue.empty()
 
         try:
             if timeout is None:
@@ -751,7 +835,7 @@ class process(tube):
                 try:
                     fd.close()
                 except IOError as e:
-                    if e.errno != errno.EPIPE:
+                    if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
                         raise
 
         if not self._stop_noticed:
@@ -1041,3 +1125,13 @@ class process(tube):
         See: :obj:`.process.proc`
         """
         return self.proc.stderr
+
+# Keep reading the process's output in a separate thread,
+# since there's no non-blocking read in python on Windows.
+def _read_in_thread(recv_queue, proc_stdout):
+    while True:
+        b = proc_stdout.read(1)
+        if b:
+            recv_queue.put(b)
+        else:
+            break

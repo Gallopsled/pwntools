@@ -57,6 +57,7 @@ dependencies = [
     "pathlib2; python_version < '3.4'",
     "unix-ar; python_version >= '3'",
     "zstandard",
+    "PythonForWindows; sys_platform == 'win32'",
 ]
 
 [project.urls]
