@@ -30,6 +30,7 @@ parser.add_argument('--color', help='Print the output in color', choices=['never
 parser.add_argument('--template', help='Path to a custom template. Tries to use \'~/.config/pwntools/templates/pwnup.mako\', if it exists. '
                                    'Check \'%s\' for the default template shipped with pwntools.' % 
                                         os.path.join(printable_data_path, "templates", "pwnup.mako"))
+parser.add_argument('--no-auto', help='Do not automatically detect missing binaries', action='store_true')
 
 def detect_missing_binaries(args):
     # look for challenge binary, libc, and ld in current directory
@@ -77,7 +78,7 @@ def main(args):
         if not args.exe:
             args.exe = os.path.basename(args.path)
 
-    if args.exe is None or args.libc is None:
+    if not args.no_auto and (args.exe is None or args.libc is None):
         args.exe, args.libc = detect_missing_binaries(args)
     
     if args.template:
