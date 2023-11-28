@@ -33,6 +33,7 @@ parser.add_argument('--template', help='Path to a custom template. Tries to use 
 parser.add_argument('--no-auto', help='Do not automatically detect missing binaries', action='store_true')
 
 def detect_missing_binaries(args):
+    log.info("Automatically detecting challenge binaries...")
     # look for challenge binary, libc, and ld in current directory
     exe, libc, ld = args.exe, args.libc, None
     other_files = []
@@ -48,6 +49,13 @@ def detect_missing_binaries(args):
                 other_files.append(filename)
     if len(other_files) == 1:
         exe = other_files[0]
+    elif len(other_files) > 1:
+        log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
+
+    if exe != args.exe:
+        log.success("Found challenge binary %r", exe)
+    if libc != args.libc:
+        log.success("Found libc binary %r", libc)
     return exe, libc
 
 def main(args):
