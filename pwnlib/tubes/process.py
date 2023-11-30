@@ -291,8 +291,6 @@ class process(tube):
             self.suid = self.uid = None
             self.sgid = self.gid = None
             internal_preexec_fn = None
-
-            self._libs = None
         else:
             # Determine which descriptors will be attached to a new PTY
             handles = (stdin, stdout, stderr)
@@ -925,9 +923,7 @@ class process(tube):
         if IS_WINDOWS:
             if not self._check_initialized():
                 raise Exception("PEB not initialized while getting the loaded modules")
-            if not self._libs:
-                self._libs = {module.name.lower(): module.baseaddr for module in self.win_process.peb.modules if module.name}
-            return self._libs
+            return  {module.name.lower(): module.baseaddr for module in self.win_process.peb.modules if module.name}
 
         try:
             maps_raw = open('/proc/%d/maps' % self.pid).read()
