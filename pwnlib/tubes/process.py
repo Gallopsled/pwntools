@@ -18,10 +18,6 @@ IS_WINDOWS = sys.platform.startswith('win')
 if IS_WINDOWS:
     import queue
     import threading
-    import windows
-    from windows.generated_def.winstructs import CREATE_SUSPENDED
-    from windows.generated_def import ntstatus
-    ntstatus_names = {int(v):k for k,v in ntstatus.__dict__.items() if k.startswith('STATUS') and v}
 else:
     import fcntl
     import pty
@@ -38,6 +34,8 @@ from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 from pwnlib.util.misc import normalize_argv_env
 from pwnlib.util.packing import _need_bytes
+from pwnlib.util.proc import cwd
+from pwnlib.util.proc import memory_maps
 
 log = getLogger(__name__)
 
@@ -380,15 +378,6 @@ class process(tube):
             p.success('pid %i' % self.pid)
 
         if IS_WINDOWS:
-            class winprocess(windows.winobject.process.WinProcess):
-                def __del__(self):
-                    # sys.path is not None -> check if python shutdown
-                    # workaround crash on shutdown trying to delete invalid WinProcess object
-                    if hasattr(sys, "path") and sys.path is not None:
-                        super(winprocess, self).__del__()
-
-            #: :class:`windows.winobject.process.WinProcess` object that provides insight into the process
-            self.win_process = winprocess(pid=self.pid)
             self._read_thread = None
             self._read_queue = queue.Queue()
             if self.proc.stdout:
@@ -396,9 +385,6 @@ class process(tube):
                 self._read_thread = threading.Thread(target=_read_in_thread, args=(self._read_queue, self.proc.stdout))
                 self._read_thread.daemon = True
                 self._read_thread.start()
-
-            if (creationflags & CREATE_SUSPENDED) == 0:
-                self._wait_initialized()
             return
 
         if self.pty is not None:
@@ -522,18 +508,6 @@ class process(tube):
         # we don't have a qemu which can run it.
         self.exception(exception)
 
-    def _check_initialized(self):
-        # Accessing PEB until WinProcess is done initializing.
-        try:
-            self.win_process.peb.modules[1]
-            return True
-        except:
-            return False
-
-    def _wait_initialized(self):
-        while not self._check_initialized() and not self.win_process.is_exit:
-            time.sleep(0.05)
-
     @property
     def program(self):
         """Alias for ``executable``, for backward compatibility.
@@ -566,10 +540,7 @@ class process(tube):
             '/proc'
         """
         try:
-            if IS_WINDOWS:
-                self._cwd = self.win_process.peb.ProcessParameters.contents.CurrentDirectory.DosPath.str
-            else:
-                self._cwd = os.readlink('/proc/%i/cwd' % self.pid)
+            self._cwd = cwd(self.pid)
         except Exception:
             pass
 
@@ -713,12 +684,8 @@ class process(tube):
         if returncode is not None and not self._stop_noticed:
             self._stop_noticed = time.time()
             signame = ''
-            if IS_WINDOWS:
-                if returncode in ntstatus_names:
-                    signame = ' (%s)' % (ntstatus_names[returncode])
-            else:
-                if returncode < 0:
-                    signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
+            if returncode < 0:
+                signame = ' (%s)' % (signal_names.get(returncode, 'SIG???'))
 
             self.info("Process %r stopped with exit code %d%s (pid %i)" % (self.display,
                                                                   returncode,
@@ -920,15 +887,7 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        if IS_WINDOWS:
-            if not self._check_initialized():
-                raise Exception("PEB not initialized while getting the loaded modules")
-            return  {module.name.lower(): module.baseaddr for module in self.win_process.peb.modules if module.name}
-
-        try:
-            maps_raw = open('/proc/%d/maps' % self.pid).read()
-        except IOError:
-            maps_raw = None
+        maps_raw = memory_maps(self.pid)
 
         if not maps_raw:
             import pwnlib.elf.elf
@@ -938,18 +897,18 @@ class process(tube):
 
         # Enumerate all of the libraries actually loaded right now.
         maps = {}
-        for line in maps_raw.splitlines():
-            if '/' not in line: continue
-            path = line[line.index('/'):]
+        for mapping in maps_raw:
+            path = mapping.path
+            if os.sep not in path: continue
             path = os.path.realpath(path)
             if path not in maps:
                 maps[path]=0
 
         for lib in maps:
             path = os.path.realpath(lib)
-            for line in maps_raw.splitlines():
-                if line.endswith(path):
-                    address = line.split('-')[0]
+            for mapping in maps_raw:
+                if mapping.path == path:
+                    address = mapping.addr.split('-')[0]
                     maps[lib] = int(address, 16)
                     break
 
@@ -1058,11 +1017,6 @@ class process(tube):
             >>> p.leak(e.address, 4)
             b'\x7fELF'
         """
-        if IS_WINDOWS:
-            if not self._check_initialized():
-                self.error("PEB not initialized while reading memory")
-            return self.win_process.read_memory(address, count)
-
         # If it's running under qemu-user, don't leak anything.
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
             self.error("Cannot use leaker on binaries under QEMU.")
@@ -1108,10 +1062,6 @@ class process(tube):
             >>> io.recvall()
             b'aaaabaaacaaadaaaeaaafaaagaaahaaa'
         """
-        if IS_WINDOWS:
-            if not self._check_initialized():
-                self.error("PEB not initialized while writing memory")
-            return self.win_process.write_memory(address, data)
 
         if 'qemu-' in os.path.realpath('/proc/%i/exe' % self.pid):
             self.error("Cannot use leaker on binaries under QEMU.")
