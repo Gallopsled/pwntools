@@ -752,9 +752,7 @@ class process(tube):
             while count < numb:
                 if self._read_queue.empty():
                     break
-                # FIXME: Just read all data available without waiting for more.
-                #        The timeout should be handled in can_recv_raw.
-                last_byte = self._read_queue.get(block=self.timeout is not None, timeout=self.timeout)
+                last_byte = self._read_queue.get(block=False)
                 data += last_byte
                 count += 1
             return data
@@ -797,8 +795,10 @@ class process(tube):
             return False
 
         if IS_WINDOWS:
-            # FIXME: Wait for data for `timeout` seconds.
-            return not self._read_queue.empty()
+            with self.countdown(timeout=timeout):
+                while self.timeout and self._read_queue.empty():
+                    time.sleep(0.01)
+                return not self._read_queue.empty()
 
         try:
             if timeout is None:
