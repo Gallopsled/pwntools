@@ -40,7 +40,7 @@ def detect_missing_binaries(args):
     for filename in os.listdir():
         if not os.path.isfile(filename):
             continue
-        if not libc and 'libc' in filename:
+        if not libc and ('libc-' in filename or 'libc.' in filename):
             libc = filename
         elif not ld and 'ld-' in filename:
             ld = filename
