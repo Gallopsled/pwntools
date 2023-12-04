@@ -460,6 +460,7 @@ class ELF(ELFFile):
     def get_machine_arch(self):
         return {
             ('EM_X86_64', 64): 'amd64',
+            ('EM_X86_64', 32): 'amd64', # x32 ABI
             ('EM_386', 32): 'i386',
             ('EM_486', 32): 'i386',
             ('EM_ARM', 32): 'arm',
