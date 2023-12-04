@@ -34,8 +34,6 @@ from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 from pwnlib.util.misc import normalize_argv_env
 from pwnlib.util.packing import _need_bytes
-from pwnlib.util.proc import cwd
-from pwnlib.util.proc import memory_maps
 
 log = getLogger(__name__)
 
@@ -540,6 +538,7 @@ class process(tube):
             '/proc'
         """
         try:
+            from pwnlib.util.proc import cwd
             self._cwd = cwd(self.pid)
         except Exception:
             pass
@@ -887,6 +886,7 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
+        from pwnlib.util.proc import memory_maps
         maps_raw = memory_maps(self.pid)
 
         if not maps_raw:
