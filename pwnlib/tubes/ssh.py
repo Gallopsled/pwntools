@@ -1821,12 +1821,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> s.cwd = f'{pwnlib.data.elf.path}/ssh_libs'
-            >>> s.libs("duplicate", "out_duplicate") # doctest: +ELLIPSIS
+            >>> s.libs(pwnlib.data.elf.ssh_libs.get("duplicate"), "/tmp/out_duplicate") # doctest: +ELLIPSIS
             {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
-            >>> s.libs("no_duplicate", "out_noduplicate_flatten", flatten = True) # doctest: +ELLIPSIS
-            {'.../out_noduplicate_flatten/lib.so': ..., '.../out_noduplicate_flatten/lib2.so': ..., '.../out_noduplicate_flatten/no_duplicate': ...}
-            >>> s.libs("duplicate", "out_duplicate_flatten", flatten = True) # doctest: +ELLIPSIS
+            >>> s.libs(pwnlib.data.elf.ssh_libs.get("no_duplicate"), "/tmp/out_noduplicate_flatten", flatten = True) # doctest: +ELLIPSIS
+            {'/tmp/out_noduplicate_flatten/lib.so': ..., '/tmp/out_noduplicate_flatten/lib2.so': ..., '/tmp/out_noduplicate_flatten/no_duplicate': ...}
+            >>> s.libs(pwnlib.data.elf.ssh_libs.get("duplicate"), "/tmp/out_duplicate_flatten", flatten = True) # doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
             PwnlibException: Duplicate lib name: ...
