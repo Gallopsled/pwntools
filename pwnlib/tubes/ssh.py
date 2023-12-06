@@ -1821,7 +1821,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         Examples:
             >>> s =  ssh(host='example.pwnme')
-            >>> s.upload_dir(pwnlib.data.elf.ssh_libs.get("."), "/tmp/ssh_libs")
+            >>> s.upload_dir(pwnlib.data.elf.ssh_libs.get("."), "/tmp")
             >>> s.cwd = "/tmp/ssh_libs"
             >>> s.libs(pwnlib.data.elf.ssh_libs.get("duplicate"), "/tmp/out_duplicate") # doctest: +ELLIPSIS
             {'.../b/lib.so': ..., '.../a/lib.so': ..., '.../duplicate': ...}
