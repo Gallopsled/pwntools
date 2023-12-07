@@ -107,9 +107,9 @@ def yesno(prompt, default=None):
         yesfocus, yes = term.text.bold('Yes'), 'yes'
         nofocus, no = term.text.bold('No'), 'no'
         hy = term.output(yesfocus if default is True else yes)
-        term.output('/')
+        hs = term.output('/')
         hn = term.output(nofocus if default is False else no)
-        term.output(']\n')
+        he = term.output(']\n')
         cur = default
         while True:
             k = term.key.get()
@@ -210,9 +210,9 @@ def options(prompt, opts, default = None):
         for i, opt in enumerate(opts):
             h = term.output(arrow if i == cur else space, frozen = False)
             num = numfmt % (i + 1)
-            term.output(num)
-            term.output(opt + '\n', indent = len(num) + len(space))
-            hs.append(h)
+            h1 = term.output(num)
+            h2 = term.output(opt + '\n', indent = len(num) + len(space))
+            hs.append((h, h1, h2))
         ds = ''
         while True:
             prev = cur
@@ -249,11 +249,11 @@ def options(prompt, opts, default = None):
 
             if prev != cur:
                 if prev is not None:
-                    hs[prev].update(space)
+                    hs[prev][0].update(space)
                 if was_digit:
-                    hs[cur].update(term.text.bold_green('%5s> ' % ds))
+                    hs[cur][0].update(term.text.bold_green('%5s> ' % ds))
                 else:
-                    hs[cur].update(arrow)
+                    hs[cur][0].update(arrow)
     else:
         linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
         if default is not None:
@@ -361,6 +361,5 @@ def more(text):
                 print(l)
             if i + step < len(lines):
                 term.key.get()
-        h.delete()
     else:
         print(text)
