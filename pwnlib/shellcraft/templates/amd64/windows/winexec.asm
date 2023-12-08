@@ -17,8 +17,9 @@ cmd = _need_bytes(cmd)
     ${amd64.windows.getprocaddress(b'WinExec', b'kernel32.dll', 'rsi')}
     ${amd64.pushstr(cmd)}
     mov rcx, rsp
-    sub rsp, 0x30
     and rsp, -16
+    sub rsp, 0x30
     ${amd64.mov('rdx', cmd_show)}
     call rsi
-    add rsp, ${pretty(0x30+align(16, len(cmd)+1))}
+    add rsp, ${pretty(0x30+align(8, len(cmd)+1))}
+    or rsp, 8
