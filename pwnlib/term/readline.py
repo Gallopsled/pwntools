@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import io
 import six
 import sys
 
@@ -406,17 +407,20 @@ def readline(_size=-1, prompt='', float=True, priority=10):
                         history.insert(0, buffer)
                     return force_to_bytes(buffer)
             except KeyboardInterrupt:
-                control_c()
+                do_raise = False
+                try:
+                    control_c()
+                except KeyboardInterrupt:
+                    do_raise = True
+                if do_raise:
+                    raise
     finally:
         line = buffer_left + buffer_right + '\n'
         buffer_handle.update(line)
-        buffer_handle.freeze()
         buffer_handle = None
         if prompt_handle:
-            prompt_handle.freeze()
             prompt_handle = None
         if suggest_handle:
-            suggest_handle.freeze()
             suggest_handle = None
         if shutdown_hook:
             shutdown_hook()
@@ -484,7 +488,10 @@ def init():
         def __init__(self, fd):
             self._fd = fd
         def readline(self, size = None):
-            return readline(size)
+            r = readline(size)
+            if isinstance(self._fd, io.TextIOWrapper):
+                r = r.decode(encoding=self._fd.encoding, errors=self._fd.errors)
+            return r
         def __getattr__(self, k):
             return getattr(self._fd, k)
     sys.stdin = Wrapper(sys.stdin)

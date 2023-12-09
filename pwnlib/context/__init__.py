@@ -787,7 +787,7 @@ class ContextType(object):
         try:
             defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
+            raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
 
         for k,v in defaults.items():
             if k not in self._tls:

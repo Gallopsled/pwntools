@@ -176,9 +176,13 @@ def translate_offset(offs, args, exe):
     return offs
 
 def collect_synthetic_symbols(exe):
-    available_symbols = ['str_bin_sh']
-    exe.symbols['str_bin_sh'] = next(exe.search(b'/bin/sh\x00'))
-
+    available_symbols = []
+    try:
+        exe.symbols['str_bin_sh'] = next(exe.search(b'/bin/sh\x00'))
+        available_symbols.append('str_bin_sh')
+    except StopIteration:
+        pass
+        
     libc_start_main_return = exe.libc_start_main_return
     if libc_start_main_return > 0:
         exe.symbols['__libc_start_main_ret'] = libc_start_main_return

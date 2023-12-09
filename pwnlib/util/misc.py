@@ -410,7 +410,12 @@ os.execve({argv0!r}, {argv!r}, os.environ)
 
     if terminal == 'tmux':
         out, _ = p.communicate()
-        pid = int(out)
+        try:
+            pid = int(out)
+        except ValueError:
+            pid = None
+        if pid is None:
+            log.error("Could not parse PID from tmux output (%r). Start tmux first.", out)
     elif terminal == 'qdbus':
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
