@@ -28,7 +28,7 @@ jobs:
 
     - name: Set up Python ${{ matrix.python_version }}
       if: matrix.python_version != '2.7'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
 
