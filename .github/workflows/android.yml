@@ -37,6 +37,7 @@ jobs:
 
     - name: Install Android AVD
       run: |
+        sudo usermod -aG kvm $USER
         source travis/setup_avd_fast.sh
         sed -i 's/skip_android = True/skip_android = False/' docs/source/conf.py
         set | grep ^PATH >.android.env
