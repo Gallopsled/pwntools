@@ -18,7 +18,7 @@ yes | sdkmanager --sdk_root="$ANDROID_HOME" --install "system-images;$ANDROIDV;d
 yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
 echo no | avdmanager --silent create avd --name android-$ANDROID_ABI --force --package "system-images;$ANDROIDV;default;$ANDROID_ABI"
 
-"$ANDROID_HOME"/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot -grpc &
+"$ANDROID_HOME"/emulator/emulator -avd android-$ANDROID_ABI -no-window -no-boot-anim -read-only -no-audio -no-window -no-snapshot -gpu off &
 adb wait-for-device
 adb shell id
 adb shell getprop
