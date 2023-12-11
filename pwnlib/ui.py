@@ -43,14 +43,7 @@ from pwn import *
         cmd = "import coverage; coverage.process_startup()\n" + cmd
         env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
-    try:
-        p.recvuntil(b"\33[6n")
-    except EOFError:
-        raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     # late initialization can lead to EINTR in many places
-    fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
-    p.stdout.write(b"\x1b[1;1R")
-    time.sleep(0.5)
     return p
 
 def yesno(prompt, default=None):

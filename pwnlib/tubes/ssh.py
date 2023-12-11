@@ -124,7 +124,7 @@ class ssh_channel(sock):
                             pass
 
                 self.resizer = resizer
-                term.term.on_winch.append(self.resizer)
+                term.term.on_winch.append(self.resizer)  # XXX memory leak
             else:
                 self.resizer = None
 
