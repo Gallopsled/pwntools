@@ -42,8 +42,11 @@ from pwn import *
     if "coverage" in sys.modules:
         cmd = "import coverage; coverage.process_startup()\n" + cmd
         env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
+    env['COLUMNS'] = '80'
+    env['ROWS'] = '24'
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
     # late initialization can lead to EINTR in many places
+    fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack('HH', 24, 80))
     return p
 
 def yesno(prompt, default=None):
