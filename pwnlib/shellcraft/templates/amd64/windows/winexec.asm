@@ -12,14 +12,14 @@ Args:
 <%page args="cmd, cmd_show = 0"/>
 <%
 cmd = _need_bytes(cmd)
+stack_frame = 0x30 + align(8, len(cmd)+1)
+stack_frame_align = 8 & ~stack_frame
 %>
 
     ${amd64.windows.getprocaddress(b'WinExec', b'kernel32.dll', 'rsi')}
     ${amd64.pushstr(cmd)}
     mov rcx, rsp
-    and rsp, -16
-    sub rsp, 0x30
+    sub rsp, ${pretty(0x30 + stack_frame_align)}
     ${amd64.mov('rdx', cmd_show)}
     call rsi
-    add rsp, ${pretty(0x30+align(8, len(cmd)+1))}
-    or rsp, 8
+    add rsp, ${pretty(stack_frame + stack_frame_align)}
