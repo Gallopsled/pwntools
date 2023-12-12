@@ -22,6 +22,7 @@ try:    _fd = sys.stdin.fileno()
 except Exception: _fd = os.open(os.devnull, os.O_RDONLY)
 
 def getch(timeout = 0):
+    term.setupterm()
     while True:
         try:
             rfds, _wfds, _xfds = select.select([_fd], [], [], timeout)

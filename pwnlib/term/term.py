@@ -27,15 +27,11 @@ __all__ = ['output', 'init']
 # we assume no terminal can display more lines than this
 MAX_TERM_HEIGHT = 200
 
-# default values
-scroll = 0
-
 # list of callbacks triggered on SIGWINCH
 on_winch = []
 
 cached_pos = None
 settings = None
-need_scroll_update = -1
 setup_done = False
 epoch = 0
 
@@ -80,7 +76,7 @@ def update_geometry():
     width, height = shutil.get_terminal_size()
 
 def handler_sigwinch(signum, stack):
-    global cached_pos, winchretry, need_scroll_update
+    global cached_pos, winchretry
     with wlock.guard:
         while True:
             if not wlock.acquire(False):
@@ -88,7 +84,6 @@ def handler_sigwinch(signum, stack):
                 return
 
             winchretry = False
-            need_scroll_update = epoch
             update_geometry()
             for cb in on_winch:
                 cb()
@@ -101,14 +96,16 @@ def handler_sigstop(signum, stack):
     os.kill(0, signal.SIGSTOP)
 
 def handler_sigcont(signum, stack):
-    global epoch, cached_pos, scroll, setup_done
+    global epoch, cached_pos, setup_done
     epoch += 1
     cached_pos = None
-    scroll = 0
     setup_done = False
 
 def setupterm():
-    global settings
+    global settings, setup_done
+    if setup_done:
+        return
+    setup_done = True
     hide_cursor()
     update_geometry()
     do('smkx') # keypad mode
@@ -121,6 +118,7 @@ def setupterm():
     mode[CC][termios.VMIN] = 1
     mode[CC][termios.VTIME] = 0
     termios.tcsetattr(fd, termios.TCSADRAIN, mode)
+    fd.flush()
 
 def resetterm():
     global settings, setup_done
@@ -131,6 +129,7 @@ def resetterm():
         setup_done = False
         show_cursor()
         do('rmkx')
+        fd.flush()
 
 def init():
     atexit.register(resetterm)
@@ -168,42 +167,45 @@ def init():
 tmap = {c: '\\x{:02x}'.format(c) for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
 
 def put(s):
-    global cached_pos, scroll
+    global cached_pos, epoch
+    s = s.translate(tmap)
     if cached_pos:
         it = iter(s.replace('\n', '\r\n'))
+        sanit_s = ''
         for c in it:
             if c == '\r':
                 cached_pos[1] = 0
             elif c == '\n':
                 cached_pos[0] += 1
-                if cached_pos[0] >= height:
-                    scroll = max(scroll, cached_pos[0] - height + 1)
             elif c == '\t':
                 cached_pos[1] = (cached_pos[1] + 8) & -8
             elif c in '\x1b\u009b':  # ESC or CSI
+                seq = c
                 for c in it:
-                    if c not in '[]0123456789;:':
+                    seq += c
+                    if c not in '[0123456789;':
                         break
                 else:
-                    # unterminated ctrl seq, just discard cache
-                    cached_pos = None
-                    break
+                    # unterminated ctrl seq, just print it visually
+                    c = seq.replace('\x1b', r'\x1b').replace('\u009b', r'\u009b')
+                    cached_pos[1] += len(c)
 
                 # if '\e[123;123;123;123m' then nothing
                 if c == 'm':
-                    pass
+                    c = seq
                 else:
-                    # undefined ctrl seq, just discard cache
-                    cached_pos = None
-                    break
+                    # undefined ctrl seq, just print it visually
+                    c = seq.replace('\x1b', r'\x1b').replace('\u009b', r'\u009b')
+                    cached_pos[1] += len(c)
             elif c < ' ':
-                # undefined ctrl char, just discard cache
-                cached_pos = None
-                break
+                assert False, 'impossible ctrl char'
             else:
                 # normal character, nothing to see here
                 cached_pos[1] += 1
-    return fd.write(s.translate(tmap))
+            sanit_s += c
+        else:
+            s = sanit_s.replace('\r\n', '\n')
+    return fd.write(s)
 
 def do(c, *args):
     s = termcap.get(c, *args)
@@ -211,7 +213,7 @@ def do(c, *args):
         fd.write(s.decode('utf-8'))
 
 def goto(rc):
-    global cached_pos, scroll
+    global cached_pos
     r, c = rc
     nowr, nowc = cached_pos or (None, None)
     cached_pos = [r, c]
@@ -220,30 +222,17 @@ def goto(rc):
         if r == nowr + 1:
             fd.write('\n')
             return
-        if r == nowr:
-            if c != nowc:
-                fd.write('\r')
-            return
-
-    if nowc == c:
-        if r == nowr - 1:
-            do('cuu1')
-        elif r < nowr:
-            do('cuu', nowr - r)
-        elif r > nowr:
-            do('cud', r - nowr)
-        return
-
-    if r == nowr:
+        if c != nowc:
+            fd.write('\r')
+    elif c != nowc:
         do('hpa', c)
-        return
 
-    if need_scroll_update == epoch and nowr is not None:
-        cached_pos = None
-        diffr, diffc = get_position()
-        scroll += nowr - diffr
-        cached_pos = [r, c]
-    do('cup', r - scroll, c)
+    if r == nowr - 1:
+        do('cuu1')
+    elif r < nowr:
+        do('cuu', nowr - r)
+    elif r > nowr:
+        do('cud', r - nowr)
 
 
 class Cell(object):
@@ -261,7 +250,15 @@ class Cell(object):
         if isinstance(value, bytes):
             value = value.decode('utf-8', 'backslashreplace')
         with wlock:
-            want_erase_line = len(value) < len(self.value) and '\n' in value
+            want_erase_line = False
+            if '\n' in value:
+                if len(value) < len(self.value):
+                    want_erase_line = True
+                elif '\n' not in self.value:  # not really supported
+                    for cell in cells.iter_after(self):
+                        if cell.value:
+                            want_erase_line = True
+                        break
             self.value = value
             self.update_locked(erase_line=want_erase_line)
             fd.flush()
@@ -390,34 +387,9 @@ cells = WeakCellList()
 
 
 def get_position():
-    global cached_pos, setup_done, need_scroll_update
-    if cached_pos:
-        return tuple(cached_pos)
-
-    if not setup_done:
-        setup_done = True
-        setupterm()
-    #do('u7')
-    with rlock:
-        fd.write('\x1b[6n')
-        fd.flush()
-        s = os.read(fd.fileno(), 6)
-        while True:
-            if s[-1:] == b'R':
-                mat = re.findall(b'\x1b' + br'\[(\d*);(\d*)R', s)
-                if mat:
-                    [[row, col]] = mat
-                    break
-            try:
-                s += os.read(fd.fileno(), 1)
-            except OSError as e:
-                if e.errno != errno.EINTR:
-                    raise
-                continue
-    need_scroll_update = -1
-    row = int(row) + scroll - 1
-    col = int(col) - 1
-    cached_pos = [row, col]
+    global cached_pos
+    if not cached_pos:
+        cached_pos = [0, 0]
     return tuple(cached_pos)
 
 
@@ -431,10 +403,14 @@ def output(s='', float=False, priority=10, frozen=False, indent=0, before=None):
         if frozen:
             for f in cells.floats:
                 f.prepare_redraw()
+                do('ed')  # we could do it only when necessary
                 break
             ret = put(s)
             for f in cells.floats:
                 f.draw()
+            for f in cells.floats:
+                fd.flush()
+                break
             return ret
 
         c = Cell(s, float)
