@@ -22,4 +22,9 @@ stack_frame_align = 8 & ~stack_frame
     sub rsp, ${pretty(0x30 + stack_frame_align)}
     ${amd64.mov('rdx', cmd_show)}
     call rsi
+% if stack_frame + stack_frame_align < 0x80:
     add rsp, ${pretty(stack_frame + stack_frame_align)}
+% else:
+    ${amd64.mov('rcx', stack_frame + stack_frame_align)}
+    add rsp, rcx
+% endif
