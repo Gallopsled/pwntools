@@ -1491,7 +1491,8 @@ class Partitions(object):
     @context.quietfunc
     def by_name_dir(self):
         try:
-            return next(find('/dev/block/platform','by-name'))
+            with context.local(log_level=logging.FATAL):
+                return next(find('/dev/block/platform','by-name'))
         except (StopIteration, PwnlibException):
             return '/dev/block'
 
