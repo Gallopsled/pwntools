@@ -8,7 +8,7 @@ set -ex
 # - arm64-v8a
 # - x86
 # - x86_64
-ANDROID_ABI='armeabi-v7a'
+ANDROID_ABI='x86_64'
 ANDROIDV=android-24
 
 # Create our emulator Android Virtual Device (AVD)
