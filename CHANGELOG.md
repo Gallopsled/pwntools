@@ -77,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#1763][1763] Allow to add to the existing environment in `process` instead of replacing it
 - [#2307][2307] Fix `pwn libcdb file` crashing if "/bin/sh" string was not found
 - [#2309][2309] Detect challenge binary and libc in `pwn template`
+- [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -85,6 +86,7 @@ The table below shows which release corresponds to each branch, and what date th
 [1763]: https://github.com/Gallopsled/pwntools/pull/1763
 [2307]: https://github.com/Gallopsled/pwntools/pull/2307
 [2309]: https://github.com/Gallopsled/pwntools/pull/2309
+[2308]: https://github.com/Gallopsled/pwntools/pull/2308
 
 ## 4.12.0 (`beta`)
 
