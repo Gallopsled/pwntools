@@ -560,7 +560,7 @@ class Handler(logging.StreamHandler):
 
         # we enrich the `Progress` object to keep track of the spinner
         if not hasattr(progress, '_spinner_handle'):
-            spinner_handle = term.output('')
+            spinner_handle = term.output('[x] ')
             msg_handle = term.output(msg)
             stop = threading.Event()
             def spin():
