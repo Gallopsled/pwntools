@@ -44,8 +44,14 @@ from pwn import *
 %if not quiet:
 # Set up pwntools for the correct architecture
 %endif
+%if ctx.binary or not host:
 exe = context.binary = ELF(args.EXE or ${binary_repr})
 <% binary_repr = 'exe.path' %>
+%else:
+context.update(arch='i386')
+exe = ${binary_repr}
+<% binary_repr = 'exe' %>
+%endif
 
 %if not quiet:
 # Many built-in settings can be controlled on the command-line and show up
