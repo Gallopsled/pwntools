@@ -17,6 +17,7 @@ import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.log import getLogger
 from pwnlib.term import text
@@ -123,7 +124,7 @@ class ssh_channel(sock):
                             pass
 
                 self.resizer = resizer
-                term.term.on_winch.append(self.resizer)
+                term.term.on_winch.append(self.resizer)  # XXX memory leak
             else:
                 self.resizer = None
 
@@ -613,6 +614,9 @@ class ssh(Timeout, Logger):
         self._platform_info = {}
         self._aslr = None
         self._aslr_ulimit = None
+        self._cpuinfo_cache = None
+        self._user_shstk = None
+        self._ibt = None
 
         misc.mkdir_p(self._cachedir)
 
@@ -756,7 +760,7 @@ class ssh(Timeout, Logger):
         """
         return self.run(shell, tty, timeout = timeout)
 
-    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, timeout=Timeout.default, run=True,
+    def process(self, argv=None, executable=None, tty=True, cwd=None, env=None, ignore_environ=None, timeout=Timeout.default, run=True,
                 stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), raw=True, aslr=None, setuid=None,
                 shell=False):
         r"""
@@ -784,8 +788,9 @@ class ssh(Timeout, Logger):
                 Working directory.  If :const:`None`, uses the working directory specified
                 on :attr:`cwd` or set via :meth:`set_working_directory`.
             env(dict):
-                Environment variables to set in the child.  If :const:`None`, inherits the
-                default environment.
+                Environment variables to add to the environment.
+            ignore_environ(bool):
+                Ignore default environment.  By default use default environment iff env not specified.
             timeout(int):
                 Timeout to set on the `tube` created to interact with the process.
             run(bool):
@@ -905,6 +910,9 @@ class ssh(Timeout, Logger):
 
         aslr      = aslr if aslr is not None else context.aslr
 
+        if ignore_environ is None:
+            ignore_environ = env is not None  # compat
+
         argv, env = misc.normalize_argv_env(argv, env, self)
 
         if shell:
@@ -955,11 +963,12 @@ env   = %(env)r
 
 os.chdir(%(cwd)r)
 
+if %(ignore_environ)r:
+    os.environ.clear()
 environ = getattr(os, 'environb', os.environ)
 
 if env is not None:
     env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
-    os.environ.clear()
     environ.update(env)
 else:
     env = environ
@@ -1502,14 +1511,14 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         with open(local, 'wb') as fd:
             fd.write(data)
 
-    def _download_to_cache(self, remote, p):
+    def _download_to_cache(self, remote, p, fingerprint=True):
 
         with context.local(log_level='error'):
             remote = self.readlink('-f',remote)
         if not hasattr(remote, 'encode'):
             remote = remote.decode('utf-8')
 
-        fingerprint = self._get_fingerprint(remote)
+        fingerprint = fingerprint and self._get_fingerprint(remote) or None
         if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
@@ -1531,7 +1540,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return local
 
-    def download_data(self, remote):
+    def download_data(self, remote, fingerprint=True):
         """Downloads a file from the remote server and returns it as a string.
 
         Arguments:
@@ -1552,7 +1561,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         """
         with self.progress('Downloading %r' % remote) as p:
-            with open(self._download_to_cache(remote, p), 'rb') as fd:
+            with open(self._download_to_cache(remote, p, fingerprint), 'rb') as fd:
                 return fd.read()
 
     def download_file(self, remote, local = None):
@@ -2144,6 +2153,57 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self._aslr_ulimit
 
+    def _cpuinfo(self):
+        if self._cpuinfo_cache is None:
+            with context.quiet:
+                try:
+                    self._cpuinfo_cache = self.download_data('/proc/cpuinfo', fingerprint=False)
+                except PwnlibException:
+                    self._cpuinfo_cache = b''
+        return self._cpuinfo_cache
+
+    @property
+    def user_shstk(self):
+        """:class:`bool`: Whether userspace shadow stack is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.user_shstk
+            False
+        """
+        if self._user_shstk is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for userspace shadow stack checks.")
+                self._user_shstk = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._user_shstk = b' user_shstk' in cpuinfo
+        return self._user_shstk
+
+    @property
+    def ibt(self):
+        """:class:`bool`: Whether kernel indirect branch tracking is supported on the system.
+
+        Example:
+
+            >>> s = ssh("travis", "example.pwnme")
+            >>> s.ibt
+            False
+        """
+        if self._ibt is None:
+            if self.os != 'linux':
+                self.warn_once("Only Linux is supported for kernel indirect branch tracking checks.")
+                self._ibt = False
+
+            else:
+                cpuinfo = self._cpuinfo()
+
+                self._ibt = b' ibt ' in cpuinfo or b' ibt\n' in cpuinfo
+        return self._ibt
+
     def _checksec_cache(self, value=None):
         path = self._get_cachefile('%s-%s' % (self.host, self.port))
 
@@ -2180,7 +2240,15 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             "ASLR:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
-            }[self.aslr]
+            }[self.aslr],
+            "SHSTK:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.user_shstk],
+            "IBT:".ljust(10) + {
+                True: green("Enabled"),
+                False: red("Disabled")
+            }[self.ibt],
         ]
 
         if self.aslr_ulimit:
