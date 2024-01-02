@@ -33,7 +33,7 @@ from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 from pwnlib.util.misc import normalize_argv_env
-from pwnlib.util.packing import _need_bytes
+from pwnlib.util.packing import _decode
 
 log = getLogger(__name__)
 
@@ -558,7 +558,11 @@ class process(tube):
 
         argv, env = normalize_argv_env(argv, env, self, 4)
         if env:
-            env = {bytes(k): bytes(v) for k, v in env}
+            if sys.platform == 'win32':
+                # Windows requires that all environment variables be strings
+                env = {_decode(k): _decode(v) for k, v in env}
+            else:
+                env = {bytes(k): bytes(v) for k, v in env}
         if argv:
             argv = list(map(bytes, argv))
 
@@ -576,6 +580,8 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
+        pathexts = os.environ.get('PATHEXT', '').split(os.pathsep) if sys.platform == 'win32' else []
+        pathexts = [''] + pathexts
         path = env and env.get(b'PATH')
         if path:
             path = path.decode()
@@ -587,10 +593,15 @@ class process(tube):
 
         # If there's no path component, it's in $PATH or relative to the
         # target directory.
+        # Try all of the file extensions in $PATHEXT on Windows too.
         #
         # For example, 'sh'
-        elif os.path.sep not in executable and which(executable, path=path):
-            executable = which(executable, path=path)
+        elif os.path.sep not in executable and any(which(executable + pathext, path=path) for pathext in pathexts):
+            for pathext in pathexts:
+                resolved_path = which(executable + pathext, path=path)
+                if resolved_path:
+                    executable = resolved_path
+                    break
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
