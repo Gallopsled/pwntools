@@ -1096,9 +1096,13 @@ class process(tube):
 # Keep reading the process's output in a separate thread,
 # since there's no non-blocking read in python on Windows.
 def _read_in_thread(recv_queue, proc_stdout):
-    while True:
-        b = proc_stdout.read(1)
-        if b:
-            recv_queue.put(b)
-        else:
-            break
+    try:
+        while True:
+            b = proc_stdout.read(1)
+            if b:
+                recv_queue.put(b)
+            else:
+                break
+    except:
+        # Ignore any errors during Python shutdown
+        pass
