@@ -315,7 +315,14 @@ def _gdbserver_port(gdbserver, ssh):
 
     # Process /bin/bash created; pid = 14366
     # Listening on port 34816
-    process_created = gdbserver.recvline()
+    process_created = gdbserver.recvline(timeout=3)
+
+    if not process_created:
+        log.error(
+            'No output from gdbserver after 3 seconds. Try setting the SHELL=/bin/sh '
+            'environment variable or using the env={} argument if you are affected by '
+            'https://sourceware.org/bugzilla/show_bug.cgi?id=26116'
+        )
 
     if process_created.startswith(b'ERROR:'):
         raise ValueError(
