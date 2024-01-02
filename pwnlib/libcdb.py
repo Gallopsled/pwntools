@@ -13,7 +13,7 @@ from pwnlib.elf import ELF
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex
-from pwnlib.util.hashes import sha1sumhex, sha256sumhex, md5sumhex
+from pwnlib.util.hashes import sha1filehex, sha256filehex, md5filehex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import which
 from pwnlib.util.misc import write
@@ -23,9 +23,9 @@ log = getLogger(__name__)
 
 HASHES = {
     'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
-    'sha1': sha1sumhex,
-    'sha256': sha256sumhex,
-    'md5': md5sumhex,
+    'sha1': sha1filehex,
+    'sha256': sha256filehex,
+    'md5': md5filehex,
 }
 DEBUGINFOD_SERVERS = [
     'https://debuginfod.elfutils.org/',
