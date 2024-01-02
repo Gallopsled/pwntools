@@ -110,7 +110,7 @@ def provider_libc_rip(hex_encoded_id, hash_type):
 def provider_local_system(hex_encoded_id, hash_type):
     if hash_type == 'id':
         return None
-    shell_path = os.environ['SHELL'] or '/bin/sh'
+    shell_path = os.environ.get('SHELL', None) or '/bin/sh'
     if not os.path.exists(shell_path):
         log.debug('Shell path %r does not exist. Skipping local system libc matching.', shell_path)
         return None
