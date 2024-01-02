@@ -79,6 +79,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2309][2309] Detect challenge binary and libc in `pwn template`
 - [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
 - [#2279][2279] Make `pwn template` always set context.binary
+- [#2310][2310] Add support to start a process on Windows
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -89,6 +90,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2309]: https://github.com/Gallopsled/pwntools/pull/2309
 [2308]: https://github.com/Gallopsled/pwntools/pull/2308
 [2279]: https://github.com/Gallopsled/pwntools/pull/2279
+[2310]: https://github.com/Gallopsled/pwntools/pull/2310
 
 ## 4.12.0 (`beta`)
 

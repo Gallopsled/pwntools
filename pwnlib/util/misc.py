@@ -160,7 +160,7 @@ def which(name, all = False, path=None):
     if os.path.sep in name:
         return name
 
-    isroot = os.getuid() == 0
+    isroot = False if sys.platform == 'win32' else (os.getuid() == 0)
     out = set()
     try:
         path = path or os.environ['PATH']

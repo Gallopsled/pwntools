@@ -6,16 +6,19 @@ import ctypes
 import errno
 import logging
 import os
-import platform
 import select
 import signal
-import six
 import stat
 import subprocess
 import sys
 import time
 
-if sys.platform != 'win32':
+IS_WINDOWS = sys.platform.startswith('win')
+
+if IS_WINDOWS:
+    import queue
+    import threading
+else:
     import fcntl
     import pty
     import resource
@@ -116,6 +119,8 @@ class process(tube):
             List of arguments to display, instead of the main executable name.
         alarm(int):
             Set a SIGALRM alarm timeout on the process.
+        creationflags(int):
+            Windows only.  Flags to pass to ``CreateProcess``.
 
     Examples:
 
@@ -228,7 +233,7 @@ class process(tube):
                  env = None,
                  ignore_environ = None,
                  stdin  = PIPE,
-                 stdout = PTY,
+                 stdout = PTY if not IS_WINDOWS else PIPE,
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
@@ -238,6 +243,7 @@ class process(tube):
                  where = 'local',
                  display = None,
                  alarm = None,
+                 creationflags = 0,
                  *args,
                  **kwargs
                  ):
@@ -250,6 +256,8 @@ class process(tube):
             else:
                 raise TypeError('Must provide argv or set context.binary')
 
+        if IS_WINDOWS and PTY in (stdin, stdout, stderr):
+            raise NotImplementedError("ConPTY isn't implemented yet")
 
         #: :class:`subprocess.Popen` object that backs this process
         self.proc = None
@@ -258,7 +266,12 @@ class process(tube):
         original_env = env
 
         if shell:
-            executable_val, argv_val, env_val = executable or '/bin/sh', argv, env
+            executable_val, argv_val, env_val = executable, argv, env
+            if executable is None:
+                if IS_WINDOWS:
+                    executable_val = os.environ.get('ComSpec', 'cmd.exe')
+                else:
+                    executable_val = '/bin/sh'
         else:
             executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
@@ -266,23 +279,34 @@ class process(tube):
         if stderr is STDOUT:
             stderr = stdout
 
-        # Determine which descriptors will be attached to a new PTY
-        handles = (stdin, stdout, stderr)
+        if IS_WINDOWS:
+            self.pty = None
+            self.raw = False
+            self.aslr = True
+            self._setuid = False
+            self.suid = self.uid = None
+            self.sgid = self.gid = None
+            internal_preexec_fn = None
+        else:
+            # Determine which descriptors will be attached to a new PTY
+            handles = (stdin, stdout, stderr)
 
-        #: Which file descriptor is the controlling TTY
-        self.pty          = handles.index(PTY) if PTY in handles else None
+            #: Which file descriptor is the controlling TTY
+            self.pty          = handles.index(PTY) if PTY in handles else None
 
-        #: Whether the controlling TTY is set to raw mode
-        self.raw          = raw
+            #: Whether the controlling TTY is set to raw mode
+            self.raw          = raw
 
-        #: Whether ASLR should be left on
-        self.aslr         = aslr if aslr is not None else context.aslr
+            #: Whether ASLR should be left on
+            self.aslr         = aslr if aslr is not None else context.aslr
 
-        #: Whether setuid is permitted
-        self._setuid      = setuid if setuid is None else bool(setuid)
+            #: Whether setuid is permitted
+            self._setuid      = setuid if setuid is None else bool(setuid)
 
-        # Create the PTY if necessary
-        stdin, stdout, stderr, master, slave = self._handles(*handles)
+            # Create the PTY if necessary
+            stdin, stdout, stderr, master, slave = self._handles(*handles)
+
+            internal_preexec_fn = self.__preexec_fn
 
         #: Arguments passed on argv
         self.argv = argv_val
@@ -341,7 +365,8 @@ class process(tube):
                                                  stdout = stdout,
                                                  stderr = stderr,
                                                  close_fds = close_fds,
-                                                 preexec_fn = self.__preexec_fn)
+                                                 preexec_fn = internal_preexec_fn,
+                                                 creationflags = creationflags)
                     break
                 except OSError as exception:
                     if exception.errno != errno.ENOEXEC:
@@ -349,6 +374,16 @@ class process(tube):
                     prefixes.append(self.__on_enoexec(exception))
 
             p.success('pid %i' % self.pid)
+
+        if IS_WINDOWS:
+            self._read_thread = None
+            self._read_queue = queue.Queue()
+            if self.proc.stdout:
+                # Read from stdout in a thread
+                self._read_thread = threading.Thread(target=_read_in_thread, args=(self._read_queue, self.proc.stdout))
+                self._read_thread.daemon = True
+                self._read_thread.start()
+            return
 
         if self.pty is not None:
             if stdin is slave:
@@ -503,7 +538,8 @@ class process(tube):
             '/proc'
         """
         try:
-            self._cwd = os.readlink('/proc/%i/cwd' % self.pid)
+            from pwnlib.util.proc import cwd
+            self._cwd = cwd(self.pid)
         except Exception:
             pass
 
@@ -676,6 +712,17 @@ class process(tube):
         if not self.can_recv_raw(self.timeout):
             return ''
 
+        if IS_WINDOWS:
+            data = b''
+            count = 0
+            while count < numb:
+                if self._read_queue.empty():
+                    break
+                last_byte = self._read_queue.get(block=False)
+                data += last_byte
+                count += 1
+            return data
+
         # This will only be reached if we either have data,
         # or we have reached an EOF. In either case, it
         # should be safe to read without expecting it to block.
@@ -712,6 +759,12 @@ class process(tube):
     def can_recv_raw(self, timeout):
         if not self.connected_raw('recv'):
             return False
+
+        if IS_WINDOWS:
+            with self.countdown(timeout=timeout):
+                while self.timeout and self._read_queue.empty():
+                    time.sleep(0.01)
+                return not self._read_queue.empty()
 
         try:
             if timeout is None:
@@ -751,7 +804,7 @@ class process(tube):
                 try:
                     fd.close()
                 except IOError as e:
-                    if e.errno != errno.EPIPE:
+                    if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
                         raise
 
         if not self._stop_noticed:
@@ -833,10 +886,8 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        try:
-            maps_raw = open('/proc/%d/maps' % self.pid).read()
-        except IOError:
-            maps_raw = None
+        from pwnlib.util.proc import memory_maps
+        maps_raw = memory_maps(self.pid)
 
         if not maps_raw:
             import pwnlib.elf.elf
@@ -846,18 +897,18 @@ class process(tube):
 
         # Enumerate all of the libraries actually loaded right now.
         maps = {}
-        for line in maps_raw.splitlines():
-            if '/' not in line: continue
-            path = line[line.index('/'):]
+        for mapping in maps_raw:
+            path = mapping.path
+            if os.sep not in path: continue
             path = os.path.realpath(path)
             if path not in maps:
                 maps[path]=0
 
         for lib in maps:
             path = os.path.realpath(lib)
-            for line in maps_raw.splitlines():
-                if line.endswith(path):
-                    address = line.split('-')[0]
+            for mapping in maps_raw:
+                if mapping.path == path:
+                    address = mapping.addr.split('-')[0]
                     maps[lib] = int(address, 16)
                     break
 
@@ -1041,3 +1092,17 @@ class process(tube):
         See: :obj:`.process.proc`
         """
         return self.proc.stderr
+
+# Keep reading the process's output in a separate thread,
+# since there's no non-blocking read in python on Windows.
+def _read_in_thread(recv_queue, proc_stdout):
+    try:
+        while True:
+            b = proc_stdout.read(1)
+            if b:
+                recv_queue.put(b)
+            else:
+                break
+    except:
+        # Ignore any errors during Python shutdown
+        pass
