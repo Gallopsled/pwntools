@@ -3,6 +3,7 @@ from __future__ import division
 
 import errno
 import socket
+import sys
 import time
 
 import psutil
@@ -304,6 +305,43 @@ def status(pid):
             raise
     return out
 
+def _tracer_windows(pid):
+    import ctypes
+    from ctypes import wintypes
+
+    def _check_bool(result, func, args):
+        if not result:
+            raise ctypes.WinError(ctypes.get_last_error())
+        return args
+
+    SYNCHRONIZE = 0x00100000
+    STANDARD_RIGHTS_REQUIRED = 0x000F0000
+    PROCESS_ALL_ACCESS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    OpenProcess = kernel32.OpenProcess 
+    OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    OpenProcess.restype = wintypes.HANDLE
+
+    CheckRemoteDebuggerPresent = kernel32.CheckRemoteDebuggerPresent
+    CheckRemoteDebuggerPresent.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+    CheckRemoteDebuggerPresent.restype = wintypes.BOOL
+    CheckRemoteDebuggerPresent.errcheck = _check_bool
+
+    CloseHandle = kernel32.CloseHandle
+    CloseHandle.argtypes = [wintypes.HANDLE]
+    CloseHandle.restype = wintypes.BOOL
+    CloseHandle.errcheck = _check_bool
+
+    proc_handle = OpenProcess( PROCESS_ALL_ACCESS, False, pid )
+    present = wintypes.BOOL()
+    CheckRemoteDebuggerPresent(proc_handle, ctypes.byref(present))
+    ret = 0
+    if present.value:
+        ret = pid
+    CloseHandle(proc_handle)
+
+    return ret
+
 def tracer(pid):
     """tracer(pid) -> int
 
@@ -317,7 +355,10 @@ def tracer(pid):
         >>> tracer(os.getpid()) is None
         True
     """
-    tpid = int(status(pid)['TracerPid'])
+    if sys.platform == 'win32':
+        tpid = _tracer_windows(pid)
+    else:
+        tpid = int(status(pid)['TracerPid'])
     return tpid if tpid > 0 else None
 
 def state(pid):
