@@ -46,15 +46,14 @@ need_fix_alligment = len(array) % 2 == 1
     ${shellcraft.pushstr(string, register1=register1, register2=register2)}
 
     /* push null terminator */
-    ${shellcraft.mov(register2, 0)}
-    str ${register2}, [sp, #-16]!
+    str xzr, [sp, #-16]!
 
     /* push pointers onto the stack */
 %for i, value in enumerate(reversed(array)):
-   ${shellcraft.mov(register1, 8 + ((i+1)*8 + string.index(value)))}
+   ${shellcraft.mov(register1, (i+2)*8 + string.index(value))}
    add ${register1}, sp, ${register1}
  %if i % 2 == 0:
-   str ${register2}, [sp, #-16]!  /* allocate zeros */
+   str xzr, [sp, #-16]!  /* allocate zeros */
    str ${register1}, [sp, #8]!
  %else:
    sub sp, sp, #8
