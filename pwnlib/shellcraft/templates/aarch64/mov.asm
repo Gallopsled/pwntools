@@ -80,14 +80,15 @@ xor        = None
 %if not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
+  %if src & 0xffff == 0:
+    mov  ${dst}, xzr
+  %endif
   %if src == 0:
     mov  ${dst}, xzr
-  %elif src & 0xffff == 0:
-    eor  ${dst}, ${dst}, ${dst}
   %elif src & 0xffff == src:
     mov  ${dst}, #${src}
   %else:
-    /* Set ${dst} = ${src} = ${pretty(src)} */
+    /* Set ${dst} = ${src} = ${pretty(src, False)} */
     %if src & 0x000000000000ffff:
     mov  ${dst}, #${(src >> 0x00) & 0xffff}
     %endif
