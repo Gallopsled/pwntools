@@ -72,7 +72,6 @@ import os
 import socket
 import subprocess
 import tempfile
-import sys
 
 from io import BytesIO, StringIO
 
