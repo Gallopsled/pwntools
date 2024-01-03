@@ -580,8 +580,6 @@ class process(tube):
         if not isinstance(executable, str):
             executable = executable.decode('utf-8')
 
-        pathexts = os.environ.get('PATHEXT', '').split(os.pathsep) if sys.platform == 'win32' else []
-        pathexts = [''] + pathexts
         path = env and env.get(b'PATH')
         if path:
             path = path.decode()
@@ -593,15 +591,10 @@ class process(tube):
 
         # If there's no path component, it's in $PATH or relative to the
         # target directory.
-        # Try all of the file extensions in $PATHEXT on Windows too.
         #
         # For example, 'sh'
-        elif os.path.sep not in executable and any(which(executable + pathext, path=path) for pathext in pathexts):
-            for pathext in pathexts:
-                resolved_path = which(executable + pathext, path=path)
-                if resolved_path:
-                    executable = resolved_path
-                    break
+        elif os.path.sep not in executable and which(executable, path=path):
+            executable = which(executable, path=path)
 
         # Either there is a path component, or the binary is not in $PATH
         # For example, 'foo/bar' or 'bar' with cwd=='foo'
