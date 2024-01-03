@@ -469,6 +469,7 @@ def cpp(shellcode):
     ]
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 
+
 @LocalContext
 def make_elf_from_assembly(assembly,
                            vma=None,
@@ -650,6 +651,68 @@ def make_elf(data,
         atexit.register(lambda: shutil.rmtree(tmpdir))
 
     return retval
+
+
+@LocalContext
+def make_macho_from_assembly(shellcode):
+    return make_macho(shellcode, is_shellcode=True)
+
+
+@LocalContext
+def make_macho(data, is_shellcode=False):
+    prefix = []
+    if context.arch == 'amd64':
+        prefix = [
+            '.intel_syntax noprefix',
+        ]
+    prefix.extend([
+        '.text',
+        '.global _start',
+        '_start:',
+        '.p2align 2',
+    ])
+    code = ''
+    code += '\n'.join(prefix) + '\n'
+    if is_shellcode:
+        code += cpp(data)
+    else:
+        code += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+
+    log.debug('Assembling\n%s' % code)
+
+    tmpdir = tempfile.mkdtemp(prefix = 'pwn-asm-')
+    step1 = path.join(tmpdir, 'step1')
+    step2 = path.join(tmpdir, 'step2')
+    step3 = path.join(tmpdir, 'step3')
+
+    with open(step1, 'w') as fd:
+        fd.write(code)
+
+    assembler = [
+        '/usr/bin/as',
+    ]
+    asflags = [
+        '-mmacosx-version-min=11.0',
+        '-o', step2, step1,
+    ]
+    _run(assembler + asflags)
+
+    linker = [
+        '/usr/bin/ld',
+    ]
+    ldflags = [
+        '-macosx_version_min', '11.0',
+        '-l', 'System',
+        '-e', '_start',
+        '-L', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib',
+        '-o', step3, step2,
+    ]
+    _run(linker + ldflags)
+
+    os.chmod(step3, 0o755)
+
+    return step3
+
 
 @LocalContext
 def asm(shellcode, vma = 0, extract = True, shared = False):
