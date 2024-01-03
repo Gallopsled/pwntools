@@ -193,7 +193,7 @@ freebsd_ppc = sysv_ppc
 freebsd_ppc64 = sysv_ppc64
 
 freebsd_i386_syscall   = SyscallABI('esp', ['eax'], 4, 0)
-freebsd_amd64_syscall  = SyscallABI('rsp', ['rax','rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
+freebsd_amd64_syscall  = SyscallABI('rsp', ['rax','rdi','rsi','rdx','r10','r8','r9'], 8, 0)
 freebsd_arm_syscall    = SyscallABI('sp', ['r7', 'r0', 'r1', 'r2', 'r3'], 8, 0)
 freebsd_aarch64_syscall = SyscallABI('sp', ['x8', 'x0', 'x1', 'x2', 'x3'], 16, 0)
 freebsd_mips_syscall  = SyscallABI('$sp', ['$v0','$a0','$a1','$a2','$a3'], 4, 0)
