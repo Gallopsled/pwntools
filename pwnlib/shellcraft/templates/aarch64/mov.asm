@@ -84,7 +84,6 @@ xor        = None
     mov  ${dst}, xzr
   %endif
   %if src == 0:
-    mov  ${dst}, xzr
   %elif src & 0xffff == src:
     mov  ${dst}, #${src}
   %else:
