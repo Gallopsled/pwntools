@@ -57,7 +57,7 @@ class ABI(object):
         (32, 'thumb', 'freebsd'):   freebsd_arm,
         (32, 'mips', 'freebsd'):   freebsd_mips,
         (32, 'powerpc', 'freebsd'): freebsd_ppc,
-        (64, 'powerpc64', 'freebsd'): freebsd_ppc64,
+        (64, 'powerpc', 'freebsd'): freebsd_ppc64,
         (32, 'i386', 'windows'):  windows_i386,
         (64, 'amd64', 'windows'): windows_amd64,
         (64, 'amd64', 'darwin'): darwin_amd64,
@@ -90,7 +90,7 @@ class ABI(object):
         (32, 'mips', 'freebsd'):   freebsd_mips_syscall,
         (64, 'aarch64', 'freebsd'):   freebsd_aarch64_syscall,
         (32, 'powerpc', 'freebsd'): freebsd_ppc_syscall,
-        (64, 'powerpc64', 'freebsd'): freebsd_ppc64_syscall,
+        (64, 'powerpc', 'freebsd'): freebsd_ppc64_syscall,
         (64, 'amd64', 'darwin'): darwin_amd64_syscall,
         (64, 'aarch64', 'darwin'): darwin_aarch64_syscall,
         }[(context.bits, context.arch, context.os)]
