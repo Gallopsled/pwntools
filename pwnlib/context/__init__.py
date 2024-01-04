@@ -302,7 +302,7 @@ class ContextType(object):
         >>> context.os == 'linux'
         True
         >>> context.arch = 'arm'
-        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux'}
+        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n'}
         True
         >>> context.endian
         'little'
@@ -455,14 +455,14 @@ class ContextType(object):
 
 
     def copy(self):
-        """copy() -> dict
+        r"""copy() -> dict
         Returns a copy of the current context as a dictionary.
 
         Examples:
 
             >>> context.clear()
             >>> context.os   = 'linux'
-            >>> vars(context) == {'os': 'linux'}
+            >>> vars(context) == {'os': 'linux', 'newline': b'\n'}
             True
         """
         return self._tls.copy()
@@ -1086,7 +1086,7 @@ class ContextType(object):
 
     @_validator
     def os(self, os):
-        """
+        r"""
         Operating system of the target machine.
 
         The default value is ``linux``.
