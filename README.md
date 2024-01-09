@@ -1,6 +1,24 @@
 # Pwn All In One
-![pwntools logo](https://github.com/Gallopsled/pwntools/blob/stable/docs/source/logo.png?raw=true)
+Pwndbg + GEF + Peda - One for all, and all for one
+This is a script which installs Pwndbg, GEF, and Peda GDB plugins in a single command.
 
+Run install.sh and then use one of the commands below to launch the corresponding GDB environment:
+
+gdb-peda
+gdb-peda-intel
+gdb-peda-arm
+gdb-pwndbg
+gdb-gef
+For more information read the relevant blog post:
+
+https://medium.com/bugbountywriteup/pwndbg-gef-peda-one-for-all-and-all-for-one-714d71bf36b8
+
+Installation
+cd ~ && git clone https://github.com/apogiatzis/gdb-peda-pwndbg-gef.git
+cd ~/gdb-peda-pwndbg-gef
+./install.sh
+Update
+./update.sh
 [![PyPI](https://img.shields.io/pypi/v/pwntools?style=flat)](https://pypi.python.org/pypi/pwntools/)
 [![Docs](https://readthedocs.org/projects/pwntools/badge/?version=stable)](https://docs.pwntools.com/)
 [![GitHub Workflow Status (dev)](https://img.shields.io/github/actions/workflow/status/Gallopsled/pwntools/ci.yml?branch=dev&logo=GitHub)](https://github.com/Gallopsled/pwntools/actions/workflows/ci.yml?query=branch%3Adev)
