@@ -860,6 +860,8 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
 
 
     lines = []
+
+    # Note: those patterns are also used in pwnlib/commandline/disasm.py
     pattern = '^( *[0-9a-f]+: *)', '((?:[0-9a-f]+ )+ *)', '(.*)'
     if not byte:
         pattern = pattern[::2]
