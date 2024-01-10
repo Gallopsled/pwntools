@@ -690,7 +690,7 @@ class DynELF(object):
         symtab = self._make_absolute_ptr(symtab)
         jmprel = self._make_absolute_ptr(jmprel)
 
-        w = self.waitfor(f"Looking for {symb} in .real.plt")
+        w = self.waitfor(f"Looking for {symb} in .rel.plt")
         # We look for the symbol by iterating through each Elf64_Rel entry.
         # For each Elf64_Rel, get the Elf64_Sym for that entry
         # Then compare the Elf64_Sym.st_name with the symbol name
