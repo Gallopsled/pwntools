@@ -165,6 +165,7 @@ class DynELF(object):
         self._waitfor  = None
         self._bases    = {}
         self._dynamic  = None
+        self.elf = None
 
         if elf:
             path = elf
@@ -175,7 +176,7 @@ class DynELF(object):
             with context.local(log_level='error'):
                 w = self.waitfor("Loading from %r" % path)
                 self.elf = ELF(path)
-                w.status("[LOADED]")
+                w.success("[LOADED]")
 
         if not (pointer or (elf and elf.address)):
             log.error("Must specify either a pointer into a module and/or an ELF file with a valid base address")
@@ -352,6 +353,15 @@ class DynELF(object):
         return dynamic
 
     def _find_dt_optimized(self, name):
+        """
+        Find an entry in the DYNAMIC array through an ELF
+
+        Arguments:
+            name(str): Name of the tag to find ('DT_DEBUG', 'DT_PLTGOT', ...)
+
+        Returns:
+            Pointer to the data described by the specified entry.
+        """
         if not self.elf:
             return None
 
@@ -396,9 +406,9 @@ class DynELF(object):
             return None
 
         ptr = leak.field(dynamic, Dyn.d_ptr)
-        self.success("Found %s at %#x" % (name, dynamic))
 
         ptr = self._make_absolute_ptr(ptr)
+        self.status("Found %s at %#x" % (name, ptr))
 
         return ptr
 
@@ -658,6 +668,62 @@ class DynELF(object):
         lib._waitfor = self._waitfor
         return lib
 
+    def _rel_lookup(self, symb, strtab=None, symtab=None, jmprel=None):
+        """Performs slower symbol lookup using DT_JMPREL(.rela.plt)"""
+        leak = self.leak
+        elf_obj = self.elf
+        symb_name = symb.decode()
+
+        # If elf is available look for the symbol in it
+        if elf_obj and symb_name in elf_obj.symbols:
+            self.success(f"Symbol '{symb_name}' found in ELF!")
+            return elf_obj.symbols[symb_name]
+
+        log.warning("Looking up symbol through DT_JMPREL. This might be slower...")
+
+
+        strtab  = strtab or self._find_dt(constants.DT_STRTAB)
+        symtab  = symtab or self._find_dt(constants.DT_SYMTAB)
+        jmprel  = jmprel or self._find_dt(constants.DT_JMPREL) # .rela.plt
+
+        strtab = self._make_absolute_ptr(strtab)
+        symtab = self._make_absolute_ptr(symtab)
+        jmprel = self._make_absolute_ptr(jmprel)
+
+        w = self.waitfor(f"Looking for {symb} in .real.plt")
+        # We look for the symbol by iterating through each Elf64_Rel entry.
+        # For each Elf64_Rel, get the Elf64_Sym for that entry
+        # Then compare the Elf64_Sym.st_name with the symbol name
+       
+        Rel = {32: elf.Elf32_Rel, 64: elf.Elf64_Rel}[self.elfclass]
+        Sym = {32: elf.Elf32_Sym, 64: elf.Elf64_Sym}[self.elfclass]
+
+        rel_addr = jmprel
+        rel_entry = None
+        while True:
+            rel_entry = leak.struct(rel_addr, Rel)
+
+            # We ran out of entries in DT_JMPREL 
+            if rel_entry.r_offset == 0:
+                return None
+
+            sym_idx = rel_entry.r_info >> 32 # might be different for 32-bit
+            sym_entry_address = symtab + ( sym_idx * sizeof(Sym) )
+            sym_str_off = leak.field(sym_entry_address, Sym.st_name)
+            symb_str = leak.s(strtab+sym_str_off)
+
+            if symb_str == symb:
+                w.success(f"Found matching Elf64_Rel entry!")
+                break
+
+            rel_addr += sizeof(Rel)
+
+        symbol_address = self._make_absolute_ptr(rel_entry.r_offset)
+
+        return symbol_address
+
+
+
     def _lookup(self, symb):
         """Performs the actual symbol lookup within one ELF file."""
         leak = self.leak
@@ -690,6 +756,8 @@ class DynELF(object):
         #
         # Perform the hash lookup
         #
+
+        # Save off our real leaker in case we use the fake leaker
         real_leak = self.leak
         if self.elf:
 
@@ -702,14 +770,22 @@ class DynELF(object):
                     return self.elf.read(address, 4)
                 except ValueError:
                     return real_leak.b(address)
-
+            # Use fake leaker since ELF is available
             self.leak = fake_leak
-            # Save off our real leaker, use the fake leaker
+
         routine = {'sysv': self._resolve_symbol_sysv,
                    'gnu':  self._resolve_symbol_gnu}[hshtype]
         resolved_addr = routine(self.libbase, symb, hshtab, strtab, symtab)
 
+        if resolved_addr:
+            return resolved_addr
+
+        # if symbol not found in GNU_Hash, try looking in JMPREL
+        resolved_addr = self._rel_lookup(symb, strtab, symtab)
+
+        # Restore the original leaker
         self.leak = real_leak
+
         return resolved_addr
 
     def _resolve_symbol_sysv(self, libbase, symb, hshtab, strtab, symtab):
