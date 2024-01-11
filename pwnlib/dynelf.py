@@ -368,7 +368,7 @@ class DynELF(object):
         ptr = self.elf.dynamic_value_by_tag(name)
         if ptr:
             ptr = self._make_absolute_ptr(ptr)
-            self.success(f"Found {name} at 0x{ptr:x}")
+            self.success("Found %s at %#x" % (name, ptr))
             return ptr
         return None
 
@@ -676,7 +676,7 @@ class DynELF(object):
 
         # If elf is available look for the symbol in it
         if elf_obj and symb_name in elf_obj.symbols:
-            self.success(f"Symbol '{symb_name}' found in ELF!")
+            self.success("Symbol '%s' found in ELF!" % symb_name)
             return elf_obj.symbols[symb_name]
 
         log.warning("Looking up symbol through DT_JMPREL. This might be slower...")
@@ -690,7 +690,7 @@ class DynELF(object):
         symtab = self._make_absolute_ptr(symtab)
         jmprel = self._make_absolute_ptr(jmprel)
 
-        w = self.waitfor(f"Looking for {symb} in .rel.plt")
+        w = self.waitfor("Looking for %s in .rel.plt" % symb)
         # We look for the symbol by iterating through each Elf64_Rel entry.
         # For each Elf64_Rel, get the Elf64_Sym for that entry
         # Then compare the Elf64_Sym.st_name with the symbol name
@@ -713,7 +713,7 @@ class DynELF(object):
             symb_str = leak.s(strtab+sym_str_off)
 
             if symb_str == symb:
-                w.success(f"Found matching Elf64_Rel entry!")
+                w.success("Found matching Elf64_Rel entry!")
                 break
 
             rel_addr += sizeof(Rel)
