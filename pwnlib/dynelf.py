@@ -778,6 +778,8 @@ class DynELF(object):
         resolved_addr = routine(self.libbase, symb, hshtab, strtab, symtab)
 
         if resolved_addr:
+            # Restore the original leaker
+            self.leak = real_leak
             return resolved_addr
 
         # if symbol not found in GNU_Hash, try looking in JMPREL
