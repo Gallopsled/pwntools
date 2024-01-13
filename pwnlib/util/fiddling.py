@@ -42,7 +42,7 @@ def unhex(s):
     """
     s = s.strip()
     if len(s) % 2 != 0:
-        if callable(getattr(s, "decode", None)):
+        if isinstance(s, (bytes, bytearray)):
             s = b'0' + s
         else:
             s = '0' + s
