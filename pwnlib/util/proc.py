@@ -314,13 +314,11 @@ def _tracer_windows(pid):
             raise ctypes.WinError(ctypes.get_last_error())
         return args
 
-    SYNCHRONIZE = 0x00100000
-    STANDARD_RIGHTS_REQUIRED = 0x000F0000
-    PROCESS_ALL_ACCESS = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFFF
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     OpenProcess = kernel32.OpenProcess 
     OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     OpenProcess.restype = wintypes.HANDLE
+    OpenProcess.errcheck = _check_bool
 
     CheckRemoteDebuggerPresent = kernel32.CheckRemoteDebuggerPresent
     CheckRemoteDebuggerPresent.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
@@ -332,7 +330,8 @@ def _tracer_windows(pid):
     CloseHandle.restype = wintypes.BOOL
     CloseHandle.errcheck = _check_bool
 
-    proc_handle = OpenProcess( PROCESS_ALL_ACCESS, False, pid )
+    PROCESS_QUERY_INFORMATION = 0x0400
+    proc_handle = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
     present = wintypes.BOOL()
     CheckRemoteDebuggerPresent(proc_handle, ctypes.byref(present))
     ret = 0

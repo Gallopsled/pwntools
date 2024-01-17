@@ -177,7 +177,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
 
         >>> io = process('cmd') # doctest: +SKIP
         >>> pid = windbg.attach(io, windbgscript='''
-        ... bp ucrtbase:puts
+        ... bp kernelbase!WriteFile
         ... g
         ... ''') # doctest: +SKIP
     """
