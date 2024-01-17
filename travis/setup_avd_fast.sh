@@ -14,7 +14,7 @@ ANDROIDV=android-24
 # Create our emulator Android Virtual Device (AVD)
 # --snapshot flag is deprecated, see bitrise-steplib/steps-create-android-emulator#18
 export PATH=$PATH:"$ANDROID_HOME"/cmdline-tools/latest/bin:"$ANDROID_HOME"/platform-tools
-yes | sdkmanager --sdk_root="$ANDROID_HOME" --install "system-images;$ANDROIDV;default;$ANDROID_ABI"
+yes | sdkmanager --sdk_root="$ANDROID_HOME" --install "system-images;$ANDROIDV;default;$ANDROID_ABI" "emulator" "platform-tools" "platforms;$ANDROIDV"
 yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
 echo no | avdmanager --silent create avd --name android-$ANDROID_ABI --force --package "system-images;$ANDROIDV;default;$ANDROID_ABI"
 
