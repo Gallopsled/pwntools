@@ -46,35 +46,40 @@ if dst not in regs:
 if not src in regs:
     src = SC.eval(src)
 
-mov_x0_x15 = False
-xor        = None
+mov_x15 = None
+xor     = None
 
-# if isinstance(src, six.integer_types):
-#     # Moving an immediate into x0 emits a null byte.
-#     # Moving a register into x0 does not.
-#     # Use x15 as a scratch register.
-#     if dst == 'x0':
-#         mov_x0_x15 = True
-#         dst = 'x15'
-#
-#     packed = pack(src)
-#     words  = group(2, packed)
-#     xor    = ['\x00\x00'] * 4
-#     okay   = False
-#
-#     for i, word in enumerate(list(words)):
-#         # If an entire word is zero, we can work around it.
-#         # However, if any of the individual bytes are '\n', or only
-#         # one of the bytes is a zero, we must do an XOR.
-#         if '\n' not in word or word == '\x00\x00' or '\x00' not in word:
-#             continue
-#
-#         a, b = xor_pair(word)
-#         words[i] = a
-#         xor[i]   = b
-#
-#     src = unpack(''.join(words))
-#     xor = unpack(''.join(xor))
+
+if isinstance(src, six.integer_types):
+    lobits = dst not in ('x0', 'x10')
+    packed = pack(src)
+    words  = group(2, packed)
+    xor    = [b'\x00\x00'] * 4
+
+    for i, word in enumerate(list(words)):
+        # If an entire word is zero, we can work around it.
+        # However, if any of the individual bytes are '\n', or only
+        # one of the bytes is a zero, we must do an XOR.
+        if word == b'\x00\x00': continue
+
+        w = p16((u16(word) & 0x7ff) << 5 | lobits)
+        if b'\n' not in w and b'\x00' not in w:
+            if u16(word) & 7 == 0 and not lobits:
+                mov_x15 = dst
+                dst = 'x15'
+                lobits = 15
+            continue
+
+        a, b = xor_pair(word)
+        words[i] = a
+        xor[i]   = b
+	if dst == 'x0':
+	    mov_x15 = dst
+	    dst = 'x15'
+	    lobits = 15
+
+    src = unpack(b''.join(words))
+    xor = unpack(b''.join(xor))
 
 %>
 %if not isinstance(src, six.integer_types):
@@ -83,8 +88,7 @@ xor        = None
   %if src & 0xffff == 0:
     mov  ${dst}, xzr
   %endif
-  %if src == 0:
-  %elif src & 0xffff == src:
+  %if src & 0xffff == src != 0:
     mov  ${dst}, #${src}
   %else:
     /* Set ${dst} = ${src} = ${pretty(src, False)} */
@@ -100,12 +104,12 @@ xor        = None
     %if src & 0xffff000000000000:
     movk ${dst}, #${(src >> 0x30) & 0xffff}, lsl #0x30
     %endif
-    %if xor:
-    ${SC.mov('x14', xor)}
-    eor ${dst}, ${dst}, x14
-    %endif
-    %if mov_x0_x15:
-    ${SC.mov('x0','x15')}
-    %endif
+  %endif
+  %if xor:
+  ${SC.mov('x14', xor)}
+  eor ${dst}, ${dst}, x14
+  %endif
+  %if mov_x15:
+  ${SC.mov(mov_x15,'x15')}
   %endif
 %endif
