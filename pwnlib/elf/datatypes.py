@@ -631,29 +631,6 @@ class Elf64_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint64),
                 ('a_val', ctypes.c_uint64),]
 
-def generate_prpsinfo(long):
-    return [
-        ('pr_state', byte),
-        ('pr_sname', char),
-        ('pr_zomb', byte),
-        ('pr_nice', byte),
-        ('pr_flag', long),
-        ('pr_uid', ctypes.c_ushort),
-        ('pr_gid', ctypes.c_ushort),
-        ('pr_pid', ctypes.c_int),
-        ('pr_ppid', ctypes.c_int),
-        ('pr_pgrp', ctypes.c_int),
-        ('pr_sid', ctypes.c_int),
-        ('pr_fname', char * 16),
-        ('pr_psargs', char * 80)
-    ]
-
-class elf_prpsinfo_32(ctypes.Structure):
-    _fields_ = generate_prpsinfo(Elf32_Addr)
-
-class elf_prpsinfo_64(ctypes.Structure):
-    _fields_ = generate_prpsinfo(Elf64_Addr)
-
 def generate_siginfo(int_t, long_t):
     class siginfo_t(ctypes.Structure):
         _fields_ = [('si_signo', int_t),

@@ -139,6 +139,7 @@ def which(name, all = False, path=None):
 
     Works as the system command ``which``; searches $PATH for ``name`` and
     returns a full path if found.
+    Tries all of the file extensions in $PATHEXT on Windows too.
 
     If `all` is :const:`True` the set of all found locations is returned, else
     the first occurrence or :const:`None` is returned.
@@ -160,26 +161,35 @@ def which(name, all = False, path=None):
     if os.path.sep in name:
         return name
 
-    isroot = os.getuid() == 0
+    if sys.platform == 'win32':
+        pathexts = os.environ.get('PATHEXT', '').split(os.pathsep)
+        isroot = False
+    else:
+        pathexts = []
+        isroot = os.getuid() == 0
+    pathexts = [''] + pathexts
     out = set()
     try:
         path = path or os.environ['PATH']
     except KeyError:
         log.exception('Environment variable $PATH is not set')
-    for p in path.split(os.pathsep):
-        p = os.path.join(p, name)
-        if os.access(p, os.X_OK):
-            st = os.stat(p)
-            if not stat.S_ISREG(st.st_mode):
-                continue
-            # work around this issue: https://bugs.python.org/issue9311
-            if isroot and not \
-              st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
-                continue
-            if all:
-                out.add(p)
-            else:
-                return p
+    for path_part in path.split(os.pathsep):
+        for ext in pathexts:
+            nameext = name + ext
+            p = os.path.join(path_part, nameext)
+            if os.access(p, os.X_OK):
+                st = os.stat(p)
+                if not stat.S_ISREG(st.st_mode):
+                    continue
+                # work around this issue: https://bugs.python.org/issue9311
+                if isroot and not \
+                st.st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH):
+                    continue
+                if all:
+                    out.add(p)
+                    break
+                else:
+                    return p
     if all:
         return out
     else:
@@ -386,7 +396,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 import os
 os.execve({argv0!r}, {argv!r}, os.environ)
 '''
-        script = script.format(executable=sys.executable,
+        script = script.format(executable='/bin/env ' * (' ' in sys.executable) + sys.executable,
                                argv=command,
                                argv0=which(command[0]))
         script = script.lstrip()
@@ -410,7 +420,12 @@ os.execve({argv0!r}, {argv!r}, os.environ)
 
     if terminal == 'tmux':
         out, _ = p.communicate()
-        pid = int(out)
+        try:
+            pid = int(out)
+        except ValueError:
+            pid = None
+        if pid is None:
+            log.error("Could not parse PID from tmux output (%r). Start tmux first.", out)
     elif terminal == 'qdbus':
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
