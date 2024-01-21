@@ -28,12 +28,12 @@ Examples:
         mov  x0, x1
     >>> print(shellcraft.mov('x0','0').rstrip())
         mov  x0, xzr
-    >>> print(shellcraft.mov('x0', 5).rstrip())
-        mov  x0, #5
-    >>> print(shellcraft.mov('x0', 0x34532).rstrip())
-        /* Set x0 = 214322 = 0x34532 */
+    >>> print(shellcraft.mov('x0', 9).rstrip())
+        mov  x0, #9
+    >>> print(shellcraft.mov('x0', 0x94532).rstrip())
+        /* Set x0 = 607538 = 0x94532 */
         mov  x0, #17714
-        movk x0, #3, lsl #16
+        movk x0, #9, lsl #16
 
 Args:
   dest (str): The destination register.
@@ -78,22 +78,30 @@ if isinstance(src, six.integer_types):
 	    dst = 'x15'
 	    lobits = 15
 
-    src = unpack(b''.join(words))
     xor = unpack(b''.join(xor))
+    if xor:
+        src = unpack(b''.join(words))
+
+tmp = 'x14'
+if dst == 'x14':
+    tmp = 'x15'
+if dst == 'x15':
+    tmp = 'x12'
 
 %>
 %if not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
-  %if src & 0xffff == 0:
+  %if src == 0:
     mov  ${dst}, xzr
-  %endif
-  %if src & 0xffff == src != 0:
+  %elif src & 0xffff == src:
     mov  ${dst}, #${src}
   %else:
     /* Set ${dst} = ${src} = ${pretty(src, False)} */
     %if src & 0x000000000000ffff:
     mov  ${dst}, #${(src >> 0x00) & 0xffff}
+    %else:
+    mov  ${dst}, xzr
     %endif
     %if src & 0x00000000ffff0000:
     movk ${dst}, #${(src >> 0x10) & 0xffff}, lsl #16
@@ -106,8 +114,8 @@ if isinstance(src, six.integer_types):
     %endif
   %endif
   %if xor:
-  ${SC.mov('x14', xor)}
-  eor ${dst}, ${dst}, x14
+  ${SC.mov(tmp, xor)}
+  eor ${dst}, ${dst}, ${tmp}
   %endif
   %if mov_x15:
   ${SC.mov(mov_x15,'x15')}
