@@ -82,6 +82,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2310][2310] Add support to start a process on Windows
 - [#2334][2334] Speed up disasm commandline tool with colored output
 - [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
+- [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -95,6 +96,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2310]: https://github.com/Gallopsled/pwntools/pull/2310
 [2334]: https://github.com/Gallopsled/pwntools/pull/2334
 [2328]: https://github.com/Gallopsled/pwntools/pull/2328
+[2336]: https://github.com/Gallopsled/pwntools/pull/2336
 
 ## 4.12.0 (`beta`)
 
