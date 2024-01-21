@@ -448,7 +448,7 @@ class ELF(ELFFile):
 
     def _describe(self, *a, **kw):
         log.info_once(
-            '%s\n%-10s%s-%s-%s\n%s',
+            '%s\n%-12s%s-%s-%s\n%s',
             repr(self.path),
             'Arch:',
             self.arch,
@@ -2003,6 +2003,16 @@ class ELF(ELFFile):
         return b'UPX!' in self.get_data()[:0xFF]
 
     @property
+    def stripped(self):
+        """:class:`bool`: Whether the current binary has been stripped of symbols"""
+        return not any(section['sh_type'] == 'SHT_SYMTAB' for section in self.iter_sections())
+
+    @property
+    def debuginfo(self):
+        """:class:`bool`: Whether the current binary has debug information"""
+        return self.get_section_by_name('.debug_info') is not None
+
+    @property
     def pie(self):
         """:class:`bool`: Whether the current binary is position-independent."""
         return self.elftype == 'DYN'
@@ -2045,26 +2055,26 @@ class ELF(ELFFile):
 
         # Kernel version?
         if self.version and self.version != (0,):
-            res.append('Version:'.ljust(10) + '.'.join(map(str, self.version)))
+            res.append('Version:'.ljust(12) + '.'.join(map(str, self.version)))
         if self.build:
-            res.append('Build:'.ljust(10) + self.build)
+            res.append('Build:'.ljust(12) + self.build)
 
         res.extend([
-            "RELRO:".ljust(10) + {
+            "RELRO:".ljust(12) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
                 None:      red("No RELRO")
             }[self.relro],
-            "Stack:".ljust(10) + {
+            "Stack:".ljust(12) + {
                 True:  green("Canary found"),
                 False: red("No canary found")
             }[self.canary],
-            "NX:".ljust(10) + {
+            "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
                 None: yellow("NX unknown - GNU_STACK missing"),
             }[self.nx],
-            "PIE:".ljust(10) + {
+            "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
                 False: red("No PIE (%#x)" % self.address)
             }[self.pie],
@@ -2072,41 +2082,47 @@ class ELF(ELFFile):
 
         # Execstack may be a thing, even with NX enabled, because of glibc
         if self.execstack and self.nx is not False:
-            res.append("Stack:".ljust(10) + red("Executable"))
+            res.append("Stack:".ljust(12) + red("Executable"))
 
         # Are there any RWX areas in the binary?
         #
         # This will occur if NX is disabled and *any* area is
         # RW, or can expressly occur.
         if self.rwx_segments or (not self.nx and self.writable_segments):
-            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
+            res += [ "RWX:".ljust(12) + red("Has RWX segments") ]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
+            res += [ "RPATH:".ljust(12) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
+            res += [ "RUNPATH:".ljust(12) + red(repr(self.runpath)) ]
 
         if self.packed:
-            res.append('Packer:'.ljust(10) + red("Packed with UPX"))
+            res.append('Packer:'.ljust(12) + red("Packed with UPX"))
 
         if self.fortify:
-            res.append("FORTIFY:".ljust(10) + green("Enabled"))
+            res.append("FORTIFY:".ljust(12) + green("Enabled"))
 
         if self.asan:
-            res.append("ASAN:".ljust(10) + green("Enabled"))
+            res.append("ASAN:".ljust(12) + green("Enabled"))
 
         if self.msan:
-            res.append("MSAN:".ljust(10) + green("Enabled"))
+            res.append("MSAN:".ljust(12) + green("Enabled"))
 
         if self.ubsan:
-            res.append("UBSAN:".ljust(10) + green("Enabled"))
+            res.append("UBSAN:".ljust(12) + green("Enabled"))
         
         if self.shadowstack:
-            res.append("SHSTK:".ljust(10) + green("Enabled"))
+            res.append("SHSTK:".ljust(12) + green("Enabled"))
         
         if self.ibt:
-            res.append("IBT:".ljust(10) + green("Enabled"))
+            res.append("IBT:".ljust(12) + green("Enabled"))
+        
+        if not self.stripped:
+            res.append("Stripped:".ljust(12) + green("No"))
+        
+        if self.debuginfo:
+            res.append("Debuginfo:".ljust(12) + green("Yes"))
 
         # Check for Linux configuration, it must contain more than
         # just the version.
