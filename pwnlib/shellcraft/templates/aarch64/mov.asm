@@ -89,7 +89,11 @@ if dst == 'x15':
     tmp = 'x12'
 
 %>
-%if not isinstance(src, six.integer_types):
+%if src == 'sp':
+    add  ${dst}, ${src}, xzr
+%elif src == 'x0':
+    add  ${dst}, ${src}, xzr, lsl #1
+%elif not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
   %if src == 0:
@@ -115,9 +119,9 @@ if dst == 'x15':
   %endif
   %if xor:
   ${SC.mov(tmp, xor)}
-  eor ${dst}, ${dst}, ${tmp}
+  eor ${dst}, ${tmp}, ${dst}
   %endif
   %if mov_x15:
-  ${SC.mov(mov_x15,'x15')}
+  mov ${mov_x15}, x15
   %endif
 %endif

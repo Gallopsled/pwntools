@@ -16,7 +16,7 @@ Example:
     >>> print(shellcraft.aarch64.linux.syscall(11, 9, 'sp', 8, 0).rstrip())
         /* call syscall(0xb, 9, 'sp', 8, 0) */
         mov  x0, #9
-        mov  x1, sp
+        add  x1, sp, xzr
         mov  x2, #8
         mov  x3, xzr
         mov  x8, #11
@@ -39,7 +39,7 @@ Example:
         movk x15, #27750, lsl #16
         movk x15, #26465, lsl #0x20
         stp x14, x15, [sp, #-16]!
-        mov  x1, sp
+        add  x1, sp, xzr
         /* Set x0 = -2 = -2 */
         mov  x0, #65534
         movk x0, #65535, lsl #16
