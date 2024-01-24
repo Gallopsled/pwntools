@@ -46,7 +46,7 @@ lookup_parser.add_argument(
 )
 
 lookup_parser.add_argument(
-    '--unstrip',
+    '--no-unstrip',
     action = 'store_true',
     default = False,
     help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
@@ -89,7 +89,7 @@ hash_parser.add_argument(
 )
 
 hash_parser.add_argument(
-    '--unstrip',
+    '--no-unstrip',
     action = 'store_true',
     default = False,
     help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
@@ -130,26 +130,26 @@ file_parser.add_argument(
 )
 
 file_parser.add_argument(
-    '--unstrip',
+    '--no-unstrip',
     action = 'store_true',
     default = False,
     help = 'Attempt to unstrip the libc binary inplace with debug symbols from a debuginfod server'
 )
 
-download_parser = libc_commands.add_parser(
-    'download',
-    help = 'Download the libc-database repository',
+offline_parser = libc_commands.add_parser(
+    'offline',
+    help = 'Offline the libc-database repository',
     description = 'Lookup a libc version by function offsets'
 )
 
-download_parser.add_argument(
+offline_parser.add_argument(
     'categories',
     metavar = 'categories',
     nargs = '+',
     help = 'Fetch the required libc category and symbol offsets. The parameter is the same as https://github.com/niklasb/libc-database/blob/master/get',
 )
 
-download_parser.add_argument(
+offline_parser.add_argument(
     '--save-path',
     type = str,
     help = 'Set the save path for libc-database.',
@@ -168,14 +168,11 @@ def print_libc(libc):
     for symbol in libc['symbols'].items():
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
-def fetch_libc(args, libc, hash_type="build_id"):
-    hash_value = libc.get("buildid") or libc.get("build_id")
+def fetch_libc(args, libc, hash_type="buildid"):
+    hash_value = libc[hash_type.replace("_", "")]
 
     if args.download_libc:
-        if hash_type == "buildid":
-            hash_type = "build_id"
-
-        path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
+        path = libcdb.search_by_hash(hash_value, hash_type, not args.no_unstrip, args.offline)
 
         if path:
             shutil.copy(path, './{}.so'.format(libc['id']))
@@ -219,7 +216,7 @@ def main(args):
             return
 
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = libcdb.search_by_symbol_offsets(symbols, raw=True, unstrip=args.unstrip, offline=args.offline)
+        matched_libcs = libcdb.search_by_symbol_offsets(symbols, raw=True, unstrip=not args.no_unstrip, offline=args.offline)
         for libc in matched_libcs:
             print_libc(libc)
             fetch_libc(args, libc)
@@ -227,15 +224,16 @@ def main(args):
     elif args.libc_command == 'hash':
         for hash_value in args.hash_value:
             libs_id = None
-            hash_type = args.hash_type if args.hash_type != "buildid" else "build_id"
+            hash_type = args.hash_type
 
             # Search and download libc
-            exe_path = libcdb.search_by_hash(hash_value, hash_type, args.unstrip, args.offline)
+            exe_path = libcdb.search_by_hash(hash_value, hash_type, not args.no_unstrip, args.offline)
 
             if exe_path:
                 libs_id = read(exe_path + ".id").decode()
 
             if not libs_id:
+                log.warn_once("Empty libs id in %s %s", hash_type, hash_value)
                 continue
 
             # Dump common symbols
@@ -259,7 +257,7 @@ def main(args):
                 log.failure('File does not exist %s', args.file)
                 continue
 
-            if args.unstrip:
+            if not args.no_unstrip:
                 libcdb.unstrip_libc(file)
 
             exe = ELF(file, checksec=False)

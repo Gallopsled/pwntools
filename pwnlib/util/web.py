@@ -41,7 +41,7 @@ def wget(url, save=None, timeout=5, **kwargs):
         w.status("Making request...")
 
         response = requests.get(url, stream=True, timeout=timeout, **kwargs)
-
+    
         if not response.ok:
             w.failure("Got code %s" % response.status_code)
             return
