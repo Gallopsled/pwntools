@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2334][2334] Speed up disasm commandline tool with colored output
 - [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
 - [#2189][2189] Explicitly define p64/u64 functions for IDE support
+- [#2339][2339] Fix: Allow setting attributes on gdb Breakpoints
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -97,6 +98,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2334]: https://github.com/Gallopsled/pwntools/pull/2334
 [2328]: https://github.com/Gallopsled/pwntools/pull/2328
 [2189]: https://github.com/Gallopsled/pwntools/pull/2189
+[2339]: https://github.com/Gallopsled/pwntools/pull/2339
 
 ## 4.12.0 (`beta`)
 
