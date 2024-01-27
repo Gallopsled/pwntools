@@ -713,6 +713,22 @@ class FinishBreakpoint(Breakpoint):
             self, hasattr(self, 'stop'), hasattr(self, 'out_of_scope'),
             *args, **kwargs)
 
+    def __getattr__(self, item):
+        """Return attributes of the real breakpoint."""
+        if item in (
+                '____id_pack__',
+                '__name__',
+                '____conn__',
+                'stop',
+                'out_of_scope',
+        ):
+            # Ignore RPyC netref attributes.
+            # Also, if stop() or out_of_scope() are not defined, hasattr() call
+            # in our __init__() will bring us here. Don't contact the
+            # server in this case either.
+            raise AttributeError()
+        return getattr(self.server_breakpoint, item)
+
     def exposed_out_of_scope(self):
         # Handle out_of_scope() call from the server.
         return self.out_of_scope()
