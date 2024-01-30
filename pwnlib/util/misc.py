@@ -307,7 +307,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
-        elif 'TERM_PROGRAM' in os.environ:
+        elif 'TERM_PROGRAM' in os.environ and which(os.environ['TERM_PROGRAM']):
             terminal = os.environ['TERM_PROGRAM']
             args     = []
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
