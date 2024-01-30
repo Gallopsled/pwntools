@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import time
 import six
 import tempfile
 
@@ -34,6 +35,9 @@ DEBUGINFOD_SERVERS = [
 if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
+
+# Retry failed lookups after some time
+NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
@@ -131,6 +135,10 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, hash_type)
     if cache_valid:
         return cache
+    
+    # We searched for this buildid before, but didn't find anything.
+    if cache is None:
+        return None
 
     # Run through all available libc database providers to see if we have a match.
     for provider in PROVIDERS:
@@ -163,6 +171,10 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
     cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
     if cache_valid:
         return cache
+    
+    # We searched for this buildid before, but didn't find anything.
+    if cache is None:
+        return None
 
     # Try to find separate debuginfo.
     url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
@@ -213,8 +225,11 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
 
     data = read(cache)
     if not data.startswith(b'\x7FELF'):
-        log.info_once("Skipping unavailable ELF %s", hex_encoded_id)
-        return cache, False
+        # Retry failed lookups after some time
+        if time.time() > os.path.getmtime(cache) + NEGATIVE_CACHE_EXPIRY:
+            return cache, False
+        log.info_once("Skipping invalid cached ELF %s", hex_encoded_id)
+        return None, False
 
     log.info_once("Using cached data from %r", cache)
     return cache, True
