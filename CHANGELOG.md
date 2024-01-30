@@ -82,6 +82,10 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2310][2310] Add support to start a process on Windows
 - [#2334][2334] Speed up disasm commandline tool with colored output
 - [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
+- [#2189][2189] Explicitly define p64/u64 functions for IDE support
+- [#2339][2339] Fix: Allow setting attributes on gdb Breakpoints
+- [#2323][2323] Retry failed lookups after one week in libcdb
+- [#2325][2325] Match against local system libc first in libcdb
 - [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
@@ -96,6 +100,10 @@ The table below shows which release corresponds to each branch, and what date th
 [2310]: https://github.com/Gallopsled/pwntools/pull/2310
 [2334]: https://github.com/Gallopsled/pwntools/pull/2334
 [2328]: https://github.com/Gallopsled/pwntools/pull/2328
+[2189]: https://github.com/Gallopsled/pwntools/pull/2189
+[2339]: https://github.com/Gallopsled/pwntools/pull/2339
+[2323]: https://github.com/Gallopsled/pwntools/pull/2323
+[2325]: https://github.com/Gallopsled/pwntools/pull/2325
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
 
 ## 4.12.0 (`beta`)
