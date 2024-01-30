@@ -2119,10 +2119,10 @@ class ELF(ELFFile):
             res.append("IBT:".ljust(12) + green("Enabled"))
         
         if not self.stripped:
-            res.append("Stripped:".ljust(12) + green("No"))
+            res.append("Stripped:".ljust(12) + red("No"))
         
         if self.debuginfo:
-            res.append("Debuginfo:".ljust(12) + green("Yes"))
+            res.append("Debuginfo:".ljust(12) + red("Yes"))
 
         # Check for Linux configuration, it must contain more than
         # just the version.
