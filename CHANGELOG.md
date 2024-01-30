@@ -85,6 +85,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2189][2189] Explicitly define p64/u64 functions for IDE support
 - [#2339][2339] Fix: Allow setting attributes on gdb Breakpoints
 - [#2323][2323] Retry failed lookups after one week in libcdb
+- [#2325][2325] Match against local system libc first in libcdb
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -101,6 +102,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2189]: https://github.com/Gallopsled/pwntools/pull/2189
 [2339]: https://github.com/Gallopsled/pwntools/pull/2339
 [2323]: https://github.com/Gallopsled/pwntools/pull/2323
+[2325]: https://github.com/Gallopsled/pwntools/pull/2325
 
 ## 4.12.0 (`beta`)
 
