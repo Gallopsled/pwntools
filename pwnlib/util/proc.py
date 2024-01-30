@@ -223,6 +223,23 @@ def cmdline(pid):
     """
     return psutil.Process(pid).cmdline()
 
+def memory_maps(pid):
+    """memory_maps(pid) -> list
+    
+    Arguments:
+        pid (int): PID of the process.
+
+    Returns:
+        A list of the memory mappings in the process.
+
+    Example:
+        >>> maps = memory_maps(os.getpid())
+        >>> [(m.path, m.perms) for m in maps if '[stack]' in m.path]
+        [('[stack]', 'rw-p')]
+
+    """
+    return psutil.Process(pid).memory_maps(grouped=False)
+
 def stat(pid):
     """stat(pid) -> str list
 

@@ -324,6 +324,7 @@ class ssh_process(ssh_channel):
 
         for lib in maps:
             remote_path = lib.split(self.parent.host)[-1]
+            remote_path = self.parent.readlink('-f', remote_path).decode()
             for line in maps_raw.splitlines():
                 if line.endswith(remote_path):
                     address = line.split('-')[0]
