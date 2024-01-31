@@ -307,6 +307,10 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        elif 'TERM_PROGRAM' in os.environ and os.environ['TERM_PROGRAM'] == "iTerm.app" and which('osascript'):
+            # if we're on a mac, and using iTerm
+            terminal = "osascript"
+            args     = []
         elif 'TERM_PROGRAM' in os.environ and which(os.environ['TERM_PROGRAM']):
             terminal = os.environ['TERM_PROGRAM']
             args     = []
@@ -366,7 +370,6 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
                     args.extend(['wsl.exe', '-d', distro_name, 'bash', '-c'])
                 else:
                     args.extend(['bash.exe', '-c'])
-                
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
@@ -381,6 +384,27 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     # Instead, set them here and hope for the best.
     if terminal == 'tmux':
         args += ['-F' '#{pane_pid}', '-P']
+
+    # if we're on a Mac and use iTerm
+    # we use `osascript` to split the current window
+    if terminal == 'osascript':
+        osa_script = """
+tell application "iTerm"
+    tell current session of current window
+        set newSession to (split horizontally with default profile)
+    end tell
+    tell newSession
+        write text "{gdb_command}"
+    end tell
+end tell
+"""
+        osa_script = osa_script.format(gdb_command=" ".join(command)).lstrip()
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
+            tmp.write(osa_script)
+            tmp.flush()
+            os.chmod(tmp.name, 0o700)
+            args = [tmp.name]
+
 
     argv = [which(terminal)] + args
 
