@@ -87,6 +87,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2323][2323] Retry failed lookups after one week in libcdb
 - [#2325][2325] Match against local system libc first in libcdb
 - [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
+- [#2338][2338] Fix: follow symlink for libs on ssh connection
+- [#2341][2341] Launch GDB correctly in iTerm on Mac
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -105,6 +107,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2323]: https://github.com/Gallopsled/pwntools/pull/2323
 [2325]: https://github.com/Gallopsled/pwntools/pull/2325
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
+[2338]: https://github.com/Gallopsled/pwntools/pull/2338
+[2341]: https://github.com/Gallopsled/pwntools/pull/2341
 
 ## 4.12.0 (`beta`)
 
