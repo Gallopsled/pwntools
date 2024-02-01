@@ -385,28 +385,6 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if terminal == 'tmux':
         args += ['-F' '#{pane_pid}', '-P']
 
-    # if we're on a Mac and use iTerm
-    # we use `osascript` to split the current window
-    if terminal == 'osascript':
-        osa_script = """
-tell application "iTerm"
-    tell current session of current window
-        set newSession to (split horizontally with default profile)
-    end tell
-    tell newSession
-        write text "{gdb_command}"
-    end tell
-end tell
-"""
-        gdb_command = " ".join(command).replace('"', '\\"').replace("'", "\\'")
-        osa_script = osa_script.format(gdb_command=gdb_command).lstrip()
-        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
-            tmp.write(osa_script)
-            tmp.flush()
-            os.chmod(tmp.name, 0o700)
-            args = [tmp.name]
-
-
     argv = [which(terminal)] + args
 
     if isinstance(command, six.string_types):
@@ -434,6 +412,26 @@ os.execve({argv0!r}, {argv!r}, os.environ)
           os.chmod(tmp.name, 0o700)
           argv += [tmp.name]
 
+
+    # if we're on a Mac and use iTerm, we use `osascript` to split the current window
+    # `command` was sanitized on the previous step. It is now either a string, or was written to a tmp file
+    # we run the command, which is now `argv[-1]`
+    if terminal == 'osascript':
+        osa_script = f"""
+tell application "iTerm"
+    tell current session of current window
+        set newSession to (split horizontally with default profile)
+    end tell
+    tell newSession
+        write text "{argv[-1]}"
+    end tell
+end tell
+"""
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
+            tmp.write(osa_script.lstrip())
+            tmp.flush()
+            os.chmod(tmp.name, 0o700)
+            argv = [which(terminal), tmp.name]
 
     log.debug("Launching a new terminal: %r" % argv)
 
