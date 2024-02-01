@@ -398,7 +398,8 @@ tell application "iTerm"
     end tell
 end tell
 """
-        osa_script = osa_script.format(gdb_command=" ".join(command)).lstrip()
+        gdb_command = " ".join(command).replace('"', '\\"').replace("'", "\\'")
+        osa_script = osa_script.format(gdb_command=gdb_command).lstrip()
         with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
             tmp.write(osa_script)
             tmp.flush()
