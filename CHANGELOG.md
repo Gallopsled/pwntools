@@ -87,6 +87,10 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2323][2323] Retry failed lookups after one week in libcdb
 - [#2325][2325] Match against local system libc first in libcdb
 - [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
+- [#2161][2161] Add basic support for darwin shellcraft/asm/disasm/run_shellcode/run_assembly
+- [#2161][2161] Fix freebsd amd64 SyscallABI
+- [#2160][2161] Fix invalid shellcraft.mov on arm64
+- [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -105,6 +109,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2323]: https://github.com/Gallopsled/pwntools/pull/2323
 [2325]: https://github.com/Gallopsled/pwntools/pull/2325
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
+[2161]: https://github.com/Gallopsled/pwntools/pull/2161
 
 ## 4.12.0 (`beta`)
 
