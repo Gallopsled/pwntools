@@ -33,7 +33,7 @@ from pwnlib.util.hashes import sha256file
 from pwnlib.util.misc import parse_ldd_output
 from pwnlib.util.misc import which
 from pwnlib.util.misc import normalize_argv_env
-from pwnlib.util.packing import _need_bytes
+from pwnlib.util.packing import _decode
 
 log = getLogger(__name__)
 
@@ -558,7 +558,11 @@ class process(tube):
 
         argv, env = normalize_argv_env(argv, env, self, 4)
         if env:
-            env = {bytes(k): bytes(v) for k, v in env}
+            if sys.platform == 'win32':
+                # Windows requires that all environment variables be strings
+                env = {_decode(k): _decode(v) for k, v in env}
+            else:
+                env = {bytes(k): bytes(v) for k, v in env}
         if argv:
             argv = list(map(bytes, argv))
 
