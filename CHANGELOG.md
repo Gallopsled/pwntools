@@ -80,6 +80,17 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
 - [#2279][2279] Make `pwn template` always set context.binary
 - [#2310][2310] Add support to start a process on Windows
+- [#2334][2334] Speed up disasm commandline tool with colored output
+- [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
+- [#2189][2189] Explicitly define p64/u64 functions for IDE support
+- [#2339][2339] Fix: Allow setting attributes on gdb Breakpoints
+- [#2323][2323] Retry failed lookups after one week in libcdb
+- [#2325][2325] Match against local system libc first in libcdb
+- [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
+- [#2161][2161] Add basic support for darwin shellcraft/asm/disasm/run_shellcode/run_assembly
+- [#2161][2161] Fix freebsd amd64 SyscallABI
+- [#2160][2161] Fix invalid shellcraft.mov on arm64
+- [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -91,6 +102,14 @@ The table below shows which release corresponds to each branch, and what date th
 [2308]: https://github.com/Gallopsled/pwntools/pull/2308
 [2279]: https://github.com/Gallopsled/pwntools/pull/2279
 [2310]: https://github.com/Gallopsled/pwntools/pull/2310
+[2334]: https://github.com/Gallopsled/pwntools/pull/2334
+[2328]: https://github.com/Gallopsled/pwntools/pull/2328
+[2189]: https://github.com/Gallopsled/pwntools/pull/2189
+[2339]: https://github.com/Gallopsled/pwntools/pull/2339
+[2323]: https://github.com/Gallopsled/pwntools/pull/2323
+[2325]: https://github.com/Gallopsled/pwntools/pull/2325
+[2336]: https://github.com/Gallopsled/pwntools/pull/2336
+[2161]: https://github.com/Gallopsled/pwntools/pull/2161
 
 ## 4.12.0 (`beta`)
 
