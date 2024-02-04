@@ -701,7 +701,7 @@ def make_macho(data, is_shellcode=False):
         '/usr/bin/ld',
     ]
     ldflags = [
-        '-macosx_version_min', '11.0',
+        '-macos_version_min', '11.0',
         '-l', 'System',
         '-e', '_start',
         '-L', '/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib',
