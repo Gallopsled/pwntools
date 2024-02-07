@@ -91,6 +91,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2161][2161] Fix freebsd amd64 SyscallABI
 - [#2160][2161] Fix invalid shellcraft.mov on arm64
 - [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
+- [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -110,6 +111,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2325]: https://github.com/Gallopsled/pwntools/pull/2325
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
 [2161]: https://github.com/Gallopsled/pwntools/pull/2161
+[2347]: https://github.com/Gallopsled/pwntools/pull/2347
 
 ## 4.12.0 (`beta`)
 
