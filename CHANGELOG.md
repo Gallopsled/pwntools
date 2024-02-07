@@ -91,6 +91,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2161][2161] Fix freebsd amd64 SyscallABI
 - [#2160][2161] Fix invalid shellcraft.mov on arm64
 - [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
+- [#2345][2345] Fix pwn constgrep when it matches a non-constant type
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -110,6 +111,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2325]: https://github.com/Gallopsled/pwntools/pull/2325
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
 [2161]: https://github.com/Gallopsled/pwntools/pull/2161
+[2345]: https://github.com/Gallopsled/pwntools/pull/2345
 
 ## 4.12.0 (`beta`)
 
