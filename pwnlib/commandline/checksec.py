@@ -4,7 +4,7 @@ from __future__ import division
 import argparse
 import sys
 
-from pwn import *
+from pwnlib.elf import ELF
 from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
