@@ -399,6 +399,15 @@ class Elf64_Sym(ctypes.Structure):
                 ("st_value", Elf64_Addr),
                 ("st_size", Elf64_Xword),]
 
+class Elf64_Rel(ctypes.Structure):
+    _fields_ = [("r_offset", Elf64_Addr),
+                ("r_info", Elf64_Xword),
+                ("r_addend", Elf64_Sxword),]
+
+class Elf32_Rel(ctypes.Structure):
+    _fields_ = [("r_offset", Elf32_Addr),
+                ("r_info", Elf32_Word),]
+
 class Elf32_Link_Map(ctypes.Structure):
     _fields_ = [("l_addr", Elf32_Addr),
                 ("l_name", Elf32_Addr),
