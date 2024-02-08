@@ -92,6 +92,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2160][2161] Fix invalid shellcraft.mov on arm64
 - [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
 - [#2345][2345] Fix pwn constgrep when it matches a non-constant type
+- [#2338][2338] Fix: follow symlink for libs on ssh connection
+- [#2341][2341] Launch GDB correctly in iTerm on Mac
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -112,6 +114,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2336]: https://github.com/Gallopsled/pwntools/pull/2336
 [2161]: https://github.com/Gallopsled/pwntools/pull/2161
 [2345]: https://github.com/Gallopsled/pwntools/pull/2345
+[2338]: https://github.com/Gallopsled/pwntools/pull/2338
+[2341]: https://github.com/Gallopsled/pwntools/pull/2341
 
 ## 4.12.0 (`beta`)
 

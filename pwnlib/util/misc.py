@@ -307,6 +307,10 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
+        elif 'TERM_PROGRAM' in os.environ and os.environ['TERM_PROGRAM'] == "iTerm.app" and which('osascript'):
+            # if we're on a mac, and using iTerm
+            terminal = "osascript"
+            args     = []
         elif 'TERM_PROGRAM' in os.environ and which(os.environ['TERM_PROGRAM']):
             terminal = os.environ['TERM_PROGRAM']
             args     = []
@@ -366,7 +370,6 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
                     args.extend(['wsl.exe', '-d', distro_name, 'bash', '-c'])
                 else:
                     args.extend(['bash.exe', '-c'])
-                
 
     if not terminal:
         log.error('Could not find a terminal binary to use. Set context.terminal to your terminal.')
@@ -409,6 +412,26 @@ os.execve({argv0!r}, {argv!r}, os.environ)
           os.chmod(tmp.name, 0o700)
           argv += [tmp.name]
 
+
+    # if we're on a Mac and use iTerm, we use `osascript` to split the current window
+    # `command` was sanitized on the previous step. It is now either a string, or was written to a tmp file
+    # we run the command, which is now `argv[-1]`
+    if terminal == 'osascript':
+        osa_script = f"""
+tell application "iTerm"
+    tell current session of current window
+        set newSession to (split horizontally with default profile)
+    end tell
+    tell newSession
+        write text "{argv[-1]}"
+    end tell
+end tell
+"""
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
+            tmp.write(osa_script.lstrip())
+            tmp.flush()
+            os.chmod(tmp.name, 0o700)
+            argv = [which(terminal), tmp.name]
 
     log.debug("Launching a new terminal: %r" % argv)
 
