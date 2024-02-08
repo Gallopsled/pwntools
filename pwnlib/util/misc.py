@@ -417,16 +417,16 @@ os.execve({argv0!r}, {argv!r}, os.environ)
     # `command` was sanitized on the previous step. It is now either a string, or was written to a tmp file
     # we run the command, which is now `argv[-1]`
     if terminal == 'osascript':
-        osa_script = f"""
+        osa_script = """
 tell application "iTerm"
     tell current session of current window
         set newSession to (split horizontally with default profile)
     end tell
     tell newSession
-        write text "{argv[-1]}"
+        write text "{}"
     end tell
 end tell
-"""
+""".format(argv[-1])
         with tempfile.NamedTemporaryFile(delete=False, mode='wt+') as tmp:
             tmp.write(osa_script.lstrip())
             tmp.flush()
