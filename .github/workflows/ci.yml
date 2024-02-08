@@ -172,6 +172,7 @@ jobs:
         pwn constgrep -c freebsd -m ^PROT_ '3 + 4'
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
+        pwn constgrep C
 
         pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
         pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
