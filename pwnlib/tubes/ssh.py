@@ -324,6 +324,7 @@ class ssh_process(ssh_channel):
 
         for lib in maps:
             remote_path = lib.split(self.parent.host)[-1]
+            remote_path = self.parent.readlink('-f', remote_path).decode()
             for line in maps_raw.splitlines():
                 if line.endswith(remote_path):
                     address = line.split('-')[0]
@@ -1809,19 +1810,41 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         return self.sftp.unlink(file)
 
-    def libs(self, remote, directory = None):
+    def libs(self, remote, directory = None, flatten = False):
         """Downloads the libraries referred to by a file.
 
         This is done by running ldd on the remote server, parsing the output
         and downloading the relevant files.
 
         The directory argument specified where to download the files. This defaults
-        to './$HOSTNAME' where $HOSTNAME is the hostname of the remote server."""
+        to './$HOSTNAME' where $HOSTNAME is the hostname of the remote server.
+
+        Arguments:
+            remote(str): Remote file path
+            directory(str): Output directory
+            flatten(bool): Flatten the file tree if True (defaults to False) and
+                ignore the remote directory structure. If there are duplicate
+                filenames, an error will be raised.
+        """
 
         libs = self._libs_remote(remote)
 
         remote = packing._decode(self.readlink('-f',remote).strip())
         libs[remote] = 0
+
+        if flatten:
+            basenames = dict()
+
+            # If there is a duplicate switch to unflattened download
+            for lib in libs:
+                name = os.path.basename(lib)
+
+                if name in basenames.values():
+                    duplicate = [key for key, value in basenames.items() if
+                                 value == name][0]
+                    self.error('Duplicate lib name: %r / %4r' % (lib, duplicate))
+
+                basenames[lib] = name
 
         if directory is None:
             directory = self.host
@@ -1833,7 +1856,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         seen = set()
 
         for lib, addr in libs.items():
-            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep + lib))
+            local = os.path.realpath(os.path.join(directory, '.' + os.path.sep \
+                    + (basenames[lib] if flatten else lib)))
             if not local.startswith(directory):
                 self.warning('This seems fishy: %r' % lib)
                 continue

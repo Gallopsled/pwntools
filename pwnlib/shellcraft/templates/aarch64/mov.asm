@@ -28,12 +28,12 @@ Examples:
         mov  x0, x1
     >>> print(shellcraft.mov('x0','0').rstrip())
         mov  x0, xzr
-    >>> print(shellcraft.mov('x0', 5).rstrip())
-        mov  x0, #5
-    >>> print(shellcraft.mov('x0', 0x34532).rstrip())
-        /* Set x0 = 214322 = 0x34532 */
+    >>> print(shellcraft.mov('x0', 9).rstrip())
+        mov  x0, #9
+    >>> print(shellcraft.mov('x0', 0x94532).rstrip())
+        /* Set x0 = 607538 = 0x94532 */
         mov  x0, #17714
-        movk x0, #3, lsl #16
+        movk x0, #9, lsl #16
 
 Args:
   dest (str): The destination register.
@@ -46,50 +46,66 @@ if dst not in regs:
 if not src in regs:
     src = SC.eval(src)
 
-mov_x0_x15 = False
-xor        = None
+mov_x15 = None
+xor     = None
 
-# if isinstance(src, six.integer_types):
-#     # Moving an immediate into x0 emits a null byte.
-#     # Moving a register into x0 does not.
-#     # Use x15 as a scratch register.
-#     if dst == 'x0':
-#         mov_x0_x15 = True
-#         dst = 'x15'
-#
-#     packed = pack(src)
-#     words  = group(2, packed)
-#     xor    = ['\x00\x00'] * 4
-#     okay   = False
-#
-#     for i, word in enumerate(list(words)):
-#         # If an entire word is zero, we can work around it.
-#         # However, if any of the individual bytes are '\n', or only
-#         # one of the bytes is a zero, we must do an XOR.
-#         if '\n' not in word or word == '\x00\x00' or '\x00' not in word:
-#             continue
-#
-#         a, b = xor_pair(word)
-#         words[i] = a
-#         xor[i]   = b
-#
-#     src = unpack(''.join(words))
-#     xor = unpack(''.join(xor))
+
+if isinstance(src, six.integer_types):
+    lobits = dst not in ('x0', 'x10')
+    packed = pack(src)
+    words  = group(2, packed)
+    xor    = [b'\x00\x00'] * 4
+
+    for i, word in enumerate(list(words)):
+        # If an entire word is zero, we can work around it.
+        # However, if any of the individual bytes are '\n', or only
+        # one of the bytes is a zero, we must do an XOR.
+        if word == b'\x00\x00': continue
+
+        w = p16((u16(word) & 0x7ff) << 5 | lobits)
+        if b'\n' not in w and b'\x00' not in w:
+            if u16(word) & 7 == 0 and not lobits:
+                mov_x15 = dst
+                dst = 'x15'
+                lobits = 15
+            continue
+
+        a, b = xor_pair(word)
+        words[i] = a
+        xor[i]   = b
+	if dst == 'x0':
+	    mov_x15 = dst
+	    dst = 'x15'
+	    lobits = 15
+
+    xor = unpack(b''.join(xor))
+    if xor:
+        src = unpack(b''.join(words))
+
+tmp = 'x14'
+if dst == 'x14':
+    tmp = 'x15'
+if dst == 'x15':
+    tmp = 'x12'
 
 %>
-%if not isinstance(src, six.integer_types):
+%if src == 'sp':
+    add  ${dst}, ${src}, xzr
+%elif src == 'x0':
+    add  ${dst}, ${src}, xzr, lsl #1
+%elif not isinstance(src, six.integer_types):
     mov  ${dst}, ${src}
 %else:
   %if src == 0:
     mov  ${dst}, xzr
-  %elif src & 0xffff == 0:
-    eor  ${dst}, ${dst}, ${dst}
   %elif src & 0xffff == src:
     mov  ${dst}, #${src}
   %else:
-    /* Set ${dst} = ${src} = ${pretty(src)} */
+    /* Set ${dst} = ${src} = ${pretty(src, False)} */
     %if src & 0x000000000000ffff:
     mov  ${dst}, #${(src >> 0x00) & 0xffff}
+    %else:
+    mov  ${dst}, xzr
     %endif
     %if src & 0x00000000ffff0000:
     movk ${dst}, #${(src >> 0x10) & 0xffff}, lsl #16
@@ -100,12 +116,12 @@ xor        = None
     %if src & 0xffff000000000000:
     movk ${dst}, #${(src >> 0x30) & 0xffff}, lsl #0x30
     %endif
-    %if xor:
-    ${SC.mov('x14', xor)}
-    eor ${dst}, ${dst}, x14
-    %endif
-    %if mov_x0_x15:
-    ${SC.mov('x0','x15')}
-    %endif
+  %endif
+  %if xor:
+  ${SC.mov(tmp, xor)}
+  eor ${dst}, ${tmp}, ${dst}
+  %endif
+  %if mov_x15:
+  mov ${mov_x15}, x15
   %endif
 %endif
