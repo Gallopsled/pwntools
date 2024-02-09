@@ -28,9 +28,9 @@ Example:
         /* push 0 */
         mov  x14, xzr
         str x14, [sp, #-16]!
-    >>> print(pwnlib.shellcraft.push(1).rstrip())
-        /* push 1 */
-        mov  x14, #1
+    >>> print(pwnlib.shellcraft.push(9).rstrip())
+        /* push 9 */
+        mov  x14, #9
         str x14, [sp, #-16]!
     >>> print(pwnlib.shellcraft.push(256).rstrip())
         /* push 0x100 */

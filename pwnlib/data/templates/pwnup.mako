@@ -44,7 +44,7 @@ from pwn import *
 %if not quiet:
 # Set up pwntools for the correct architecture
 %endif
-%if ctx.binary:
+%if ctx.binary or not host:
 exe = context.binary = ELF(args.EXE or ${binary_repr})
 <% binary_repr = 'exe.path' %>
 %else:
@@ -99,11 +99,7 @@ else:
 %endif
     library_path = libcdb.download_libraries(${libc_repr})
     if library_path:
-      %if ctx.binary:
         exe = context.binary = ELF.patch_custom_libraries(${binary_repr}, library_path)
-      %else:
-        exe = ELF.patch_custom_libraries(exe, library_path)
-      %endif
         libc = exe.libc
     else:
         libc = ELF(${libc_repr})

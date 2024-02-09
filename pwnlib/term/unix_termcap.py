@@ -32,7 +32,7 @@ def get(cap, *args, **kwargs):
                 s = curses.tigetflag(cap)
                 if s == -1:
                     # default to empty string so tparm doesn't fail
-                    s = ''
+                    s = b''
                 else:
                     s = bool(s)
         cache[cap] = s
