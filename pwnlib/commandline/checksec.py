@@ -38,4 +38,4 @@ def main(args):
         e = ELF(f.name)
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    common.main(__file__)
