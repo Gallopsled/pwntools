@@ -74,11 +74,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2281][2281] FIX: Getting right amount of data for search fix
 - [#2293][2293] Add x86 CET status to checksec output
 - [#1763][1763] Allow to add to the existing environment in `process` instead of replacing it
+- [#2268][2268] Add a `flatten` argument to `ssh.libs`
 
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 [2293]: https://github.com/Gallopsled/pwntools/pull/2293
 [1763]: https://github.com/Gallopsled/pwntools/pull/1763
+[2268]: https://github.com/Gallopsled/pwntools/pull/2268
 
 ## 4.12.0 (`beta`)
 
@@ -89,7 +91,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
 - [#2257][2257] Allow creation of custom templates for `pwn template` command
 - [#2225][2225] Allow empty argv in ssh.process()
-- [#2268][2268] Add a `flatten` argument to `ssh.libs`
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
@@ -98,7 +99,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2212]: https://github.com/Gallopsled/pwntools/pull/2212
 [2257]: https://github.com/Gallopsled/pwntools/pull/2257
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
-[2268]: https://github.com/Gallopsled/pwntools/pull/2268
 
 ## 4.11.1 (`stable`)
 
