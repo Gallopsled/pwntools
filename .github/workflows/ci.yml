@@ -164,6 +164,7 @@ jobs:
         pwn phd -l 0x3d --color=always /etc/os-release
 
         pwn checksec /bin/bash
+        (ulimit -v 500000 && pwn checksec /bin/bash)
 
         pwn errno 2
         pwn errno -1
