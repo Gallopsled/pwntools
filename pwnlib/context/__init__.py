@@ -376,7 +376,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
+    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal','darwin'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}

@@ -2,9 +2,10 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import sys
 import tempfile
 
-from pwnlib.context import LocalContext
+from pwnlib.context import LocalContext, context
 from pwnlib.elf import ELF
 from pwnlib.tubes.process import process
 
@@ -31,6 +32,14 @@ def run_assembly(assembly):
         >>> p.poll()
         12
     """
+    if context.os == 'darwin':
+        if sys.platform != 'darwin':
+            raise ValueError('Running Mach-O only supported on Darwin machines. Please use:\n'
+                             '- https://github.com/MatthewCroughan/NixThePlanet\n'
+                             '- https://github.com/sickcodes/Docker-OSX')
+        from pwnlib.asm import make_macho_from_assembly
+        return process(make_macho_from_assembly(assembly))
+
     return ELF.from_assembly(assembly).process()
 
 @LocalContext
@@ -51,6 +60,14 @@ def run_shellcode(bytes, **kw):
         >>> p.poll()
         12
     """
+    if context.os == 'darwin':
+        if sys.platform != 'darwin':
+            raise ValueError('Running Mach-O only supported on Darwin machines. Please use:\n'
+                             '- https://github.com/MatthewCroughan/NixThePlanet\n'
+                             '- https://github.com/sickcodes/Docker-OSX')
+        from pwnlib.asm import make_macho
+        return process(make_macho(bytes))
+
     return ELF.from_bytes(bytes, **kw).process()
 
 @LocalContext

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
+import time
 import six
 import tempfile
 
@@ -13,6 +14,7 @@ from pwnlib.elf import ELF
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex
+from pwnlib.util.hashes import sha1filehex, sha256filehex, md5filehex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import which
 from pwnlib.util.misc import write
@@ -20,7 +22,12 @@ from pwnlib.util.web import wget
 
 log = getLogger(__name__)
 
-HASHES = ['build_id', 'sha1', 'sha256', 'md5']
+HASHES = {
+    'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
+    'sha1': sha1filehex,
+    'sha256': sha256filehex,
+    'md5': md5filehex,
+}
 DEBUGINFOD_SERVERS = [
     'https://debuginfod.elfutils.org/',
 ]
@@ -28,6 +35,9 @@ DEBUGINFOD_SERVERS = [
 if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
+
+# Retry failed lookups after some time
+NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
@@ -100,7 +110,23 @@ def provider_libc_rip(hex_encoded_id, hash_type):
         return None
     return data
 
-PROVIDERS = [provider_libcdb, provider_libc_rip]
+# Check if the local system libc matches the requested hash.
+def provider_local_system(hex_encoded_id, hash_type):
+    if hash_type == 'id':
+        return None
+    shell_path = os.environ.get('SHELL', None) or '/bin/sh'
+    if not os.path.exists(shell_path):
+        log.debug('Shell path %r does not exist. Skipping local system libc matching.', shell_path)
+        return None
+    local_libc = ELF(shell_path, checksec=False).libc
+    if not local_libc:
+        log.debug('Cannot lookup libc from shell %r. Skipping local system libc matching.', shell_path)
+        return None
+    if HASHES[hash_type](local_libc.path) == hex_encoded_id:
+        return local_libc.data
+    return None
+
+PROVIDERS = [provider_local_system, provider_libcdb, provider_libc_rip]
 
 def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     assert hash_type in HASHES, hash_type
@@ -109,6 +135,10 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, hash_type)
     if cache_valid:
         return cache
+    
+    # We searched for this buildid before, but didn't find anything.
+    if cache is None:
+        return None
 
     # Run through all available libc database providers to see if we have a match.
     for provider in PROVIDERS:
@@ -141,6 +171,10 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
     cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
     if cache_valid:
         return cache
+    
+    # We searched for this buildid before, but didn't find anything.
+    if cache is None:
+        return None
 
     # Try to find separate debuginfo.
     url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
@@ -191,8 +225,11 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
 
     data = read(cache)
     if not data.startswith(b'\x7FELF'):
-        log.info_once("Skipping unavailable ELF %s", hex_encoded_id)
-        return cache, False
+        # Retry failed lookups after some time
+        if time.time() > os.path.getmtime(cache) + NEGATIVE_CACHE_EXPIRY:
+            return cache, False
+        log.info_once("Skipping invalid cached ELF %s", hex_encoded_id)
+        return None, False
 
     log.info_once("Using cached data from %r", cache)
     return cache, True

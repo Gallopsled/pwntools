@@ -37,6 +37,8 @@ if append_null and not string.endswith(b'\x00'):
     string += b'\x00'
 
 pretty_string = pretty or shellcraft.pretty(string)
+if len(pretty_string) > 1000:
+    pretty_string = pretty_string[:1000] + '...'
 
 while len(string) % 8:
     string += b'\x00'
