@@ -386,6 +386,7 @@ class ContextType(object):
         'cgc':       unix_like,
         'android':   unix_like,
         'baremetal': unix_like,
+        'darwin':    unix_like,
     })
 
     big_32    = {'endian': 'big', 'bits': 32}

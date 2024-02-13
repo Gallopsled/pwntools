@@ -37,10 +37,15 @@ def unhex(s):
         b'test'
         >>> unhex("F\n")
         b'\x0f'
+        >>> unhex(bytearray(b" F "))
+        b'\x0f'
     """
     s = s.strip()
     if len(s) % 2 != 0:
-        s = '0' + s
+        if isinstance(s, (bytes, bytearray)):
+            s = b'0' + s
+        else:
+            s = '0' + s
     return binascii.unhexlify(s)
 
 def enhex(x):

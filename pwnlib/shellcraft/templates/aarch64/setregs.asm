@@ -13,8 +13,8 @@ Args:
 
 Example:
 
-    >>> print(shellcraft.setregs({'x0':1, 'x2':'x3'}).rstrip())
-        mov  x0, #1
+    >>> print(shellcraft.setregs({'x0':9, 'x2':'x3'}).rstrip())
+        mov  x0, #9
         mov  x2, x3
     >>> print(shellcraft.setregs({'x0':'x1', 'x1':'x0', 'x2':'x3'}).rstrip())
         mov  x2, x3
