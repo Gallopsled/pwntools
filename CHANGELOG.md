@@ -90,6 +90,11 @@ The table below shows which release corresponds to each branch, and what date th
 [2257]: https://github.com/Gallopsled/pwntools/pull/2257
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
 
+## 4.11.2
+- [#2349][2349] Fix term.readline omitting a trailing \n
+
+[2349]: https://github.com/Gallopsled/pwntools/pull/2349
+
 ## 4.11.1 (`stable`)
 
 - [#2271][2271] FIX: Generated shebang with path to python invalid if path contains spaces
