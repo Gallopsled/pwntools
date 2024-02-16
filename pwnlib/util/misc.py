@@ -619,11 +619,9 @@ def python_2_bytes_compatible(klass):
             klass.__str__ = klass.__bytes__
     return klass
 
-
-
-def create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
+def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
-        shell=False):
+        shell=False, log=log):
     """
     Creates a python wrapper script that triggers the syscall `execve` directly.
 
@@ -665,6 +663,7 @@ def create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_
             Pass the command-line arguments to the shell.
 
     Returns:
+        A string containing the python script.
     """
     if not argv and not executable:
         log.error("Must specify argv or executable")
@@ -732,7 +731,6 @@ environ = getattr(os, 'environb', os.environ)
 
 if env is not None:
     env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
-    os.environ.clear()
     environ.update(env)
 else:
     env = environ

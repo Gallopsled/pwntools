@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import inspect
 import logging
 import os
 import re
@@ -13,7 +12,6 @@ import tarfile
 import tempfile
 import threading
 import time
-import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
@@ -906,10 +904,10 @@ class ssh(Timeout, Logger):
 
         """
         cwd = cwd or self.cwd
-        script = misc.create_execve_script(argv=argv, executable=executable,
+        script = misc._create_execve_script(argv=argv, executable=executable,
                 cwd=cwd, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
                 ignore_environ=ignore_environ, preexec_fn=preexec_fn, preexec_args=preexec_args,
-                aslr=aslr, setuid=setuid, shell=shell)
+                aslr=aslr, setuid=setuid, shell=shell, log=self)
 
 
         self.debug("Created execve script:\n" + script)

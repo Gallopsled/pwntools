@@ -274,7 +274,7 @@ def _execve_script(argv, executable, env, ssh):
         # ssh.process with run=false creates the script for us
         return ssh.process(argv, executable=executable, env=env, run=False)
 
-    script=misc.create_execve_script(argv=argv, executable=executable, env=env)
+    script = misc._create_execve_script(argv=argv, executable=executable, env=env, log=log)
     script = script.strip()
     # Create a temporary file to hold the script
     tmp = tempfile.NamedTemporaryFile(mode="w+t",prefix='pwnlib-execve-', suffix='.py', delete=False)
