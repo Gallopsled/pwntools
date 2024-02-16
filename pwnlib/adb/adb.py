@@ -66,6 +66,7 @@ from pwnlib import tubes
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.device import Device
+from pwnlib.exception import PwnlibException
 from pwnlib.log import getLogger
 from pwnlib.protocols.adb import AdbClient
 from pwnlib.util.packing import _decode
@@ -122,7 +123,7 @@ def current_device(any=False):
 
         >>> device = adb.current_device(any=True)
         >>> device  # doctest: +ELLIPSIS
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_armv7', model='sdk ...phone armv7', device='generic')
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_...', model='...', device='generic...')
         >>> device.port
         'emulator'
     """
@@ -252,13 +253,13 @@ class AdbDevice(Device):
 
         >>> device = adb.wait_for_device()
         >>> device.arch
-        'arm'
+        'amd64'
         >>> device.bits
-        32
+        64
         >>> device.os
         'android'
         >>> device.product  # doctest: +ELLIPSIS
-        'sdk_...phone_armv7'
+        'sdk_...phone_...'
         >>> device.serial
         'emulator-5554'
     """
@@ -1364,7 +1365,7 @@ def compile(source):
         >>> filename = adb.compile(temp)
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
-        b'... /system/bin/linker\n...'
+        b'... /system/lib64/libc.so\n...'
     """
 
     ndk_build = misc.which('ndk-build')
@@ -1490,8 +1491,9 @@ class Partitions(object):
     @context.quietfunc
     def by_name_dir(self):
         try:
-            return next(find('/dev/block/platform','by-name'))
-        except StopIteration:
+            with context.local(log_level=logging.FATAL):
+                return next(find('/dev/block/platform','by-name'))
+        except (StopIteration, PwnlibException):
             return '/dev/block'
 
     @context.quietfunc

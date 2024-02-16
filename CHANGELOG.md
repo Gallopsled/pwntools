@@ -70,16 +70,59 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.13.0 (`dev`)
 
+- [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 - [#2277][2277] elf: Resolve more relocations into GOT entries
 - [#2281][2281] FIX: Getting right amount of data for search fix
 - [#2293][2293] Add x86 CET status to checksec output
 - [#1763][1763] Allow to add to the existing environment in `process` instead of replacing it
+- [#2307][2307] Fix `pwn libcdb file` crashing if "/bin/sh" string was not found
+- [#2309][2309] Detect challenge binary and libc in `pwn template`
+- [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
+- [#2279][2279] Make `pwn template` always set context.binary
+- [#2310][2310] Add support to start a process on Windows
+- [#2335][2335] Add lookup optimizations in DynELF 
+- [#2334][2334] Speed up disasm commandline tool with colored output
+- [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
+- [#2189][2189] Explicitly define p64/u64 functions for IDE support
+- [#2339][2339] Fix: Allow setting attributes on gdb Breakpoints
+- [#2323][2323] Retry failed lookups after one week in libcdb
+- [#2325][2325] Match against local system libc first in libcdb
+- [#2336][2336] Add `ELF.stripped` and `ELF.debuginfo` properties
+- [#2161][2161] Add basic support for darwin shellcraft/asm/disasm/run_shellcode/run_assembly
+- [#2161][2161] Fix freebsd amd64 SyscallABI
+- [#2160][2161] Fix invalid shellcraft.mov on arm64
+- [#2284][2161] Fix invalid shellcraft.pushstr_array on arm64
+- [#2345][2345] Fix pwn constgrep when it matches a non-constant type
+- [#2338][2338] Fix: follow symlink for libs on ssh connection
+- [#2341][2341] Launch GDB correctly in iTerm on Mac
+- [#2268][2268] Add a `flatten` argument to `ssh.libs`
+- [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
 - [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
 
+[2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 [2293]: https://github.com/Gallopsled/pwntools/pull/2293
 [1763]: https://github.com/Gallopsled/pwntools/pull/1763
+[2307]: https://github.com/Gallopsled/pwntools/pull/2307
+[2309]: https://github.com/Gallopsled/pwntools/pull/2309
+[2308]: https://github.com/Gallopsled/pwntools/pull/2308
+[2279]: https://github.com/Gallopsled/pwntools/pull/2279
+[2310]: https://github.com/Gallopsled/pwntools/pull/2310
+[2335]: https://github.com/Gallopsled/pwntools/pull/2335
+[2334]: https://github.com/Gallopsled/pwntools/pull/2334
+[2328]: https://github.com/Gallopsled/pwntools/pull/2328
+[2189]: https://github.com/Gallopsled/pwntools/pull/2189
+[2339]: https://github.com/Gallopsled/pwntools/pull/2339
+[2323]: https://github.com/Gallopsled/pwntools/pull/2323
+[2325]: https://github.com/Gallopsled/pwntools/pull/2325
+[2336]: https://github.com/Gallopsled/pwntools/pull/2336
+[2161]: https://github.com/Gallopsled/pwntools/pull/2161
+[2345]: https://github.com/Gallopsled/pwntools/pull/2345
+[2338]: https://github.com/Gallopsled/pwntools/pull/2338
+[2341]: https://github.com/Gallopsled/pwntools/pull/2341
+[2268]: https://github.com/Gallopsled/pwntools/pull/2268
+[2347]: https://github.com/Gallopsled/pwntools/pull/2347
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
 
 ## 4.12.0 (`beta`)

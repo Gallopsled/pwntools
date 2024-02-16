@@ -10,6 +10,7 @@ import sys
 
 from pwnlib.term import keyconsts as kc
 from pwnlib.term import termcap
+from pwnlib.term import term
 
 __all__ = ['getch', 'getraw', 'get', 'unget']
 
@@ -21,11 +22,15 @@ try:    _fd = sys.stdin.fileno()
 except Exception: _fd = os.open(os.devnull, os.O_RDONLY)
 
 def getch(timeout = 0):
+    term.setupterm()
     while True:
         try:
             rfds, _wfds, _xfds = select.select([_fd], [], [], timeout)
             if rfds:
-                c = os.read(_fd, 1)
+                with term.rlock:
+                    rfds, _wfds, _xfds = select.select([_fd], [], [], 0)
+                    if not rfds: continue
+                    c = os.read(_fd, 1)
                 return ord(c) if c else None
             else:
                 return None

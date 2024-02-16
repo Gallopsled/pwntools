@@ -376,7 +376,7 @@ class ContextType(object):
     }
 
     #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
+    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal','darwin'))
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -787,7 +787,7 @@ class ContextType(object):
         try:
             defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
+            raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
 
         for k,v in defaults.items():
             if k not in self._tls:

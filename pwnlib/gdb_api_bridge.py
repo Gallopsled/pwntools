@@ -110,5 +110,6 @@ spawn(ThreadedServer(
     socket_path=socket_path,
     protocol_config={
         'allow_all_attrs': True,
+        'allow_setattr': True,
     },
 ).start)

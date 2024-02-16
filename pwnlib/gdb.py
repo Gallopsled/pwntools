@@ -360,7 +360,14 @@ def _gdbserver_port(gdbserver, ssh):
 
     # Process /bin/bash created; pid = 14366
     # Listening on port 34816
-    process_created = gdbserver.recvline()
+    process_created = gdbserver.recvline(timeout=3)
+
+    if not process_created:
+        log.error(
+            'No output from gdbserver after 3 seconds. Try setting the SHELL=/bin/sh '
+            'environment variable or using the env={} argument if you are affected by '
+            'https://sourceware.org/bugzilla/show_bug.cgi?id=26116'
+        )
 
     if process_created.startswith(b'ERROR:'):
         raise ValueError(
@@ -731,7 +738,10 @@ class Breakpoint:
         """
         # Creates a real breakpoint and connects it with this mirror
         self.conn = conn
-        self.server_breakpoint = conn.root.set_breakpoint(
+        self.server_breakpoint = self._server_set_breakpoint(*args, **kwargs)
+
+    def _server_set_breakpoint(self, *args, **kwargs):
+        return self.conn.root.set_breakpoint(
             self, hasattr(self, 'stop'), *args, **kwargs)
 
     def __getattr__(self, item):
@@ -749,25 +759,43 @@ class Breakpoint:
             raise AttributeError()
         return getattr(self.server_breakpoint, item)
 
+    def __setattr__(self, name, value):
+        """Set attributes of the real breakpoint."""
+        if name in (
+            'enabled',
+            'silent',
+            'thread',
+            'task',
+            'ignore_count',
+            'hit_count'
+            'condition',
+            'commands',
+        ):
+            return setattr(self.server_breakpoint, name, value)
+        return super().__setattr__(name, value)
+
     def exposed_stop(self):
         # Handle stop() call from the server.
         return self.stop()
 
-class FinishBreakpoint:
+class FinishBreakpoint(Breakpoint):
     """Mirror of ``gdb.FinishBreakpoint`` class.
 
     See https://sourceware.org/gdb/onlinedocs/gdb/Finish-Breakpoints-in-Python.html
     for more information.
     """
 
-    def __init__(self, conn, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Do not create instances of this class directly.
 
         Use ``pwnlib.gdb.Gdb.FinishBreakpoint`` instead.
         """
-        # Creates a real finish breakpoint and connects it with this mirror
-        self.conn = conn
-        self.server_breakpoint = conn.root.set_finish_breakpoint(
+        # See https://github.com/pylint-dev/pylint/issues/4228
+        # pylint: disable=useless-super-delegation
+        super().__init__(*args, **kwargs)
+
+    def _server_set_breakpoint(self, *args, **kwargs):
+        return self.conn.root.set_finish_breakpoint(
             self, hasattr(self, 'stop'), hasattr(self, 'out_of_scope'),
             *args, **kwargs)
 
@@ -786,10 +814,6 @@ class FinishBreakpoint:
             # server in this case either.
             raise AttributeError()
         return getattr(self.server_breakpoint, item)
-
-    def exposed_stop(self):
-        # Handle stop() call from the server.
-        return self.stop()
 
     def exposed_out_of_scope(self):
         # Handle out_of_scope() call from the server.
