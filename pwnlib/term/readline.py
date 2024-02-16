@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import six
 import sys
+import os
 
 from pwnlib.term import keyconsts as kc
 from pwnlib.term import keymap as km
@@ -404,7 +405,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
                     buffer = (buffer_left + buffer_right)
                     if buffer:
                         history.insert(0, buffer)
-                    return force_to_bytes(buffer)
+                    return force_to_bytes(buffer) + b'\n'
             except KeyboardInterrupt:
                 control_c()
     finally:
@@ -432,7 +433,7 @@ def raw_input(prompt='', float=True):
         float(bool): If set to `True`, prompt and input will float to the
                      bottom of the screen when `term.term_mode` is enabled.
     """
-    return readline(-1, prompt, float)
+    return readline(-1, prompt, float).rstrip(os.linesep.encode())
 
 def str_input(prompt='', float=True):
     r"""str_input(prompt='', float=True)
@@ -445,7 +446,7 @@ def str_input(prompt='', float=True):
         float(bool): If set to `True`, prompt and input will float to the
                      bottom of the screen when `term.term_mode` is enabled.
     """
-    return readline(-1, prompt, float).decode()
+    return readline(-1, prompt, float).decode().rstrip(os.linesep)
 
 def eval_input(prompt='', float=True):
     """eval_input(prompt='', float=True)
@@ -471,7 +472,7 @@ def eval_input(prompt='', float=True):
         Favorite object? 20
     """
     from pwnlib.util import safeeval
-    return safeeval.const(readline(-1, prompt, float))
+    return safeeval.const(readline(-1, prompt, float).rstrip(os.linesep.encode()))
 
 def init():
     global safeeval
