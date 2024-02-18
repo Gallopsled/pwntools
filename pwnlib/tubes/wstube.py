@@ -36,8 +36,8 @@ class wstube(tube):
         b'echo.websocket.events sponsored by Lob.com'
         >>> for i in range(3):
         ...     ws.send(b'test')
-        ...     print(ws.recv(2))
-        ...     print(ws.recv(2))
+        ...     ws.recv(2)
+        ...     ws.recv(2)
         b'te'
         b'st'
         b'te'
@@ -45,12 +45,12 @@ class wstube(tube):
         b'te'
         b'st'
         >>> ws.sendline(b'test')
-        >>> print(ws.recv())
+        >>> ws.recv()
         b'test\\n'
         >>> ws.send(b'12345asdfg')
-        >>> print(ws.recvregex(b'[0-9]{5}'))
+        >>> ws.recvregex(b'[0-9]{5}')
         b'12345'
-        >>> print(ws.recv())
+        >>> ws.recv()
         b'asdfg'
         >>> ws.close()
     """
