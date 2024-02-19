@@ -97,7 +97,6 @@ pwnlib.context.ContextType.defaults['log_console'] = stdout()
 github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
-branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
 '''
 
