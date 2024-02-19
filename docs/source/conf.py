@@ -71,6 +71,7 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
+import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
@@ -98,6 +99,7 @@ github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 skip_android = True
+is_python2 = six.PY2
 '''
 
 autoclass_content = 'both'

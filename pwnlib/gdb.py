@@ -512,27 +512,28 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
         
         Start a new process with modified argv[0]
-        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], executable="/bin/sh")
+        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh")
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
-        b'$ \xde\xad\xbe\xef\n'
+        b'\xde\xad\xbe\xef\n'
         >>> io.close()
 
         Demonstrate that LD_PRELOAD is respected
         >>> io = process(["grep", "libc.so.6", "/proc/self/maps"])
         >>> real_libc_path = io.recvline().split()[-1]
+        >>> io.close()
         >>> import shutil
-        >>> shutil.copy(real_libc_path, "./libc.so.6") # make a copy of libc to demonstrate that it is loaded
-        >>> io = gdb.debug(["grep", "libc.so.6", "/proc/self/maps"], env={"LD_PRELOAD": "./libc.so.6"})
-        >>> io.recvline().split()[-1]
-        b"./libc.so.6"
-        >>> os.remove("./libc.so.6") # cleanup
+        >>> local_path = shutil.copy(real_libc_path, "./local-libc.so") # make a copy of libc to demonstrate that it is loaded
+        >>> io = gdb.debug(["grep", "local-libc.so", "/proc/self/maps"], gdbscript="continue", env={"LD_PRELOAD": "./local-libc.so"})
+        >>> io.recvline().split()[-1] # doctest: +ELLIPSIS
+        b'.../local-libc.so'
+        >>> os.remove("./local-libc.so") # cleanup
 
 
     Using GDB Python API:
 
-    .. doctest
-       :skipif: six.PY2
+    .. doctest::
+       :skipif: is_python2
 
         Debug a new process
 
@@ -581,14 +582,14 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
 
         Using a modified args[0] on a remote process
-        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'],  gdbscript='continue', exe="/bin/sh",  ssh=shell)
+        >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \xde\xad\xbe\xef\n'
         >>> io.close()
 
         Using an empty args[0] on a remote process
-        >>> io = gdb.debug(args=[],  gdbscript='continue', exe="/bin/sh",  ssh=shell)
+        >>> io = gdb.debug(args=[], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
         b'$ \n'
@@ -681,7 +682,10 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     garbage = gdbserver.recvline(timeout=1)
 
     # Some versions of gdbserver output an additional message
-    garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
+    try:
+        garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
+    except EOFError:
+        pass
 
     return gdbserver
 
@@ -944,8 +948,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         Using GDB Python API:
 
-        .. doctest
-           :skipif: six.PY2
+        .. doctest::
+           :skipif: is_python2
 
             >>> io = process('bash')
 
