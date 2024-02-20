@@ -92,8 +92,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.11.2
 - [#2349][2349] Fix term.readline omitting a trailing \n
+- [#2352][2352] add `RETURN_CONST` as an allowed `_const_code` in safeeval
 
 [2349]: https://github.com/Gallopsled/pwntools/pull/2349
+[2352]: https://github.com/Gallopsled/pwntools/pull/2352
 
 ## 4.11.1 (`stable`)
 
@@ -102,14 +104,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2281][2281] FIX: Getting right amount of data for search fix
 - [#2287][2287] Fix `_countdown_handler` not invoking `timeout_change`
 - [#2294][2294] Fix atexit SEGV in aarch64 loader
-- [#2352][2352] add `RETURN_CONST` as an allowed `_const_code` in safeeval
 
 [2271]: https://github.com/Gallopsled/pwntools/pull/2271
 [2272]: https://github.com/Gallopsled/pwntools/pull/2272
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281
 [2287]: https://github.com/Gallopsled/pwntools/pull/2287
 [2294]: https://github.com/Gallopsled/pwntools/pull/2294
-[2352]: https://github.com/Gallopsled/pwntools/pull/2352
 
 ## 4.11.0
 
