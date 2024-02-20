@@ -1074,15 +1074,19 @@ os.execve(exe, argv, env)
                 python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
 
             try:
-                python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
-                python.recvline()                           # Python interpreter that was selected
+                python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
+                try:
+                    if b'python' not in python.recvline():  # Python interpreter that was selected
+                        raise ValueError("Python not found on remote host")
+                except (EOFError, ValueError):
+                    self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                                   + "Use ssh.system() instead of ssh.process()\n")
+                    h.failure("Process creation failed")
+                    return None
+
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python interpreter on %s\n' % self.host
-                               + "Use ssh.run() instead of ssh.process()\n"
-                                 "The original error message:\n"
-                               + python.recvall().decode())
                 return None
 
             # If an error occurred, try to grab as much output

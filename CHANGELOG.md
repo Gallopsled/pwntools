@@ -92,8 +92,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.11.2
 - [#2349][2349] Fix term.readline omitting a trailing \n
+- [#2352][2352] add `RETURN_CONST` as an allowed `_const_code` in safeeval
 
 [2349]: https://github.com/Gallopsled/pwntools/pull/2349
+[2352]: https://github.com/Gallopsled/pwntools/pull/2352
 
 ## 4.11.1 (`stable`)
 
