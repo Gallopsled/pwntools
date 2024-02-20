@@ -22,6 +22,7 @@ def partition(lst, f, save_keys = False):
                        returned instead of just the values
 
     Example:
+
       >>> partition([1,2,3,4,5], lambda x: x&1)
       [[1, 3, 5], [2, 4]]
       >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True)
@@ -55,6 +56,7 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
       A list containing the grouped values.
 
     Example:
+
       >>> group(3, "ABCDEFG")
       ['ABC', 'DEF', 'G']
       >>> group(3, 'ABCDEFG', 'drop')
@@ -119,6 +121,7 @@ def concat_all(*args):
     Concats all the arguments together.
 
     Example:
+
        >>> concat_all(0, [1, (2, 3)], [([[4, 5, 6]])])
        [0, 1, 2, 3, 4, 5, 6]
     """
@@ -139,6 +142,7 @@ def ordlist(s):
     Turns a string into a list of the corresponding ascii values.
 
     Example:
+
       >>> ordlist("hello")
       [104, 101, 108, 108, 111]
     """
@@ -150,6 +154,7 @@ def unordlist(cs):
     Takes a list of ascii values and returns the corresponding string.
 
     Example:
+
       >>> unordlist([104, 101, 108, 108, 111])
       'hello'
     """
@@ -162,6 +167,7 @@ def findall(haystack, needle):
     Knuth-Morris-Pratt algorithm.
 
     Example:
+
       >>> foo = findall([1,2,3,4,4,3,4,2,1], 4)
       >>> next(foo)
       3

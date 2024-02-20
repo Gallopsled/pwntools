@@ -141,14 +141,11 @@ Member Documentation
 from __future__ import absolute_import
 from __future__ import division
 
-from contextlib import contextmanager
 import os
-import sys
 import platform
 import psutil
 import random
 import re
-import shlex
 import six
 import six.moves
 import socket
@@ -512,6 +509,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
         
         Start a new process with modified argv[0]
+
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh")
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
@@ -519,6 +517,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
 
         Demonstrate that LD_PRELOAD is respected
+
         >>> io = process(["grep", "libc.so.6", "/proc/self/maps"])
         >>> real_libc_path = io.recvline().split()[-1]
         >>> io.close()
@@ -578,10 +577,12 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.sendline(b"echo hello")
 
         Interact with the process
+
         >>> io.interactive() # doctest: +SKIP
         >>> io.close()
 
         Using a modified args[0] on a remote process
+
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
@@ -589,6 +590,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.close()
 
         Using an empty args[0] on a remote process
+
         >>> io = gdb.debug(args=[], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
