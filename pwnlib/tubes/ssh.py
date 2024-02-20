@@ -1075,7 +1075,13 @@ os.execve(exe, argv, env)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
-                if b'python' not in python.recvline():  # Python interpreter that was selected
+                try:
+                    if b'python' not in python.recvline():  # Python interpreter that was selected
+                        self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                                       + "Use ssh.run() instead of ssh.process()\n")
+                        h.failure("Process creation failed")
+                        return None
+                except (EOFError, ValueError):
                     self.warn_once('Could not find a Python interpreter on %s\n' % self.host
                                    + "Use ssh.system() instead of ssh.process()\n")
                     h.failure("Process creation failed")
