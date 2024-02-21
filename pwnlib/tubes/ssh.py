@@ -1007,12 +1007,15 @@ class ssh(Timeout, Logger):
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; command -v %s' % program).recvall().strip().decode()
+        if isinstance(program, six.text_type):
+            program = packing._encode(program)
 
-        if ('/%s' % program) not in result:
+        result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
+
+        if (b'/' + program) not in result:
             return None
 
-        return result
+        return packing._decode(result)
 
     def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
         r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
