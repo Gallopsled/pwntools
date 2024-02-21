@@ -97,6 +97,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2341][2341] Launch GDB correctly in iTerm on Mac
 - [#2268][2268] Add a `flatten` argument to `ssh.libs`
 - [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
+- [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
 - [#2322][2322] Add basic RISCV64 shellcraft support
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
@@ -123,6 +124,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2341]: https://github.com/Gallopsled/pwntools/pull/2341
 [2268]: https://github.com/Gallopsled/pwntools/pull/2268
 [2347]: https://github.com/Gallopsled/pwntools/pull/2347
+[2233]: https://github.com/Gallopsled/pwntools/pull/2233
 [2322]: https://github.com/Gallopsled/pwntools/pull/2322
 
 ## 4.12.0 (`beta`)

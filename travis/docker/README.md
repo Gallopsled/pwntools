@@ -6,7 +6,19 @@ It's pretty simple, just run `make`.  All of your changes will be copied into th
 
 ```shell
 $ make -C travis/docker ANDROID=yes
-$ make -C travis/docker ANDROID=no TARGET=docs/source/tubes/ssh.rst
+$ make -C travis/docker ANDROID=no TARGET=ssh.rst
+```
+
+By default the Python 3 tests are run. You can choose the Python version using the `doctest2` or `doctest3` target.
+
+```shell
+$ make -C travis/docker ANDROID=no doctest2
+```
+
+You can get drop into a tmux session in the container to debug tests using the `shell` or `bash` targets.
+
+```shell
+$ make -C travis/docker shell
 ```
 
 ## Options
@@ -19,7 +31,7 @@ Controls whether or not to run the Android test.  The valid options are ``yes`` 
 
 ### `TARGET`
 
-This is appended to the `sphinx` command line, but generally is useful to sepcify a specific `rst` file to parse (e.g. to only run those tests).
+This is appended to the `sphinx` command line, but generally is useful to select a specific `rst` file to parse (e.g. to only run those tests).
 
 ## Known Issues
 
