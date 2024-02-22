@@ -900,8 +900,8 @@ class tube(Timeout, Logger):
             while not go.is_set():
                 if term.term_mode:
                     data = term.readline.readline(prompt = prompt, float = True)
-                    if data:
-                        data += self.newline
+                    if data.endswith(b'\n') and self.newline != b'\n':
+                        data = data[:-1] + self.newline
                 else:
                     stdin = getattr(sys.stdin, 'buffer', sys.stdin)
                     data = stdin.read(1)
