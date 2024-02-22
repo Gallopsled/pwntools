@@ -52,6 +52,7 @@ from pwnlib.tubes.serialtube import serialtube
 from pwnlib.tubes.server import server
 from pwnlib.tubes.ssh import ssh
 from pwnlib.tubes.tube import tube
+from pwnlib.tubes.wstube import wstube
 from pwnlib.ui import *
 from pwnlib.util import crc
 from pwnlib.util import iters

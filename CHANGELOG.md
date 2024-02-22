@@ -69,7 +69,7 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 ## 4.13.0 (`dev`)
-
+- [#2350][2350] add native websocket support
 - [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 - [#2277][2277] elf: Resolve more relocations into GOT entries
 - [#2281][2281] FIX: Getting right amount of data for search fix
@@ -99,6 +99,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
 - [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
 
+[2350]: https://github.com/Gallopsled/pwntools/pull/2350
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
 [2281]: https://github.com/Gallopsled/pwntools/pull/2281

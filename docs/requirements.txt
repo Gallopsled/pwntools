@@ -20,3 +20,4 @@ sphinx==1.8.6; python_version<'3'
 sphinx>=4.5.0; python_version>='3'
 sphinx_rtd_theme
 sphinxcontrib-autoprogram<=0.1.5
+websocket-client
