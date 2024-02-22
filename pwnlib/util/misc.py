@@ -30,6 +30,7 @@ def align(alignment, x):
     Rounds `x` up to nearest multiple of the `alignment`.
 
     Example:
+
       >>> [align(5, n) for n in range(15)]
       [0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10, 15, 15, 15, 15]
     """
@@ -42,6 +43,7 @@ def align_down(alignment, x):
     Rounds `x` down to nearest multiple of the `alignment`.
 
     Example:
+
         >>> [align_down(5, n) for n in range(15)]
         [0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 10, 10, 10, 10, 10]
     """
@@ -54,6 +56,7 @@ def binary_ip(host):
     Resolve host and return IP as four byte string.
 
     Example:
+
         >>> binary_ip("127.0.0.1")
         b'\\x7f\\x00\\x00\\x01'
     """
@@ -71,6 +74,7 @@ def size(n, abbrev = 'B', si = False):
       abbrev(str): String appended to the size, defaults to ``'B'``.
 
     Example:
+
         >>> size(451)
         '451B'
         >>> size(1000)
@@ -116,6 +120,7 @@ def read(path, count=-1, skip=0):
     Open file, return content.
 
     Examples:
+
         >>> read('/proc/self/exe')[:4]
         b'\x7fELF'
     """
@@ -481,6 +486,7 @@ def parse_ldd_output(output):
       output(str): The output to parse
 
     Example:
+
         >>> sorted(parse_ldd_output('''
         ...     linux-vdso.so.1 =>  (0x00007fffbf5fe000)
         ...     libtinfo.so.5 => /lib/x86_64-linux-gnu/libtinfo.so.5 (0x00007fe28117f000)
@@ -545,6 +551,7 @@ def register_sizes(regs, in_sizes):
     Used in i386/AMD64 shellcode, e.g. the mov-shellcode.
 
     Example:
+
         >>> regs = [['eax', 'ax', 'al', 'ah'],['ebx', 'bx', 'bl', 'bh'],
         ... ['ecx', 'cx', 'cl', 'ch'],
         ... ['edx', 'dx', 'dl', 'dh'],

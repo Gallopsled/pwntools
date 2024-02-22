@@ -34,6 +34,7 @@ def pidof(target):
         A list of found PIDs.
 
     Example:
+
         >>> l = tubes.listen.listen()
         >>> p = process(['curl', '-s', 'http://127.0.0.1:%d'%l.lport])
         >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.lport))
@@ -68,6 +69,7 @@ def pid_by_name(name):
         List of PIDs matching `name` sorted by lifetime, youngest to oldest.
 
     Example:
+
         >>> os.getpid() in pid_by_name(name(os.getpid()))
         True
     """
@@ -99,6 +101,7 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
+
         >>> p = process('cat')
         >>> name(p.pid)
         'cat'
@@ -141,6 +144,7 @@ def ancestors(pid):
         List of PIDs of whose parent process is `pid` or an ancestor of `pid`.
 
     Example:
+
         >>> ancestors(os.getpid()) # doctest: +ELLIPSIS
         [..., 1]
     """
@@ -160,6 +164,7 @@ def descendants(pid):
         Dictionary mapping the PID of each child of `pid` to it's descendants.
 
     Example:
+
         >>> d = descendants(os.getppid())
         >>> os.getpid() in d.keys()
         True
@@ -187,6 +192,7 @@ def exe(pid):
         The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
 
     Example:
+
         >>> exe(os.getpid()) == os.path.realpath(sys.executable)
         True
     """
@@ -203,6 +209,7 @@ def cwd(pid):
         ``/proc/<pid>/cwd`` points to.
 
     Example:
+
         >>> cwd(os.getpid()) == os.getcwd()
         True
     """
@@ -218,6 +225,7 @@ def cmdline(pid):
         A list of the fields in ``/proc/<pid>/cmdline``.
 
     Example:
+
         >>> 'py' in ''.join(cmdline(os.getpid()))
         True
     """
@@ -233,6 +241,7 @@ def memory_maps(pid):
         A list of the memory mappings in the process.
 
     Example:
+
         >>> maps = memory_maps(os.getpid())
         >>> [(m.path, m.perms) for m in maps if '[stack]' in m.path]
         [('[stack]', 'rw-p')]
@@ -250,6 +259,7 @@ def stat(pid):
         A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
 
     Example:
+
         >>> stat(os.getpid())[2]
         'R'
     """
@@ -271,6 +281,7 @@ def starttime(pid):
         The time (in seconds) the process started after system boot
 
     Example:
+
         >>> starttime(os.getppid()) <= starttime(os.getpid())
         True
     """
@@ -314,6 +325,7 @@ def tracer(pid):
         PID of the process tracing `pid`, or None if no `pid` is not being traced.
 
     Example:
+
         >>> tracer(os.getpid()) is None
         True
     """
@@ -330,6 +342,7 @@ def state(pid):
         State of the process as listed in ``/proc/<pid>/status``.  See `proc(5)` for details.
 
     Example:
+
         >>> state(os.getpid())
         'R (running)'
     """

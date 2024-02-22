@@ -112,6 +112,10 @@ jobs:
 
     - name: Coverage doctests
       run: |
+        # Python version installed using setup-python interferes with gdb's python
+        # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
+        # like _socket. This is a workaround.
+        unset LD_LIBRARY_PATH
         PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples

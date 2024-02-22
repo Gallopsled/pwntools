@@ -82,7 +82,6 @@ Each of the ``pwntools`` modules is documented here.
    :hidden:
 
    testexample
-   rop/call
 
 .. only:: not dash
 

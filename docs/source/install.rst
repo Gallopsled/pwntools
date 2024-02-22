@@ -51,13 +51,11 @@ Command-Line Tools
 
 When installed with ``sudo`` the above commands will install Pwntools' command-line tools to somewhere like ``/usr/bin``.
 
-However, if you run as an unprivileged user, you may see a warning message that looks like this:
+However, if you run as an unprivileged user, you may see a warning message that looks like this::
 
-.. code-block::
-
-      WARNING: The scripts asm, checksec, common, constgrep, cyclic, debug, disablenx, disasm, 
-      elfdiff, elfpatch, errno, hex, main, phd, pwn, pwnstrip, scramble, shellcraft, template, 
-      unhex, update and version are installed in '/home/user/.local/bin' which is not on PATH.
+    WARNING: The scripts asm, checksec, common, constgrep, cyclic, debug, disablenx, disasm, 
+    elfdiff, elfpatch, errno, hex, main, phd, pwn, pwnstrip, scramble, shellcraft, template, 
+    unhex, update and version are installed in '/home/user/.local/bin' which is not on PATH.
 
 Follow the instructions listed and add ``~/.local/bin`` to your ``$PATH`` environment variable.
 

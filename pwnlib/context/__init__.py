@@ -830,6 +830,7 @@ class ContextType(object):
         The default value is ``32``, but changes according to :attr:`arch`.
 
         Examples:
+
             >>> context.clear()
             >>> context.bits == 32
             True

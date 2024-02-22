@@ -249,6 +249,7 @@ def unstrip_libc(filename):
         :const:`True` if binary was unstripped, :const:`False` otherwise.
 
     Examples:
+
         >>> filename = search_by_build_id('69389d485a9793dbe873f0ea2c93e02efaa9aa3d', unstrip=False)
         >>> libc = ELF(filename)
         >>> 'main_arena' in libc.symbols
@@ -432,6 +433,7 @@ def download_libraries(libc_path, unstrip=True):
         The path to the cached directory containing the downloaded libraries.
 
     Example:
+
         >>> libc_path = ELF(which('ls'), checksec=False).libc.path
         >>> lib_path = download_libraries(libc_path)
         >>> lib_path is not None
@@ -545,6 +547,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         is returned instead.
 
     Examples:
+
         >>> filename = search_by_symbol_offsets({'puts': 0x420, 'printf': 0xc90}, select_index=1)
         >>> libc = ELF(filename)
         >>> libc.sym.system == 0x52290
@@ -597,6 +600,7 @@ def search_by_build_id(hex_encoded_id, unstrip=True):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+
         >>> filename = search_by_build_id('fe136e485814fee2268cf19e5c124ed0f73f4400')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -622,6 +626,7 @@ def search_by_md5(hex_encoded_id, unstrip=True):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+
         >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -647,6 +652,7 @@ def search_by_sha1(hex_encoded_id, unstrip=True):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+
         >>> filename = search_by_sha1('34471e355a5e71400b9d65e78d2cd6ce7fc49de5')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'
@@ -673,6 +679,7 @@ def search_by_sha256(hex_encoded_id, unstrip=True):
         Path to the downloaded library on disk, or :const:`None`.
 
     Examples:
+
         >>> filename = search_by_sha256('5e877a8272da934812d2d1f9ee94f73c77c790cbc5d8251f5322389fc9667f21')
         >>> hex(ELF(filename).symbols.read)
         '0xda260'

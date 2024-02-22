@@ -193,6 +193,7 @@ def unbits(s, endian = 'big'):
        A string of the decoded bits.
 
     Example:
+
        >>> unbits([1])
        b'\\x80'
        >>> unbits([1], endian = 'little')
@@ -233,6 +234,7 @@ def bitswap(s):
     Reverses the bits in every byte of a given string.
 
     Example:
+
         >>> bitswap(b"1234")
         b'\\x8cL\\xcc,'
     """
@@ -254,6 +256,7 @@ def bitswap_int(n, width):
         width (int): The width of the integer
 
     Examples:
+
         >>> hex(bitswap_int(0x1234, 8))
         '0x2c'
         >>> hex(bitswap_int(0x1234, 16))
