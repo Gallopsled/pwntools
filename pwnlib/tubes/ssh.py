@@ -1011,8 +1011,7 @@ class ssh(Timeout, Logger):
         if os.path.sep in program:
             return program
 
-        if isinstance(program, six.text_type):
-            program = packing._encode(program)
+        program = packing._encode(program)
 
         result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
 
