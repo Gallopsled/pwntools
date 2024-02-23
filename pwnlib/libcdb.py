@@ -130,7 +130,6 @@ def provider_local_system(hex_encoded_id, hash_type):
 # Offline search https://github.com/niklasb/libc-database for hash type
 def provider_local_database(hex_encoded_id, hash_type):
     assert context.local_libcdb
-    assert hash_type in HASHES
 
     localdb = Path(context.local_libcdb)
     if not localdb.is_dir():
