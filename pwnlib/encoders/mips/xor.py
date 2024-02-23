@@ -29,8 +29,9 @@ import six
 from pwnlib import asm
 from pwnlib import shellcraft
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.util.fiddling import xor_key
+from pwnlib.util.misc import byteset
 
 decoders = {
     'little': b''.join([
@@ -114,7 +115,7 @@ class MipsXorEncoder(Encoder):
     """
 
     arch = 'mips'
-    blacklist = cannot_avoid = set(b''.join(v for v in decoders.values()))
+    blacklist = cannot_avoid = byteset(b''.join(v for v in decoders.values()))
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
 

@@ -10,13 +10,13 @@ import sys
 
 from pwnlib.context import context
 from . import builder
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 
 
 class ArmEncoder(Encoder):
     arch = 'arm'
 
-    blacklist  = {chr(c) for c in range(256) if chr(c) in (string.ascii_letters + string.digits)}
+    blacklist  = {bytes([c]) for c in range(256) if chr(c) in (string.ascii_letters + string.digits)}
     icache_flush = 1
 
     def __call__(self, input, avoid, pcreg=None):

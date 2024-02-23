@@ -10,9 +10,10 @@ import six
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.encoders.encoder import all_chars
 from pwnlib.util.iters import group
+from pwnlib.util.misc import byteset
 from pwnlib.util.packing import *
 
 
@@ -94,13 +95,14 @@ class AsciiShellcodeEncoder(Encoder):
             vocab = bytearray(
                 b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
         else:
-            required_chars = set('\\-%TXP')
+            required_chars = byteset(b'\\-%TXP')
             allowed = set(all_chars)
+            avoid = byteset(avoid)
             if avoid.intersection(required_chars):
                 raise RuntimeError(
                     '''These characters ({}) are required because they assemble
                     into instructions used to unpack the shellcode'''.format(
-                        str(required_chars, 'ascii')))
+                        str(b''.join(required_chars), 'ascii')))
             allowed.difference_update(avoid)
             vocab = bytearray(map(ord, allowed))
 
