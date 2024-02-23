@@ -159,6 +159,10 @@ def STDERR(v):
     """Sends logging to ``stderr`` by default, instead of ``stdout``"""
     context.log_console = sys.stderr
 
+def LOCAL_LIBCDB(v):
+    """Sets local libcdb path"""
+    context.defaults['local_libcdb'] = v
+
 hooks = {
     'LOG_LEVEL': LOG_LEVEL,
     'LOG_FILE': LOG_FILE,
@@ -170,6 +174,7 @@ hooks = {
     'NOASLR': NOASLR,
     'NOPTRACE': NOPTRACE,
     'STDERR': STDERR,
+    'LOCAL_LIBCDB': LOCAL_LIBCDB,
 }
 
 def initialize():
