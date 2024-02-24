@@ -149,7 +149,7 @@ def provider_local_database(hex_encoded_id, hash_type):
 
     return None
 
-PROVIDERS = [provider_local_database, provider_local_system, provider_libcdb, provider_libc_rip]
+PROVIDERS = [provider_local_system, provider_local_database, provider_libcdb, provider_libc_rip]
 
 def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     assert hash_type in HASHES, hash_type
