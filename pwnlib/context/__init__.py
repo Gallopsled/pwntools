@@ -1074,6 +1074,21 @@ class ContextType(object):
 
     @_validator
     def local_libcdb(self, path):
+        """ 
+        Sets path to local libc-database, get more information for libc-database:
+        https://github.com/niklasb/libc-database
+
+        Works in offline search mode of :attr:`pwnlib.libcdb`.
+
+        The default value is ``/var/lib/libc-database``.
+
+        When `context.local_libcdb` is default value, no warning will be issued for path check 
+        during `pwnlib.libcdb` searching by local database provider.
+
+        Examples:
+
+            >>> context.local_libcdb = '/path/to/libc-database'
+        """
         return path
 
     @property
