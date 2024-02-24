@@ -40,6 +40,10 @@ if 'DEBUGINFOD_URLS' in os.environ:
 # Retry failed lookups after some time
 NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
+# The default value of `context.local_libcdb`, when user doesn't modify `context.local_libcdb`
+# suppress the warning output for path check in local database provider.
+DEFAULT_LOCAL_LIBCDB = '/var/lib/libc-database'
+
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
 def provider_libcdb(hex_encoded_id, hash_type):
@@ -129,11 +133,13 @@ def provider_local_system(hex_encoded_id, hash_type):
 
 # Offline search https://github.com/niklasb/libc-database for hash type
 def provider_local_database(hex_encoded_id, hash_type):
-    assert context.local_libcdb
+    if not context.local_libcdb:
+        log.error("`context.local_libcdb` could not be null or empty string.")
 
     localdb = Path(context.local_libcdb)
     if not localdb.is_dir():
-        log.warn_once("%s does not exist, please download libc-database first.", str(localdb))
+        if context.local_libcdb != DEFAULT_LOCAL_LIBCDB:
+            log.warn_once("%s does not exist, please download libc-database first.", context.local_libcdb)
         return None
 
     log.debug("Searching local libc database, %s: %s", hash_type, hex_encoded_id)
