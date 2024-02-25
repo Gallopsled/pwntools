@@ -134,7 +134,7 @@ def provider_local_system(hex_encoded_id, hash_type):
 # Offline search https://github.com/niklasb/libc-database for hash type
 def provider_local_database(hex_encoded_id, hash_type):
     if not context.local_libcdb:
-        log.error("`context.local_libcdb` could not be null or empty string.")
+        return None
 
     localdb = Path(context.local_libcdb)
     if not localdb.is_dir():
