@@ -59,6 +59,8 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util.hashes import sha1sumhex
+from pwnlib.util.packing import _encode
 
 log = getLogger(__name__)
 
@@ -751,8 +753,35 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         b'0@*\x00'
         >>> asm("la %r0, 42", arch = 's390', bits=64)
         b'A\x00\x00*'
+
+        The output is cached:
+
+        >>> start = time.time()
+        >>> asm("lea rax, [rip+0]", arch = 'amd64')
+        b'H\x8d\x05\x00\x00\x00\x00'
+        >>> uncached_time = time.time() - start
+        >>> start = time.time()
+        >>> asm("lea rax, [rip+0]", arch = 'amd64')
+        b'H\x8d\x05\x00\x00\x00\x00'
+        >>> cached_time = time.time() - start
+        >>> uncached_time > cached_time * 2
+        True
     """
-    result = ''
+    result = b''
+
+    cache_file = None
+    if context.cache_dir:
+        cache_dir = os.path.join(context.cache_dir, 'asm-cache')
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
+
+        # Include the context in the hash in addition to the shellcode
+        hash_params = '{}_{}_{}_{}_{}_{}_{}'.format(vma, extract, shared, context.arch, context.os, context.bits, context.endianness)
+        asm_hash = sha1sumhex(_encode(shellcode) + _encode(hash_params))
+        cache_file = os.path.join(cache_dir, asm_hash)
+        if os.path.exists(cache_file):
+            with open(cache_file, 'rb') as f:
+                return f.read()
 
     assembler = _assembler()
     linker    = _linker()
@@ -810,6 +839,8 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             shutil.copy(step2, step3)
 
         if not extract:
+            if cache_file is not None:
+                shutil.copy(step3, cache_file)
             return step3
 
         _run(objcopy + [step3, step4])
@@ -822,6 +853,10 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         log.exception("An error occurred while assembling:\n%s" % lines)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
+
+    if cache_file is not None and result != b'':
+        with open(cache_file, 'wb') as f:
+            f.write(result)
 
     return result
 
