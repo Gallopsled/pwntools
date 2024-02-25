@@ -19,6 +19,13 @@ jobs:
         git fetch origin
         git log --oneline --graph -10
 
+    - name: Install RPyC for gdb
+      run: |
+        # The version packaged in python3-rpyc is too old on Ubuntu 22.04
+        sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
+        /usr/bin/python -m pip install rpyc
+        gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
+
     - name: Cache for pip
       uses: actions/cache@v4
       id: cache-pip
@@ -62,7 +69,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          python3-rpyc \
           gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
