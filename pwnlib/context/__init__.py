@@ -1078,9 +1078,11 @@ class ContextType(object):
         Sets path to local libc-database, get more information for libc-database:
         https://github.com/niklasb/libc-database
 
-        Works in offline search mode of :attr:`pwnlib.libcdb`.
+        Works in :attr:`pwnlib.libcdb` when searching by local database provider.
 
         The default value is ``/var/lib/libc-database``.
+
+        Sets `context.local_libcdb` to falsely path will turn off local libc-database integration.
 
         When `context.local_libcdb` is default value, no warning will be issued for path check 
         during `pwnlib.libcdb` searching by local database provider.
