@@ -530,6 +530,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io = gdb.debug(["grep", "local-libc.so", "/proc/self/maps"], gdbscript="continue", env={"LD_PRELOAD": "./local-libc.so"})
         >>> io.recvline().split()[-1] # doctest: +ELLIPSIS
         b'.../local-libc.so'
+        >>> io.close()
         >>> os.remove("./local-libc.so") # cleanup
 
 
@@ -559,6 +560,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
         >>> io.gdb.continue_nowait()
         >>> io.recvline()
         b'foo\n'
+        >>> io.close()
 
 
     Using SSH:
