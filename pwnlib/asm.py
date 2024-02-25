@@ -783,8 +783,13 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             if extract:
                 with open(cache_file, 'rb') as f:
                     return f.read()
-            else:
-                return cache_file
+
+            # Create a temporary copy of the cached file to avoid modification.
+            tmpdir = tempfile.mkdtemp(prefix = 'pwn-asm-')
+            atexit.register(shutil.rmtree, tmpdir)
+            step3 = os.path.join(tmpdir, 'step3')
+            shutil.copy(cache_file, step3)
+            return step3
 
     assembler = _assembler()
     linker    = _linker()
