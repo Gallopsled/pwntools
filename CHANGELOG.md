@@ -71,7 +71,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
+- [#2358][2358] Cache output of `asm()`
 
+[2358]: https://github.com/Gallopsled/pwntools/pull/2358
 
 ## 4.13.0 (`beta`)
 
