@@ -162,7 +162,7 @@ def STDERR(v):
 def LOCAL_LIBCDB(v):
     """Sets path to local libc-database via ``context.local_libcdb``, e.g. 
     ``LOCAL_LIBCDB='/path/to/libc-databse'``"""
-    context.defaults['local_libcdb'] = v
+    context.local_libcdb = v
 
 hooks = {
     'LOG_LEVEL': LOG_LEVEL,

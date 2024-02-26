@@ -1082,15 +1082,20 @@ class ContextType(object):
 
         The default value is ``/var/lib/libc-database``.
 
-        Sets `context.local_libcdb` to falsely path will turn off local libc-database integration.
-
-        When `context.local_libcdb` is default value, no warning will be issued for path check 
-        during `pwnlib.libcdb` searching by local database provider.
+        Sets `context.local_libcdb` to empty string or `None` will turn off local libc-database integration.
 
         Examples:
 
             >>> context.local_libcdb = '/path/to/libc-database'
+            >>> context.local_libcdb = 'foobar'
+            Traceback (most recent call last):
+            ...
+            AttributeError: 'foobar' does not exist, please download libc-database first
         """
+
+        if not os.path.isdir(path):
+            raise AttributeError("'%s' does not exist, please download libc-database first" % path)
+
         return path
 
     @property
