@@ -460,6 +460,8 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
+    elif terminal == 'x-terminal-emulator':
+        pid = p.pid + 1
     else:
         pid = p.pid
 
