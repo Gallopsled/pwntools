@@ -1086,7 +1086,7 @@ class ContextType(object):
 
         Examples:
 
-            >>> context.local_libcdb = '/path/to/libc-database'
+            >>> context.local_libcdb = pwnlib.data.elf.path
             >>> context.local_libcdb = 'foobar'
             Traceback (most recent call last):
             ...
