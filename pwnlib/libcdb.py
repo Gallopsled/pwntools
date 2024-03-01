@@ -11,6 +11,7 @@ import tempfile
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
+from pwnlib.filesystem.path import Path
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex
@@ -126,7 +127,23 @@ def provider_local_system(hex_encoded_id, hash_type):
         return local_libc.data
     return None
 
-PROVIDERS = [provider_local_system, provider_libcdb, provider_libc_rip]
+# Offline search https://github.com/niklasb/libc-database for hash type
+def provider_local_database(hex_encoded_id, hash_type):
+    if not context.local_libcdb:
+        return None
+
+    localdb = Path(context.local_libcdb)
+    if not localdb.is_dir():
+        return None
+
+    log.debug("Searching local libc database, %s: %s", hash_type, hex_encoded_id)
+    for libc_path in localdb.rglob("*.so"):
+        if hex_encoded_id == HASHES[hash_type](libc_path):
+            return read(libc_path)
+
+    return None
+
+PROVIDERS = [provider_local_system, provider_local_database, provider_libcdb, provider_libc_rip]
 
 def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True):
     assert hash_type in HASHES, hash_type
