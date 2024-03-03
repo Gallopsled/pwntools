@@ -72,8 +72,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.14.0 (`dev`)
 
 - [#2356][2356] Add local libc database provider for libcdb
+- [#2362][2362] Fix x-terminal does not work properly gdb.attach
 
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
+[2362]: https://github.com/Gallopsled/pwntools/issues/2362
 
 ## 4.13.0 (`beta`)
 
