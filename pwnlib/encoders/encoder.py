@@ -67,7 +67,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     if expr:
         for char in all_chars:
             if re.search(expr, char):
-                avoid.add(char)
+                avoid.add(ord(char))
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
