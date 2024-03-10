@@ -72,8 +72,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.14.0 (`dev`)
 
 - [#2356][2356] Add local libc database provider for libcdb
+- [#2364][2364] Deprecate direct commandline scripts invocation and exclude nonsense ones
 
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
+[2364]: https://github.com/Gallopsled/pwntools/pull/2364
 
 ## 4.13.0 (`beta`)
 
