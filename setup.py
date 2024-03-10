@@ -35,10 +35,10 @@ for filename in glob.glob('pwnlib/commandline/*'):
     filename = os.path.basename(filename)
     filename, ext = os.path.splitext(filename)
 
-    if ext != '.py' or '__init__' in filename:
+    if ext != '.py' or filename in ('__init__', 'common', 'main', 'update', 'version'):
         continue
 
-    script = '%s=pwnlib.commandline.common:main' % filename
+    script = '%s=pwnlib.commandline.common:deprecated_main' % filename
     if not flag:
         console_scripts.append(script)
 
@@ -78,6 +78,5 @@ setup(
         ] + templates,
     },
     entry_points = {'console_scripts': console_scripts},
-    scripts              = glob.glob("bin/*"),
     **compat
 )
