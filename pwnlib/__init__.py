@@ -18,6 +18,7 @@ __all__ = [
     'encoders',
     'elf',
     'exception',
+    'file',
     'fmtstr',
     'gdb',
     'libcdb',
