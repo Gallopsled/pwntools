@@ -888,21 +888,26 @@ class process(tube):
         """maps() -> [mapping]
 
         Returns a list of process mappings.
+        A mapping object has the following fields:
+            addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
+        perms is a permissions object, with the following fields:
+            read, write, execute, string     
         """
 
         """
-        raw__mapping example: 
-            pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
-        
+        memory_maps() returns a list of pmmap_ext objects
 
-        memory_maps returnes a list of named_tuples, dataclass is python3.7 version of named_tuples.
-        The definition is:
+        The definition (from psutil/_pslinux.py) is:
         pmmap_grouped = namedtuple(
             'pmmap_grouped',
             ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
             'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
         pmmap_ext = namedtuple(
             'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
+
+            
+        Here is an example of a pmmap_ext entry: 
+            pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
         """
 
         class permissions(NamedTuple):
@@ -945,6 +950,11 @@ class process(tube):
         return maps
 
     def stack_mapping(self, single=True):
+        """stack_mapping(single=True) -> mapping
+        stack_mapping(False) -> [mapping]
+
+        Returns either the first stack mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
 
         if single:
@@ -960,6 +970,11 @@ class process(tube):
         return s_mappings
     
     def heap_mapping(self, single=True):
+        """heap_mapping(single=True) -> mapping
+        heap_mapping(False) -> [mapping]
+
+        Returns either the first heap mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
 
         if single:
@@ -975,6 +990,11 @@ class process(tube):
         return h_mappings
     
     def vdso_mapping(self, single=True):
+        """vdso_mapping(single=True) -> mapping
+        vdso_mapping(False) -> [mapping]
+
+        Returns either the first vdso mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
 
         if single:
@@ -990,6 +1010,11 @@ class process(tube):
         return v_mappings
     
     def vvar_mapping(self, single=True):
+        """vvar_mapping(single=True) -> mapping
+        vvar_mapping(False) -> [mapping]
+
+        Returns either the first vvar mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
         if single:
             for mapping in all_maps:
@@ -1004,6 +1029,11 @@ class process(tube):
         return v_mappings
     
     def libc_mapping(self, single=True):
+        """libc_mapping(single=True) -> mapping
+        libc_mapping(False) -> [mapping]
+
+        Returns either the first libc mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
 
         if single:
@@ -1021,6 +1051,11 @@ class process(tube):
         return l_mappings
     
     def musl_mapping(self, single=True):
+        """musl_mapping(single=True) -> mapping
+        musl_mapping(False) -> [mapping]
+
+        Returns either the first musl mapping found in process memory, or all of the mappings, depending on "single". 
+        """
         all_maps = self.maps()
 
         if single:
