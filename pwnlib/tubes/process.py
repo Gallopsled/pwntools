@@ -950,12 +950,17 @@ class process(tube):
         return maps
 
     def get_mapping(self, path_value, single=True):
-        """stack_mapping(single=True) -> mapping
-        stack_mapping(False) -> [mapping]
+        """stack_mapping(path_value, single=True) -> mapping
+        stack_mapping(path_value, False) -> [mapping]
 
-        Returns either the first mapping found in process memory
-        that exactly matches the path_value provided, or all matching 
-        mappings, depending on "single".
+        Arguments:
+            path_value(str): The path used to find the mapping,
+                valid values are also [stack], [heap], etc..
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns found mapping(s) in process memory according to 
+        path_value.
         """
         all_maps = self.maps()
 
@@ -975,9 +980,11 @@ class process(tube):
         """stack_mapping(single=True) -> mapping
         stack_mapping(False) -> [mapping]
 
-        Returns either the first stack mapping found in process memory, 
-        or all stack mappings, depending on "single". Essentially,
-        runs get_mapping('[stack]', single).
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[stack]', single).
         """
         return self.get_mapping('[stack]', single)
     
@@ -985,9 +992,11 @@ class process(tube):
         """heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
 
-        Returns either the first heap mapping found in process memory, 
-        or all heap mappings, depending on "single". Essentially,
-        runs get_mapping('[heap]', single). 
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[heap]', single).
         """
         return self.get_mapping('[heap]', single)
     
@@ -995,9 +1004,11 @@ class process(tube):
         """vdso_mapping(single=True) -> mapping
         vdso_mapping(False) -> [mapping]
 
-        Returns either the first vdso mapping found in process memory, 
-        or all vdso mappings, depending on "single". Essentially,
-        runs get_mapping('[vdso]', single). 
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[vdso]', single).
         """
         return self.get_mapping('[vdso]', single)
     
@@ -1005,15 +1016,21 @@ class process(tube):
         """vvar_mapping(single=True) -> mapping
         vvar_mapping(False) -> [mapping]
 
-        Returns either the first vvar mapping found in process memory, 
-        or all vvar mappings, depending on "single". Essentially,
-        runs get_mapping(['vvar'], single).
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[vvar]', single).
         """
         return self.get_mapping('[vvar]', single)
     
     def libc_mapping(self, single=True):
         """libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
 
         Returns either the first libc mapping found in process memory,
         or all libc mappings, depending on "single". 
@@ -1038,6 +1055,10 @@ class process(tube):
         """musl_mapping(single=True) -> mapping
         musl_mapping(False) -> [mapping]
 
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
         Returns either the first musl mapping found in process memory,
         or all musl mappings, depending on "single". 
         """
@@ -1061,9 +1082,11 @@ class process(tube):
         """elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
 
-        Returns either the first mapping to the elf that generated the 
-        process, or all of its mappings, depending on "single".
-        Essentially, runs get_mapping(self.executable, single).
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping(self.executable, single).
         """
         return self.get_mapping(self.executable, single)
 
