@@ -985,7 +985,8 @@ class process(tube):
         all_maps = self.maps()
 
         for mapping in all_maps:
-           if 'libc.so' in mapping.path or 'libc-' in mapping.path:
+            lib_basename = os.path.basename(mapping.path)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
                 return mapping
         return None
     
@@ -994,7 +995,8 @@ class process(tube):
         all_maps = self.maps()
 
         for mapping in all_maps:
-           if 'musl.so' in mapping.path or 'musl-' in mapping.path:
+            lib_basename = os.path.basename(mapping.path)
+            if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
                 return mapping
         return None
          
@@ -1052,7 +1054,8 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib or 'libc-' in lib:
+            lib_basename = os.path.basename(lib)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
                 e = ELF(lib)
                 e.address = address
                 return e
