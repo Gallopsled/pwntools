@@ -945,22 +945,24 @@ class process(tube):
         return maps
 
     @property
-    def stack_mapping(self):
+    def stack_mappings(self):
         all_maps = self.maps()
 
+        s_mappings = []
         for mapping in all_maps:
             if '[stack]' == mapping.path:
-                return mapping
-        return None
+                s_mappings.append(mapping)
+        return s_mappings
     
     @property
-    def heap_mapping(self):
+    def heap_mappings(self):
         all_maps = self.maps()
 
+        h_mappings = []
         for mapping in all_maps:
             if '[heap]' == mapping.path:
-                return mapping
-        return None
+                h_mappings.append(mapping)
+        return h_mappings
     
     @property
     def vdso_mapping(self):
@@ -981,24 +983,26 @@ class process(tube):
         return None
     
     @property
-    def libc_mapping(self):
+    def libc_mappings(self):
         all_maps = self.maps()
 
+        l_mappings = []
         for mapping in all_maps:
             lib_basename = os.path.basename(mapping.path)
             if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
-                return mapping
-        return None
+                l_mappings.append(mapping)
+        return l_mappings
     
     @property
-    def musl_mapping(self):
+    def musl_mappings(self):
         all_maps = self.maps()
 
+        m_mappings = []
         for mapping in all_maps:
             lib_basename = os.path.basename(mapping.path)
             if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
-                return mapping
-        return None
+                m_mappings.append(mapping)
+        return m_mappings
          
     def libs(self):
         """libs() -> dict
