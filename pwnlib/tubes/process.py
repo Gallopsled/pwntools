@@ -1096,6 +1096,17 @@ class process(tube):
         return self.get_mapping(self.executable, single)
     
     def _location_from_mappings(self, contiguous_mappings):
+        """_location_from_mappings(contiguous_mappings) 
+            -> mapping_location
+
+        Arguments:
+            contiguous_mappings([mapping]): list of contiguous
+            mappings, sorted by starting address
+
+        Returns location of the first mapping, and the sum
+        of their sizes.
+        """
+
        # no match found, print some error?
         if len(contiguous_mappings) == 0:
             return None
