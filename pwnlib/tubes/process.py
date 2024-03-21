@@ -1071,7 +1071,27 @@ class process(tube):
             if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
                 m_mappings.append(mapping)
         return m_mappings
-         
+    
+    def elf_mapping(self, single=True):
+        """elf_mapping(single=True) -> mapping
+        elf_mapping(False) -> [mapping]
+
+        Returns either the first mapping to the elf that generated the process, or all of its mappings, depending on "single". 
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                if self.executable == mapping.path:
+                    return mapping
+            return None
+        
+        m_mappings = []
+        for mapping in all_maps:
+            if self.executable == mapping.path:
+                m_mappings.append(mapping)
+        return m_mappings
+
     def libs(self):
         """libs() -> dict
 
