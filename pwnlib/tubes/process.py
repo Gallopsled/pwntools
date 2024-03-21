@@ -949,90 +949,74 @@ class process(tube):
 
         return maps
 
-    def stack_mapping(self, single=True):
+    def get_mapping(self, path_value, single=True):
         """stack_mapping(single=True) -> mapping
         stack_mapping(False) -> [mapping]
 
-        Returns either the first stack mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first mapping found in process memory
+        that exactly matches the path_value provided, or all matching 
+        mappings, depending on "single".
         """
         all_maps = self.maps()
 
         if single:
             for mapping in all_maps:
-                if '[stack]' == mapping.path:
+                if path_value == mapping.path:
                     return mapping
             return None
 
-        s_mappings = []
+        m_mappings = []
         for mapping in all_maps:
-            if '[stack]' == mapping.path:
-                s_mappings.append(mapping)
-        return s_mappings
+            if path_value == mapping.path:
+                m_mappings.append(mapping)
+        return m_mappings
+
+    def stack_mapping(self, single=True):
+        """stack_mapping(single=True) -> mapping
+        stack_mapping(False) -> [mapping]
+
+        Returns either the first stack mapping found in process memory, 
+        or all stack mappings, depending on "single". Essentially,
+        runs get_mapping('[stack]', single).
+        """
+        return self.get_mapping('[stack]', single)
     
     def heap_mapping(self, single=True):
         """heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
 
-        Returns either the first heap mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first heap mapping found in process memory, 
+        or all heap mappings, depending on "single". Essentially,
+        runs get_mapping('[heap]', single). 
         """
-        all_maps = self.maps()
-
-        if single:
-            for mapping in all_maps:
-                if '[heap]' == mapping.path:
-                    return mapping
-            return None
-
-        h_mappings = []
-        for mapping in all_maps:
-            if '[heap]' == mapping.path:
-                h_mappings.append(mapping)
-        return h_mappings
+        return self.get_mapping('[heap]', single)
     
     def vdso_mapping(self, single=True):
         """vdso_mapping(single=True) -> mapping
         vdso_mapping(False) -> [mapping]
 
-        Returns either the first vdso mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first vdso mapping found in process memory, 
+        or all vdso mappings, depending on "single". Essentially,
+        runs get_mapping('[vdso]', single). 
         """
-        all_maps = self.maps()
-
-        if single:
-            for mapping in all_maps:
-                if '[vdso]' == mapping.path:
-                    return mapping
-            return None
-        
-        v_mappings = []
-        for mapping in all_maps:
-            if '[vdso]' == mapping.path:
-                v_mappings.append(mapping)
-        return v_mappings
+        return self.get_mapping('[vdso]', single)
     
     def vvar_mapping(self, single=True):
         """vvar_mapping(single=True) -> mapping
         vvar_mapping(False) -> [mapping]
 
-        Returns either the first vvar mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first vvar mapping found in process memory, 
+        or all vvar mappings, depending on "single". Essentially,
+        runs get_mapping(['vvar'], single).
         """
-        all_maps = self.maps()
-        if single:
-            for mapping in all_maps:
-                if '[vvar]' == mapping.path:
-                    return mapping
-            return None
-    
-        v_mappings = []
-        for mapping in all_maps:
-            if '[vvar]' == mapping.path:
-                v_mappings.append(mapping)
-        return v_mappings
+        return self.get_mapping('[vvar]', single)
     
     def libc_mapping(self, single=True):
         """libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
 
-        Returns either the first libc mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first libc mapping found in process memory,
+        or all libc mappings, depending on "single". 
         """
         all_maps = self.maps()
 
@@ -1054,7 +1038,8 @@ class process(tube):
         """musl_mapping(single=True) -> mapping
         musl_mapping(False) -> [mapping]
 
-        Returns either the first musl mapping found in process memory, or all of the mappings, depending on "single". 
+        Returns either the first musl mapping found in process memory,
+        or all musl mappings, depending on "single". 
         """
         all_maps = self.maps()
 
@@ -1076,21 +1061,13 @@ class process(tube):
         """elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
 
-        Returns either the first mapping to the elf that generated the process, or all of its mappings, depending on "single". 
+        Returns either the first mapping to the elf that generated the 
+        process, or all of its mappings, depending on "single".
+        Essentially, runs get_mapping(self.executable, single).
         """
-        all_maps = self.maps()
+        return self.get_mapping(self.executable, single)
 
-        if single:
-            for mapping in all_maps:
-                if self.executable == mapping.path:
-                    return mapping
-            return None
-        
-        m_mappings = []
-        for mapping in all_maps:
-            if self.executable == mapping.path:
-                m_mappings.append(mapping)
-        return m_mappings
+    # stack_location, heap_location, elf_location, libc_location, musl_location
 
     def libs(self):
         """libs() -> dict
