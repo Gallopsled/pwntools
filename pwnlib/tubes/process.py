@@ -45,6 +45,11 @@ PIPE = subprocess.PIPE
 
 signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
 
+# used by get_mapping_location and friends
+class mapping_location(NamedTuple):
+    address: int
+    size: int
+
 class process(tube):
     r"""
     Spawns a new process, and wraps it with a tube for communication.
@@ -1089,8 +1094,90 @@ class process(tube):
         Returns self.get_mapping(self.executable, single).
         """
         return self.get_mapping(self.executable, single)
+    
+    def get_mapping_location(self, path_value):
+        """get_mapping_location(path_value) -> mapping_location
 
-    # stack_location, heap_location, elf_location, libc_location, musl_location
+        Arguments:
+            path_value(str): The path used to find the mapping,
+                valid values are also [stack], [heap], etc..
+
+        Returns a mapping_location object if found some matching
+        mapping, which are contiguous in memory. Otherwise returns
+        None.
+
+        mapping_location:
+            address: int
+            size: int
+        """
+        matched_mappings = self.get_mapping(path_value, False)
+        
+        # no match found, print some error?
+        if len(matched_mappings) == 0:
+            return None
+
+        address = matched_mappings[0].addr
+        size = matched_mappings[0].size
+
+        for i in range(1, len(matched_mappings)):
+            matched = matched_mappings[i]
+            if matched.address != matched_mappings[i - 1].end:
+                # non-contiguous, print some error?
+                return None
+
+            size += matched.size 
+
+        return mapping_location(address, size)
+
+    def stack_location(self):
+        """stack_location() -> mapping_location
+
+        Returnes location and size of the stack
+        mapping.
+        Runs get_mapping_location('[stack]').
+        """
+
+        return self.get_mapping_location('[stack]')
+    
+    def heap_location(self):
+        """heap_location() -> mapping_location
+
+        Returnes location and size of the heap
+        mapping.
+        Runs get_mapping_location('[heap]').
+        """
+
+        return self.get_mapping_location('[heap]')
+
+    def vdso_location(self):
+        """vdso_location() -> mapping_location
+
+        Returnes location and size of the vdso
+        mapping.
+        Runs get_mapping_location('[vdso]').
+        """
+
+        return self.get_mapping_location('[vdso]')
+    
+    def vvar_location(self):
+        """vvar_location() -> mapping_location
+
+        Returnes location and size of the vvar
+        mapping.
+        Runs get_mapping_location('[vvar]').
+        """
+
+        return self.get_mapping_location('[vvar]')
+
+    def elf_location(self):
+        """elf_location() -> mapping_location
+
+        Returnes location and size of elf that
+        launched the process. Runs
+        get_mapping_location(self.executable).
+        """
+
+        return self.get_mapping_location(self.executable)
 
     def libs(self):
         """libs() -> dict
