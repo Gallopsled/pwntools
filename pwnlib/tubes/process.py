@@ -1112,7 +1112,7 @@ class process(tube):
                 valid values are also [stack], [heap], etc..
 
         Returns a mapping_location object if found some matching
-        mapping, which are contiguous in memory. Otherwise returns
+        mappings, which are contiguous in memory. Otherwise returns
         None.
 
         mapping_location:
@@ -1187,6 +1187,18 @@ class process(tube):
         process memory.
         """
         return self._location_from_mappings(self.musl_mapping(False))
+
+    def address_mapping(self, address):
+        """address_mapping(address) -> mapping
+        
+        Returns mapping at the specified address.
+        """
+
+        all_maps = self.maps()
+        for mapping in all_maps:
+            if mapping.addr <= address <= mapping.end:
+                return mapping
+        return None
 
     def libs(self):
         """libs() -> dict
