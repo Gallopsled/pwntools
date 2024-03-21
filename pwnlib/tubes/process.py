@@ -1107,7 +1107,7 @@ class process(tube):
         of their sizes.
         """
 
-       # empty list, print some error?
+       # print some error?, make more explicit error if == Null or isn't list?
         if len(contiguous_mappings) == 0:
             return None
 
