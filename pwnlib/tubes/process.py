@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import time
+from typing import NamedTuple
 
 IS_WINDOWS = sys.platform.startswith('win')
 
@@ -883,6 +884,120 @@ class process(tube):
         else:
             os.close(fd)
 
+    def maps(self):
+        """maps() -> [mapping]
+
+        Returns a list of process mappings.
+        """
+
+        """
+        raw__mapping example: 
+            pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
+        
+
+        memory_maps returnes a list of named_tuples, dataclass is python3.7 version of named_tuples.
+        The definition is:
+        pmmap_grouped = namedtuple(
+            'pmmap_grouped',
+            ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
+            'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
+        pmmap_ext = namedtuple(
+            'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
+        """
+
+        class permissions(NamedTuple):
+            read: bool
+            write: bool
+            execute: bool
+            string: str
+        class mapping(NamedTuple):
+            addr: int
+            address: int        # alias for addr
+            start: int          # alias for addr
+            end: int            # addr + size
+            size: int
+            perms: permissions
+            path: str
+            rss: int
+            pss: int
+            shared_clean: int   # some of these should probably be bools
+            shared_dirty: int
+            private_clean: int
+            private_dirty: int
+            referenced: int
+            anonymous: int
+            swap: int
+
+        from pwnlib.util.proc import memory_maps
+        raw_maps = memory_maps(self.pid)
+
+        maps = []
+        # raw_mapping
+        for r_m in raw_maps:
+            p_perms = permissions('r' in r_m.perms, 'w' in r_m.perms, 'x' in r_m.perms, r_m.perms)
+            addr_split = r_m.addr.split('-')
+            p_addr = int(addr_split[0], 16)
+            p_mapping = mapping(p_addr, p_addr, p_addr, int(addr_split[1], 16), r_m.size, p_perms, r_m.path, r_m.rss,
+                                r_m.pss, r_m.shared_clean, r_m.shared_dirty, r_m.private_clean, r_m.private_dirty,
+                                r_m.referenced, r_m.anonymous, r_m.swap)
+            maps.append(p_mapping)
+
+        return maps
+
+    @property
+    def stack_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+            if '[stack]' == mapping.path:
+                return mapping
+        return None
+    
+    @property
+    def heap_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+            if '[heap]' == mapping.path:
+                return mapping
+        return None
+    
+    @property
+    def vdso_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+            if '[vdso]' == mapping.path:
+                return mapping
+        return None
+    
+    @property
+    def vvar_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+            if '[vvar]' == mapping.path:
+                return mapping
+        return None
+    
+    @property
+    def libc_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+           if 'libc.so' in mapping.path or 'libc-' in mapping.path:
+                return mapping
+        return None
+    
+    @property
+    def musl_mapping(self):
+        all_maps = self.maps()
+
+        for mapping in all_maps:
+           if 'musl.so' in mapping.path or 'musl-' in mapping.path:
+                return mapping
+        return None
+         
     def libs(self):
         """libs() -> dict
 
