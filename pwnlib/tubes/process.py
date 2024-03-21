@@ -1095,6 +1095,24 @@ class process(tube):
         """
         return self.get_mapping(self.executable, single)
     
+    def _location_from_mappings(self, contiguous_mappings):
+       # no match found, print some error?
+        if len(contiguous_mappings) == 0:
+            return None
+
+        address = contiguous_mappings[0].addr
+        size = contiguous_mappings[0].size
+
+        for i in range(1, len(contiguous_mappings)):
+            matched = contiguous_mappings[i]
+            if matched.address != contiguous_mappings[i - 1].end:
+                # non-contiguous, print some error?
+                return None
+
+            size += matched.size 
+
+        return mapping_location(address, size)
+
     def get_mapping_location(self, path_value):
         """get_mapping_location(path_value) -> mapping_location
 
@@ -1110,29 +1128,12 @@ class process(tube):
             address: int
             size: int
         """
-        matched_mappings = self.get_mapping(path_value, False)
-        
-        # no match found, print some error?
-        if len(matched_mappings) == 0:
-            return None
-
-        address = matched_mappings[0].addr
-        size = matched_mappings[0].size
-
-        for i in range(1, len(matched_mappings)):
-            matched = matched_mappings[i]
-            if matched.address != matched_mappings[i - 1].end:
-                # non-contiguous, print some error?
-                return None
-
-            size += matched.size 
-
-        return mapping_location(address, size)
+        return self._location_from_mappings(self.get_mapping(path_value, False))
 
     def stack_location(self):
         """stack_location() -> mapping_location
 
-        Returnes location and size of the stack
+        Returns location and size of the stack
         mapping.
         Runs get_mapping_location('[stack]').
         """
@@ -1142,7 +1143,7 @@ class process(tube):
     def heap_location(self):
         """heap_location() -> mapping_location
 
-        Returnes location and size of the heap
+        Returns location and size of the heap
         mapping.
         Runs get_mapping_location('[heap]').
         """
@@ -1152,7 +1153,7 @@ class process(tube):
     def vdso_location(self):
         """vdso_location() -> mapping_location
 
-        Returnes location and size of the vdso
+        Returns location and size of the vdso
         mapping.
         Runs get_mapping_location('[vdso]').
         """
@@ -1162,7 +1163,7 @@ class process(tube):
     def vvar_location(self):
         """vvar_location() -> mapping_location
 
-        Returnes location and size of the vvar
+        Returns location and size of the vvar
         mapping.
         Runs get_mapping_location('[vvar]').
         """
@@ -1172,12 +1173,29 @@ class process(tube):
     def elf_location(self):
         """elf_location() -> mapping_location
 
-        Returnes location and size of elf that
+        Returns location and size of elf that
         launched the process. Runs
         get_mapping_location(self.executable).
         """
 
         return self.get_mapping_location(self.executable)
+
+    def libc_location(self):
+        """libc_location() -> mapping_location
+
+        Returns location and size of libc in
+        process memory.
+        """
+
+        return self._location_from_mappings(self.libc_mapping(False))
+
+    def musl_location(self):
+        """musl_location() -> mapping_location
+
+        Returns location and size of musl in
+        process memory.
+        """
+        return self._location_from_mappings(self.musl_mapping(False))
 
     def libs(self):
         """libs() -> dict
