@@ -1091,9 +1091,9 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping(self.executable, single).
+        Returns self.get_mapping(self.elf.path, single).
         """
-        return self.get_mapping(self.executable, single)
+        return self.get_mapping(self.elf.path, single)
     
     def _location_from_mappings(self, contiguous_mappings):
         """_location_from_mappings(contiguous_mappings) 
@@ -1186,10 +1186,10 @@ class process(tube):
 
         Returns location and size of elf that
         launched the process. Runs
-        get_mapping_location(self.executable).
+        get_mapping_location(self.elf.path).
         """
 
-        return self.get_mapping_location(self.executable)
+        return self.get_mapping_location(self.elf.path)
 
     def libc_location(self):
         """libc_location() -> mapping_location
