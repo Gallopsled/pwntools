@@ -12,7 +12,7 @@ import stat
 import subprocess
 import sys
 import time
-from typing import NamedTuple
+from collections import namedtuple
 
 IS_WINDOWS = sys.platform.startswith('win')
 
@@ -46,9 +46,7 @@ PIPE = subprocess.PIPE
 signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
 
 # used by get_mapping_location and friends
-class mapping_location(NamedTuple):
-    address: int
-    size: int
+mapping_location = namedtuple("mapping_location", "address size")
 
 class process(tube):
     r"""
@@ -915,28 +913,10 @@ class process(tube):
             pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
         """
 
-        class permissions(NamedTuple):
-            read: bool
-            write: bool
-            execute: bool
-            string: str
-        class mapping(NamedTuple):
-            addr: int
-            address: int        # alias for addr
-            start: int          # alias for addr
-            end: int            # addr + size
-            size: int
-            perms: permissions
-            path: str
-            rss: int
-            pss: int
-            shared_clean: int   # some of these should probably be bools
-            shared_dirty: int
-            private_clean: int
-            private_dirty: int
-            referenced: int
-            anonymous: int
-            swap: int
+        permissions = namedtuple("permissions", "read write execute string")
+        mapping = namedtuple("mapping", 
+            "addr address start end size perms path rss pss shared_clean shared_dirty private_clean private_dirty referenced anonymous swap")
+        # addr = address (alias) = start (alias)
 
         from pwnlib.util.proc import memory_maps
         raw_maps = memory_maps(self.pid)
