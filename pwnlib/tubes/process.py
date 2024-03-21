@@ -944,7 +944,6 @@ class process(tube):
 
         return maps
 
-    @property
     def stack_mapping(self, single=True):
         all_maps = self.maps()
 
@@ -960,7 +959,6 @@ class process(tube):
                 s_mappings.append(mapping)
         return s_mappings
     
-    @property
     def heap_mapping(self, single=True):
         all_maps = self.maps()
 
@@ -976,7 +974,6 @@ class process(tube):
                 h_mappings.append(mapping)
         return h_mappings
     
-    @property
     def vdso_mapping(self, single=True):
         all_maps = self.maps()
 
@@ -992,7 +989,6 @@ class process(tube):
                 v_mappings.append(mapping)
         return v_mappings
     
-    @property
     def vvar_mapping(self, single=True):
         all_maps = self.maps()
         if single:
@@ -1007,7 +1003,6 @@ class process(tube):
                 v_mappings.append(mapping)
         return v_mappings
     
-    @property
     def libc_mapping(self, single=True):
         all_maps = self.maps()
 
@@ -1025,7 +1020,6 @@ class process(tube):
                 l_mappings.append(mapping)
         return l_mappings
     
-    @property
     def musl_mapping(self, single=True):
         all_maps = self.maps()
 
