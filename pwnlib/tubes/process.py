@@ -945,8 +945,14 @@ class process(tube):
         return maps
 
     @property
-    def stack_mappings(self):
+    def stack_mapping(self, single=True):
         all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                if '[stack]' == mapping.path:
+                    return mapping
+            return None
 
         s_mappings = []
         for mapping in all_maps:
@@ -955,8 +961,14 @@ class process(tube):
         return s_mappings
     
     @property
-    def heap_mappings(self):
+    def heap_mapping(self, single=True):
         all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                if '[heap]' == mapping.path:
+                    return mapping
+            return None
 
         h_mappings = []
         for mapping in all_maps:
@@ -965,26 +977,46 @@ class process(tube):
         return h_mappings
     
     @property
-    def vdso_mapping(self):
+    def vdso_mapping(self, single=True):
         all_maps = self.maps()
 
+        if single:
+            for mapping in all_maps:
+                if '[vdso]' == mapping.path:
+                    return mapping
+            return None
+        
+        v_mappings = []
         for mapping in all_maps:
             if '[vdso]' == mapping.path:
-                return mapping
-        return None
+                v_mappings.append(mapping)
+        return v_mappings
     
     @property
-    def vvar_mapping(self):
+    def vvar_mapping(self, single=True):
         all_maps = self.maps()
-
+        if single:
+            for mapping in all_maps:
+                if '[vvar]' == mapping.path:
+                    return mapping
+            return None
+    
+        v_mappings = []
         for mapping in all_maps:
             if '[vvar]' == mapping.path:
-                return mapping
-        return None
+                v_mappings.append(mapping)
+        return v_mappings
     
     @property
-    def libc_mappings(self):
+    def libc_mapping(self, single=True):
         all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
 
         l_mappings = []
         for mapping in all_maps:
@@ -994,9 +1026,16 @@ class process(tube):
         return l_mappings
     
     @property
-    def musl_mappings(self):
+    def musl_mapping(self, single=True):
         all_maps = self.maps()
 
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
+        
         m_mappings = []
         for mapping in all_maps:
             lib_basename = os.path.basename(mapping.path)
