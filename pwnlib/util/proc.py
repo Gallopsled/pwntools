@@ -372,7 +372,7 @@ def wait_for_debugger(pid, debugger_pid=None):
                         pass
                     else:
                         debugger_pid = 0
-                        break
+                        continue
                 else:
                     time.sleep(0.01)
 
