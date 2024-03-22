@@ -28,8 +28,6 @@ class Module(types.ModuleType):
         self.__file__ = __file__
         self.__name__ = __name__
         self.num_colors = 8
-        self.has_bright = self.num_colors >= 16
-        self.has_gray = self.has_bright
         self.when = 'auto'
         self._colors = {
             'black': 0,
@@ -60,6 +58,14 @@ class Module(types.ModuleType):
     @when.setter
     def when(self, val):
         self._when = eval_when(val)
+
+    @property
+    def has_bright(self):
+        return self.num_colors >= 16
+    
+    @property
+    def has_gray(self):
+        return self.has_bright
 
     def _fg_color(self, c):
         c = termcap.get('setaf', c) or termcap.get('setf', c)
