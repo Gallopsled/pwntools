@@ -291,6 +291,10 @@ def unstrip_libc(filename):
         log.warn_once('Given libc does not have a buildid. Cannot look for debuginfo to unstrip.')
         return False
 
+    if libc.debuginfo:
+        log.debug('Given libc already contains debug information. Skipping unstrip.')
+        return True
+
     log.debug('Trying debuginfod servers: %r', DEBUGINFOD_SERVERS)
 
     for server_url in DEBUGINFOD_SERVERS:
