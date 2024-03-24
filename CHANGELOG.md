@@ -71,9 +71,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
+- [#2360][2360] Add offline parameter for `search_by_hash` series function
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
 
+[2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
 [2374]: https://github.com/Gallopsled/pwntools/pull/2374
 
