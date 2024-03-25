@@ -73,9 +73,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
+- [#2376][2376] Return buffered data on first EOF in tube.readline()
 
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
 [2374]: https://github.com/Gallopsled/pwntools/pull/2374
+[2376]: https://github.com/Gallopsled/pwntools/pull/2376
 
 ## 4.13.0 (`beta`)
 
