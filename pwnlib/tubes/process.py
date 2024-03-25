@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import time
+from collections import namedtuple
 
 IS_WINDOWS = sys.platform.startswith('win')
 
@@ -43,6 +44,9 @@ STDOUT = subprocess.STDOUT
 PIPE = subprocess.PIPE
 
 signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
+
+# used by get_mapping_location and friends
+mapping_location = namedtuple("mapping_location", "address size")
 
 class process(tube):
     r"""
@@ -883,6 +887,319 @@ class process(tube):
         else:
             os.close(fd)
 
+    def maps(self):
+        """maps() -> [mapping]
+
+        Returns a list of process mappings.
+        A mapping object has the following fields:
+            addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
+        perms is a permissions object, with the following fields:
+            read, write, execute, string     
+        """
+
+        """
+        memory_maps() returns a list of pmmap_ext objects
+
+        The definition (from psutil/_pslinux.py) is:
+        pmmap_grouped = namedtuple(
+            'pmmap_grouped',
+            ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
+            'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
+        pmmap_ext = namedtuple(
+            'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
+
+            
+        Here is an example of a pmmap_ext entry: 
+            pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
+        """
+
+        permissions = namedtuple("permissions", "read write execute string")
+        mapping = namedtuple("mapping", 
+            "addr address start end size perms path rss pss shared_clean shared_dirty private_clean private_dirty referenced anonymous swap")
+        # addr = address (alias) = start (alias)
+
+        from pwnlib.util.proc import memory_maps
+        raw_maps = memory_maps(self.pid)
+
+        maps = []
+        # raw_mapping
+        for r_m in raw_maps:
+            p_perms = permissions('r' in r_m.perms, 'w' in r_m.perms, 'x' in r_m.perms, r_m.perms)
+            addr_split = r_m.addr.split('-')
+            p_addr = int(addr_split[0], 16)
+            p_mapping = mapping(p_addr, p_addr, p_addr, int(addr_split[1], 16), r_m.size, p_perms, r_m.path, r_m.rss,
+                                r_m.pss, r_m.shared_clean, r_m.shared_dirty, r_m.private_clean, r_m.private_dirty,
+                                r_m.referenced, r_m.anonymous, r_m.swap)
+            maps.append(p_mapping)
+
+        return maps
+
+    def get_mapping(self, path_value, single=True):
+        """stack_mapping(path_value, single=True) -> mapping
+        stack_mapping(path_value, False) -> [mapping]
+
+        Arguments:
+            path_value(str): The path used to find the mapping,
+                valid values are also [stack], [heap], etc..
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns found mapping(s) in process memory according to 
+        path_value.
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                if path_value == mapping.path:
+                    return mapping
+            return None
+
+        m_mappings = []
+        for mapping in all_maps:
+            if path_value == mapping.path:
+                m_mappings.append(mapping)
+        return m_mappings
+
+    def stack_mapping(self, single=True):
+        """stack_mapping(single=True) -> mapping
+        stack_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[stack]', single).
+        """
+        return self.get_mapping('[stack]', single)
+    
+    def heap_mapping(self, single=True):
+        """heap_mapping(single=True) -> mapping
+        heap_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[heap]', single).
+        """
+        return self.get_mapping('[heap]', single)
+    
+    def vdso_mapping(self, single=True):
+        """vdso_mapping(single=True) -> mapping
+        vdso_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[vdso]', single).
+        """
+        return self.get_mapping('[vdso]', single)
+    
+    def vvar_mapping(self, single=True):
+        """vvar_mapping(single=True) -> mapping
+        vvar_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping('[vvar]', single).
+        """
+        return self.get_mapping('[vvar]', single)
+    
+    def libc_mapping(self, single=True):
+        """libc_mapping(single=True) -> mapping
+        libc_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns either the first libc mapping found in process memory,
+        or all libc mappings, depending on "single". 
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
+
+        l_mappings = []
+        for mapping in all_maps:
+            lib_basename = os.path.basename(mapping.path)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
+                l_mappings.append(mapping)
+        return l_mappings
+    
+    def musl_mapping(self, single=True):
+        """musl_mapping(single=True) -> mapping
+        musl_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns either the first musl mapping found in process memory,
+        or all musl mappings, depending on "single". 
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
+        
+        m_mappings = []
+        for mapping in all_maps:
+            lib_basename = os.path.basename(mapping.path)
+            if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
+                m_mappings.append(mapping)
+        return m_mappings
+    
+    def elf_mapping(self, single=True):
+        """elf_mapping(single=True) -> mapping
+        elf_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns self.get_mapping(self.elf.path, single).
+        """
+        return self.get_mapping(self.elf.path, single)
+    
+    def _location_from_mappings(self, contiguous_mappings):
+        """_location_from_mappings(contiguous_mappings) 
+            -> mapping_location
+
+        Arguments:
+            contiguous_mappings([mapping]): list of contiguous
+            mappings, sorted by starting address
+
+        Returns location of the first mapping, and the sum
+        of their sizes.
+        """
+
+       # print some error?, make more explicit error if == Null or isn't list?
+        if len(contiguous_mappings) == 0:
+            return None
+
+        address = contiguous_mappings[0].addr
+        size = contiguous_mappings[0].size
+
+        for i in range(1, len(contiguous_mappings)):
+            matched = contiguous_mappings[i]
+            if matched.address != contiguous_mappings[i - 1].end:
+                # non-contiguous, print some error?
+                return None
+
+            size += matched.size 
+
+        return mapping_location(address, size)
+
+    def get_mapping_location(self, path_value):
+        """get_mapping_location(path_value) -> mapping_location
+
+        Arguments:
+            path_value(str): The path used to find the mapping,
+                valid values are also [stack], [heap], etc..
+
+        Returns a mapping_location object if found some matching
+        mappings, which are contiguous in memory. Otherwise returns
+        None.
+
+        mapping_location:
+            address: int
+            size: int
+        """
+        return self._location_from_mappings(self.get_mapping(path_value, False))
+
+    def stack_location(self):
+        """stack_location() -> mapping_location
+
+        Returns location and size of the stack
+        mapping.
+        Runs get_mapping_location('[stack]').
+        """
+
+        return self.get_mapping_location('[stack]')
+    
+    def heap_location(self):
+        """heap_location() -> mapping_location
+
+        Returns location and size of the heap
+        mapping.
+        Runs get_mapping_location('[heap]').
+        """
+
+        return self.get_mapping_location('[heap]')
+
+    def vdso_location(self):
+        """vdso_location() -> mapping_location
+
+        Returns location and size of the vdso
+        mapping.
+        Runs get_mapping_location('[vdso]').
+        """
+
+        return self.get_mapping_location('[vdso]')
+    
+    def vvar_location(self):
+        """vvar_location() -> mapping_location
+
+        Returns location and size of the vvar
+        mapping.
+        Runs get_mapping_location('[vvar]').
+        """
+
+        return self.get_mapping_location('[vvar]')
+
+    def elf_location(self):
+        """elf_location() -> mapping_location
+
+        Returns location and size of elf that
+        launched the process. Runs
+        get_mapping_location(self.elf.path).
+        """
+
+        return self.get_mapping_location(self.elf.path)
+
+    def libc_location(self):
+        """libc_location() -> mapping_location
+
+        Returns location and size of libc in
+        process memory.
+        """
+
+        return self._location_from_mappings(self.libc_mapping(False))
+
+    def musl_location(self):
+        """musl_location() -> mapping_location
+
+        Returns location and size of musl in
+        process memory.
+        """
+        return self._location_from_mappings(self.musl_mapping(False))
+
+    def address_mapping(self, address):
+        """address_mapping(address) -> mapping
+        
+        Returns mapping at the specified address.
+        """
+
+        all_maps = self.maps()
+        for mapping in all_maps:
+            if mapping.addr <= address <= mapping.end:
+                return mapping
+        return None
+
     def libs(self):
         """libs() -> dict
 
@@ -937,7 +1254,8 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib or 'libc-' in lib:
+            lib_basename = os.path.basename(lib)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
                 e = ELF(lib)
                 e.address = address
                 return e

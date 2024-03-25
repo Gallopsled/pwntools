@@ -71,9 +71,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
+- [#2371][2371] Add functions for retrieving process mappings
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
 
+[2371]: https://github.com/Gallopsled/pwntools/pull/2371
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
 [2374]: https://github.com/Gallopsled/pwntools/pull/2374
 
