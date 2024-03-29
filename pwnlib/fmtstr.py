@@ -129,6 +129,7 @@ def normalize_writes(writes):
     such that all values are raw bytes and consecutive writes are merged to a single key.
 
     Examples:
+
         >>> context.clear(endian="little", bits=32)
         >>> normalize_writes({0x0: [p32(0xdeadbeef)], 0x4: p32(0xf00dface), 0x10: 0x41414141})
         [(0, b'\xef\xbe\xad\xde\xce\xfa\r\xf0'), (16, b'AAAA')]
@@ -215,6 +216,7 @@ class AtomWrite(object):
         given the current format string write counter (how many bytes have been written until now).
 
         Examples:
+
             >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0x2345).compute_padding(0x1111))
             '0x1234'
             >>> hex(pwnlib.fmtstr.AtomWrite(0x0, 0x2, 0xaa00).compute_padding(0xaabb))
@@ -246,6 +248,7 @@ class AtomWrite(object):
         Combine adjacent writes into a single write.
 
         Example:
+
             >>> context.clear(endian = "little")
             >>> pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0x1, 0xff).union(pwnlib.fmtstr.AtomWrite(0x1, 0x1, 0x2, 0x77))
             AtomWrite(start=0, size=2, integer=0x201, mask=0x77ff)
@@ -285,11 +288,13 @@ def make_atoms_simple(address, data, badbytes=frozenset()):
 
     This function is simple and does not try to minimize the number of atoms. For example, if there are no
     bad bytes, it simply returns one atom for each byte:
+
         >>> pwnlib.fmtstr.make_atoms_simple(0x0, b"abc", set())
         [AtomWrite(start=0, size=1, integer=0x61, mask=0xff), AtomWrite(start=1, size=1, integer=0x62, mask=0xff), AtomWrite(start=2, size=1, integer=0x63, mask=0xff)]
     
     If there are bad bytes, it will try to bypass by skipping addresses containing bad bytes, otherwise a
     RuntimeError will be raised:
+
         >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'abc', b'\x62')
         [AtomWrite(start=97, size=2, integer=0x6261, mask=0xffff), AtomWrite(start=99, size=1, integer=0x63, mask=0xff)]
         >>> pwnlib.fmtstr.make_atoms_simple(0x61, b'a'*0x10, b'\x62\x63\x64\x65\x66\x67\x68')
@@ -325,6 +330,7 @@ def merge_atoms_writesize(atoms, maxsize):
     This function simply merges adjacent atoms as long as the merged atom's size is not larger than ``maxsize``.
 
     Examples:
+
         >>> from pwnlib.fmtstr import *
         >>> merge_atoms_writesize([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1), AtomWrite(2, 1, 2)], 2)
         [AtomWrite(start=0, size=2, integer=0x101, mask=0xffff), AtomWrite(start=2, size=1, integer=0x2, mask=0xff)]
@@ -364,6 +370,7 @@ def find_min_hamming_in_range_step(prev, step, carry, strict):
         A tuple (score, value, mask) where score equals the number of matching bytes between the returned value and target.
 
     Examples:
+
         >>> initial = {(0,0): (0,0,0), (0,1): None, (1,0): None, (1,1): None}
         >>> pwnlib.fmtstr.find_min_hamming_in_range_step(initial, (0, 0xFF, 0x1), 0, 0)
         (1, 1, 255)
@@ -419,6 +426,7 @@ def find_min_hamming_in_range(maxbytes, lower, upper, target):
         target(int): the target value that should be approximated
 
     Examples:
+
         >>> pp = lambda svm: (svm[0], hex(svm[1]), hex(svm[2]))
         >>> pp(pwnlib.fmtstr.find_min_hamming_in_range(1, 0x0, 0x100, 0xaa))
         (1, '0xaa', '0xff')
@@ -470,6 +478,7 @@ def merge_atoms_overlapping(atoms, sz, szmax, numbwritten, overflows):
         overflows(int): how many extra overflows (of size sz) to tolerate to reduce the number of atoms
 
     Examples:
+
         >>> from pwnlib.fmtstr import *
         >>> merge_atoms_overlapping([AtomWrite(0, 1, 1), AtomWrite(1, 1, 1)], 2, 8, 0, 1)
         [AtomWrite(start=0, size=2, integer=0x101, mask=0xffff)]
@@ -557,6 +566,7 @@ def overlapping_atoms(atoms):
     Finds pairs of atoms that write to the same address.
 
     Basic examples:
+
         >>> from pwnlib.fmtstr import *
         >>> list(overlapping_atoms([AtomWrite(0, 2, 0), AtomWrite(2, 10, 1)])) # no overlaps
         []
@@ -564,6 +574,7 @@ def overlapping_atoms(atoms):
         [(AtomWrite(start=0, size=2, integer=0x0, mask=0xffff), AtomWrite(start=1, size=2, integer=0x1, mask=0xffff))]
 
     When there are transitive overlaps, only the largest overlap is returned. For example:
+
         >>> list(overlapping_atoms([AtomWrite(0, 3, 0), AtomWrite(1, 4, 1), AtomWrite(2, 4, 1)]))
         [(AtomWrite(start=0, size=3, integer=0x0, mask=0xffffff), AtomWrite(start=1, size=4, integer=0x1, mask=0xffffffff)), (AtomWrite(start=1, size=4, integer=0x1, mask=0xffffffff), AtomWrite(start=2, size=4, integer=0x1, mask=0xffffffff))]
 
@@ -629,6 +640,7 @@ def sort_atoms(atoms, numbwritten):
         numbwritten(int): the value at which the counter starts
 
     Examples:
+
         >>> from pwnlib.fmtstr import *
         >>> sort_atoms([AtomWrite(0, 1, 0xff), AtomWrite(1, 1, 0xfe)], 0) # the example described above
         [AtomWrite(start=1, size=1, integer=0xfe, mask=0xff), AtomWrite(start=0, size=1, integer=0xff, mask=0xff)]
@@ -694,6 +706,7 @@ def make_payload_dollar(data_offset, atoms, numbwritten=0, countersize=4, no_dol
         no_dollars(bool) : flag to generete the payload with or w/o $ notation 
 
     Examples:
+
         >>> pwnlib.fmtstr.make_payload_dollar(1, [pwnlib.fmtstr.AtomWrite(0x0, 0x1, 0xff)])
         (b'%255c%1$hhn', b'\x00\x00\x00\x00')
     '''
@@ -840,6 +853,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         The payload in order to do needed writes
 
     Examples:
+
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'

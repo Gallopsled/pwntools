@@ -298,6 +298,7 @@ def cyclic_metasploit(length = None, sets = None):
         sets: List of strings to generate the sequence over.
 
     Example:
+
         >>> cyclic_metasploit(32)
         b'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab'
         >>> cyclic_metasploit(sets = [b"AB",b"ab",b"12"])

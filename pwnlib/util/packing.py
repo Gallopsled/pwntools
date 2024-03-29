@@ -76,6 +76,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         The packed number as a string.
 
     Examples:
+
         >>> pack(0x414243, 24, 'big', True)
         b'ABC'
         >>> pack(0x414243, 24, 'little', True)
@@ -189,6 +190,7 @@ def unpack(data, word_size = None):
         The unpacked number.
 
     Examples:
+
         >>> hex(unpack(b'\xaa\x55', 16, endian='little', sign=False))
         '0x55aa'
         >>> hex(unpack(b'\xaa\x55', 16, endian='big', sign=False))
@@ -256,6 +258,7 @@ def unpack_many(data, word_size = None):
         The unpacked numbers.
 
     Examples:
+
         >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
         >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
@@ -510,6 +513,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
         of that number in a packed form.
 
     Examples:
+
         >>> p = make_packer(32, endian='little', sign='unsigned')
         >>> p
         <function _p32lu at 0x...>
@@ -573,6 +577,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         of that string in an unpacked form.
 
     Examples:
+
         >>> u = make_unpacker(32, endian='little', sign='unsigned')
         >>> u
         <function _u32lu at 0x...>
@@ -978,6 +983,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         modified in-place.
 
     Examples:
+
         >>> dd(tuple('Hello!'), b'?', skip = 5)
         ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)

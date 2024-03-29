@@ -1346,6 +1346,7 @@ class ELF(ELFFile):
             or :const:`None`.
 
         Examples:
+
             >>> bash = ELF(which('bash'))
             >>> bash.vaddr_to_offset(bash.address)
             0
@@ -1496,6 +1497,7 @@ class ELF(ELFFile):
             that it stays in the same segment.
 
         Examples:
+
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
           b'ELF'
@@ -2387,6 +2389,7 @@ class ELF(ELFFile):
             A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
 
         Example:
+
             >>> tmpdir = tempfile.mkdtemp()
             >>> ls_path = os.path.join(tmpdir, 'ls')
             >>> _ = shutil.copy(which('ls'), ls_path)

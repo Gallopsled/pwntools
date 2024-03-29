@@ -9,7 +9,6 @@ import struct
 import subprocess
 import sys
 import time
-import types
 
 from pwnlib import term
 from pwnlib.log import getLogger
@@ -62,9 +61,6 @@ def yesno(prompt, default=None):
 
     Examples:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> yesno("A number:", 20)
         Traceback (most recent call last):
         ...
@@ -83,9 +79,6 @@ def yesno(prompt, default=None):
          [?] is it good 3 [yes/No] False
 
     Tests:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> p = testpwnproc("print(yesno('is it ok??'))")
         >>> b"is it ok" in p.recvuntil(b"??")
@@ -149,18 +142,12 @@ def options(prompt, opts, default = None):
 
     Examples:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> options("Select a color", ("red", "green", "blue"), "green")
         Traceback (most recent call last):
         ...
         ValueError: options(): default must be a number or None
 
     Tests:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> p = testpwnproc("print(options('select a color', ('red', 'green', 'blue')))")
         >>> p.sendline(b"\33[C\33[A\33[A\33[B\33[1;5A\33[1;5B 0310")
@@ -273,9 +260,6 @@ def pause(n=None):
 
     Examples:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> with context.local(log_level="INFO"):
         ...     pause(1)
         [x] Waiting
@@ -287,9 +271,6 @@ def pause(n=None):
         ValueError: pause(): n must be a number or None
 
     Tests:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> saved_stdin = sys.stdin
         >>> try:
@@ -335,11 +316,8 @@ def more(text):
     Returns:
       :const:`None`
 
-    Tests:
-
-    .. doctest::
-       :skipif: branch_dev
-       
+    Tests:      
+ 
         >>> more("text")
         text
         >>> p = testpwnproc("more('text\\n' * (term.height + 2))")

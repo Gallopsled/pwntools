@@ -47,10 +47,11 @@ def detect_missing_binaries(args):
         else:
             if os.access(filename, os.X_OK):
                 other_files.append(filename)
-    if len(other_files) == 1:
-        exe = other_files[0]
-    elif len(other_files) > 1:
-        log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
+    if not exe:
+        if len(other_files) == 1:
+            exe = other_files[0]
+        elif len(other_files) > 1:
+            log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
 
     if exe != args.exe:
         log.success("Found challenge binary %r", exe)
