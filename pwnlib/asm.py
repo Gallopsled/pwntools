@@ -780,6 +780,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         asm_hash = sha1sumhex(_encode(shellcode) + _encode(hash_params))
         cache_file = os.path.join(cache_dir, asm_hash)
         if os.path.exists(cache_file):
+            log.debug('Using cached assembly output from %r', cache_file)
             if extract:
                 with open(cache_file, 'rb') as f:
                     return f.read()
