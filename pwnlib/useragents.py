@@ -34,6 +34,7 @@ def getall():
         A set of user agent strings.
 
     Examples:
+
         >>> 'libcurl-agent/1.0' in getall()
         True
         >>> 'wget' in getall()

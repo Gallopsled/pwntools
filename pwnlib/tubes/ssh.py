@@ -340,6 +340,7 @@ class ssh_process(ssh_channel):
         automatically.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> p = s.process('true')
             >>> p.libc  # doctest: +ELLIPSIS
@@ -383,6 +384,7 @@ class ssh_process(ssh_channel):
         r"""Retrieve the address of an environment variable in the remote process.
 
         Examples:
+
             >>> s = ssh(host='example.pwnme')
             >>> p = s.process(['python', '-c', 'import time; time.sleep(10)'])
             >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
@@ -751,6 +753,7 @@ class ssh(Timeout, Logger):
             Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> sh = s.shell('/bin/sh')
             >>> sh.sendline(b'echo Hello; exit')
@@ -829,6 +832,7 @@ class ssh(Timeout, Logger):
             Requires Python on the remote server.
 
         Examples:
+
             >>> s = ssh(host='example.pwnme')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline(b'echo Hello; exit')
@@ -947,15 +951,19 @@ class ssh(Timeout, Logger):
                 python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
 
             try:
-                python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
-                python.recvline()                           # Python interpreter that was selected
+                python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
+                try:
+                    if b'python' not in python.recvline():  # Python interpreter that was selected
+                        raise ValueError("Python not found on remote host")
+                except (EOFError, ValueError):
+                    self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                                   + "Use ssh.system() instead of ssh.process()\n")
+                    h.failure("Process creation failed")
+                    return None
+
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python interpreter on %s\n' % self.host
-                               + "Use ssh.run() instead of ssh.process()\n"
-                                 "The original error message:\n"
-                               + python.recvall().decode())
                 return None
 
             # If an error occurred, try to grab as much output
@@ -1007,12 +1015,14 @@ class ssh(Timeout, Logger):
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; command -v %s' % program).recvall().strip().decode()
+        program = packing._encode(program)
 
-        if ('/%s' % program) not in result:
+        result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
+
+        if (b'/' + program) not in result:
             return None
 
-        return result
+        return packing._decode(result)
 
     def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
         r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
@@ -1026,6 +1036,7 @@ class ssh(Timeout, Logger):
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> py = s.system('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
@@ -1095,6 +1106,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         a TTY on the remote server.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> print(s.run_to_end('echo Hello; exit 17'))
             (b'Hello\n', 17)
@@ -1121,6 +1133,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
 
         Examples:
+
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme')
@@ -1368,6 +1381,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         Examples:
+
             >>> with open('/tmp/bar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1395,6 +1409,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
         
         Examples:
+
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1472,6 +1487,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote(str): The filename to upload it to.
 
         Example:
+
             >>> s =  ssh(host='example.pwnme')
             >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
             >>> print(open('/tmp/upload_foo').read())
@@ -1594,6 +1610,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         
 
         Examples:
+
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1734,6 +1751,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 that all files in the "old" working directory should be symlinked.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> cwd = s.set_working_directory()
             >>> s.ls()

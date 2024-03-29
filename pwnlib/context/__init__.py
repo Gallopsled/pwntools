@@ -360,6 +360,7 @@ class ContextType(object):
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
+        'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
         'log_file': _devnull(),
         'log_console': sys.stdout,
@@ -830,6 +831,7 @@ class ContextType(object):
         The default value is ``32``, but changes according to :attr:`arch`.
 
         Examples:
+
             >>> context.clear()
             >>> context.bits == 32
             True
@@ -1069,6 +1071,32 @@ class ContextType(object):
         if isinstance(stream, str):
             stream = open(stream, 'wt')
         return stream
+
+    @_validator
+    def local_libcdb(self, path):
+        """ 
+        Sets path to local libc-database, get more information for libc-database:
+        https://github.com/niklasb/libc-database
+
+        Works in :attr:`pwnlib.libcdb` when searching by local database provider.
+
+        The default value is ``/var/lib/libc-database``.
+
+        Sets `context.local_libcdb` to empty string or `None` will turn off local libc-database integration.
+
+        Examples:
+
+            >>> context.local_libcdb = pwnlib.data.elf.path
+            >>> context.local_libcdb = 'foobar'
+            Traceback (most recent call last):
+            ...
+            AttributeError: 'foobar' does not exist, please download libc-database first
+        """
+
+        if not os.path.isdir(path):
+            raise AttributeError("'%s' does not exist, please download libc-database first" % path)
+
+        return path
 
     @property
     def mask(self):

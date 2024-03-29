@@ -77,12 +77,12 @@ Each of the ``pwntools`` modules is documented here.
    update
    useragents
    util/*
+   windbg
 
 .. toctree::
    :hidden:
 
    testexample
-   rop/call
 
 .. only:: not dash
 

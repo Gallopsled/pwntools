@@ -9,9 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.13.0](#4130-dev)  | `dev`    |
-| [4.12.0](#4120-beta)  | `beta`   |
-| [4.11.1](#4111-stable)  | `stable` | Nov 14, 2023
+| [4.14.0](#4140-dev)  | `dev`   |
+| [4.13.0](#4130-beta)  | `beta`    |
+| [4.12.0](#4120-stable)  | `stable`   | Feb 22, 2024
+| [4.11.1](#4111)  |          | Nov 14, 2023
 | [4.11.0](#4110)  |          | Sep 15, 2023
 | [4.10.0](#4100)  |          | May 21, 2023
 | [4.9.0](#490)    |          | Dec 29, 2022
@@ -68,7 +69,19 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.13.0 (`dev`)
+## 4.14.0 (`dev`)
+
+- [#2360][2360] Add offline parameter for `search_by_hash` series function
+- [#2356][2356] Add local libc database provider for libcdb
+- [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
+- [#2327][2327] Add basic support to debug processes on Windows
+
+[2360]: https://github.com/Gallopsled/pwntools/pull/2360
+[2356]: https://github.com/Gallopsled/pwntools/pull/2356
+[2374]: https://github.com/Gallopsled/pwntools/pull/2374
+[2327]: https://github.com/Gallopsled/pwntools/pull/2327
+
+## 4.13.0 (`beta`)
 
 - [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 - [#2277][2277] elf: Resolve more relocations into GOT entries
@@ -127,7 +140,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
 [2322]: https://github.com/Gallopsled/pwntools/pull/2322
 
-## 4.12.0 (`beta`)
+## 4.12.0 (`stable`)
 
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
@@ -136,6 +149,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2212][2212] Add `--libc libc.so` argument to `pwn template` command
 - [#2257][2257] Allow creation of custom templates for `pwn template` command
 - [#2225][2225] Allow empty argv in ssh.process()
+- [#2349][2349] Fix term.readline omitting a trailing \n
+- [#2352][2352] add `RETURN_CONST` as an allowed `_const_code` in safeeval
 
 [2202]: https://github.com/Gallopsled/pwntools/pull/2202
 [2117]: https://github.com/Gallopsled/pwntools/pull/2117
@@ -144,8 +159,10 @@ The table below shows which release corresponds to each branch, and what date th
 [2212]: https://github.com/Gallopsled/pwntools/pull/2212
 [2257]: https://github.com/Gallopsled/pwntools/pull/2257
 [2225]: https://github.com/Gallopsled/pwntools/pull/2225
+[2349]: https://github.com/Gallopsled/pwntools/pull/2349
+[2352]: https://github.com/Gallopsled/pwntools/pull/2352
 
-## 4.11.1 (`stable`)
+## 4.11.1
 
 - [#2271][2271] FIX: Generated shebang with path to python invalid if path contains spaces
 - [#2272][2272] Fix `tube.clean_and_log` not logging buffered data
