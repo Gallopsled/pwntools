@@ -469,8 +469,10 @@ class tube(Timeout, Logger):
         A "line" is any sequence of bytes terminated by the byte sequence
         set in :attr:`newline`, which defaults to ``b'\n'``.
 
-        If the connection is closed (:class:`EOFError`) before a newline is received, the
-        buffered data is returned. If the buffer is empty, an :class:`EOFError` is raised.
+        If the connection is closed (:class:`EOFError`) before a newline
+        is received, the buffered data is returned by default and a warning
+        is logged. If the buffer is empty, an :class:`EOFError` is raised.
+        This behavior can be changed by setting :property:`context.context.throw_eof_on_incomplete_line`.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty byte string (``b''``) is returned.
@@ -486,7 +488,10 @@ class tube(Timeout, Logger):
         Return:
             All bytes received over the tube until the first
             newline ``'\n'`` is received.  Optionally retains
-            the ending.
+            the ending. If the connection is closed before a newline
+            is received, the remaining data received up to this point
+            is returned.
+
 
         Examples:
 
@@ -521,8 +526,9 @@ class tube(Timeout, Logger):
         try:
             return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
         except EOFError:
-            if self.buffer.size > 0:
-                self.warn_once('EOFError during recvline. Returning buffered data without trailing newline.')
+            if not context.throw_eof_on_incomplete_line and self.buffer.size > 0:
+                if context.throw_eof_on_incomplete_line is None:
+                    self.warn_once('EOFError during recvline. Returning buffered data without trailing newline.')
                 return self.buffer.get()
             raise
 
