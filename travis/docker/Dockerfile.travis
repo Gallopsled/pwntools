@@ -1,7 +1,7 @@
 
 # Some additional debugging tools that are useful
-RUN python2.7 -m pip install ipdb && \
-    python3 -m pip install ipdb
+RUN python2.7 -m pip install --no-cache-dir ipdb && \
+    python3 -m pip install --no-cache-dir ipdb
 
 # Install debugging utilities
 USER root

@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import inspect
 import logging
 import os
 import re
@@ -13,7 +12,6 @@ import tarfile
 import tempfile
 import threading
 import time
-import types
 
 from pwnlib import term
 from pwnlib.context import context, LocalContext
@@ -342,6 +340,7 @@ class ssh_process(ssh_channel):
         automatically.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> p = s.process('true')
             >>> p.libc  # doctest: +ELLIPSIS
@@ -385,6 +384,7 @@ class ssh_process(ssh_channel):
         r"""Retrieve the address of an environment variable in the remote process.
 
         Examples:
+
             >>> s = ssh(host='example.pwnme')
             >>> p = s.process(['python', '-c', 'import time; time.sleep(10)'])
             >>> hex(p.getenv('PATH'))  # doctest: +ELLIPSIS
@@ -753,6 +753,7 @@ class ssh(Timeout, Logger):
             Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> sh = s.shell('/bin/sh')
             >>> sh.sendline(b'echo Hello; exit')
@@ -831,6 +832,7 @@ class ssh(Timeout, Logger):
             Requires Python on the remote server.
 
         Examples:
+
             >>> s = ssh(host='example.pwnme')
             >>> sh = s.process('/bin/sh', env={'PS1':''})
             >>> sh.sendline(b'echo Hello; exit')
@@ -906,192 +908,12 @@ class ssh(Timeout, Logger):
             b'$ \n'
 
         """
-        if not argv and not executable:
-            self.error("Must specify argv or executable")
+        cwd = cwd or self.cwd
+        script = misc._create_execve_script(argv=argv, executable=executable,
+                cwd=cwd, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
+                ignore_environ=ignore_environ, preexec_fn=preexec_fn, preexec_args=preexec_args,
+                aslr=aslr, setuid=setuid, shell=shell, log=self)
 
-        aslr      = aslr if aslr is not None else context.aslr
-
-        if ignore_environ is None:
-            ignore_environ = env is not None  # compat
-
-        argv, env = misc.normalize_argv_env(argv, env, self)
-
-        if shell:
-            if len(argv) != 1:
-                self.error('Cannot provide more than 1 argument if shell=True')
-            argv = [bytearray(b'/bin/sh'), bytearray(b'-c')] + argv
-
-        executable = executable or argv[0]
-        cwd        = cwd or self.cwd
-
-        # Validate, since failures on the remote side will suck.
-        if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
-            self.error("executable / argv[0] must be a string: %r" % executable)
-        executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
-
-        # Allow passing in sys.stdin/stdout/stderr objects
-        handles = {sys.stdin: 0, sys.stdout:1, sys.stderr:2}
-        stdin  = handles.get(stdin, stdin)
-        stdout = handles.get(stdout, stdout)
-        stderr = handles.get(stderr, stderr)
-
-        # Allow the user to provide a self-contained function to run
-        def func(): pass
-        func      = preexec_fn or func
-        func_args = preexec_args
-
-        if not isinstance(func, types.FunctionType):
-            self.error("preexec_fn must be a function")
-
-        func_name = func.__name__
-        if func_name == (lambda: 0).__name__:
-            self.error("preexec_fn cannot be a lambda")
-
-        func_src  = inspect.getsource(func).strip()
-        setuid = True if setuid is None else bool(setuid)
-
-        script = r"""
-#!/usr/bin/env python
-import os, sys, ctypes, resource, platform, stat
-from collections import OrderedDict
-try:
-    integer_types = int, long
-except NameError:
-    integer_types = int,
-exe   = bytes(%(executable)r)
-argv  = [bytes(a) for a in %(argv)r]
-env   = %(env)r
-
-os.chdir(%(cwd)r)
-
-if %(ignore_environ)r:
-    os.environ.clear()
-environ = getattr(os, 'environb', os.environ)
-
-if env is not None:
-    env = OrderedDict((bytes(k), bytes(v)) for k,v in env)
-    environ.update(env)
-else:
-    env = environ
-
-def is_exe(path):
-    return os.path.isfile(path) and os.access(path, os.X_OK)
-
-PATH = environ.get(b'PATH',b'').split(os.pathsep.encode())
-
-if os.path.sep.encode() not in exe and not is_exe(exe):
-    for path in PATH:
-        test_path = os.path.join(path, exe)
-        if is_exe(test_path):
-            exe = test_path
-            break
-
-if not is_exe(exe):
-    sys.stderr.write('3\n')
-    sys.stderr.write("{!r} is not executable or does not exist in $PATH: {!r}".format(exe,PATH))
-    sys.exit(-1)
-
-if not %(setuid)r:
-    PR_SET_NO_NEW_PRIVS = 38
-    result = ctypes.CDLL('libc.so.6').prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
-
-    if result != 0:
-        sys.stdout.write('3\n')
-        sys.stdout.write("Could not disable setuid: prctl(PR_SET_NO_NEW_PRIVS) failed")
-        sys.exit(-1)
-
-try:
-    PR_SET_PTRACER = 0x59616d61
-    PR_SET_PTRACER_ANY = -1
-    ctypes.CDLL('libc.so.6').prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0)
-except Exception:
-    pass
-
-# Determine what UID the process will execute as
-# This is used for locating apport core dumps
-suid = os.getuid()
-sgid = os.getgid()
-st = os.stat(exe)
-if %(setuid)r:
-    if (st.st_mode & stat.S_ISUID):
-        suid = st.st_uid
-    if (st.st_mode & stat.S_ISGID):
-        sgid = st.st_gid
-
-if sys.argv[-1] == 'check':
-    sys.stdout.write("1\n")
-    sys.stdout.write(str(os.getpid()) + "\n")
-    sys.stdout.write(str(os.getuid()) + "\n")
-    sys.stdout.write(str(os.getgid()) + "\n")
-    sys.stdout.write(str(suid) + "\n")
-    sys.stdout.write(str(sgid) + "\n")
-    getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
-    sys.stdout.flush()
-
-for fd, newfd in {0: %(stdin)r, 1: %(stdout)r, 2:%(stderr)r}.items():
-    if newfd is None:
-        os.close(fd)
-    elif isinstance(newfd, (str, bytes)):
-        newfd = os.open(newfd, os.O_RDONLY if fd == 0 else (os.O_RDWR|os.O_CREAT))
-        os.dup2(newfd, fd)
-        os.close(newfd)
-    elif isinstance(newfd, integer_types) and newfd != fd:
-        os.dup2(fd, newfd)
-
-if not %(aslr)r:
-    if platform.system().lower() == 'linux' and %(setuid)r is not True:
-        ADDR_NO_RANDOMIZE = 0x0040000
-        ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
-
-    resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
-
-# Attempt to dump ALL core file regions
-try:
-    with open('/proc/self/coredump_filter', 'w') as core_filter:
-        core_filter.write('0x3f\n')
-except Exception:
-    pass
-
-# Assume that the user would prefer to have core dumps.
-try:
-    resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
-except Exception:
-    pass
-
-%(func_src)s
-%(func_name)s(*%(func_args)r)
-
-""" % locals()  
-
-        if len(argv) > 0 and len(argv[0]) > 0:
-            script += r"os.execve(exe, argv, env) " 
-
-        # os.execve does not allow us to pass empty argv[0]
-        # Therefore we use ctypes to call execve directly
-        else:
-            script += r"""
-# Transform envp from dict to list
-env_list = [key + b"=" + value for key, value in env.items()]
-
-# ctypes helper to convert a python list to a NULL-terminated C array
-def to_carray(py_list):
-    py_list += [None] # NULL-terminated
-    return (ctypes.c_char_p * len(py_list))(*py_list)
-
-c_argv = to_carray(argv)
-c_env = to_carray(env_list)
-
-# Call execve
-libc = ctypes.CDLL('libc.so.6')
-libc.execve(exe, c_argv, c_env)
-
-# We should never get here, since we sanitized argv and env,
-# but just in case, indicate that something went wrong.
-libc.perror(b"execve")
-raise OSError("execve failed")
-""" % locals()
-
-        script = script.strip()
 
         self.debug("Created execve script:\n" + script)
 
@@ -1101,6 +923,7 @@ raise OSError("execve failed")
                 self.chmod('+x', tmpfile)
 
             self.info("Uploading execve script to %r" % tmpfile)
+            script = packing._encode(script)
             self.upload_data(script, tmpfile)
             return tmpfile
 
@@ -1128,15 +951,19 @@ raise OSError("execve failed")
                 python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
 
             try:
-                python.recvline_contains(b'PWNTOOLS')        # Magic flag so that any sh/bash initialization errors are swallowed
-                python.recvline()                           # Python interpreter that was selected
+                python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
+                try:
+                    if b'python' not in python.recvline():  # Python interpreter that was selected
+                        raise ValueError("Python not found on remote host")
+                except (EOFError, ValueError):
+                    self.warn_once('Could not find a Python interpreter on %s\n' % self.host
+                                   + "Use ssh.system() instead of ssh.process()\n")
+                    h.failure("Process creation failed")
+                    return None
+
                 result = safeeval.const(python.recvline())  # Status flag from the Python script
             except (EOFError, ValueError):
                 h.failure("Process creation failed")
-                self.warn_once('Could not find a Python interpreter on %s\n' % self.host
-                               + "Use ssh.run() instead of ssh.process()\n"
-                                 "The original error message:\n"
-                               + python.recvall().decode())
                 return None
 
             # If an error occurred, try to grab as much output
@@ -1188,12 +1015,14 @@ raise OSError("execve failed")
         if os.path.sep in program:
             return program
 
-        result = self.run('export PATH=$PATH:$PWD; command -v %s' % program).recvall().strip().decode()
+        program = packing._encode(program)
 
-        if ('/%s' % program) not in result:
+        result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
+
+        if (b'/' + program) not in result:
             return None
 
-        return result
+        return packing._decode(result)
 
     def system(self, process, tty = True, cwd = None, env = None, timeout = None, raw = True, wd = None):
         r"""system(process, tty = True, cwd = None, env = None, timeout = Timeout.default, raw = True) -> ssh_channel
@@ -1207,6 +1036,7 @@ raise OSError("execve failed")
         Return a :class:`pwnlib.tubes.ssh.ssh_channel` object.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> py = s.system('python3 -i')
             >>> _ = py.recvuntil(b'>>> ')
@@ -1276,6 +1106,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         a TTY on the remote server.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> print(s.run_to_end('echo Hello; exit 17'))
             (b'Hello\n', 17)
@@ -1302,6 +1133,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Returns a :class:`pwnlib.tubes.ssh.ssh_connecter` object.
 
         Examples:
+
             >>> from pwn import *
             >>> l = listen()
             >>> s =  ssh(host='example.pwnme')
@@ -1549,6 +1381,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         Examples:
+
             >>> with open('/tmp/bar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1576,6 +1409,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             local(str): The local filename to save it to. Default is to infer it from the remote filename.
         
         Examples:
+
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1653,6 +1487,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote(str): The filename to upload it to.
 
         Example:
+
             >>> s =  ssh(host='example.pwnme')
             >>> s.upload_data(b'Hello, world', '/tmp/upload_foo')
             >>> print(open('/tmp/upload_foo').read())
@@ -1775,6 +1610,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         
 
         Examples:
+
             >>> with open('/tmp/foobar','w+') as f:
             ...     _ = f.write('Hello, world')
             >>> s =  ssh(host='example.pwnme',
@@ -1915,6 +1751,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 that all files in the "old" working directory should be symlinked.
 
         Examples:
+
             >>> s =  ssh(host='example.pwnme')
             >>> cwd = s.set_working_directory()
             >>> s.ls()
