@@ -75,11 +75,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
 - [#2327][2327] Add basic support to debug processes on Windows
+- [#2322][2322] Add basic RISCV64 shellcraft support
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
 [2374]: https://github.com/Gallopsled/pwntools/pull/2374
 [2327]: https://github.com/Gallopsled/pwntools/pull/2327
+[2322]: https://github.com/Gallopsled/pwntools/pull/2322
 
 ## 4.13.0 (`beta`)
 
@@ -111,7 +113,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2268][2268] Add a `flatten` argument to `ssh.libs`
 - [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
 - [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
-- [#2322][2322] Add basic RISCV64 shellcraft support
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -138,7 +139,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2268]: https://github.com/Gallopsled/pwntools/pull/2268
 [2347]: https://github.com/Gallopsled/pwntools/pull/2347
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
-[2322]: https://github.com/Gallopsled/pwntools/pull/2322
 
 ## 4.12.0 (`stable`)
 
