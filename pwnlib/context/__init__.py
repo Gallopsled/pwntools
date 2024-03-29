@@ -1433,14 +1433,14 @@ class ContextType(object):
     
     @_validator
     def throw_eof_on_incomplete_line(self, v):
-        """Whether to raise an EOFError if an EOF is received before a newline in :meth:`tube.recvline`.
+        """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
 
-        Controls if an EOFError is treated as newline in :meth:`tube.recvline` and similar functions
+        Controls if an :class:`EOFError` is treated as newline in ``tube.recvline`` and similar functions
         and whether a warning should be logged about it.
 
         Possible values are:
 
-        - ``True``: Raise an EOFError if an EOF is received before a newline.
+        - ``True``: Raise an :class:`EOFError` if an EOF is received before a newline.
         - ``False``: Return the data received so far if an EOF is received
           before a newline without logging a warning.
         - ``None``: Return the data received so far if an EOF is received

@@ -472,7 +472,7 @@ class tube(Timeout, Logger):
         If the connection is closed (:class:`EOFError`) before a newline
         is received, the buffered data is returned by default and a warning
         is logged. If the buffer is empty, an :class:`EOFError` is raised.
-        This behavior can be changed by setting :property:`context.context.throw_eof_on_incomplete_line`.
+        This behavior can be changed by setting :meth:`pwnlib.context.ContextType.throw_eof_on_incomplete_line`.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty byte string (``b''``) is returned.
@@ -482,7 +482,7 @@ class tube(Timeout, Logger):
             timeout(int): Timeout
 
         Raises:
-            exceptions.EOFError: The connection closed before the request
+            :class:`EOFError`: The connection closed before the request
                                  could be satisfied and the buffer is empty
 
         Return:
