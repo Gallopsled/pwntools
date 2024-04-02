@@ -1083,7 +1083,7 @@ class process(tube):
             contiguous_mappings([mapping]): list of contiguous
             mappings, sorted by starting address
 
-        Returns location of the first mapping, and the sum
+        Returns the location of the first mapping, and the sum
         of their sizes.
         """
 
@@ -1108,7 +1108,7 @@ class process(tube):
         """get_mapping_location(path_value) -> mapping_location
 
         Arguments:
-            path_value(str): The path used to find the mapping,
+            path_value(str): The exact path of the requested mapping,
                 valid values are also [stack], [heap], etc..
 
         Returns a mapping_location object if found some matching
@@ -1124,8 +1124,7 @@ class process(tube):
     def stack_location(self):
         """stack_location() -> mapping_location
 
-        Returns location and size of the stack
-        mapping.
+        Returns the location and size of the stack mapping.
         Runs :meth:`.process.get_mapping_location` with '[stack]' as the argument.
         """
 
@@ -1134,8 +1133,7 @@ class process(tube):
     def heap_location(self):
         """heap_location() -> mapping_location
 
-        Returns location and size of the heap
-        mapping.
+        Returns the location and size of the heap mapping.
         Runs :meth:`.process.get_mapping_location` with '[heap]' as the argument.
         """
 
@@ -1144,8 +1142,7 @@ class process(tube):
     def vdso_location(self):
         """vdso_location() -> mapping_location
 
-        Returns location and size of the vdso
-        mapping.
+        Returns the location and size of the vdso mapping.
         Runs :meth:`.process.get_mapping_location` with '[vdso]' as the argument.
         """
 
@@ -1154,8 +1151,7 @@ class process(tube):
     def vvar_location(self):
         """vvar_location() -> mapping_location
 
-        Returns location and size of the vvar
-        mapping.
+        Returns the location and size of the vvar mapping.
         Runs :meth:`.process.get_mapping_location` with '[vvar]' as the argument.
         """
 
@@ -1164,8 +1160,7 @@ class process(tube):
     def elf_location(self):
         """elf_location() -> mapping_location
 
-        Returns location and size of elf that
-        launched the process.
+        Returns the location and size of the elf that launched the process.
         Runs :meth:`.process.get_mapping_location` with the :meth:`.process.elf` path as the argument.
         """
 
@@ -1174,8 +1169,7 @@ class process(tube):
     def libc_location(self):
         """libc_location() -> mapping_location
 
-        Returns location and size of libc in
-        process memory.
+        Returns the location and size of libc in process memory.
         """
 
         return self._location_from_mappings(self.libc_mapping(False))
@@ -1183,15 +1177,14 @@ class process(tube):
     def musl_location(self):
         """musl_location() -> mapping_location
 
-        Returns location and size of musl in
-        process memory.
+        Returns the location and size of musl in process memory.
         """
         return self._location_from_mappings(self.musl_mapping(False))
 
     def address_mapping(self, address):
         """address_mapping(address) -> mapping
         
-        Returns mapping at the specified address.
+        Returns the mapping at the specified address.
         """
 
         all_maps = self.maps()
