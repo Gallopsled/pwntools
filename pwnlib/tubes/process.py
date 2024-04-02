@@ -935,8 +935,8 @@ class process(tube):
         return maps
 
     def get_mapping(self, path_value, single=True):
-        """stack_mapping(path_value, single=True) -> mapping
-        stack_mapping(path_value, False) -> [mapping]
+        """get_mapping(path_value, single=True) -> mapping
+        get_mapping(path_value, False) -> [mapping]
 
         Arguments:
             path_value(str): The path used to find the mapping,
