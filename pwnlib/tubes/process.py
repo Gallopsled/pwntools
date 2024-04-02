@@ -806,15 +806,6 @@ class process(tube):
         # First check if we are already dead
         self.poll()
 
-        # close file descriptors
-        for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
-            if fd is not None:
-                try:
-                    fd.close()
-                except IOError as e:
-                    if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
-                        raise
-
         if not self._stop_noticed:
             try:
                 self.proc.kill()
@@ -823,6 +814,15 @@ class process(tube):
                 self.info('Stopped process %r (pid %i)' % (self.program, self.pid))
             except OSError:
                 pass
+
+        # close file descriptors
+        for fd in [self.proc.stdin, self.proc.stdout, self.proc.stderr]:
+            if fd is not None:
+                try:
+                    fd.close()
+                except IOError as e:
+                    if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
+                        raise
 
 
     def fileno(self):
