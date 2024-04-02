@@ -969,7 +969,7 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping('[stack]', single).
+        Returns :meth:`.process.get_mapping` with '[stack]' and single as arguments.
         """
         return self.get_mapping('[stack]', single)
     
@@ -981,7 +981,7 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping('[heap]', single).
+        Returns :meth:`.process.get_mapping` with '[heap]' and single as arguments.
         """
         return self.get_mapping('[heap]', single)
     
@@ -993,7 +993,7 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping('[vdso]', single).
+        Returns :meth:`.process.get_mapping` with '[vdso]' and single as arguments.
         """
         return self.get_mapping('[vdso]', single)
     
@@ -1005,7 +1005,7 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping('[vvar]', single).
+        Returns :meth:`.process.get_mapping` with '[vvar]' and single as arguments.
         """
         return self.get_mapping('[vvar]', single)
     
@@ -1071,7 +1071,7 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns self.get_mapping(self.elf.path, single).
+        Returns :meth:`.process.get_mapping` with the :meth:`.process.elf` path and single as arguments.
         """
         return self.get_mapping(self.elf.path, single)
     
@@ -1126,7 +1126,7 @@ class process(tube):
 
         Returns location and size of the stack
         mapping.
-        Runs get_mapping_location('[stack]').
+        Runs :meth:`.process.get_mapping_location` with '[stack]' as the argument.
         """
 
         return self.get_mapping_location('[stack]')
@@ -1136,7 +1136,7 @@ class process(tube):
 
         Returns location and size of the heap
         mapping.
-        Runs get_mapping_location('[heap]').
+        Runs :meth:`.process.get_mapping_location` with '[heap]' as the argument.
         """
 
         return self.get_mapping_location('[heap]')
@@ -1146,7 +1146,7 @@ class process(tube):
 
         Returns location and size of the vdso
         mapping.
-        Runs get_mapping_location('[vdso]').
+        Runs :meth:`.process.get_mapping_location` with '[vdso]' as the argument.
         """
 
         return self.get_mapping_location('[vdso]')
@@ -1156,7 +1156,7 @@ class process(tube):
 
         Returns location and size of the vvar
         mapping.
-        Runs get_mapping_location('[vvar]').
+        Runs :meth:`.process.get_mapping_location` with '[vvar]' as the argument.
         """
 
         return self.get_mapping_location('[vvar]')
@@ -1165,8 +1165,8 @@ class process(tube):
         """elf_location() -> mapping_location
 
         Returns location and size of elf that
-        launched the process. Runs
-        get_mapping_location(self.elf.path).
+        launched the process.
+        Runs :meth:`.process.get_mapping_location` with the :meth:`.process.elf` path as the argument.
         """
 
         return self.get_mapping_location(self.elf.path)
