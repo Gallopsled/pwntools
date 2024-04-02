@@ -939,7 +939,7 @@ class process(tube):
         get_mapping(path_value, False) -> [mapping]
 
         Arguments:
-            path_value(str): The path used to find the mapping,
+            path_value(str): The exact path of the requested mapping,
                 valid values are also [stack], [heap], etc..
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
