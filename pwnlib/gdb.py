@@ -283,7 +283,7 @@ def _execve_script(argv, executable, env, ssh):
     return tmp.name
     
 
-def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python_wrapper_script=None):
+def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None, python_wrapper_script=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
@@ -292,6 +292,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
     Arguments:
         pid(int): Process ID to attach to
         path(str): Process to launch
+        port(int): Port to use for gdbserver
         args(list): List of arguments to provide on the debugger command line
         which(callaable): Function to find the path of a binary.
         env(dict): Environment variables to pass to the program
@@ -347,7 +348,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
     elif env is not None:
         gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
-    gdbserver_args += ['localhost:0']
+    gdbserver_args += [f'localhost:{port}']
     gdbserver_args += args
 
     return gdbserver_args
@@ -412,7 +413,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=False, **kwargs):
+def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, port=0, sysroot=None, api=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -420,9 +421,11 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     Arguments:
         args(list): Arguments to the process, similar to :class:`.process`.
         gdbscript(str): GDB script to run.
+        gdb_args(list): List of additional arguments to pass to GDB.
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
+        port(int): Gdb port to use
         sysroot(str): Set an alternate system root. The system root is used to
             load absolute shared library symbol files. This is useful to instruct
             gdb to load a local version of binaries/libraries instead of downloading
@@ -612,7 +615,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     gdbscript = gdbscript or ''
 
     if api and runner is not tubes.process.process:
-        raise ValueError('GDB Python API is supported only for local processes')
+        log.warn('GDB Python API is supported only for local processes')
 
     args, env = misc.normalize_argv_env(args, env, log)
     if env:
@@ -628,7 +631,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
 
     if ssh or context.native or (context.os == 'android'):
         if len(args) > 0 and which(packing._decode(args[0])) == packing._decode(exe):
-            args = _gdbserver_args(args=args, which=which, env=env)
+            args = _gdbserver_args(args=args, port=port, which=which, env=env)
         
         else:
             # GDBServer is limited in it's ability to manipulate argv[0]
@@ -636,7 +639,7 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
             # ``execve`` calls.
             # Therefore, we use a wrapper script to execute the target binary
             script = _execve_script(args, executable=exe, env=env, ssh=ssh)
-            args = _gdbserver_args(args=args, which=which, env=env, python_wrapper_script=script)
+            args = _gdbserver_args(args=args, port=port, which=which, env=env, python_wrapper_script=script)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()
@@ -667,17 +670,19 @@ def debug(args, gdbscript=None, exe=None, ssh=None, env=None, sysroot=None, api=
     # Set the .executable on the process object.
     gdbserver.executable = exe
 
-    # Find what port we need to connect to
-    if ssh or context.native or (context.os == 'android'):
-        port = _gdbserver_port(gdbserver, ssh)
-    else:
-        port = qemu_port
+    # if the port was set manually we won't need to find it
+    if not port:
+        # Find what port we need to connect to
+        if ssh or context.native or (context.os == 'android'):
+            port = _gdbserver_port(gdbserver, ssh)
+        else:
+            port = qemu_port
 
     host = '127.0.0.1'
     if not ssh and context.os == 'android':
         host = context.adb_host
 
-    tmp = attach((host, port), exe=exe, gdbscript=gdbscript, ssh=ssh, sysroot=sysroot, api=api)
+    tmp = attach((host, port), exe=exe, gdbscript=gdbscript, gdb_args=gdb_args, ssh=ssh, sysroot=sysroot, api=api)
     if api:
         _, gdb = tmp
         gdbserver.gdb = gdb
