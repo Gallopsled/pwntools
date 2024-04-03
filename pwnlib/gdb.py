@@ -283,7 +283,7 @@ def _execve_script(argv, executable, env, ssh):
     return tmp.name
     
 
-def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None, python_wrapper_script=None):
+def _gdbserver_args(pid=None, path=None, port=0, gdbserver_args=None, args=None, which=None, env=None, python_wrapper_script=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
 
     Sets up a listening gdbserver, to either connect to the specified
@@ -293,6 +293,7 @@ def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None
         pid(int): Process ID to attach to
         path(str): Process to launch
         port(int): Port to use for gdbserver
+        gdbserver_args(list): List of additional arguments to pass to gdbserver
         args(list): List of arguments to provide on the debugger command line
         which(callaable): Function to find the path of a binary.
         env(dict): Environment variables to pass to the program
@@ -301,6 +302,11 @@ def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None
     Returns:
         A list of arguments to invoke gdbserver.
     """
+    if gdbserver_args is None:
+        gdbserver_args = list()
+    elif not isinstance(gdbserver_args, (list, tuple)):
+        gdbserver_args = [gdbserver_args]
+
     if [pid, path, args].count(None) != 2:
         log.error("Must specify exactly one of pid, path, or args")
 
@@ -324,7 +330,7 @@ def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None
 
     orig_args = args
 
-    gdbserver_args = [gdbserver, '--multi']
+    gdbserver_args = [gdbserver, '--multi'] + gdbserver_args
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
     else:
@@ -413,7 +419,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, port=0, sysroot=None, api=False, **kwargs):
+def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, port=0, gdbserver_args=None, sysroot=None, api=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -426,6 +432,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
         port(int): Gdb port to use
+        gdbserver_args(list): List of additional arguments to pass to gdbserver
         sysroot(str): Set an alternate system root. The system root is used to
             load absolute shared library symbol files. This is useful to instruct
             gdb to load a local version of binaries/libraries instead of downloading
@@ -631,7 +638,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
     if ssh or context.native or (context.os == 'android'):
         if len(args) > 0 and which(packing._decode(args[0])) == packing._decode(exe):
-            args = _gdbserver_args(args=args, port=port, which=which, env=env)
+            args = _gdbserver_args(gdbserver_args=gdbserver_args, args=args, port=port, which=which, env=env)
         
         else:
             # GDBServer is limited in it's ability to manipulate argv[0]
@@ -639,7 +646,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
             # ``execve`` calls.
             # Therefore, we use a wrapper script to execute the target binary
             script = _execve_script(args, executable=exe, env=env, ssh=ssh)
-            args = _gdbserver_args(args=args, port=port, which=which, env=env, python_wrapper_script=script)
+            args = _gdbserver_args(gdbserver_args=gdbserver_args, args=args, port=port, which=which, env=env, python_wrapper_script=script)
     else:
         qemu_port = random.randint(1024, 65535)
         qemu_user = qemu.user_path()

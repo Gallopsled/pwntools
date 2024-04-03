@@ -71,7 +71,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
-- [#2382][2382] added optional port and gdb_args parameters to gdb.debug()
+- [#2382][2382] added optional port, gdb_args and gdbserver_args parameters to gdb.debug()
 - [#2360][2360] Add offline parameter for `search_by_hash` series function
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
