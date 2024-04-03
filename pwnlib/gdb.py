@@ -348,7 +348,7 @@ def _gdbserver_args(pid=None, path=None, port=0, args=None, which=None, env=None
     elif env is not None:
         gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
 
-    gdbserver_args += [f'localhost:{port}']
+    gdbserver_args += ['localhost:%d' % port]
     gdbserver_args += args
 
     return gdbserver_args
