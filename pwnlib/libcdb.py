@@ -655,15 +655,15 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     matching_list = list(matching_libcs.values())
 
     if return_as_list:
-        return [libc['buildid'] for libc in matching_libcs.values()]
+        return [libc['buildid'] for libc in matching_list]
 
     # If there's only one match, return it directly
-    if len(matching_libcs) == 1:
+    if len(matching_list) == 1:
         return search_by_build_id(matching_list[0]['buildid'], unstrip=unstrip)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
-        if select_index > 0 and select_index <= len(matching_libcs):
+        if select_index > 0 and select_index <= len(matching_list):
             return search_by_build_id(matching_list[select_index - 1]['buildid'], unstrip=unstrip)
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
