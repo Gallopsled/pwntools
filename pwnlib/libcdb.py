@@ -652,24 +652,25 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         log.warn_once("No matching libc for symbols %r", symbols)
         return None
 
+    matching_list = list(matching_libcs.values())
+
     if return_as_list:
         return [libc['buildid'] for libc in matching_libcs.values()]
 
     # If there's only one match, return it directly
     if len(matching_libcs) == 1:
-        key = next(iter(matching_libcs))
-        return search_by_build_id(matching_libcs[key]['buildid'], unstrip=unstrip)
+        return search_by_build_id(matching_list[0]['buildid'], unstrip=unstrip)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_libcs):
-            return search_by_build_id(matching_libcs[select_index - 1]['buildid'], unstrip=unstrip)
+            return search_by_build_id(matching_list[select_index - 1]['buildid'], unstrip=unstrip)
         else:
-            log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
+            log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
             return None
 
     # Handle multiple matches interactively if no index is specified
-    selected_libc = _handle_multiple_matching_libcs(list(matching_libcs.values()))
+    selected_libc = _handle_multiple_matching_libcs(matching_list)
     return search_by_build_id(selected_libc['buildid'], unstrip=unstrip)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
