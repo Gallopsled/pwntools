@@ -143,6 +143,39 @@ def provider_local_database(hex_encoded_id, hash_type):
 
     return None
 
+def query_local_database(params):
+    if not context.local_libcdb or not params.get("symbols"):
+        return None
+
+    localdb = Path(context.local_libcdb)
+    if not localdb.is_dir():
+        return None
+
+    res = []
+    symbols = params["symbols"]
+
+    # Loop through each '.symbols' file in the local database
+    for symbol_file in localdb.rglob("*.symbols"):
+        syms = _parse_libc_symbol(symbol_file)
+
+        matched = 0
+        for name, addr in symbols.items():
+            if isinstance(addr, str):
+                addr = int(addr, 16) 
+
+            # Compare last 12 bits
+            if syms.get(name) and (syms.get(name) & 0xfff) == (addr & 0xfff):
+                matched += 1
+        
+        # Check if all symbols have been matched
+        if matched == len(symbols):
+            libs_id = symbol_file.stem
+            libc_path = symbol_file.parent / ("%s.so" % libs_id)
+            libs_url = read(symbol_file.parent / ("%s.url" % libs_id)).decode().strip()
+            res.append(_pack_libs_info(libc_path, libs_id, libs_url, syms))
+
+    return res
+
 PROVIDERS = {
     "offline": [provider_local_system, provider_local_database],
     "online": [provider_libcdb, provider_libc_rip]
@@ -546,7 +579,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -568,6 +601,9 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         return_as_list(bool):
             Return a list of build ids of all matching libc versions
             instead of a path to a downloaded file.
+        offline_only(bool):
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -592,18 +628,39 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     params = {'symbols': symbols}
     log.debug('Request: %s', params)
-    matching_libcs = query_libc_rip(params)
-    log.debug('Result: %s', matching_libcs)
-    if matching_libcs is None or len(matching_libcs) == 0:
-        log.warn_once("No matching libc for symbols %r on libc.rip", symbols)
+
+    offline_matching = query_local_database(params)
+    online_matching = query_libc_rip(params) if not offline_only else None
+
+    if offline_matching is None:
+        offline_matching = []
+    if online_matching is None:
+        online_matching = []
+
+    # Aggregate and deduplicate matches from both sources
+    matching_libcs = {}
+    for libc in offline_matching + online_matching:
+        if libc['id'] not in matching_libcs:
+            matching_libcs[libc['id']] = libc
+
+    log.debug('Offline search result: %s', offline_matching)
+    if not offline_only:
+        log.debug('Online search result: %s', online_matching)
+
+    # Check if no matches are found
+    if len(matching_libcs) == 0:
+        log.warn_once("No matching libc for symbols %r", symbols)
         return None
 
     if return_as_list:
-        return [libc['buildid'] for libc in matching_libcs]
+        return [libc['buildid'] for libc in matching_libcs.values()]
 
+    # If there's only one match, return it directly
     if len(matching_libcs) == 1:
-        return search_by_build_id(matching_libcs[0]['buildid'], unstrip=unstrip)
+        key = next(iter(matching_libcs))
+        return search_by_build_id(matching_libcs[key]['buildid'], unstrip=unstrip)
 
+    # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_libcs):
             return search_by_build_id(matching_libcs[select_index - 1]['buildid'], unstrip=unstrip)
@@ -611,7 +668,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_libcs))
             return None
 
-    selected_libc = _handle_multiple_matching_libcs(matching_libcs)
+    # Handle multiple matches interactively if no index is specified
+    selected_libc = _handle_multiple_matching_libcs(list(matching_libcs.values()))
     return search_by_build_id(selected_libc['buildid'], unstrip=unstrip)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
@@ -624,9 +682,8 @@ def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
-            Both offline and online providers are used by default. When pass
-            `offline_only=True`, libcdb enable an exclusive offline search mode,
-            which will disable online providers.
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -654,9 +711,8 @@ def search_by_md5(hex_encoded_id, unstrip=True, offline_only=False):
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
-            Both offline and online providers are used by default. When pass
-            `offline_only=True`, libcdb enable an exclusive offline search mode,
-            which will disable online providers.
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -684,9 +740,8 @@ def search_by_sha1(hex_encoded_id, unstrip=True, offline_only=False):
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
-            Both offline and online providers are used by default. When pass
-            `offline_only=True`, libcdb enable an exclusive offline search mode,
-            which will disable online providers.
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -714,9 +769,8 @@ def search_by_sha256(hex_encoded_id, unstrip=True, offline_only=False):
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
-            Both offline and online providers are used by default. When pass
-            `offline_only=True`, libcdb enable an exclusive offline search mode,
-            which will disable online providers.
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -734,7 +788,45 @@ def search_by_sha256(hex_encoded_id, unstrip=True, offline_only=False):
     """
     return search_by_hash(hex_encoded_id, 'sha256', unstrip, offline_only)
 
+def _parse_libc_symbol(path):
+    """
+    Parse symbols file to `dict`, the format is same as https://github.com/niklasb/libc-database/
+    """
 
+    syms = {}
+
+    with open(path, "r") as fd:
+        for x in fd:
+            name, addr = x.split(" ")
+            syms[name] = int(addr, 16)
+
+    return syms
+
+def _pack_libs_info(path, libs_id, libs_url, syms):
+    """ 
+    The JSON format is the same as libc.rip, and the "download_url" field is by default an empty string, 
+    as it's not required in offline mode.
+    """
+
+    info = {}
+
+    info["id"] = libs_id
+    info["libs_url"] = libs_url
+    info["download_url"] = ""
+
+    for hash_type, hash_func in HASHES.items():
+        # replace 'build_id' to 'buildid'
+        info[hash_type.replace("_", "")] = hash_func(path)
+
+    default_symbol_list = [
+        "__libc_start_main_ret", "dup2", "printf", "puts", "read", "system", "str_bin_sh"
+    ]
+
+    info["symbols"] = {}
+    for name in default_symbol_list:
+        info["symbols"][name] = hex(syms[name])
+
+    return info
 
 
 def get_build_id_offsets():
