@@ -32,14 +32,15 @@ Mac OS X
 ^^^^^^^^^^^^^^^^
 
 Mac OS X is just as easy, but requires building binutils from source.
-However, we've made ``homebrew`` recipes to make this a single command.
+However, we've made ``homebrew`` recipes to make this just two commands.
 After installing `brew <https://brew.sh>`__, grab the appropriate
 recipe from our `binutils
 repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
 .. code-block:: bash
 
-    $ brew install https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
+    $ wget https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
+    $ brew install ./binutils-$ARCH.rb
 
 Alternate OSes
 ^^^^^^^^^^^^^^^^
