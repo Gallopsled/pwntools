@@ -322,6 +322,10 @@ def xor(*args, **kwargs):
     Example:
        >>> xor(b'lol', b'hello', 42)
        b'. ***'
+       >>> xor(cut = 'min', other = '')
+       Traceback (most recent call last):
+         ...
+       TypeError: xor() got an unexpected keyword argument 'other'
     """
 
     cut = kwargs.pop('cut', 'max')
