@@ -320,6 +320,7 @@ def xor(*args, **kwargs):
        The string of the arguments xor'ed together.
 
     Example:
+
        >>> xor(b'lol', b'hello', 42)
        b'. ***'
        >>> xor(cut = 'min', other = '')
