@@ -44,6 +44,7 @@
 #define SYS_clone2 __NR_clone2
 #define SYS_clone3 __NR_clone3
 #define SYS_close __NR_close
+#define SYS_close_range __NR_close_range
 #define SYS_connect __NR_connect
 #define SYS_copy_file_range __NR_copy_file_range
 #define SYS_creat __NR_creat
@@ -58,6 +59,7 @@
 #define SYS_epoll_ctl __NR_epoll_ctl
 #define SYS_epoll_ctl_old __NR_epoll_ctl_old
 #define SYS_epoll_pwait __NR_epoll_pwait
+#define SYS_epoll_pwait2 __NR_epoll_pwait2
 #define SYS_epoll_wait __NR_epoll_wait
 #define SYS_epoll_wait_old __NR_epoll_wait_old
 #define SYS_eventfd __NR_eventfd
@@ -69,6 +71,7 @@
 #define SYS_exit __NR_exit
 #define SYS_exit_group __NR_exit_group
 #define SYS_faccessat __NR_faccessat
+#define SYS_faccessat2 __NR_faccessat2
 #define SYS_fadvise64 __NR_fadvise64
 #define SYS_fadvise64_64 __NR_fadvise64_64
 #define SYS_fallocate __NR_fallocate
@@ -191,6 +194,9 @@
 #define SYS_kexec_load __NR_kexec_load
 #define SYS_keyctl __NR_keyctl
 #define SYS_kill __NR_kill
+#define SYS_landlock_add_rule __NR_landlock_add_rule
+#define SYS_landlock_create_ruleset __NR_landlock_create_ruleset
+#define SYS_landlock_restrict_self __NR_landlock_restrict_self
 #define SYS_lchown __NR_lchown
 #define SYS_lchown32 __NR_lchown32
 #define SYS_lgetxattr __NR_lgetxattr
@@ -228,6 +234,7 @@
 #define SYS_mmap2 __NR_mmap2
 #define SYS_modify_ldt __NR_modify_ldt
 #define SYS_mount __NR_mount
+#define SYS_mount_setattr __NR_mount_setattr
 #define SYS_move_mount __NR_move_mount
 #define SYS_move_pages __NR_move_pages
 #define SYS_mprotect __NR_mprotect
@@ -402,6 +409,7 @@
 #define SYS_preadv __NR_preadv
 #define SYS_preadv2 __NR_preadv2
 #define SYS_prlimit64 __NR_prlimit64
+#define SYS_process_madvise __NR_process_madvise
 #define SYS_process_vm_readv __NR_process_vm_readv
 #define SYS_process_vm_writev __NR_process_vm_writev
 #define SYS_prof __NR_prof
@@ -440,6 +448,7 @@
 #define SYS_reserved221 __NR_reserved221
 #define SYS_reserved82 __NR_reserved82
 #define SYS_restart_syscall __NR_restart_syscall
+#define SYS_riscv_flush_icache __NR_riscv_flush_icache
 #define SYS_rmdir __NR_rmdir
 #define SYS_rseq __NR_rseq
 #define SYS_rtas __NR_rtas
@@ -572,6 +581,7 @@
 #define SYS_sys_kexec_load __NR_sys_kexec_load
 #define SYS_syslog __NR_syslog
 #define SYS_sysmips __NR_sysmips
+#define SYS_sysriscv __NR_sysriscv
 #define SYS_sys_setaltroot __NR_sys_setaltroot
 #define SYS_tee __NR_tee
 #define SYS_tgkill __NR_tgkill

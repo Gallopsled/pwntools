@@ -15,6 +15,9 @@ following system libraries installed.
 
    install/*
 
+
+Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-config ``brew install pkg-config`` installed.
+
 Released Version
 -----------------
 
