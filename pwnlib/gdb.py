@@ -323,9 +323,7 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
 
     orig_args = args
 
-    # --no-startup-with-shell is required for forking shells like SHELL=/bin/fish
-    # https://github.com/Gallopsled/pwntools/issues/2377
-    gdbserver_args = [gdbserver, '--multi', '--no-startup-with-shell']
+    gdbserver_args = [gdbserver, '--multi']
     if context.aslr:
         gdbserver_args += ['--no-disable-randomization']
     else:
@@ -348,6 +346,10 @@ def _gdbserver_args(pid=None, path=None, args=None, which=None, env=None, python
         gdbserver_args += ['--wrapper', python_wrapper_script, '--']
     elif env is not None:
         gdbserver_args += ['--wrapper', which('env'), '-i'] + env_args + ['--']
+    # --no-startup-with-shell is required for forking shells like SHELL=/bin/fish
+    # https://github.com/Gallopsled/pwntools/issues/2377
+    else:
+        gdbserver_args += ['--no-startup-with-shell']
 
     gdbserver_args += ['localhost:0']
     gdbserver_args += args
