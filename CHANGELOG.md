@@ -132,8 +132,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.12.1
 
+- [#2373][2373] Fix displaying bright color variation in terminal output
 - [#2378][2378] Don't go though a shell in `gdb.debug`
 
+[2373]: https://github.com/Gallopsled/pwntools/pull/2373
 [2378]: https://github.com/Gallopsled/pwntools/pull/2378
 
 ## 4.12.0 (`stable`)
