@@ -77,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2327][2327] Add basic support to debug processes on Windows
 - [#2322][2322] Add basic RISCV64 shellcraft support
 - [#2330][2330] Change `context.newline` when setting `context.os` to `"windows"`
+- [#2389][2389] Fix passing bytes to `context.log_file` and `crc.BitPolynom`
 - [#2391][2391] Fix error message when passing invalid kwargs to `xor`
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
@@ -85,6 +86,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2327]: https://github.com/Gallopsled/pwntools/pull/2327
 [2322]: https://github.com/Gallopsled/pwntools/pull/2322
 [2330]: https://github.com/Gallopsled/pwntools/pull/2330
+[2389]: https://github.com/Gallopsled/pwntools/pull/2389
 [2391]: https://github.com/Gallopsled/pwntools/pull/2391
 
 ## 4.13.0 (`beta`)
