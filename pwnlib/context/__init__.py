@@ -1033,6 +1033,8 @@ class ContextType(object):
         """
         if isinstance(value, (bytes, six.text_type)):
             # check if mode was specified as "[value],[mode]"
+            from pwnlib.util.packing import _need_text
+            value = _need_text(value)
             if ',' not in value:
                 value += ',a'
             filename, mode = value.rsplit(',', 1)
