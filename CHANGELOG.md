@@ -129,6 +129,11 @@ The table below shows which release corresponds to each branch, and what date th
 [2347]: https://github.com/Gallopsled/pwntools/pull/2347
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
 
+## 4.12.1
+- [#2373][2373] Fix displaying bright color variation in terminal output
+
+[2373]: https://github.com/Gallopsled/pwntools/pull/2373
+
 ## 4.12.0 (`stable`)
 
 - [#2202][2202] Fix `remote` and `listen` in sagemath
