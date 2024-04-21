@@ -77,7 +77,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2327][2327] Add basic support to debug processes on Windows
 - [#2322][2322] Add basic RISCV64 shellcraft support
 - [#2330][2330] Change `context.newline` when setting `context.os` to `"windows"`
-- [#2392][2392] Updated Mac OS install documentation
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
@@ -85,7 +84,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2327]: https://github.com/Gallopsled/pwntools/pull/2327
 [2322]: https://github.com/Gallopsled/pwntools/pull/2322
 [2330]: https://github.com/Gallopsled/pwntools/pull/2330
-[2392]: https://github.com/Gallopsled/pwntools/pull/2392
 
 ## 4.13.0 (`beta`)
 
