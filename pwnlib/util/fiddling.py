@@ -332,7 +332,7 @@ def xor(*args, **kwargs):
     cut = kwargs.pop('cut', 'max')
 
     if kwargs != {}:
-        raise TypeError("xor() got an unexpected keyword argument '%s'" % list(kwargs.keys())[0])
+        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.popitem()[0])
 
     if len(args) == 0:
         raise ValueError("Must have something to xor")

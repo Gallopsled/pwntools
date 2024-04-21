@@ -77,7 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2327][2327] Add basic support to debug processes on Windows
 - [#2322][2322] Add basic RISCV64 shellcraft support
 - [#2330][2330] Change `context.newline` when setting `context.os` to `"windows"`
-- [#2391][2391] Change from `pop` to `keys` for reporting proper error message
+- [#2391][2391] Fix error message when passing invalid kwargs to `xor`
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
