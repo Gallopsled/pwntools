@@ -1420,6 +1420,21 @@ class process(tube):
 
         Returns the location and size of the elf that launched the process.
         Runs :meth:`.process.get_mapping_location` with the :meth:`.process.elf` path as the argument.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> elf_loc = p.elf_location()
+            >>> hex(elf_loc.address) # doctest: +SKIP
+            '0x561fa59b4000'
+            >>> hex(elf_loc.size) # doctest: +SKIP
+            '0xd000'
+            >>> elf_mappings = p.elf_mapping(single=False)
+            >>> elf_loc.address == elf_mappings[0].address
+            True
+            >>> elf_loc.size == elf_mappings[-1].end - elf_mappings[0].start
+            True
+
         """
 
         return self.get_mapping_location(self.elf.path)
