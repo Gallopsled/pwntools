@@ -1272,7 +1272,7 @@ class process(tube):
             True
             >>> libc_loc.address == mappings[0].start
             True
-            
+
         """
 
        # print some error?, make more explicit error if == Null or isn't list?
@@ -1306,6 +1306,23 @@ class process(tube):
         mapping_location:
             address: int
             size: int
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> elf_loc = p.get_mapping_location(which('cat'))
+            >>> hex(elf_loc.address) # doctest: +SKIP
+            '0x5654d472e000'
+            >>> hex(elf_loc.size) # doctest: +SKIP
+            '0xd000'
+            >>> elf_mappings = p.elf_mapping(single=False)
+            >>> elf_loc.address == elf_mappings[0].address
+            True
+            >>> elf_loc.size == elf_mappings[-1].end - elf_mappings[0].start
+            True
+            >>> p.get_mapping_location('doesnt exist') == None
+            True
+
         """
         return self._location_from_mappings(self.get_mapping(path_value, False))
 
