@@ -1216,6 +1216,32 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns :meth:`.process.get_mapping` with the :meth:`.process.elf` path and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> mapping = p.elf_mapping()
+            >>> mapping.path # doctest: +ELLIPSIS
+            '...cat...'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x55a2abba0000'
+            >>> mappings = p.elf_mapping(single=False)
+            >>> len(mappings)
+            5
+            >>> hex(mappings[1].address) # doctest: +SKIP
+            '0x55a2abba2000'
+            >>> mappings[0].end == mappings[1].start
+            True
+            >>> mappings[1].perms.execute
+            True
+
         """
         return self.get_mapping(self.elf.path, single)
     
