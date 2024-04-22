@@ -1377,10 +1377,13 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> loc = p.vdso_location()
-            >>> loc != None
+            >>> mapping = p.vdso_mapping()
+            >>> loc.address == mapping.address
+            True
+            >>> loc.size == mapping.size
             True
             >>> hex(loc.address) # doctest: +SKIP
-            '0x7fffe3bd4000'
+            '0x7ffdc4be0000'
             >>> hex(loc.size) # doctest: +SKIP
             '0x2000'
 
@@ -1398,10 +1401,13 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> loc = p.vvar_location()
-            >>> loc != None
+            >>> mapping = p.vvar_mapping()
+            >>> loc.address == mapping.address
+            True
+            >>> loc.size == mapping.size
             True
             >>> hex(loc.address) # doctest: +SKIP
-            '0x7ffda97f9000'
+            '0x7ffece794000'
             >>> hex(loc.size) # doctest: +SKIP
             '0x4000'
 
