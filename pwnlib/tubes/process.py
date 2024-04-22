@@ -1479,7 +1479,7 @@ class process(tube):
 
         all_maps = self.maps()
         for mapping in all_maps:
-            if mapping.addr <= address <= mapping.end:
+            if mapping.addr <= address < mapping.end:
                 return mapping
         return None
 
