@@ -1331,6 +1331,16 @@ class process(tube):
 
         Returns the location and size of the stack mapping.
         Runs :meth:`.process.get_mapping_location` with '[stack]' as the argument.
+
+        Example:
+
+            >>> p = process(['cat'], aslr=False)
+            >>> loc = p.stack_location()
+            >>> hex(loc.address) # doctest: +ELLIPSIS
+            '0x7ff...'
+            >>> hex(loc.size) # doctest: +SKIP
+            '0x21000'
+
         """
 
         return self.get_mapping_location('[stack]')
@@ -1340,6 +1350,19 @@ class process(tube):
 
         Returns the location and size of the heap mapping.
         Runs :meth:`.process.get_mapping_location` with '[heap]' as the argument.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> loc = p.heap_location()
+            >>> hex(loc.address) # doctest: +SKIP
+            '0x55d7c0e25000'
+            >>> hex(loc.size) # doctest: +SKIP
+            '0x21000'
+
         """
 
         return self.get_mapping_location('[heap]')
