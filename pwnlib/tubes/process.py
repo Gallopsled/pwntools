@@ -1018,7 +1018,7 @@ class process(tube):
         Returns :meth:`.process.get_mapping` with '[stack]' and single as arguments.
 
         Example:
-        
+
             >>> p = process(['cat'])
             >>> mapping = p.stack_mapping()
             >>> mapping.path
@@ -1043,6 +1043,24 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns :meth:`.process.get_mapping` with '[heap]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> mapping = p.heap_mapping()
+            >>> mapping.path == '[heap]'
+            True
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            True
+            >>> mappings = p.heap_mapping(single=False)
+            >>> len(mappings)
+            1
+            
         """
         return self.get_mapping('[heap]', single)
     
