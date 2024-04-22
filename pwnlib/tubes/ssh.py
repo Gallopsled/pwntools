@@ -554,6 +554,7 @@ class ssh(Timeout, Logger):
     pid = None
 
     _cwd = '.'
+    _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
