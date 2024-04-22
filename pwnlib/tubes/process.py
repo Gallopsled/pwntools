@@ -1372,6 +1372,18 @@ class process(tube):
 
         Returns the location and size of the vdso mapping.
         Runs :meth:`.process.get_mapping_location` with '[vdso]' as the argument.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> loc = p.vdso_location()
+            >>> loc != None
+            True
+            >>> hex(loc.address) # doctest: +SKIP
+            '0x7fffe3bd4000'
+            >>> hex(loc.size) # doctest: +SKIP
+            '0x2000'
+
         """
 
         return self.get_mapping_location('[vdso]')
@@ -1381,6 +1393,18 @@ class process(tube):
 
         Returns the location and size of the vvar mapping.
         Runs :meth:`.process.get_mapping_location` with '[vvar]' as the argument.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> loc = p.vvar_location()
+            >>> loc != None
+            True
+            >>> hex(loc.address) # doctest: +SKIP
+            '0x7ffda97f9000'
+            >>> hex(loc.size) # doctest: +SKIP
+            '0x4000'
+
         """
 
         return self.get_mapping_location('[vvar]')
