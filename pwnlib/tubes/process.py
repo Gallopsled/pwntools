@@ -974,6 +974,24 @@ class process(tube):
 
         Returns found mapping(s) in process memory according to 
         path_value.
+
+        Example:
+            
+            >>> p = process(['cat'])
+            >>> mapping = p.get_mapping('[stack]')
+            >>> mapping.path == '[stack]'
+            True
+            >>> mapping.perms.execute
+            False
+            >>>
+            >>> mapping = p.get_mapping('does not exist')
+            >>> print(mapping)
+            None
+            >>>
+            >>> mappings = p.get_mapping(which('cat'), single=False)
+            >>> len(mappings)
+            5
+
         """
         all_maps = self.maps()
 
