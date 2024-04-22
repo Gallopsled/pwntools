@@ -1475,6 +1475,25 @@ class process(tube):
         """address_mapping(address) -> mapping
         
         Returns the mapping at the specified address.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> libc = p.libc_location().address
+            >>> heap = p.heap_location().address
+            >>> elf = p.elf_location().address
+            >>> p.address_mapping(libc).path # doctest: +ELLIPSIS
+            '.../libc...'
+            >>> p.address_mapping(heap + 0x123).path
+            '[heap]'
+            >>> p.address_mapping(elf + 0x1234).path # doctest: +ELLIPSIS
+            '.../cat'
+            >>> p.address_mapping(elf - 0x1234) == None
+            True
+
         """
 
         all_maps = self.maps()
