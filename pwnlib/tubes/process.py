@@ -894,10 +894,13 @@ class process(tube):
         A mapping object has the following fields:
             addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
         perms is a permissions object, with the following fields:
-            read, write, execute, string     
+            read, write, execute, private, shared, string     
         """
 
         """
+        Useful information about this can be found at: https://man7.org/linux/man-pages/man5/proc.5.html
+        specifically the /proc/pid/maps section.
+
         memory_maps() returns a list of pmmap_ext objects
 
         The definition (from psutil/_pslinux.py) is:
@@ -913,7 +916,7 @@ class process(tube):
             pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
         """
 
-        permissions = namedtuple("permissions", "read write execute string")
+        permissions = namedtuple("permissions", "read write execute private shared string")
         mapping = namedtuple("mapping", 
             "addr address start end size perms path rss pss shared_clean shared_dirty private_clean private_dirty referenced anonymous swap")
         # addr = address (alias) = start (alias)
@@ -924,7 +927,7 @@ class process(tube):
         maps = []
         # raw_mapping
         for r_m in raw_maps:
-            p_perms = permissions('r' in r_m.perms, 'w' in r_m.perms, 'x' in r_m.perms, r_m.perms)
+            p_perms = permissions('r' in r_m.perms, 'w' in r_m.perms, 'x' in r_m.perms, 'p' in r_m.perms, 's' in r_m.perms, r_m.perms)
             addr_split = r_m.addr.split('-')
             p_addr = int(addr_split[0], 16)
             p_mapping = mapping(p_addr, p_addr, p_addr, int(addr_split[1], 16), r_m.size, p_perms, r_m.path, r_m.rss,
