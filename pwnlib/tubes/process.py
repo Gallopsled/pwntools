@@ -902,7 +902,7 @@ class process(tube):
             >>> p.sendline(b"meow")
             >>> p.recvline() == b"meow\\n"
             True
-            >>> proc_maps = open(f"/proc/{p.pid}/maps", "r").readlines()
+            >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
             True
