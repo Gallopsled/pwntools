@@ -894,7 +894,32 @@ class process(tube):
         A mapping object has the following fields:
             addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
         perms is a permissions object, with the following fields:
-            read, write, execute, private, shared, string     
+            read, write, execute, private, shared, string
+
+        Example:
+      
+            >>> p = process(['cat'])
+            >>> p.sendline(b"meow")
+            >>> p.recvline() == b"meow\n"
+            True
+            >>> proc_maps = open(f"/proc/{p.pid}/maps", "r").readlines()
+            >>> pwn_maps = p.maps()
+            >>> len(proc_maps) == len(pwn_maps)
+            True
+            >>> checker_arr = []
+            >>> for proc, pwn in zip(proc_maps, pwn_maps):
+            ...     proc = proc.split(' ')
+            ...     p_addrs = proc[0].split('-')
+            ...     checker_arr.append(int(p_addrs[0], 16) == pwn.addr == pwn.address == pwn.start)
+            ...     checker_arr.append(int(p_addrs[1], 16) == pwn.end)
+            ...     checker_arr.append(pwn.size == pwn.end - pwn.start)
+            ...     checker_arr.append(pwn.perms.string == proc[1])
+            ...     proc_path = proc[-1].strip()
+            ...     checker_arr.append(pwn.path == proc_path or (pwn.path == '[anon]' and proc_path == ''))
+            ...
+            >>> checker_arr == [True] * len(proc_maps) * 5
+            True
+
         """
 
         """
