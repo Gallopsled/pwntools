@@ -1443,6 +1443,23 @@ class process(tube):
         """libc_location() -> mapping_location
 
         Returns the location and size of libc in process memory.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> libc_loc = p.libc_location()
+            >>> hex(libc_loc.address) # doctest: +SKIP
+            '0x7fb395a2a000'
+            >>> hex(libc_loc.size) # doctest: +SKIP
+            '0x1d5000'
+            >>> libc_mappings = p.libc_mapping(single=False)
+            >>> libc_loc.address == libc_mappings[0].address
+            True
+            >>> libc_loc.size == libc_mappings[-1].end - libc_mappings[0].start
+            True
         """
 
         return self._location_from_mappings(self.libc_mapping(False))
