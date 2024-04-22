@@ -1077,6 +1077,23 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns :meth:`.process.get_mapping` with '[vdso]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> mapping = p.vdso_mapping()
+            >>> mapping.path
+            '[vdso]'
+            >>> mapping.perms.execute
+            True
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7ffcf13af000'
+            >>> mappings = p.vdso_mapping(single=False)
+            >>> len(mappings)
+            1
+
         """
         return self.get_mapping('[vdso]', single)
     
@@ -1089,6 +1106,23 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns :meth:`.process.get_mapping` with '[vvar]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> mapping = p.vvar_mapping()
+            >>> mapping.path
+            '[vvar]'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7ffee5f60000'
+            >>> mappings = p.vvar_mapping(single=False)
+            >>> len(mappings)
+            1
+
         """
         return self.get_mapping('[vvar]', single)
     
