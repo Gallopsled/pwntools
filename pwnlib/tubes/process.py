@@ -1027,6 +1027,8 @@ class process(tube):
             False
             >>> mapping.perms.write
             True
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7fffd99fe000'
             >>> mappings = p.stack_mapping(single=False)
             >>> len(mappings)
             1
@@ -1051,16 +1053,18 @@ class process(tube):
             >>> p.recvline()
             b'meow\n'
             >>> mapping = p.heap_mapping()
-            >>> mapping.path == '[heap]'
-            True
+            >>> mapping.path
+            '[heap]'
             >>> mapping.perms.execute
             False
             >>> mapping.perms.write
             True
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x557650fae000'
             >>> mappings = p.heap_mapping(single=False)
             >>> len(mappings)
             1
-            
+
         """
         return self.get_mapping('[heap]', single)
     
