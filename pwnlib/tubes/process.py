@@ -1050,8 +1050,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1141,8 +1141,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1221,8 +1221,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1260,8 +1260,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> mappings = p.libc_mapping(single=False)
             >>> libc_loc = p._location_from_mappings(mappings)
             >>> hex(libc_loc.address) # doctest: +SKIP
@@ -1355,8 +1355,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> loc = p.heap_location()
             >>> hex(loc.address) # doctest: +SKIP
             '0x55d7c0e25000'
@@ -1448,8 +1448,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> libc_loc = p.libc_location()
             >>> hex(libc_loc.address) # doctest: +SKIP
             '0x7fb395a2a000'
@@ -1480,8 +1480,8 @@ class process(tube):
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
-            >>> p.recvline()
-            b'meow\n'
+            >>> p.recvline() == b"meow\n"
+            True
             >>> libc = p.libc_location().address
             >>> heap = p.heap_location().address
             >>> elf = p.elf_location().address
