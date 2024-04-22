@@ -467,19 +467,31 @@ class tube(Timeout, Logger):
         Receive a single line from the tube.
 
         A "line" is any sequence of bytes terminated by the byte sequence
-        set in :attr:`newline`, which defaults to ``'\n'``.
+        set in :attr:`newline`, which defaults to ``b'\n'``.
+
+        If the connection is closed (:class:`EOFError`) before a newline
+        is received, the buffered data is returned by default and a warning
+        is logged. If the buffer is empty, an :class:`EOFError` is raised.
+        This behavior can be changed by setting :meth:`pwnlib.context.ContextType.throw_eof_on_incomplete_line`.
 
         If the request is not satisfied before ``timeout`` seconds pass,
-        all data is buffered and an empty string (``''``) is returned.
+        all data is buffered and an empty byte string (``b''``) is returned.
 
         Arguments:
             keepends(bool): Keep the line ending (:const:`True`).
             timeout(int): Timeout
 
+        Raises:
+            :class:`EOFError`: The connection closed before the request
+                                 could be satisfied and the buffer is empty
+
         Return:
             All bytes received over the tube until the first
             newline ``'\n'`` is received.  Optionally retains
-            the ending.
+            the ending. If the connection is closed before a newline
+            is received, the remaining data received up to this point
+            is returned.
+
 
         Examples:
 
@@ -494,8 +506,31 @@ class tube(Timeout, Logger):
             >>> t.newline = b'\r\n'
             >>> t.recvline(keepends = False)
             b'Foo\nBar'
+            >>> t = tube()
+            >>> def _recv_eof(n):
+            ...     if not _recv_eof.throw:
+            ...         _recv_eof.throw = True
+            ...         return b'real line\ntrailing data'
+            ...     raise EOFError
+            >>> _recv_eof.throw = False
+            >>> t.recv_raw = _recv_eof
+            >>> t.recvline()
+            b'real line\n'
+            >>> t.recvline()
+            b'trailing data'
+            >>> t.recvline() # doctest: +ELLIPSIS
+            Traceback (most recent call last):
+            ...
+            EOFError
         """
-        return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
+        try:
+            return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
+        except EOFError:
+            if not context.throw_eof_on_incomplete_line and self.buffer.size > 0:
+                if context.throw_eof_on_incomplete_line is None:
+                    self.warn_once('EOFError during recvline. Returning buffered data without trailing newline.')
+                return self.buffer.get()
+            raise
 
     def recvline_pred(self, pred, keepends=False, timeout=default):
         r"""recvline_pred(pred, keepends=False) -> bytes

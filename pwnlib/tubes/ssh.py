@@ -550,10 +550,6 @@ class ssh(Timeout, Logger):
     #: Paramiko SSHClient which backs this object
     client = None
 
-    #: Paramiko SFTPClient object which is used for file transfers.
-    #: Set to :const:`None` to disable ``sftp``.
-    sftp = None
-
     #: PID of the remote ``sshd`` process servicing this connection.
     pid = None
 
@@ -719,6 +715,9 @@ class ssh(Timeout, Logger):
 
     @property
     def sftp(self):
+        """Paramiko SFTPClient object which is used for file transfers.
+        Set to :const:`None` to disable ``sftp``.
+        """
         if not self._tried_sftp:
             try:
                 self._sftp = self.transport.open_sftp_client()
