@@ -1255,6 +1255,24 @@ class process(tube):
 
         Returns the location of the first mapping, and the sum
         of their sizes.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> mappings = p.libc_mapping(single=False)
+            >>> libc_loc = p._location_from_mappings(mappings)
+            >>> hex(libc_loc.address) # doctest: +SKIP
+            '0x7fc410b89000'
+            >>> hex(libc_loc.size) # doctest: +SKIP
+            '0x1d5000'
+            >>> libc_loc.size == mappings[-1].end - mappings[0].start
+            True
+            >>> libc_loc.address == mappings[0].start
+            True
+            
         """
 
        # print some error?, make more explicit error if == Null or isn't list?
