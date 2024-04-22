@@ -1016,6 +1016,21 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns :meth:`.process.get_mapping` with '[stack]' and single as arguments.
+
+        Example:
+        
+            >>> p = process(['cat'])
+            >>> mapping = p.stack_mapping()
+            >>> mapping.path
+            '[stack]'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            True
+            >>> mappings = p.stack_mapping(single=False)
+            >>> len(mappings)
+            1
+
         """
         return self.get_mapping('[stack]', single)
     
