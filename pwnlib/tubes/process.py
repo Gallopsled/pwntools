@@ -1136,6 +1136,33 @@ class process(tube):
 
         Returns either the first libc mapping found in process memory,
         or all libc mappings, depending on "single". 
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\n'
+            >>> mapping = p.libc_mapping()
+            >>> mapping.path # doctest: +ELLIPSIS
+            '...libc...'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7fbde7fd7000'
+            >>>
+            >>> mappings = p.libc_mapping(single=False)
+            >>> len(mappings)
+            5
+            >>> hex(mappings[1].address) # doctest: +SKIP
+            '0x7fbde7ffd000'
+            >>> mappings[0].end == mappings[1].start
+            True
+            >>> mappings[1].perms.execute
+            True
+
         """
         all_maps = self.maps()
 
