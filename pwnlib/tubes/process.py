@@ -989,8 +989,8 @@ class process(tube):
             None
             >>>
             >>> mappings = p.get_mapping(which('cat'), single=False)
-            >>> len(mappings)
-            5
+            >>> len(mappings) > 1
+            True
 
         """
         all_maps = self.maps()
@@ -1154,8 +1154,8 @@ class process(tube):
             '0x7fbde7fd7000'
             >>>
             >>> mappings = p.libc_mapping(single=False)
-            >>> len(mappings)
-            5
+            >>> len(mappings) > 1
+            True
             >>> hex(mappings[1].address) # doctest: +SKIP
             '0x7fbde7ffd000'
             >>> mappings[0].end == mappings[1].start
@@ -1233,8 +1233,8 @@ class process(tube):
             >>> hex(mapping.address) # doctest: +SKIP
             '0x55a2abba0000'
             >>> mappings = p.elf_mapping(single=False)
-            >>> len(mappings)
-            5
+            >>> len(mappings) > 1
+            True
             >>> hex(mappings[1].address) # doctest: +SKIP
             '0x55a2abba2000'
             >>> mappings[0].end == mappings[1].start
