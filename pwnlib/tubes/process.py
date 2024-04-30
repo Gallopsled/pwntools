@@ -898,7 +898,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
-            b"meow\\n"
+            b'meow\\n'
             >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
@@ -1048,7 +1048,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b"meow\\n"
+            b'meow\\n'
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1139,7 +1139,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b"meow\\n"
+            b'meow\\n'
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1219,7 +1219,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b"meow\\n"
+            b'meow\\n'
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1294,7 +1294,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b"meow\\n"
+            b'meow\\n'
             >>> libc = p.libc_mapping().address
             >>> heap = p.heap_mapping().address
             >>> elf = p.elf_mapping().address
