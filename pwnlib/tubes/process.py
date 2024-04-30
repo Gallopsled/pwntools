@@ -45,9 +45,6 @@ PIPE = subprocess.PIPE
 
 signal_names = {-v:k for k,v in signal.__dict__.items() if k.startswith('SIG')}
 
-# used by get_mapping_location and friends
-mapping_location = namedtuple("mapping_location", "address size")
-
 class process(tube):
     r"""
     Spawns a new process, and wraps it with a tube for communication.
@@ -1244,87 +1241,6 @@ class process(tube):
 
         """
         return self.get_mapping(self.elf.path, single)
-    
-    def _location_from_mappings(self, contiguous_mappings):
-        """_location_from_mappings(contiguous_mappings) 
-            -> mapping_location
-
-        Arguments:
-            contiguous_mappings([mapping]): list of contiguous
-            mappings, sorted by starting address
-
-        Returns the location of the first mapping, and the sum
-        of their sizes.
-
-        Example:
-
-            >>> p = process(['cat'])
-            >>> p.sendline(b'meow')
-            >>> p.recvline() == b"meow\\n"
-            True
-            >>> mappings = p.libc_mapping(single=False)
-            >>> libc_loc = p._location_from_mappings(mappings)
-            >>> hex(libc_loc.address) # doctest: +SKIP
-            '0x7fc410b89000'
-            >>> hex(libc_loc.size) # doctest: +SKIP
-            '0x1d5000'
-            >>> libc_loc.size == mappings[-1].end - mappings[0].start
-            True
-            >>> libc_loc.address == mappings[0].start
-            True
-
-        """
-
-       # print some error?, make more explicit error if == Null or isn't list?
-        if len(contiguous_mappings) == 0:
-            return None
-
-        address = contiguous_mappings[0].addr
-        size = contiguous_mappings[0].size
-
-        for i in range(1, len(contiguous_mappings)):
-            matched = contiguous_mappings[i]
-            if matched.address != contiguous_mappings[i - 1].end:
-                # non-contiguous, print some error?
-                return None
-
-            size += matched.size 
-
-        return mapping_location(address, size)
-
-    def get_mapping_location(self, path_value):
-        """get_mapping_location(path_value) -> mapping_location
-
-        Arguments:
-            path_value(str): The exact path of the requested mapping,
-                valid values are also [stack], [heap], etc..
-
-        Returns a mapping_location object if found some matching
-        mappings, which are contiguous in memory. Otherwise returns
-        None.
-
-        mapping_location:
-            address: int
-            size: int
-
-        Example:
-
-            >>> p = process(['cat'])
-            >>> elf_loc = p.get_mapping_location(which('cat'))
-            >>> hex(elf_loc.address) # doctest: +SKIP
-            '0x5654d472e000'
-            >>> hex(elf_loc.size) # doctest: +SKIP
-            '0xd000'
-            >>> elf_mappings = p.elf_mapping(single=False)
-            >>> elf_loc.address == elf_mappings[0].address
-            True
-            >>> elf_loc.size == elf_mappings[-1].end - elf_mappings[0].start
-            True
-            >>> p.get_mapping_location('doesnt exist') == None
-            True
-
-        """
-        return self._location_from_mappings(self.get_mapping(path_value, False))
 
     def address_mapping(self, address):
         """address_mapping(address) -> mapping
