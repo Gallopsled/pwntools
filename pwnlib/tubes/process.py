@@ -1295,9 +1295,9 @@ class process(tube):
             >>> p.sendline(b'meow')
             >>> p.recvline() == b"meow\\n"
             True
-            >>> libc = p.libc_location().address
-            >>> heap = p.heap_location().address
-            >>> elf = p.elf_location().address
+            >>> libc = p.libc_mapping().address
+            >>> heap = p.heap_mapping().address
+            >>> elf = p.elf_mapping().address
             >>> p.address_mapping(libc).path # doctest: +ELLIPSIS
             '.../libc...'
             >>> p.address_mapping(heap + 0x123).path
