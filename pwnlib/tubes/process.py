@@ -1242,6 +1242,36 @@ class process(tube):
         """
         return self.get_mapping(self.elf.path, single)
 
+    def lib_size(self, path_value):
+        """lib_size(path_value) -> int
+
+        Arguments:
+            path_value(str): The exact path of the shared library
+            loaded by the process
+
+        Returns the size of the shared library in process memory.
+        If the library is not found, zero is returned.
+        """
+
+        # Expecting this to be sorted
+        lib_mappings = self.get_mapping(path_value, single=False)
+        
+        if len(lib_mappings) == 0:
+            return 0
+    
+        is_contiguous = True
+        total_size = lib_mappings[0].size
+        for i in range(1, len(lib_mappings)):
+            total_size += lib_mappings[i].size
+
+            if lib_mappings[i].start != lib_mappings[i - 1].end:
+                is_contiguous = False
+
+        if not is_contiguous:
+            log.warn(f"lib_size(): {path_value} mappings aren't contiguous.")
+
+        return total_size
+
     def address_mapping(self, address):
         """address_mapping(address) -> mapping
         
