@@ -1280,7 +1280,7 @@ class process(tube):
                 is_contiguous = False
 
         if not is_contiguous:
-            log.warn(f"lib_size(): {path_value} mappings aren't contiguous.")
+            log.warn("lib_size(): %s mappings aren't contiguous" % path_value)
 
         return total_size
 
