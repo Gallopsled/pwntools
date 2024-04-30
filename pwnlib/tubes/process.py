@@ -1251,6 +1251,18 @@ class process(tube):
 
         Returns the size of the shared library in process memory.
         If the library is not found, zero is returned.
+
+        Example:
+
+            >>> from pwn import *
+            >>> p = process(['cat'])
+            >>> libc_size = p.lib_size(p.libc.path)
+            >>> hex(libc_size) # doctest: +SKIP
+            '0x1d5000'
+            >>> libc_mappings = p.libc_mapping(single=False)
+            >>> libc_size == (libc_mappings[-1].end - libc_mappings[0].start)
+            True
+
         """
 
         # Expecting this to be sorted
