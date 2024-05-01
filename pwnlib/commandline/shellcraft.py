@@ -172,9 +172,9 @@ p.add_argument(
 
 def get_template(name, delim):
     funcs = []
-    func = shellcraft
     names = name.split(delim)
     for n in names:
+        func = shellcraft
         n = n.strip()
         shellcode_and_args = n.split(' ')
         cur_name = shellcode_and_args[0]
@@ -182,7 +182,8 @@ def get_template(name, delim):
         if len(shellcode_and_args) > 1:
             args = shellcode_and_args[1:]
         for attr in cur_name.split('.'):
-            funcs.append((cur_name, getattr(func, attr), args))
+            func = getattr(func, attr)
+        funcs.append((cur_name, func, args))
     return funcs
 
 def is_not_a_syscall_template(name):
