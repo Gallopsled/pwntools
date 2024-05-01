@@ -197,7 +197,7 @@ def main(args):
 
     if args.shellcode:
         args.shellcode = " ".join(args.shellcode)
-        shellcodes = args.shellcode.split(delim)
+        shellcodes = [s.strip() for s in args.shellcode.split(delim)]
 
     if args.list:
         templates = shellcraft.templates
