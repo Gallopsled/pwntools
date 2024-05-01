@@ -170,17 +170,14 @@ p.add_argument(
     help='Generated ELF is a shared library'
 )
 
-def get_template(name, delim):
+def get_template(shellcodes):
     funcs = []
-    names = [n.strip() for n in name.split(delim)]
-    for n in names:
+    for shellcode in shellcodes:
         func = shellcraft
-        n = n.strip()
-        shellcode_and_args = n.split(' ')
-        cur_name = shellcode_and_args[0]
+        cur_name = shellcode[0]
         args = []
-        if len(shellcode_and_args) > 1:
-            args = shellcode_and_args[1:]
+        if len(shellcode) > 1:
+            args = shellcode[1:]
         for attr in cur_name.split('.'):
             func = getattr(func, attr)
         funcs.append((cur_name, func, args))
@@ -195,9 +192,17 @@ def main(args):
     if args.delim:
         delim = args.delim.strip()
 
+    shellcodes = []
     if args.shellcode:
-        args.shellcode = " ".join(args.shellcode)
-        shellcodes = [s.strip() for s in args.shellcode.split(delim)]
+        current = []
+        for s in args.shellcode:
+            if s.strip() == delim:
+                shellcodes.append(current)
+                current = []
+            else:
+                current.append(s)
+        if len(current) > 0:
+            shellcodes.append(current)
 
     if args.list:
         templates = shellcraft.templates
@@ -205,8 +210,7 @@ def main(args):
         if args.shellcode:
             template_array = []
             for s in shellcodes:
-                shellcode = s.split(' ')
-                template_array.extend(list(filter(lambda a: shellcode[0] in a, templates)))
+                template_array.extend(list(filter(lambda a: s[0] in a, templates)))
             templates = template_array
         elif not args.syscalls:
             templates = list(filter(is_not_a_syscall_template, templates))
@@ -219,7 +223,7 @@ def main(args):
         exit()
 
     try:
-        funcs = get_template(args.shellcode, delim)
+        funcs = get_template(shellcodes)
     except AttributeError:
         log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
 
