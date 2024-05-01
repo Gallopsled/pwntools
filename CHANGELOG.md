@@ -81,6 +81,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2389][2389] Fix passing bytes to `context.log_file` and `crc.BitPolynom`
 - [#2391][2391] Fix error message when passing invalid kwargs to `xor`
 - [#2376][2376] Return buffered data on first EOF in tube.readline()
+- [#2398][2398] Add support for generating multiple shellcodes at a time in shellcraft
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
@@ -91,6 +92,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2389]: https://github.com/Gallopsled/pwntools/pull/2389
 [2391]: https://github.com/Gallopsled/pwntools/pull/2391
 [2376]: https://github.com/Gallopsled/pwntools/pull/2376
+[2398]: https://github.com/Gallopsled/pwntools/pull/2398
 
 ## 4.13.0 (`beta`)
 
