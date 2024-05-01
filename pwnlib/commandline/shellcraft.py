@@ -205,10 +205,10 @@ def main(args):
             template_array = []
             for s in shellcodes:
                 shellcode = s.split(' ')
-                template_array.append(filter(lambda a: shellcode in a, templates))
+                template_array.extend(list(filter(lambda a: shellcode[0] in a, templates)))
             templates = template_array
         elif not args.syscalls:
-            templates = filter(is_not_a_syscall_template, templates)
+            templates = list(filter(is_not_a_syscall_template, templates))
 
         print('\n'.join(templates))
         exit()
