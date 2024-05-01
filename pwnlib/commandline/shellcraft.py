@@ -172,7 +172,7 @@ p.add_argument(
 
 def get_template(name, delim):
     funcs = []
-    names = name.split(delim)
+    names = [n.strip() for n in name.split(delim)]
     for n in names:
         func = shellcraft
         n = n.strip()
@@ -224,14 +224,16 @@ def main(args):
         log.error("Unknown shellcraft template %r. Use --list to see available shellcodes." % args.shellcode)
 
     if args.show:
-        # remove doctests
-        doc = []
-        in_doctest = False
-        block_indent = None
-        caption = None
-        for (_name, func, _args) in funcs:
+        for (name, func, _args) in funcs:
+            # remove doctests
+            doc = []
+            in_doctest = False
+            block_indent = None
+            caption = None
             lines = func.__doc__.splitlines()
             i = 0
+            if len(funcs) > 1:
+                print('%s:' % name)
             while i < len(lines):
                 line = lines[i]
                 if line.lstrip().startswith('>>>'):
@@ -268,7 +270,9 @@ def main(args):
                     doc.append(line)
                 i += 1
             print('\n'.join(doc).rstrip())
-            exit()
+            if len(funcs) > 1:
+                print('')
+        exit()
 
     code_array = []
     for (name, func, func_args) in funcs:
