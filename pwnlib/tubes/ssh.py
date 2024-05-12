@@ -544,20 +544,32 @@ class ssh(Timeout, Logger):
     #: Remote port (``int``)
     port = None
 
+    #: Remote username (``str``)
+    user = None
+
+    #: Remote password (``str``)
+    password = None
+
+    #: Remote private key (``str``)
+    key = None
+
+    #: Remote private key file (``str``)
+    keyfile = None
+
     #: Enable caching of SSH downloads (``bool``)
     cache = True
 
+    #: Enable raw mode and don't probe the environment (``bool``)
+    raw = False
+
     #: Paramiko SSHClient which backs this object
     client = None
-
-    #: Paramiko SFTPClient object which is used for file transfers.
-    #: Set to :const:`None` to disable ``sftp``.
-    sftp = None
 
     #: PID of the remote ``sshd`` process servicing this connection.
     pid = None
 
     _cwd = '.'
+    _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
@@ -719,6 +731,9 @@ class ssh(Timeout, Logger):
 
     @property
     def sftp(self):
+        """Paramiko SFTPClient object which is used for file transfers.
+        Set to :const:`None` to disable ``sftp``.
+        """
         if not self._tried_sftp:
             try:
                 self._sftp = self.transport.open_sftp_client()
