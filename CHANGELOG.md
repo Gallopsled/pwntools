@@ -82,6 +82,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2391][2391] Fix error message when passing invalid kwargs to `xor`
 - [#2376][2376] Return buffered data on first EOF in tube.readline()
 - [#2387][2387] Convert apport_corefile() output from bytes-like object to string
+- [#2405][2405] Add "none" ssh authentication method
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
@@ -93,6 +94,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2391]: https://github.com/Gallopsled/pwntools/pull/2391
 [2376]: https://github.com/Gallopsled/pwntools/pull/2376
 [2387]: https://github.com/Gallopsled/pwntools/pull/2387
+[2405]: https://github.com/Gallopsled/pwntools/pull/2405
 
 ## 4.13.0 (`beta`)
 
