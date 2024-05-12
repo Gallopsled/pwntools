@@ -1329,6 +1329,10 @@ class CorefileFinder(object):
         except Exception:
             pass
 
+        # Convert bytes-like object to string
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
+
         return data
 
     def systemd_coredump_corefile(self):
