@@ -292,7 +292,7 @@ def _gdbserver_args(pid=None, path=None, port=0, gdbserver_args=None, args=None,
     Arguments:
         pid(int): Process ID to attach to
         path(str): Process to launch
-        port(int): Port to use for gdbserver
+        port(int): Port to use for gdbserver, default: random
         gdbserver_args(list): List of additional arguments to pass to gdbserver
         args(list): List of arguments to provide on the debugger command line
         which(callaable): Function to find the path of a binary.
@@ -435,7 +435,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         exe(str): Path to the executable on disk
         env(dict): Environment to start the binary in
         ssh(:class:`.ssh`): Remote ssh session to use to launch the process.
-        port(int): Gdb port to use
+        port(int): Gdb port to use, default: random
         gdbserver_args(list): List of additional arguments to pass to gdbserver
         sysroot(str): Set an alternate system root. The system root is used to
             load absolute shared library symbol files. This is useful to instruct
@@ -626,7 +626,9 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
     gdbscript = gdbscript or ''
 
     if api and runner is not tubes.process.process:
-        log.warn('GDB Python API is supported only for local processes')
+        if runner is not ssh.process:
+            raise ValueError('GDB Python API is supported only for local processes')
+        log.warn('GDB Python API for ssh processes is not officially tested')
 
     args, env = misc.normalize_argv_env(args, env, log)
     if env:
@@ -652,7 +654,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
             script = _execve_script(args, executable=exe, env=env, ssh=ssh)
             args = _gdbserver_args(gdbserver_args=gdbserver_args, args=args, port=port, which=which, env=env, python_wrapper_script=script)
     else:
-        qemu_port = random.randint(1024, 65535)
+        qemu_port = port if port != 0 else random.randint(1024, 65535)
         qemu_user = qemu.user_path()
         sysroot = sysroot or qemu.ld_prefix(env=env)
         if not qemu_user:
@@ -681,13 +683,13 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
     # Set the .executable on the process object.
     gdbserver.executable = exe
 
-    # if the port was set manually we won't need to find it
-    if not port:
-        # Find what port we need to connect to
-        if ssh or context.native or (context.os == 'android'):
-            port = _gdbserver_port(gdbserver, ssh)
-        else:
-            port = qemu_port
+    if ssh or context.native or (context.os == 'android'):
+        gdb_port =  _gdbserver_port(gdbserver, ssh)
+        if port != 0 and port != gdb_port:
+            log.error("gdbserver port (%d) doesn't equals set port (%d)" % (gdb_port, port))
+        port = gdb_port
+    else:
+        port = qemu_port
 
     host = '127.0.0.1'
     if not ssh and context.os == 'android':
