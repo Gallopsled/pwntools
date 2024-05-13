@@ -320,14 +320,19 @@ def xor(*args, **kwargs):
        The string of the arguments xor'ed together.
 
     Example:
+
        >>> xor(b'lol', b'hello', 42)
        b'. ***'
+       >>> xor(cut = 'min', other = '')
+       Traceback (most recent call last):
+         ...
+       TypeError: xor() got an unexpected keyword argument 'other'
     """
 
     cut = kwargs.pop('cut', 'max')
 
     if kwargs != {}:
-        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.pop()[0])
+        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.popitem()[0])
 
     if len(args) == 0:
         raise ValueError("Must have something to xor")

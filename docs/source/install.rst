@@ -15,6 +15,9 @@ following system libraries installed.
 
    install/*
 
+
+Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-config ``brew install pkg-config`` installed.
+
 Released Version
 -----------------
 
@@ -25,8 +28,8 @@ Python3
 
 .. code-block:: bash
 
-    $ apt-get update
-    $ apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+    $ sudo apt-get update
+    $ sudo apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
     $ python3 -m pip install --upgrade pip
     $ python3 -m pip install --upgrade pwntools
 
@@ -40,8 +43,8 @@ Additionally, due to `pip` dropping support for Python2, a specfic version of `p
 
 .. code-block:: bash
 
-    $ apt-get update
-    $ apt-get install python python-pip python-dev git libssl-dev libffi-dev build-essential
+    $ sudo apt-get update
+    $ sudo apt-get install python python-pip python-dev git libssl-dev libffi-dev build-essential
     $ python2 -m pip install --upgrade pip==20.3.4
     $ python2 -m pip install --upgrade pwntools
 

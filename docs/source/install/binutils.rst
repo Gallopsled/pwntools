@@ -18,28 +18,29 @@ Ubuntu Xenial (16.04) has official packages for most architectures, and does not
 
 .. code-block:: bash
 
-    $ apt-get install software-properties-common
-    $ apt-add-repository ppa:pwntools/binutils
-    $ apt-get update
+    $ sudo apt-get install software-properties-common
+    $ sudo apt-add-repository ppa:pwntools/binutils
+    $ sudo apt-get update
 
 Then, install the binutils for your architecture.
 
 .. code-block:: bash
 
-    $ apt-get install binutils-$ARCH-linux-gnu
+    $ sudo apt-get install binutils-$ARCH-linux-gnu
 
 Mac OS X
 ^^^^^^^^^^^^^^^^
 
 Mac OS X is just as easy, but requires building binutils from source.
-However, we've made ``homebrew`` recipes to make this a single command.
+However, we've made ``homebrew`` recipes to make this just two commands.
 After installing `brew <https://brew.sh>`__, grab the appropriate
 recipe from our `binutils
 repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
 
 .. code-block:: bash
 
-    $ brew install https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
+    $ wget https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
+    $ brew install ./binutils-$ARCH.rb
 
 Alternate OSes
 ^^^^^^^^^^^^^^^^

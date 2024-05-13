@@ -59,7 +59,7 @@ if sys.version_info < (3, 4):
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print("You must install the Python development headers!", file=sys.stderr)
-    print("$ apt-get install python-dev", file=sys.stderr)
+    print("$ sudo apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 setup(
