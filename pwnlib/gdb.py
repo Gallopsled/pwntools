@@ -195,7 +195,7 @@ def debug_assembly(asm, gdbscript=None, vma=None, api=False):
 
     >>> assembly = shellcraft.echo("Hello world!\n")
     >>> io = gdb.debug_assembly(assembly)
-    >>> io.recvline()
+    >>> io.recvline(timeout=1)
     b'Hello world!\n'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
@@ -230,7 +230,7 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
     >>> assembly = shellcraft.echo("Hello world!\n")
     >>> shellcode = asm(assembly)
     >>> io = gdb.debug_shellcode(shellcode)
-    >>> io.recvline()
+    >>> io.recvline(timeout=1)
     b'Hello world!\n'
     """
     if isinstance(data, six.text_type):
@@ -490,12 +490,12 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         Send a command to Bash
 
         >>> io.sendline(b"echo hello")
-        >>> io.recvline()
+        >>> io.recvline(timeout=30)
         b'hello\n'
 
         Interact with the process
 
-        >>> io.interactive() # doctest: +SKIP
+        >>> io.interactive(timeout=1) # doctest: +SKIP
         >>> io.close()
 
         Create a new process, and stop it at '_start'
@@ -514,7 +514,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         Send a command to Bash
 
         >>> io.sendline(b"echo hello")
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'hello\n'
 
         Interact with the process
@@ -526,51 +526,22 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh")
         >>> io.sendline(b"echo $0")
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'\xde\xad\xbe\xef\n'
         >>> io.close()
 
         Demonstrate that LD_PRELOAD is respected
 
         >>> io = process(["grep", "libc.so.6", "/proc/self/maps"])
-        >>> real_libc_path = io.recvline().split()[-1]
+        >>> real_libc_path = io.recvline(timeout=1).split()[-1]
         >>> io.close()
         >>> import shutil
         >>> local_path = shutil.copy(real_libc_path, "./local-libc.so") # make a copy of libc to demonstrate that it is loaded
         >>> io = gdb.debug(["grep", "local-libc.so", "/proc/self/maps"], gdbscript="continue", env={"LD_PRELOAD": "./local-libc.so"})
-        >>> io.recvline().split()[-1] # doctest: +ELLIPSIS
+        >>> io.recvline(timeout=1).split()[-1] # doctest: +ELLIPSIS
         b'.../local-libc.so'
         >>> io.close()
         >>> os.remove("./local-libc.so") # cleanup
-
-
-    Using GDB Python API:
-
-    .. doctest::
-       :skipif: is_python2
-
-        Debug a new process
-
-        >>> io = gdb.debug(['echo', 'foo'], api=True)
-
-        Stop at 'write'
-
-        >>> bp = io.gdb.Breakpoint('write', temporary=True)
-        >>> io.gdb.continue_and_wait()
-
-        Dump 'count'
-
-        >>> count = io.gdb.parse_and_eval('$rdx')
-        >>> long = io.gdb.lookup_type('long')
-        >>> int(count.cast(long))
-        4
-
-        Resume the program
-
-        >>> io.gdb.continue_nowait()
-        >>> io.recvline()
-        b'foo\n'
-        >>> io.close()
 
 
     Using SSH:
@@ -601,7 +572,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'$ \xde\xad\xbe\xef\n'
         >>> io.close()
 
@@ -609,9 +580,55 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io = gdb.debug(args=[], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'$ \n'
         >>> io.close()
+
+
+    Using GDB Python API:
+
+    .. doctest::
+       :skipif: is_python2
+
+        Debug a new process
+
+        >>> io = gdb.debug(['echo', 'foo'], api=True)
+
+        or using ssh
+
+        >>> shell = ssh('travis', 'example.pwnme', password='demopass')
+        >>> ssh_io = gdb.debug(['/bin/echo', 'foo'], ssh=shell, api=True)
+
+        Stop at 'write'
+
+        >>> bp = io.gdb.Breakpoint('write', temporary=True)
+        >>> io.gdb.continue_and_wait()
+        >>> ssh_bp = ssh_io.gdb.Breakpoint('write', temporary=True)
+        >>> ssh_io.gdb.continue_and_wait()
+
+        Dump 'count'
+
+        >>> count = io.gdb.parse_and_eval('$rdx')
+        >>> long = io.gdb.lookup_type('long')
+        >>> int(count.cast(long))
+        4
+        >>> count = ssh_io.gdb.parse_and_eval('$rdx')
+        >>> long = ssh_io.gdb.lookup_type('long')
+        >>> int(count.cast(long))
+        4
+
+        Resume the program
+
+        >>> io.gdb.continue_nowait()
+        >>> io.recvline(timeout=1)
+        b'foo\n'
+        >>> io.close()
+
+        >>> ssh_io.gdb.continue_nowait()
+        >>> ssh_io.recvline(timeout=1)
+        b'foo\n'
+        >>> ssh_io.close()
+        >>> shell.close()
     """
     if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
@@ -625,10 +642,8 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
     which  = _get_which(ssh)
     gdbscript = gdbscript or ''
 
-    if api and runner is not tubes.process.process:
-        if runner is not ssh.process:
-            raise ValueError('GDB Python API is supported only for local processes')
-        log.warn('GDB Python API for ssh processes is not officially tested')
+    if api and runner is not tubes.process.process and not ssh:
+        raise ValueError('GDB Python API is supported only for local and ssh processes')
 
     args, env = misc.normalize_argv_env(args, env, log)
     if env:
@@ -962,7 +977,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... detach
         ... quit
         ... ''')
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'Hello from process debugger!\n'
         >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
@@ -989,7 +1004,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
             Observe the forced line
 
-            >>> io.recvline()
+            >>> io.recvline(timeout=1)
             b'Hello from process debugger!\n'
 
             Interact with the program in a regular way
@@ -1013,7 +1028,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... detach
         ... quit
         ... ''')
-        >>> io.recvline()
+        >>> io.recvline(timeout=10)
         b'Hello from remote debugger!\n'
         >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
@@ -1032,7 +1047,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         >>> io.recvline(timeout=5)  # doctest: +SKIP
         b'Hello from ssh debugger!\n'
         >>> io.sendline(b'This will be echoed back')
-        >>> io.recvline()
+        >>> io.recvline(timeout=1)
         b'This will be echoed back\n'
         >>> io.close()
     """
