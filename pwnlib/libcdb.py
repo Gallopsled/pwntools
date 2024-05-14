@@ -152,27 +152,31 @@ def query_local_database(params):
         return None
 
     res = []
-    symbols = params["symbols"]
+    query_syms = params["symbols"]
 
     # Loop through each '.symbols' file in the local database
-    for symbol_file in localdb.rglob("*.symbols"):
-        syms = _parse_libc_symbol(symbol_file)
+    # Make sure `Path.rglod` order stable
+    for symbol_file in sorted(localdb.rglob("*.symbols"), key=lambda x: x.as_posix()):
+        libc_syms = _parse_libc_symbol(symbol_file)
 
         matched = 0
-        for name, addr in symbols.items():
+        for name, addr in query_syms.items():
             if isinstance(addr, str):
                 addr = int(addr, 16) 
 
             # Compare last 12 bits
-            if syms.get(name) and (syms.get(name) & 0xfff) == (addr & 0xfff):
+            if libc_syms.get(name) and (libc_syms.get(name) & 0xfff) == (addr & 0xfff):
                 matched += 1
-        
+            else:
+                # aborting this loop once there was a mismatch.
+                break
+
         # Check if all symbols have been matched
-        if matched == len(symbols):
+        if matched == len(query_syms):
             libs_id = symbol_file.stem
             libc_path = symbol_file.parent / ("%s.so" % libs_id)
             libs_url = read(symbol_file.parent / ("%s.url" % libs_id)).decode().strip()
-            res.append(_pack_libs_info(libc_path, libs_id, libs_url, syms))
+            res.append(_pack_libs_info(libc_path, libs_id, libs_url, libc_syms))
 
     return res
 
@@ -659,19 +663,19 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     # If there's only one match, return it directly
     if len(matching_list) == 1:
-        return search_by_build_id(matching_list[0]['buildid'], unstrip=unstrip)
+        return search_by_build_id(matching_list[0]['buildid'], unstrip=unstrip, offline_only=offline_only)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_list):
-            return search_by_build_id(matching_list[select_index - 1]['buildid'], unstrip=unstrip)
+            return search_by_build_id(matching_list[select_index - 1]['buildid'], unstrip=unstrip, offline_only=offline_only)
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
             return None
 
     # Handle multiple matches interactively if no index is specified
     selected_libc = _handle_multiple_matching_libcs(matching_list)
-    return search_by_build_id(selected_libc['buildid'], unstrip=unstrip)
+    return search_by_build_id(selected_libc['buildid'], unstrip=unstrip, offline_only=offline_only)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
     """
