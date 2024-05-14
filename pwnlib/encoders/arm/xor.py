@@ -4,9 +4,10 @@ from __future__ import division
 from pwnlib import shellcraft
 from pwnlib.asm import asm
 from pwnlib.context import context
-from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder_class import Encoder
 from pwnlib.util.fiddling import xor_key
 from pwnlib.util.lists import group
+from pwnlib.util.misc import byteset
 from pwnlib.util.packing import u8
 
 
@@ -45,7 +46,7 @@ xor_cacheflush:
 payload:
     """
 
-    blacklist = set("\x01\x80\x03\x85\x04\x07\x87\x0c\x8f\x0f\x16\x1c\x9f\x84\xa0%$'-/\xb0\xbd\x81A@\xc2DG\xc6\xc8OPT\xd8_\xe1`\xe3\xe2\xe5\xe7\xe9\xe8\xea\xe0p\xf7")
+    blacklist = byteset(b"\x01\x80\x03\x85\x04\x07\x87\x0c\x8f\x0f\x16\x1c\x9f\x84\xa0%$'-/\xb0\xbd\x81A@\xc2DG\xc6\xc8OPT\xd8_\xe1`\xe3\xe2\xe5\xe7\xe9\xe8\xea\xe0p\xf7")
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         key, xordata = xor_key(raw_bytes, avoid, size=1)
