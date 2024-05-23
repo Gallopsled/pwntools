@@ -367,6 +367,7 @@ class ContextType(object):
         'randomize': False,
         'rename_corefiles': True,
         'newline': b'\n',
+        'throw_eof_on_incomplete_line': None,
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
@@ -1033,6 +1034,8 @@ class ContextType(object):
         """
         if isinstance(value, (bytes, six.text_type)):
             # check if mode was specified as "[value],[mode]"
+            from pwnlib.util.packing import _need_text
+            value = _need_text(value)
             if ',' not in value:
                 value += ',a'
             filename, mode = value.rsplit(',', 1)
@@ -1488,6 +1491,25 @@ class ContextType(object):
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
+    
+    @_validator
+    def throw_eof_on_incomplete_line(self, v):
+        """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
+
+        Controls if an :class:`EOFError` is treated as newline in ``tube.recvline`` and similar functions
+        and whether a warning should be logged about it.
+
+        Possible values are:
+
+        - ``True``: Raise an :class:`EOFError` if an EOF is received before a newline.
+        - ``False``: Return the data received so far if an EOF is received
+          before a newline without logging a warning.
+        - ``None``: Return the data received so far if an EOF is received
+          before a newline and log a warning.
+
+        Default value is ``None``.
+        """
+        return v if v is None else bool(v)
 
 
     @_validator
