@@ -608,6 +608,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         offline_only(bool):
             When pass `offline_only=True`, restricts search mode to offline sources only,
             disable online lookup. Defaults to `False`, and enable both offline and online providers.
+        hash_type(str):
+            An option to select searched hash.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
