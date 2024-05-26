@@ -583,7 +583,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, hash_type="md5"):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -626,6 +626,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         >>> for buildid in matched_libcs: # doctest +SKIP
         ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
     """
+    assert hash_type in HASHES, hash_type
+
     for symbol, address in symbols.items():
         if isinstance(address, int):
             symbols[symbol] = hex(address)
@@ -661,21 +663,24 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     if return_as_list:
         return [libc['buildid'] for libc in matching_list]
 
+    # replace 'build_id' to 'buildid'
+    match_type = hash_type.replace("_", "")
+
     # If there's only one match, return it directly
     if len(matching_list) == 1:
-        return search_by_build_id(matching_list[0]['buildid'], unstrip=unstrip, offline_only=offline_only)
+        return search_by_hash(matching_list[0][match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_list):
-            return search_by_build_id(matching_list[select_index - 1]['buildid'], unstrip=unstrip, offline_only=offline_only)
+            return search_by_hash(matching_list[select_index - 1][match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
             return None
 
     # Handle multiple matches interactively if no index is specified
     selected_libc = _handle_multiple_matching_libcs(matching_list)
-    return search_by_build_id(selected_libc['buildid'], unstrip=unstrip, offline_only=offline_only)
+    return search_by_hash(selected_libc[match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
     """
