@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2376][2376] Return buffered data on first EOF in tube.readline()
 - [#2387][2387] Convert apport_corefile() output from bytes-like object to string
 - [#2388][2388] libcdb: add `offline_only` to `search_by_symbol_offsets`
+- [#2415][2415] Add shellcraft template for IPv6 socket
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
