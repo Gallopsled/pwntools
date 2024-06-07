@@ -24,6 +24,7 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 HASHES = {
+    'id': None,
     'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
     'sha1': sha1filehex,
     'sha256': sha256filehex,
@@ -43,6 +44,9 @@ NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
 def provider_libcdb(hex_encoded_id, hash_type):
+    if hash_type == 'id':
+        return None
+
     # Deferred import because it's slow
     import requests
     from six.moves import urllib
@@ -135,6 +139,12 @@ def provider_local_database(hex_encoded_id, hash_type):
     localdb = Path(context.local_libcdb)
     if not localdb.is_dir():
         return None
+
+    if hash_type == "id":
+        libc_list = list(localdb.rglob(f"{hex_encoded_id}.so"))
+        if len(libc_list) == 0:
+            return None
+        return read(libc_list[0])
 
     log.debug("Searching local libc database, %s: %s", hash_type, hex_encoded_id)
     for libc_path in localdb.rglob("*.so"):
@@ -583,7 +593,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, hash_type="md5"):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, hash_type="id"):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -683,6 +693,32 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     # Handle multiple matches interactively if no index is specified
     selected_libc = _handle_multiple_matching_libcs(matching_list)
     return search_by_hash(selected_libc[match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
+
+def search_by_id(libs_id, unstrip=True, offline_only=False):
+    """
+    Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
+
+    Arguments:
+        libs_id(str):
+            Libs ID (e.g. 'ABCDEF...') of the library
+        unstrip(bool):
+            Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline_only(bool):
+            When pass `offline_only=True`, restricts search mode to offline sources only,
+            disable online lookup. Defaults to `False`, and enable both offline and online providers.
+
+    Returns:
+        Path to the downloaded library on disk, or :const:`None`.
+
+    Examples:
+
+        >>> None == search_by_id('XX')
+        True
+        >>> filename = search_by_id('libc6_2.31-3_amd64')
+        >>> hex(ELF(filename).symbols.read)
+        '0xeef40'
+    """
+    return search_by_hash(libs_id, 'id', unstrip, offline_only)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
     """
@@ -827,6 +863,9 @@ def _pack_libs_info(path, libs_id, libs_url, syms):
     info["download_url"] = ""
 
     for hash_type, hash_func in HASHES.items():
+        if hash_type == "id":
+            continue
+
         # replace 'build_id' to 'buildid'
         info[hash_type.replace("_", "")] = hash_func(path)
 
