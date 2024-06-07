@@ -141,7 +141,7 @@ def provider_local_database(hex_encoded_id, hash_type):
         return None
 
     if hash_type == "id":
-        libc_list = list(localdb.rglob(f"{hex_encoded_id}.so"))
+        libc_list = list(localdb.rglob("%s.so" % hex_encoded_id))
         if len(libc_list) == 0:
             return None
         return read(libc_list[0])
@@ -700,7 +700,7 @@ def search_by_id(libs_id, unstrip=True, offline_only=False):
 
     Arguments:
         libs_id(str):
-            Libs ID (e.g. 'ABCDEF...') of the library
+            Libs ID (e.g. 'libc6_...') of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
