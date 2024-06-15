@@ -182,6 +182,7 @@ def which_binutils(util, check_version=False):
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
+        'arm':  ['aarch64'],
         'mips64': ['mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
