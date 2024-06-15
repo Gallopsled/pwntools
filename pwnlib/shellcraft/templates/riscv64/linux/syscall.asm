@@ -15,20 +15,20 @@ Example:
 
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('SYS_execve', 1, 'sp', 2, 0).rstrip())
             /* call execve(1, 'sp', 2, 0) */
-            c.li a0, 1
-            c.mv a1, sp
-            c.li a2, 2
-            c.li a3, 0
+            li a0, 1
+            mv a1, sp
+            li a2, 2
+            xor a3, t6, t6
             /* mv a7, 0xdd */
             xori a7, zero, 0x722
             xori a7, a7, 0x7ff
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
-            c.li a0, 2
-            c.li a1, 1
-            c.li a2, 0
-            c.li a3, 0x14
+            li a0, 2
+            li a1, 1
+            xor a2, t6, t6
+            li a3, 0x14
             /* mv a7, 0xdd */
             xori a7, zero, 0x722
             xori a7, a7, 0x7ff
@@ -42,8 +42,8 @@ Example:
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('a3', None, None, 1).rstrip())
             /* call syscall('a3', ?, ?, 1) */
-            c.li a2, 1
-            c.mv a7, a3
+            li a2, 1
+            mv a7, a3
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall(
         ...               'SYS_mmap', 0, 0x1000,
@@ -51,12 +51,12 @@ Example:
         ...               'MAP_PRIVATE',
         ...               -1, 0).rstrip())
             /* call mmap(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE', -1, 0) */
-            c.li a0, 0
-            c.lui a1, 1 /* mv a1, 0x1000 */
-            c.li a2, 7
-            c.li a3, 2
-            c.li a4, 0xffffffffffffffff
-            c.li a5, 0
+            xor a0, t6, t6
+            lui a1, 1 /* mv a1, 0x1000 */
+            li a2, 7
+            li a3, 2
+            li a4, 0xffffffffffffffff
+            xor a5, t6, t6
             /* mv a7, 0xde */
             xori a7, zero, 0x721
             xori a7, a7, 0x7ff
@@ -69,9 +69,9 @@ Example:
             li t4, 0x67616c662f6e
             sd t4, -8(sp)
             addi sp, sp, -16
-            c.mv a1, sp
+            mv a1, sp
             xori a0, zero, 0xffffffffffffff9c
-            c.li a2, 0
+            xor a2, t6, t6
             /* call openat() */
             /* mv a7, 0x38 */
             xori a7, zero, 0x7c7
