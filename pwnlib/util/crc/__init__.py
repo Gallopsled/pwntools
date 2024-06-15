@@ -74,6 +74,8 @@ class BitPolynom(object):
 
     def __init__(self, n):
         if isinstance(n, (bytes, six.text_type)):
+            from pwnlib.util.packing import _need_text
+            n = _need_text(n)
             self.n = 0
             x = BitPolynom(2)
             try:
