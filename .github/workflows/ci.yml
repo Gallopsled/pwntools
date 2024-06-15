@@ -19,8 +19,15 @@ jobs:
         git fetch origin
         git log --oneline --graph -10
 
+    - name: Install RPyC for gdb
+      run: |
+        # The version packaged in python3-rpyc is too old on Ubuntu 22.04
+        sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
+        /usr/bin/python -m pip install rpyc
+        gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
+
     - name: Cache for pip
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       id: cache-pip
       with:
         path: ~/.cache/pip
@@ -28,7 +35,7 @@ jobs:
 
     - name: Set up Python ${{ matrix.python_version }}
       if: matrix.python_version != '2.7'
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
 
@@ -62,7 +69,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          python3-rpyc \
           gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
@@ -72,6 +78,7 @@ jobs:
           binutils-powerpc-linux-gnu \
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
+          binutils-riscv64-linux-gnu \
           gcc-multilib \
           libc6-dbg \
           elfutils \
@@ -112,6 +119,10 @@ jobs:
 
     - name: Coverage doctests
       run: |
+        # Python version installed using setup-python interferes with gdb's python
+        # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
+        # like _socket. This is a workaround.
+        unset LD_LIBRARY_PATH
         PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples
@@ -164,6 +175,7 @@ jobs:
         pwn phd -l 0x3d --color=always /etc/os-release
 
         pwn checksec /bin/bash
+        (ulimit -v 500000 && pwn checksec /bin/bash)
 
         pwn errno 2
         pwn errno -1
@@ -172,24 +184,26 @@ jobs:
         pwn constgrep -c freebsd -m ^PROT_ '3 + 4'
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
+        pwn constgrep C
 
         pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
         pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
-      if: matrix.python_version > '2.7'
+      if: matrix.python_version != '2.7'
       run: |
         python -m build
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
+      if: matrix.python_version != '2.7'
       with:
         name: packages
         path: dist/
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: coverage-${{ matrix.python_version }}
         path: .coverage*
 
 
@@ -201,10 +215,10 @@ jobs:
       with:
         fetch-depth: 20
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
-        name: coverage
-        path: .
+        pattern: coverage-*
+        merge-multiple: true
 
     - name: Install coveralls
       run: |
@@ -243,7 +257,7 @@ jobs:
     needs: test
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: packages
         path: dist

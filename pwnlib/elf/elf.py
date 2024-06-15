@@ -47,14 +47,15 @@ import tempfile
 
 from six import BytesIO
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
+from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
 from elftools.elf.gnuversions import GNUVerDefSection
-from elftools.elf.relocation import RelocationSection
+from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
 
@@ -447,7 +448,7 @@ class ELF(ELFFile):
 
     def _describe(self, *a, **kw):
         log.info_once(
-            '%s\n%-10s%s-%s-%s\n%s',
+            '%s\n%-12s%s-%s-%s\n%s',
             repr(self.path),
             'Arch:',
             self.arch,
@@ -459,6 +460,7 @@ class ELF(ELFFile):
     def get_machine_arch(self):
         return {
             ('EM_X86_64', 64): 'amd64',
+            ('EM_X86_64', 32): 'amd64', # x32 ABI
             ('EM_386', 32): 'i386',
             ('EM_486', 32): 'i386',
             ('EM_ARM', 32): 'arm',
@@ -510,6 +512,29 @@ class ELF(ELFFile):
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
 
+    def iter_notes(self):
+        """ 
+        Yields:
+            All the notes in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``n_name``, ``n_type``, and ``n_desc`` fields, amongst
+            others.
+        """
+        for seg in self.iter_segments_by_type('PT_NOTE'):
+            for note in seg.iter_notes():
+                yield note
+
+    def iter_properties(self):
+        """
+        Yields:
+            All the GNU properties in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``pr_type``, ``pr_datasz``, and ``pr_data`` fields.
+        """
+        for note in self.iter_notes():
+            if note.n_type != 'NT_GNU_PROPERTY_TYPE_0':
+                continue
+            for prop in note.n_desc:
+                yield prop
+                
     def get_segment_for_address(self, address, size=1):
         """get_segment_for_address(address, size=1) -> Segment
 
@@ -917,15 +942,25 @@ class ELF(ELFFile):
             self.symbols['got.' + symbol] = address
 
     def _populate_got(self):
-        """Loads the symbols for all relocations"""
+        """Loads the symbols for all relocations.
+
+            >>> libc = ELF(which('bash')).libc
+            >>> assert 'strchrnul' in libc.got
+            >>> assert 'memcpy' in libc.got
+            >>> assert libc.got.strchrnul != libc.got.memcpy
+        """
         # Statically linked implies no relocations, since there is no linker
         # Could always be self-relocating like Android's linker *shrug*
         if self.statically_linked:
             return
 
+        revsymbols = defaultdict(list)
+        for name, addr in self.symbols.items():
+            revsymbols[addr].append(name)
+
         for section in self.sections:
             # We are only interested in relocations
-            if not isinstance(section, RelocationSection):
+            if not isinstance(section, (RelocationSection, RelrRelocationSection)):
                 continue
 
             # Only get relocations which link to another section (for symbols)
@@ -937,7 +972,13 @@ class ELF(ELFFile):
             for rel in section.iter_relocations():
                 sym_idx  = rel.entry.r_info_sym
 
-                if not sym_idx:
+                if not sym_idx and rel.is_RELA():
+                    # TODO: actually resolve relocations
+                    relocated = rel.entry.r_addend  # sufficient for now
+
+                    symnames = revsymbols[relocated]
+                    for symname in symnames:
+                        self.got[symname] = rel.entry.r_offset
                     continue
 
                 symbol = symbols.get_symbol(sym_idx)
@@ -1195,9 +1236,10 @@ class ELF(ELFFile):
         for seg in segments:
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
-            zeroed = memsz - seg.header.p_filesz
+            filesz = seg.header.p_filesz
+            zeroed = memsz - filesz
             offset = seg.header.p_offset
-            data   = self.mmap[offset:offset+memsz]
+            data   = self.mmap[offset:offset+filesz]
             data   += b'\x00' * zeroed
             offset = 0
             while True:
@@ -1304,6 +1346,7 @@ class ELF(ELFFile):
             or :const:`None`.
 
         Examples:
+
             >>> bash = ELF(which('bash'))
             >>> bash.vaddr_to_offset(bash.address)
             0
@@ -1454,6 +1497,7 @@ class ELF(ELFFile):
             that it stays in the same segment.
 
         Examples:
+
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
           b'ELF'
@@ -1961,6 +2005,16 @@ class ELF(ELFFile):
         return b'UPX!' in self.get_data()[:0xFF]
 
     @property
+    def stripped(self):
+        """:class:`bool`: Whether the current binary has been stripped of symbols"""
+        return not any(section['sh_type'] == 'SHT_SYMTAB' for section in self.iter_sections())
+
+    @property
+    def debuginfo(self):
+        """:class:`bool`: Whether the current binary has debug information"""
+        return self.get_section_by_name('.debug_info') is not None
+
+    @property
     def pie(self):
         """:class:`bool`: Whether the current binary is position-independent."""
         return self.elftype == 'DYN'
@@ -2003,26 +2057,26 @@ class ELF(ELFFile):
 
         # Kernel version?
         if self.version and self.version != (0,):
-            res.append('Version:'.ljust(10) + '.'.join(map(str, self.version)))
+            res.append('Version:'.ljust(12) + '.'.join(map(str, self.version)))
         if self.build:
-            res.append('Build:'.ljust(10) + self.build)
+            res.append('Build:'.ljust(12) + self.build)
 
         res.extend([
-            "RELRO:".ljust(10) + {
+            "RELRO:".ljust(12) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
                 None:      red("No RELRO")
             }[self.relro],
-            "Stack:".ljust(10) + {
+            "Stack:".ljust(12) + {
                 True:  green("Canary found"),
                 False: red("No canary found")
             }[self.canary],
-            "NX:".ljust(10) + {
+            "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
                 None: yellow("NX unknown - GNU_STACK missing"),
             }[self.nx],
-            "PIE:".ljust(10) + {
+            "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
                 False: red("No PIE (%#x)" % self.address)
             }[self.pie],
@@ -2030,35 +2084,47 @@ class ELF(ELFFile):
 
         # Execstack may be a thing, even with NX enabled, because of glibc
         if self.execstack and self.nx is not False:
-            res.append("Stack:".ljust(10) + red("Executable"))
+            res.append("Stack:".ljust(12) + red("Executable"))
 
         # Are there any RWX areas in the binary?
         #
         # This will occur if NX is disabled and *any* area is
         # RW, or can expressly occur.
         if self.rwx_segments or (not self.nx and self.writable_segments):
-            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
+            res += [ "RWX:".ljust(12) + red("Has RWX segments") ]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
+            res += [ "RPATH:".ljust(12) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
+            res += [ "RUNPATH:".ljust(12) + red(repr(self.runpath)) ]
 
         if self.packed:
-            res.append('Packer:'.ljust(10) + red("Packed with UPX"))
+            res.append('Packer:'.ljust(12) + red("Packed with UPX"))
 
         if self.fortify:
-            res.append("FORTIFY:".ljust(10) + green("Enabled"))
+            res.append("FORTIFY:".ljust(12) + green("Enabled"))
 
         if self.asan:
-            res.append("ASAN:".ljust(10) + green("Enabled"))
+            res.append("ASAN:".ljust(12) + green("Enabled"))
 
         if self.msan:
-            res.append("MSAN:".ljust(10) + green("Enabled"))
+            res.append("MSAN:".ljust(12) + green("Enabled"))
 
         if self.ubsan:
-            res.append("UBSAN:".ljust(10) + green("Enabled"))
+            res.append("UBSAN:".ljust(12) + green("Enabled"))
+        
+        if self.shadowstack:
+            res.append("SHSTK:".ljust(12) + green("Enabled"))
+        
+        if self.ibt:
+            res.append("IBT:".ljust(12) + green("Enabled"))
+        
+        if not self.stripped:
+            res.append("Stripped:".ljust(12) + red("No"))
+        
+        if self.debuginfo:
+            res.append("Debuginfo:".ljust(12) + red("Yes"))
 
         # Check for Linux configuration, it must contain more than
         # just the version.
@@ -2116,6 +2182,31 @@ class ELF(ELFFile):
         """:class:`bool`: Whether the current binary was built with
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
+    
+    @property
+    def shadowstack(self):
+        """:class:`bool`: Whether the current binary was built with	
+        Shadow Stack (``SHSTK``)"""
+        if self.arch not in ['i386', 'amd64']:
+            return False
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_SHSTK'] > 0
+        return False
+
+    @property
+    def ibt(self):
+        """:class:`bool`: Whether the current binary was built with
+        Indirect Branch Tracking (``IBT``)"""
+        if self.arch not in ['i386', 'amd64']:
+            return False
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_IBT'] > 0
+        return False
+
 
     def _update_args(self, kw):
         kw.setdefault('arch', self.arch)
@@ -2298,6 +2389,7 @@ class ELF(ELFFile):
             A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
 
         Example:
+
             >>> tmpdir = tempfile.mkdtemp()
             >>> ls_path = os.path.join(tmpdir, 'ls')
             >>> _ = shutil.copy(which('ls'), ls_path)

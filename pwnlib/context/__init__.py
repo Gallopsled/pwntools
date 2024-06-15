@@ -300,7 +300,7 @@ class ContextType(object):
         >>> context.os == 'linux'
         True
         >>> context.arch = 'arm'
-        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux'}
+        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n'}
         True
         >>> context.endian
         'little'
@@ -358,12 +358,14 @@ class ContextType(object):
         'endian': 'little',
         'gdbinit': "",
         'kernel': None,
+        'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
         'log_file': _devnull(),
         'log_console': sys.stdout,
         'randomize': False,
         'rename_corefiles': True,
         'newline': b'\n',
+        'throw_eof_on_incomplete_line': None,
         'noptrace': False,
         'os': 'linux',
         'proxy': None,
@@ -373,8 +375,19 @@ class ContextType(object):
         'timeout': Timeout.maximum,
     }
 
-    #: Valid values for :meth:`pwnlib.context.ContextType.os`
-    oses = sorted(('linux','freebsd','windows','cgc','android','baremetal'))
+    unix_like    = {'newline': b'\n'}
+    windows_like = {'newline': b'\r\n'}
+
+    #: Keys are valid values for :meth:`pwnlib.context.ContextType.os`
+    oses = _longest({
+        'linux':     unix_like,
+        'freebsd':   unix_like,
+        'windows':   windows_like,
+        'cgc':       unix_like,
+        'android':   unix_like,
+        'baremetal': unix_like,
+        'darwin':    unix_like,
+    })
 
     big_32    = {'endian': 'big', 'bits': 32}
     big_64    = {'endian': 'big', 'bits': 64}
@@ -443,14 +456,14 @@ class ContextType(object):
 
 
     def copy(self):
-        """copy() -> dict
+        r"""copy() -> dict
         Returns a copy of the current context as a dictionary.
 
         Examples:
 
             >>> context.clear()
             >>> context.os   = 'linux'
-            >>> vars(context) == {'os': 'linux'}
+            >>> vars(context) == {'os': 'linux', 'newline': b'\n'}
             True
         """
         return self._tls.copy()
@@ -785,7 +798,7 @@ class ContextType(object):
         try:
             defaults = self.architectures[arch]
         except KeyError:
-            raise AttributeError('AttributeError: arch must be one of %r' % sorted(self.architectures))
+            raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
 
         for k,v in defaults.items():
             if k not in self._tls:
@@ -828,6 +841,7 @@ class ContextType(object):
         The default value is ``32``, but changes according to :attr:`arch`.
 
         Examples:
+
             >>> context.clear()
             >>> context.bits == 32
             True
@@ -1018,6 +1032,8 @@ class ContextType(object):
         """
         if isinstance(value, (bytes, six.text_type)):
             # check if mode was specified as "[value],[mode]"
+            from pwnlib.util.packing import _need_text
+            value = _need_text(value)
             if ',' not in value:
                 value += ',a'
             filename, mode = value.rsplit(',', 1)
@@ -1068,31 +1084,105 @@ class ContextType(object):
             stream = open(stream, 'wt')
         return stream
 
+    @_validator
+    def local_libcdb(self, path):
+        """ 
+        Sets path to local libc-database, get more information for libc-database:
+        https://github.com/niklasb/libc-database
+
+        Works in :attr:`pwnlib.libcdb` when searching by local database provider.
+
+        The default value is ``/var/lib/libc-database``.
+
+        Sets `context.local_libcdb` to empty string or `None` will turn off local libc-database integration.
+
+        Examples:
+
+            >>> context.local_libcdb = pwnlib.data.elf.path
+            >>> context.local_libcdb = 'foobar'
+            Traceback (most recent call last):
+            ...
+            AttributeError: 'foobar' does not exist, please download libc-database first
+        """
+
+        if not os.path.isdir(path):
+            raise AttributeError("'%s' does not exist, please download libc-database first" % path)
+
+        return path
+
     @property
     def mask(self):
         return (1 << self.bits) - 1
 
     @_validator
     def os(self, os):
-        """
+        r"""
         Operating system of the target machine.
 
         The default value is ``linux``.
 
         Allowed values are listed in :attr:`pwnlib.context.ContextType.oses`.
 
+        Side Effects:
+
+            If an os is specified some attributes will be set on the context
+            if a user has not already set a value.
+
+            The following property may be modified:
+
+            - :attr:`newline`
+
+        Raises:
+            AttributeError: An invalid os was specified
+
         Examples:
 
-            >>> context.os = 'linux'
+            >>> context.clear()
+            >>> context.os == 'linux' # Default os
+            True
+
+            >>> context.os = 'freebsd'
+            >>> context.os == 'freebsd'
+            True
+
             >>> context.os = 'foobar' #doctest: +ELLIPSIS
             Traceback (most recent call last):
             ...
             AttributeError: os must be one of ['android', 'baremetal', 'cgc', 'freebsd', 'linux', 'windows']
+
+            >>> context.clear()
+            >>> context.newline == b'\n' # Default value
+            True
+            >>> context.os = 'windows'
+            >>> context.newline == b'\r\n' # New value
+            True
+
+            Note that expressly setting :attr:`newline` means that we use
+            that value instead of the default
+
+            >>> context.clear()
+            >>> context.newline = b'\n'
+            >>> context.os = 'windows'
+            >>> context.newline == b'\n'
+            True
+
+            Setting the os can override the default for :attr:`newline`
+
+            >>> context.clear()
+            >>> context.os = 'windows'
+            >>> vars(context) == {'os': 'windows', 'newline': b'\r\n'}
+            True
         """
         os = os.lower()
 
-        if os not in self.oses:
-            raise AttributeError("os must be one of %r" % self.oses)
+        try:
+            defaults = self.oses[os]
+        except KeyError:
+            raise AttributeError("os must be one of %r" % sorted(self.oses))
+
+        for k,v in defaults.items():
+            if k not in self._tls:
+                self._tls[k] = v
 
         return os
 
@@ -1401,6 +1491,25 @@ class ContextType(object):
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
+    
+    @_validator
+    def throw_eof_on_incomplete_line(self, v):
+        """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
+
+        Controls if an :class:`EOFError` is treated as newline in ``tube.recvline`` and similar functions
+        and whether a warning should be logged about it.
+
+        Possible values are:
+
+        - ``True``: Raise an :class:`EOFError` if an EOF is received before a newline.
+        - ``False``: Return the data received so far if an EOF is received
+          before a newline without logging a warning.
+        - ``None``: Return the data received so far if an EOF is received
+          before a newline and log a warning.
+
+        Default value is ``None``.
+        """
+        return v if v is None else bool(v)
 
 
     @_validator

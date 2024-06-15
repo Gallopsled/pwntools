@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 from __future__ import absolute_import
 from __future__ import division
 
@@ -92,9 +91,13 @@ def main(args):
             if not matcher.search(k):
                 continue
 
+            # Check if the value has proper type
+            val = getattr(mod, k)
+            if not isinstance(val, pwnlib.constants.constant.Constant):
+                continue
+
             # Check the constant
             if constant is not None:
-                val = getattr(mod, k)
                 if args.mask_mode:
                     if constant & val != val:
                         continue
@@ -103,7 +106,7 @@ def main(args):
                         continue
 
             # Append it
-            out.append((getattr(mod, k), k))
+            out.append((val, k))
             maxlen = max(len(k), maxlen)
 
         # Output all matching constants

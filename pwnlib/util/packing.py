@@ -76,6 +76,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         The packed number as a string.
 
     Examples:
+
         >>> pack(0x414243, 24, 'big', True)
         b'ABC'
         >>> pack(0x414243, 24, 'little', True)
@@ -189,6 +190,7 @@ def unpack(data, word_size = None):
         The unpacked number.
 
     Examples:
+
         >>> hex(unpack(b'\xaa\x55', 16, endian='little', sign=False))
         '0x55aa'
         >>> hex(unpack(b'\xaa\x55', 16, endian='big', sign=False))
@@ -256,6 +258,7 @@ def unpack_many(data, word_size = None):
         The unpacked numbers.
 
     Examples:
+
         >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
         >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
@@ -296,12 +299,7 @@ sizes = {8:'b', 16:'h', 32:'i', 64:'q'}
 ends  = ['b','l']
 signs = ['s','u']
 
-return_types     = {'p': 'bytes', 'u': 'int'}
 op_verbs         = {'p': 'pack', 'u': 'unpack'}
-arg_doc          = {'p': 'number (int): Number to convert',
-                    'u': 'data (bytes): Byte string to convert'}
-rv_doc           = {'p': 'The packed number as a byte string',
-                    'u': 'The unpacked number'}
 
 
 def make_single(op,size,end,sign):
@@ -334,46 +332,166 @@ for op,size,end,sign in iters.product(ops, sizes, ends, signs):
 #
 # Make normal user-oriented packers, e.g. p8
 #
-def make_multi(op, size):
+def _do_packing(op, size, number):
 
     name = "%s%s" % (op,size)
+    mod = sys.modules[__name__]
 
     ls = getattr(mod, "_%sls" % (name))
     lu = getattr(mod, "_%slu" % (name))
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    @LocalNoarchContext
-    def routine(number):
-        endian = context.endian
-        signed = context.signed
-        return {("little", True  ): ls,
-                ("little", False):  lu,
-                ("big",    True  ): bs,
-                ("big",    False):  bu}[endian, signed](number, 3)
+    endian = context.endian
+    signed = context.signed
+    return {("little", True ):  ls,
+            ("little", False):  lu,
+            ("big",    True ):  bs,
+            ("big",    False):  bu}[endian, signed](number, 3)
 
-    routine.__name__ = name
-    routine.__doc__  = """%s%s(number, sign, endian, ...) -> %s
+@LocalNoarchContext
+def p8(number, endianness = None, sign = None, **kwargs):
+    """p8(number, endianness, sign, ...) -> bytes
 
-    %ss an %s-bit integer
+    Packs an 8-bit integer
 
     Arguments:
-        %s
+        number (int): Number to convert
         endianness (str): Endianness of the converted integer ("little"/"big")
         sign (str): Signedness of the converted integer ("unsigned"/"signed")
         kwargs (dict): Arguments passed to context.local(), such as
             ``endian`` or ``signed``.
 
     Returns:
-        %s
-    """ % (op, size, return_types[op], op_verbs[op].title(), size, arg_doc[op], rv_doc[op])
+        The packed number as a byte string
+    """
+    return _do_packing('p', 8, number)
 
-    return name, routine
+@LocalNoarchContext
+def p16(number, endianness = None, sign = None, **kwargs):
+    """p16(number, endianness, sign, ...) -> bytes
 
+    Packs an 16-bit integer
 
-for op,size in iters.product(ops, sizes):
-    name, routine = make_multi(op,size)
-    setattr(mod, name, routine)
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+    """
+    return _do_packing('p', 16, number)
+
+@LocalNoarchContext
+def p32(number, endianness = None, sign = None, **kwargs):
+    """p32(number, endianness, sign, ...) -> bytes
+
+    Packs an 32-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+    """
+    return _do_packing('p', 32, number)
+
+@LocalNoarchContext
+def p64(number, endianness = None, sign = None, **kwargs):
+    """p64(number, endianness, sign, ...) -> bytes
+
+    Packs an 64-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+    """
+    return _do_packing('p', 64, number)
+
+@LocalNoarchContext
+def u8(data, endianness = None, sign = None, **kwargs):
+    """u8(data, endianness, sign, ...) -> int
+
+    Unpacks an 8-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 8, data)
+
+@LocalNoarchContext
+def u16(data, endianness = None, sign = None, **kwargs):
+    """u16(data, endianness, sign, ...) -> int
+
+    Unpacks an 16-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 16, data)
+
+@LocalNoarchContext
+def u32(data, endianness = None, sign = None, **kwargs):
+    """u32(data, endianness, sign, ...) -> int
+
+    Unpacks an 32-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 32, data)
+
+@LocalNoarchContext
+def u64(data, endianness = None, sign = None, **kwargs):
+    """u64(data, endianness, sign, ...) -> int
+
+    Unpacks an 64-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 64, data)
 
 def make_packer(word_size = None, sign = None, **kwargs):
     """make_packer(word_size = None, endianness = None, sign = None) -> number → str
@@ -395,6 +513,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
         of that number in a packed form.
 
     Examples:
+
         >>> p = make_packer(32, endian='little', sign='unsigned')
         >>> p
         <function _p32lu at 0x...>
@@ -458,6 +577,7 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
         of that string in an unpacked form.
 
     Examples:
+
         >>> u = make_unpacker(32, endian='little', sign='unsigned')
         >>> u
         <function _u32lu at 0x...>
@@ -863,6 +983,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         modified in-place.
 
     Examples:
+
         >>> dd(tuple('Hello!'), b'?', skip = 5)
         ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)

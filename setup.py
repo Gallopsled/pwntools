@@ -3,14 +3,12 @@ from __future__ import print_function
 
 import glob
 import os
-import platform
-import subprocess
 import sys
-import traceback
 from distutils.command.install import INSTALL_SCHEMES
 from distutils.sysconfig import get_python_inc
 from distutils.util import convert_path
 
+from setuptools import find_packages
 from setuptools import setup
 
 # Get all template files
@@ -50,6 +48,7 @@ if sys.version_info < (3, 4):
 
     import toml
     project = toml.load('pyproject.toml')['project']
+    compat['packages'] = find_packages()
     compat['install_requires'] = project['dependencies']
     compat['name'] = project['name']
     # https://github.com/pypa/pip/issues/7953
@@ -60,11 +59,11 @@ if sys.version_info < (3, 4):
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print("You must install the Python development headers!", file=sys.stderr)
-    print("$ apt-get install python-dev", file=sys.stderr)
+    print("$ sudo apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 setup(
-    version              = '4.13.0dev',
+    version              = '4.14.0dev',
     data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

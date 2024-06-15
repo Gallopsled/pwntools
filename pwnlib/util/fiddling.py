@@ -37,10 +37,15 @@ def unhex(s):
         b'test'
         >>> unhex("F\n")
         b'\x0f'
+        >>> unhex(bytearray(b" F "))
+        b'\x0f'
     """
     s = s.strip()
     if len(s) % 2 != 0:
-        s = '0' + s
+        if isinstance(s, (bytes, bytearray)):
+            s = b'0' + s
+        else:
+            s = '0' + s
     return binascii.unhexlify(s)
 
 def enhex(x):
@@ -188,6 +193,7 @@ def unbits(s, endian = 'big'):
        A string of the decoded bits.
 
     Example:
+
        >>> unbits([1])
        b'\\x80'
        >>> unbits([1], endian = 'little')
@@ -228,6 +234,7 @@ def bitswap(s):
     Reverses the bits in every byte of a given string.
 
     Example:
+
         >>> bitswap(b"1234")
         b'\\x8cL\\xcc,'
     """
@@ -249,6 +256,7 @@ def bitswap_int(n, width):
         width (int): The width of the integer
 
     Examples:
+
         >>> hex(bitswap_int(0x1234, 8))
         '0x2c'
         >>> hex(bitswap_int(0x1234, 16))
@@ -312,14 +320,19 @@ def xor(*args, **kwargs):
        The string of the arguments xor'ed together.
 
     Example:
+
        >>> xor(b'lol', b'hello', 42)
        b'. ***'
+       >>> xor(cut = 'min', other = '')
+       Traceback (most recent call last):
+         ...
+       TypeError: xor() got an unexpected keyword argument 'other'
     """
 
     cut = kwargs.pop('cut', 'max')
 
     if kwargs != {}:
-        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.pop()[0])
+        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.popitem()[0])
 
     if len(args) == 0:
         raise ValueError("Must have something to xor")

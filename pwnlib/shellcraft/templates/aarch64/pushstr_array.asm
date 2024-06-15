@@ -17,6 +17,7 @@ Arguments:
         ends with exactly one NULL byte.
 
 Example:
+
     >>> assembly = shellcraft.execve("/bin/sh", ["sh", "-c", "echo Hello string $WORLD"], {"WORLD": "World!"})
     >>> ELF.from_assembly(assembly).process().recvall()
     b'Hello string World!\n'
@@ -39,20 +40,32 @@ string = b''.join(array)
 # which seems like a safe maximum.
 if len(array) * 8 > 4095:
     raise Exception("Array size is too large (%i), max=4095" % len(array))
+
+need_fix_alligment = len(array) % 2 == 1
 %>\
     /* push argument array ${shellcraft.pretty(array, False)} */
     ${shellcraft.pushstr(string, register1=register1, register2=register2)}
 
     /* push null terminator */
-    ${shellcraft.mov(register1, 0)}
-    str ${register1}, [sp, #-8]!
+    str xzr, [sp, #-16]!
 
     /* push pointers onto the stack */
 %for i, value in enumerate(reversed(array)):
-   ${shellcraft.mov(register1, (i+1)*8 + string.index(value))}
+   ${shellcraft.mov(register1, (i+2)*8 + string.index(value))}
    add ${register1}, sp, ${register1}
-   str ${register1}, [sp, #-8]! /* ${pretty(array[-i], False)} */
+ %if i % 2 == 0:
+   str xzr, [sp, #-16]!  /* allocate zeros */
+   str ${register1}, [sp, #8]!
+ %else:
+   sub sp, sp, #8
+   str ${register1}, [sp, #0]!
+ %endif
 %endfor
 
     /* set ${reg} to the current top of the stack */
     ${shellcraft.mov(reg,'sp')}
+
+  %if need_fix_alligment:
+    /* fix alligment */
+    sub sp, sp, #8
+  %endif

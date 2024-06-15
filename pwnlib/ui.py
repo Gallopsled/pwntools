@@ -9,7 +9,6 @@ import struct
 import subprocess
 import sys
 import time
-import types
 
 from pwnlib import term
 from pwnlib.log import getLogger
@@ -42,15 +41,11 @@ from pwn import *
     if "coverage" in sys.modules:
         cmd = "import coverage; coverage.process_startup()\n" + cmd
         env.setdefault("COVERAGE_PROCESS_START", ".coveragerc")
+    env['COLUMNS'] = '80'
+    env['ROWS'] = '24'
     p = process([sys.executable, "-c", cmd], env=env, stderr=subprocess.PIPE)
-    try:
-        p.recvuntil(b"\33[6n")
-    except EOFError:
-        raise EOFError("process terminated with code: %r (%r)" % (p.poll(True), p.stderr.read()))
     # late initialization can lead to EINTR in many places
-    fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack("hh", 80, 80))
-    p.stdout.write(b"\x1b[1;1R")
-    time.sleep(0.5)
+    fcntl.ioctl(p.stdout.fileno(), termios.TIOCSWINSZ, struct.pack('HH', 24, 80))
     return p
 
 def yesno(prompt, default=None):
@@ -65,9 +60,6 @@ def yesno(prompt, default=None):
       `True` if the answer was "yes", `False` if "no"
 
     Examples:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> yesno("A number:", 20)
         Traceback (most recent call last):
@@ -88,9 +80,6 @@ def yesno(prompt, default=None):
 
     Tests:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> p = testpwnproc("print(yesno('is it ok??'))")
         >>> b"is it ok" in p.recvuntil(b"??")
         True
@@ -107,9 +96,9 @@ def yesno(prompt, default=None):
         yesfocus, yes = term.text.bold('Yes'), 'yes'
         nofocus, no = term.text.bold('No'), 'no'
         hy = term.output(yesfocus if default is True else yes)
-        term.output('/')
+        hs = term.output('/')
         hn = term.output(nofocus if default is False else no)
-        term.output(']\n')
+        he = term.output(']\n')
         cur = default
         while True:
             k = term.key.get()
@@ -153,18 +142,12 @@ def options(prompt, opts, default = None):
 
     Examples:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> options("Select a color", ("red", "green", "blue"), "green")
         Traceback (most recent call last):
         ...
         ValueError: options(): default must be a number or None
 
     Tests:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> p = testpwnproc("print(options('select a color', ('red', 'green', 'blue')))")
         >>> p.sendline(b"\33[C\33[A\33[A\33[B\33[1;5A\33[1;5B 0310")
@@ -210,9 +193,9 @@ def options(prompt, opts, default = None):
         for i, opt in enumerate(opts):
             h = term.output(arrow if i == cur else space, frozen = False)
             num = numfmt % (i + 1)
-            term.output(num)
-            term.output(opt + '\n', indent = len(num) + len(space))
-            hs.append(h)
+            h1 = term.output(num)
+            h2 = term.output(opt + '\n', indent = len(num) + len(space))
+            hs.append((h, h1, h2))
         ds = ''
         while True:
             prev = cur
@@ -249,11 +232,11 @@ def options(prompt, opts, default = None):
 
             if prev != cur:
                 if prev is not None:
-                    hs[prev].update(space)
+                    hs[prev][0].update(space)
                 if was_digit:
-                    hs[cur].update(term.text.bold_green('%5s> ' % ds))
+                    hs[cur][0].update(term.text.bold_green('%5s> ' % ds))
                 else:
-                    hs[cur].update(arrow)
+                    hs[cur][0].update(arrow)
     else:
         linefmt =       '       %' + str(len(str(len(opts)))) + 'd) %s'
         if default is not None:
@@ -277,9 +260,6 @@ def pause(n=None):
 
     Examples:
 
-    .. doctest::
-       :skipif: branch_dev
-
         >>> with context.local(log_level="INFO"):
         ...     pause(1)
         [x] Waiting
@@ -291,9 +271,6 @@ def pause(n=None):
         ValueError: pause(): n must be a number or None
 
     Tests:
-
-    .. doctest::
-       :skipif: branch_dev
 
         >>> saved_stdin = sys.stdin
         >>> try:
@@ -339,11 +316,8 @@ def more(text):
     Returns:
       :const:`None`
 
-    Tests:
-
-    .. doctest::
-       :skipif: branch_dev
-       
+    Tests:      
+ 
         >>> more("text")
         text
         >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
@@ -361,6 +335,5 @@ def more(text):
                 print(l)
             if i + step < len(lines):
                 term.key.get()
-        h.delete()
     else:
         print(text)

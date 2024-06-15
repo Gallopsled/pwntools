@@ -717,15 +717,20 @@ class ROP(object):
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
-                moved += context.bytes
-                if r in registers:
-                    stack.append((registers[r], r))
-                else:
-                    stack.append((Padding('<pad %s>' % r), r))
+                if isinstance(r, str):
+                    if r in registers:
+                        stack.append((registers[r], r))
+                    else:
+                        stack.append((Padding('<pad %s>' % r), r))
+                    moved += context.bytes
+                    continue
 
-            for slot in range(moved, gadget.move, context.bytes):
-                left = gadget.move - slot
-                stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                for slot in range(moved, moved + r, context.bytes):
+                    left = gadget.move - slot
+                    stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                    moved += context.bytes
+
+            assert moved == gadget.move
 
         return stack
 
@@ -1389,9 +1394,7 @@ class ROP(object):
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
-                    while arg >= context.bytes:
-                        regs.append(hex(arg))
-                        arg -= context.bytes
+                    regs.append(arg)
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
@@ -1496,6 +1499,7 @@ class ROP(object):
                 .dynamic section. .got.plt entries are a good target. Required
                 for PIE binaries.
         Test:
+
             >>> context.clear(binary=pwnlib.data.elf.ret2dlresolve.get("amd64"))
             >>> r = ROP(context.binary)
             >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)

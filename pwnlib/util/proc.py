@@ -3,6 +3,7 @@ from __future__ import division
 
 import errno
 import socket
+import sys
 import time
 
 import psutil
@@ -34,6 +35,7 @@ def pidof(target):
         A list of found PIDs.
 
     Example:
+
         >>> l = tubes.listen.listen()
         >>> p = process(['curl', '-s', 'http://127.0.0.1:%d'%l.lport])
         >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.lport))
@@ -68,6 +70,7 @@ def pid_by_name(name):
         List of PIDs matching `name` sorted by lifetime, youngest to oldest.
 
     Example:
+
         >>> os.getpid() in pid_by_name(name(os.getpid()))
         True
     """
@@ -99,6 +102,7 @@ def name(pid):
         Name of process as listed in ``/proc/<pid>/status``.
 
     Example:
+
         >>> p = process('cat')
         >>> name(p.pid)
         'cat'
@@ -141,6 +145,7 @@ def ancestors(pid):
         List of PIDs of whose parent process is `pid` or an ancestor of `pid`.
 
     Example:
+
         >>> ancestors(os.getpid()) # doctest: +ELLIPSIS
         [..., 1]
     """
@@ -160,6 +165,7 @@ def descendants(pid):
         Dictionary mapping the PID of each child of `pid` to it's descendants.
 
     Example:
+
         >>> d = descendants(os.getppid())
         >>> os.getpid() in d.keys()
         True
@@ -187,6 +193,7 @@ def exe(pid):
         The path of the binary of the process. I.e. what ``/proc/<pid>/exe`` points to.
 
     Example:
+
         >>> exe(os.getpid()) == os.path.realpath(sys.executable)
         True
     """
@@ -203,6 +210,7 @@ def cwd(pid):
         ``/proc/<pid>/cwd`` points to.
 
     Example:
+
         >>> cwd(os.getpid()) == os.getcwd()
         True
     """
@@ -218,10 +226,29 @@ def cmdline(pid):
         A list of the fields in ``/proc/<pid>/cmdline``.
 
     Example:
+
         >>> 'py' in ''.join(cmdline(os.getpid()))
         True
     """
     return psutil.Process(pid).cmdline()
+
+def memory_maps(pid):
+    """memory_maps(pid) -> list
+    
+    Arguments:
+        pid (int): PID of the process.
+
+    Returns:
+        A list of the memory mappings in the process.
+
+    Example:
+
+        >>> maps = memory_maps(os.getpid())
+        >>> [(m.path, m.perms) for m in maps if '[stack]' in m.path]
+        [('[stack]', 'rw-p')]
+
+    """
+    return psutil.Process(pid).memory_maps(grouped=False)
 
 def stat(pid):
     """stat(pid) -> str list
@@ -233,6 +260,7 @@ def stat(pid):
         A list of the values in ``/proc/<pid>/stat``, with the exception that ``(`` and ``)`` has been removed from around the process name.
 
     Example:
+
         >>> stat(os.getpid())[2]
         'R'
     """
@@ -254,6 +282,7 @@ def starttime(pid):
         The time (in seconds) the process started after system boot
 
     Example:
+
         >>> starttime(os.getppid()) <= starttime(os.getpid())
         True
     """
@@ -287,6 +316,42 @@ def status(pid):
             raise
     return out
 
+def _tracer_windows(pid):
+    import ctypes
+    from ctypes import wintypes
+
+    def _check_bool(result, func, args):
+        if not result:
+            raise ctypes.WinError(ctypes.get_last_error())
+        return args
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    OpenProcess = kernel32.OpenProcess 
+    OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    OpenProcess.restype = wintypes.HANDLE
+    OpenProcess.errcheck = _check_bool
+
+    CheckRemoteDebuggerPresent = kernel32.CheckRemoteDebuggerPresent
+    CheckRemoteDebuggerPresent.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+    CheckRemoteDebuggerPresent.restype = wintypes.BOOL
+    CheckRemoteDebuggerPresent.errcheck = _check_bool
+
+    CloseHandle = kernel32.CloseHandle
+    CloseHandle.argtypes = [wintypes.HANDLE]
+    CloseHandle.restype = wintypes.BOOL
+    CloseHandle.errcheck = _check_bool
+
+    PROCESS_QUERY_INFORMATION = 0x0400
+    proc_handle = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
+    present = wintypes.BOOL()
+    CheckRemoteDebuggerPresent(proc_handle, ctypes.byref(present))
+    ret = 0
+    if present.value:
+        ret = pid
+    CloseHandle(proc_handle)
+
+    return ret
+
 def tracer(pid):
     """tracer(pid) -> int
 
@@ -297,10 +362,14 @@ def tracer(pid):
         PID of the process tracing `pid`, or None if no `pid` is not being traced.
 
     Example:
+
         >>> tracer(os.getpid()) is None
         True
     """
-    tpid = int(status(pid)['TracerPid'])
+    if sys.platform == 'win32':
+        tpid = _tracer_windows(pid)
+    else:
+        tpid = int(status(pid)['TracerPid'])
     return tpid if tpid > 0 else None
 
 def state(pid):
@@ -313,6 +382,7 @@ def state(pid):
         State of the process as listed in ``/proc/<pid>/status``.  See `proc(5)` for details.
 
     Example:
+
         >>> state(os.getpid())
         'R (running)'
     """

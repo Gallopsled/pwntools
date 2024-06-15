@@ -93,7 +93,6 @@ from pwnlib.util.fiddling import enhex
 from pwnlib.util.fiddling import unhex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import write
-from pwnlib.util.packing import _decode
 from pwnlib.util.packing import pack
 from pwnlib.util.packing import unpack_many
 
@@ -106,44 +105,11 @@ prstatus_types = {
     'aarch64': elf_prstatus_aarch64
 }
 
-prpsinfo_types = {
-    32: elf_prpsinfo_32,
-    64: elf_prpsinfo_64,
-}
-
 siginfo_types = {
     32: elf_siginfo_32,
     64: elf_siginfo_64
 }
 
-# Slightly modified copy of the pyelftools version of the same function,
-# until they fix this issue:
-# https://github.com/eliben/pyelftools/issues/93
-def iter_notes(self):
-    """ Iterates the list of notes in the segment.
-    """
-    offset = self['p_offset']
-    end = self['p_offset'] + self['p_filesz']
-    while offset < end:
-        note = struct_parse(
-            self.elffile.structs.Elf_Nhdr,
-            self.stream,
-            stream_pos=offset)
-        note['n_offset'] = offset
-        offset += self.elffile.structs.Elf_Nhdr.sizeof()
-        self.stream.seek(offset)
-        # n_namesz is 4-byte aligned.
-        disk_namesz = roundup(note['n_namesz'], 2)
-        with context.local(encoding='latin-1'):
-            note['n_name'] = _decode(
-                CString('').parse(self.stream.read(disk_namesz)))
-            offset += disk_namesz
-
-            desc_data = _decode(self.stream.read(note['n_descsz']))
-            note['n_desc'] = desc_data
-        offset += roundup(note['n_descsz'], 2)
-        note['n_size'] = offset - note['n_offset']
-        yield note
 
 class Mapping(object):
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
@@ -605,7 +571,6 @@ class Corefile(ELF):
             log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.file.name)
 
         prstatus_type = prstatus_types.get(self.arch)
-        prpsinfo_type = prpsinfo_types.get(self.bits)
         siginfo_type = siginfo_types.get(self.bits)
 
         with log.waitfor("Parsing corefile...") as w:
@@ -616,39 +581,30 @@ class Corefile(ELF):
                     continue
 
 
-                # Note that older versions of pyelftools (<=0.24) are missing enum values
-                # for NT_PRSTATUS, NT_PRPSINFO, NT_AUXV, etc.
-                # For this reason, we have to check if note.n_type is any of several values.
-                for note in iter_notes(segment):
-                    if not isinstance(note.n_desc, bytes):
-                        note['n_desc'] = note.n_desc.encode('latin1')
+                for note in segment.iter_notes():
                     # Try to find NT_PRSTATUS.
-                    if prstatus_type and \
-                       note.n_descsz == ctypes.sizeof(prstatus_type) and \
-                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRSTATUS'):
+                    if note.n_type == 'NT_PRSTATUS':
                         self.NT_PRSTATUS = note
                         self.prstatus = prstatus_type.from_buffer_copy(note.n_desc)
 
                     # Try to find NT_PRPSINFO
-                    if prpsinfo_type and \
-                       note.n_descsz == ctypes.sizeof(prpsinfo_type) and \
-                       note.n_type in ('NT_GNU_ABI_TAG', 'NT_PRPSINFO'):
+                    if note.n_type == 'NT_PRPSINFO':
                         self.NT_PRPSINFO = note
-                        self.prpsinfo = prpsinfo_type.from_buffer_copy(note.n_desc)
+                        self.prpsinfo = note.n_desc
 
                     # Try to find NT_SIGINFO so we can see the fault
-                    if note.n_type in (0x53494749, 'NT_SIGINFO'):
+                    if note.n_type == 'NT_SIGINFO':
                         self.NT_SIGINFO = note
                         self.siginfo = siginfo_type.from_buffer_copy(note.n_desc)
 
                     # Try to find the list of mapped files
-                    if note.n_type in (constants.NT_FILE, 'NT_FILE'):
+                    if note.n_type == 'NT_FILE':
                         with context.local(bytes=self.bytes):
                             self._parse_nt_file(note)
 
                     # Try to find the auxiliary vector, which will tell us
                     # where the top of the stack is.
-                    if note.n_type in (constants.NT_AUXV, 'NT_AUXV'):
+                    if note.n_type == 'NT_AUXV':
                         self.NT_AUXV = note
                         with context.local(bytes=self.bytes):
                             self._parse_auxv(note)
@@ -684,31 +640,16 @@ class Corefile(ELF):
             self._describe_core()
 
     def _parse_nt_file(self, note):
-        t = tube()
-        t.unrecv(note.n_desc)
-
-        count = t.unpack()
-        page_size = t.unpack()
-
         starts = []
         addresses = {}
 
-        for i in range(count):
-            start = t.unpack()
-            end = t.unpack()
-            offset = t.unpack()
-            starts.append((start, offset))
-
-        for i in range(count):
-            filename = t.recvuntil(b'\x00', drop=True)
+        for vma, filename in zip(note.n_desc.Elf_Nt_File_Entry, note.n_desc.filename):
             if not isinstance(filename, str):
-                filename = filename.decode('utf-8')
-            (start, offset) = starts[i]
-
+                filename = filename.decode('utf-8', 'surrogateescape')
             for mapping in self.mappings:
-                if mapping.start == start:
+                if mapping.start == vma.vm_start:
                     mapping.name = filename
-                    mapping.page_offset = offset
+                    mapping.page_offset = vma.page_offset
 
         self.mappings = sorted(self.mappings, key=lambda m: m.start)
 
@@ -1387,6 +1328,10 @@ class CorefileFinder(object):
             self.unlink(crash_path)
         except Exception:
             pass
+
+        # Convert bytes-like object to string
+        if isinstance(data, bytes):
+            data = data.decode('utf-8')
 
         return data
 
