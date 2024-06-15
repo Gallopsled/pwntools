@@ -544,8 +544,23 @@ class ssh(Timeout, Logger):
     #: Remote port (``int``)
     port = None
 
+    #: Remote username (``str``)
+    user = None
+
+    #: Remote password (``str``)
+    password = None
+
+    #: Remote private key (``str``)
+    key = None
+
+    #: Remote private key file (``str``)
+    keyfile = None
+
     #: Enable caching of SSH downloads (``bool``)
     cache = True
+
+    #: Enable raw mode and don't probe the environment (``bool``)
+    raw = False
 
     #: Paramiko SSHClient which backs this object
     client = None
@@ -554,6 +569,7 @@ class ssh(Timeout, Logger):
     pid = None
 
     _cwd = '.'
+    _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
