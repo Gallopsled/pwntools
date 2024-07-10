@@ -34,29 +34,33 @@ keywords = ["pwntools", "exploit", "ctf", "capture", "the", "flag", "binary", "w
 
 requires-python = ">=2.7"
 dependencies = [
-    "paramiko>=1.15.2",
     "mako>=1.0.0",
     "pyelftools>=0.29, <0.30; python_version < '3'",
     "pyelftools>=0.29; python_version >= '3'",
-    "capstone>=3.0.5rc2",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
     "ropgadget>=5.3",
-    "pyserial>=2.7",
-    "requests>=2.0",
     "pip>=6.0.8",
     "pygments>=2.0",
-    "pysocks",
     "python-dateutil",
     "packaging",
     "psutil>=3.3.0",
     "intervaltree>=3.0",
     "sortedcontainers",
-    "unicorn>=2.0.1",
     "six>=1.12.0",
-    "rpyc",
-    "colored_traceback",
     "pathlib2; python_version < '3.4'",
     "unix-ar; python_version >= '3'",
     "zstandard",
+]
+
+[project.optional-dependencies]
+full = [
+    "capstone>=3.0.5rc2",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
+    "colored_traceback",
+    "paramiko>=1.15.2",
+    "pyserial>=2.7",
+    "pysocks",
+    "requests>=2.0",
+    "rpyc",
+    "unicorn>=2.0.1",
 ]
 
 [project.urls]

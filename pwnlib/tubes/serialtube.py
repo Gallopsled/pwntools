@@ -6,8 +6,6 @@ import platform
 import sys
 import time
 
-import serial
-
 from pwnlib.log import getLogger
 from pwnlib.tubes import tube
 
@@ -30,6 +28,9 @@ class serialtube(tube.tube):
         self.convert_newlines = convert_newlines
         # serial.Serial might throw an exception, which must be handled
         # and propagated accordingly using self.exception
+
+        import serial
+
         try:
             self.conn = serial.Serial(
                 port = port,

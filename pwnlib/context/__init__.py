@@ -23,8 +23,6 @@ import tempfile
 import threading
 import time
 
-import socks
-
 from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
@@ -1280,6 +1278,8 @@ class ContextType(object):
         if not proxy:
             socket.socket = _original_socket
             return None
+
+        import socks  # keep dependency optional
 
         if isinstance(proxy, str):
             proxy = (socks.SOCKS5, proxy)
