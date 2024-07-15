@@ -1097,3 +1097,11 @@ def js_unescape(s, **kwargs):
             p += 1
 
     return b''.join(res)
+
+def tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))):
+    s = s.replace(lnext, lnext * 2)
+    for b in bytearray(dangerous):
+        if b in lnext: continue
+        b = bytearray([b])
+        s = s.replace(b, lnext + b)
+    return s

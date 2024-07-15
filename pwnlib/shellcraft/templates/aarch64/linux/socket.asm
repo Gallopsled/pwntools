@@ -6,7 +6,10 @@
 Creates a new socket
 </%docstring>
 <%
-    sockaddr, length, address_family = sockaddr('127.0.0.1', 1, network)
+    if network == 'ipv4':
+        sockaddr, length, address_family = sockaddr('127.0.0.1', 1, network)
+    elif network == 'ipv6':
+        sockaddr, length, address_family = sockaddr('::1', 1, network)
     socktype = {
         'tcp': SOCK_STREAM,
         'udp': SOCK_DGRAM

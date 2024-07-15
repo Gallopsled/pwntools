@@ -544,8 +544,23 @@ class ssh(Timeout, Logger):
     #: Remote port (``int``)
     port = None
 
+    #: Remote username (``str``)
+    user = None
+
+    #: Remote password (``str``)
+    password = None
+
+    #: Remote private key (``str``)
+    key = None
+
+    #: Remote private key file (``str``)
+    keyfile = None
+
     #: Enable caching of SSH downloads (``bool``)
     cache = True
+
+    #: Enable raw mode and don't probe the environment (``bool``)
+    raw = False
 
     #: Paramiko SSHClient which backs this object
     client = None
@@ -554,10 +569,12 @@ class ssh(Timeout, Logger):
     pid = None
 
     _cwd = '.'
+    _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
-                 cache=True, ssh_agent=False, ignore_config=False, raw=False, *a, **kw):
+                 cache=True, ssh_agent=False, ignore_config=False, raw=False, 
+                 auth_none=False, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -571,10 +588,11 @@ class ssh(Timeout, Logger):
             proxy_sock(str): Use this socket instead of connecting to the host.
             timeout: Timeout, in seconds
             level: Log level
-            cache: Cache downloaded files (by hash/size/timestamp)
-            ssh_agent: If :const:`True`, enable usage of keys via ssh-agent
-            ignore_config: If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
-            raw: If :const:`True`, assume a non-standard shell and don't probe the environment
+            cache(bool): Cache downloaded files (by hash/size/timestamp)
+            ssh_agent(bool): If :const:`True`, enable usage of keys via ssh-agent
+            ignore_config(bool): If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
+            raw(bool): If :const:`True`, assume a non-standard shell and don't probe the environment
+            auth_none(bool): If :const:`True`, try to authenticate with no authentication methods
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -670,6 +688,11 @@ class ssh(Timeout, Logger):
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
                            "        $ ssh-keygen -R %(host)s\n"
                            "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
+            except paramiko.SSHException as e:
+                if user and auth_none and str(e) == "No authentication methods available":
+                    self.client.get_transport().auth_none(user)
+                else:
+                    raise
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)

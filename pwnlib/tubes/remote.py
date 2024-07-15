@@ -23,11 +23,11 @@ class remote(sock):
         fam: The string "any", "ipv4" or "ipv6" or an integer to pass to :func:`socket.getaddrinfo`.
         typ: The string "tcp" or "udp" or an integer to pass to :func:`socket.getaddrinfo`.
         timeout: A positive number, None or the string "default".
+        sock(:class:`socket.socket`): Socket to inherit, rather than connecting
         ssl(bool): Wrap the socket with SSL
         ssl_context(ssl.SSLContext): Specify SSLContext used to wrap the socket.
-        sni: Set 'server_hostname' in ssl_args based on the host parameter.
-        sock(socket.socket): Socket to inherit, rather than connecting
-        ssl_args(dict): Pass ssl.wrap_socket named arguments in a dictionary.
+        ssl_args(dict): Pass :func:`ssl.wrap_socket` named arguments in a dictionary.
+        sni(str,bool): Set 'server_hostname' in ssl_args. Set to True to set it based on the host argument. Set to False to not provide any value. Default is True.
 
     Examples:
 
@@ -57,7 +57,7 @@ class remote(sock):
 
     def __init__(self, host, port,
                  fam = "any", typ = "tcp",
-                 ssl=False, sock=None, ssl_context=None, ssl_args=None, sni=True,
+                 sock=None, ssl=False, ssl_context=None, ssl_args=None, sni=True,
                  *args, **kwargs):
         super(remote, self).__init__(*args, **kwargs)
 

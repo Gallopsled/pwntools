@@ -18,15 +18,15 @@ Ubuntu Xenial (16.04) has official packages for most architectures, and does not
 
 .. code-block:: bash
 
-    $ apt-get install software-properties-common
-    $ apt-add-repository ppa:pwntools/binutils
-    $ apt-get update
+    $ sudo apt-get install software-properties-common
+    $ sudo apt-add-repository ppa:pwntools/binutils
+    $ sudo apt-get update
 
 Then, install the binutils for your architecture.
 
 .. code-block:: bash
 
-    $ apt-get install binutils-$ARCH-linux-gnu
+    $ sudo apt-get install binutils-$ARCH-linux-gnu
 
 Mac OS X
 ^^^^^^^^^^^^^^^^
