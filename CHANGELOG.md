@@ -87,6 +87,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2415][2415] Add shellcraft template for IPv6 socket
 - [#2405][2405] Add "none" ssh authentication method
 - [#2427][2427] Document behaviour of remote()'s sni argument as string.
+- [#2382][2382] added optional port, gdb_args and gdbserver_args parameters to gdb.debug()
 
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
@@ -103,6 +104,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2415]: https://github.com/Gallopsled/pwntools/pull/2415
 [2405]: https://github.com/Gallopsled/pwntools/pull/2405
 [2427]: https://github.com/Gallopsled/pwntools/pull/2405
+[2382]: https://github.com/Gallopsled/pwntools/pull/2382
 
 ## 4.13.0 (`beta`)
 
