@@ -3,13 +3,13 @@
    from pwn import *
 
 :mod:`pwnlib.virtualization` --- Virtualizing your exploits
-=============================================
+=============================================================
 
 .. automodule:: pwnlib.tubes
 
 
-Types of Tubes
--------------------
+Types of Virtualization
+----------------------------
 
 .. toctree::
     :maxdepth: 3
@@ -19,7 +19,7 @@ Types of Tubes
 
 
 :mod:`pwnlib.virtualization.pwnvirt` --- Base class
--------------------------------------------------
+-----------------------------------------------------
 
 
 .. automodule:: pwnlib.virtualization.pwnvirt

@@ -28,7 +28,7 @@ class sshvirt(pwnvirt):
             Passthrough arguments to :class: Pwnvirt
 
     :meth:`.ssh.process`.
-    Examples:
+    Running as process (or using start()):
 
         >>> with open('test', 'w') as f:
         ...     _ = f.write('#!/bin/echo')
@@ -42,6 +42,18 @@ class sshvirt(pwnvirt):
 
         >>> io.close()
 
+    Running with gdb (or using start() and args.GDB):
+
+        >>> io = vm.debug(gdbscript='continue')
+        >>> io.recvline(timeout=5)
+        b'./test\n'
+        >>> io.close()
+
+    Running with gdb and api:
+
+    .. doctest::
+       :skipif: is_python2
+
         >>> io = vm.debug(api=True)
         >>> bp = io.gdb.Breakpoint('write', temporary=True)
         >>> io.gdb.continue_and_wait()
@@ -53,6 +65,8 @@ class sshvirt(pwnvirt):
         >>> io.recvline(timeout=1)
         b'./test\n'
         >>> io.close()
+
+    Closing vm (optional):
         >>> vm.close()
     """
 
@@ -85,7 +99,7 @@ class sshvirt(pwnvirt):
 
         self._ssh_setup()
 
-        super().__init__(binary=binary, **kwargs)
+        super(sshvirt, self).__init__(binary=binary, **kwargs)
 
     def bind(self, port):
         """

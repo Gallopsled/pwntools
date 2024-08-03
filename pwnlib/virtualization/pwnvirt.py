@@ -9,7 +9,7 @@ import pwnlib.util.misc as misc
 log = pwnlib.log.getLogger(__name__)
 
 # abstract class
-class pwnvirt():
+class pwnvirt(object):
     """
     start binary inside virtualized environment and return pwnlib.tubes.process.process using Pwnvirt.start()
 
