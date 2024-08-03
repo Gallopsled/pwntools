@@ -1,10 +1,10 @@
 import os
-from shutil import which
 
 import pwnlib.args
 import pwnlib.filesystem
 import pwnlib.gdb
 import pwnlib.tubes
+import pwnlib.util.misc as misc
 
 log = pwnlib.log.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class pwnvirt():
             local_dir(str):
                 local mount point
         """
-        if not which('sshfs'):
+        if not misc.which('sshfs'):
             log.error('sshfs isn\'t installed')
         cmd = pwnvirt._SSHFS_TEMPLATE.format(port=self._ssh.port,
                                              keyfile=self._ssh.keyfile,
