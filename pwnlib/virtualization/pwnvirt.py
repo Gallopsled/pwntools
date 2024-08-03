@@ -43,12 +43,14 @@ class pwnvirt(ABC):
     DEFAULT_PORT = 2222
     STATIC_GDBSRV_PORT = 42069
 
-    is_new: bool = False
-    _path: str
-    _gdb_port: int
-    _binary: str
-    _ssh: pwnlib.tubes.ssh.ssh
-    _fast: bool
+    #: if the pwnvirt was newly created (``bool``)
+    is_new = False
+
+    _path = None
+    _gdb_port = None
+    _binary = None
+    _ssh = None
+    _fast = False
 
     def __init__(self,
                  binary: str,

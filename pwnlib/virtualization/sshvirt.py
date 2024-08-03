@@ -60,12 +60,12 @@ class sshvirt(pwnvirt):
     DEFAULT_PORT = 22
     DEFAULT_USER = 'root'
 
-    _user: str
-    _host: str
-    _port: int
-    _keyfile: str
-    _password: str
-    _ssh: pwnlib.tubes.ssh.ssh
+    _user = None
+    _host = None
+    _port = 0
+    _keyfile = None
+    _password = None
+    _ssh = None
 
     def __init__(self,
                  binary: str,
