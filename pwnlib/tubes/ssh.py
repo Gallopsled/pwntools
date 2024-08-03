@@ -597,6 +597,9 @@ class ssh(Timeout, Logger):
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
 
+        Note: alternativly use :meth:`.virtulization.sshvirt`.
+
+
         Example proxying:
 
         .. doctest::

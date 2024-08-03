@@ -54,6 +54,9 @@ This is a quick list of most of the objects and routines imported, in rough orde
 - ``ROP``
     - :mod:`pwnlib.rop`
     - Automatically generate ROP chains using a DSL to describe what you want to do, rather than raw addresses
+- ``Virtualization``
+    - :mod:`pwnlib.virtualization`
+    - Automatically virtualize our exploit in different environments
 - ``gdb.debug`` and ``gdb.attach``
     - :mod:`pwnlib.gdb`
     - Launch a binary under GDB and pop up a new terminal to interact with it.  Automates setting breakpoints and makes iteration on exploits MUCH faster.
