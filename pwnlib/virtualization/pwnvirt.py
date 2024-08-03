@@ -1,7 +1,5 @@
 import os
-from abc import ABC, abstractmethod
 from shutil import which
-from typing import Union, Iterable, List
 
 import pwnlib.args
 import pwnlib.filesystem
@@ -10,8 +8,8 @@ import pwnlib.tubes
 
 log = pwnlib.log.getLogger(__name__)
 
-
-class pwnvirt(ABC):
+# abstract class
+class pwnvirt():
     """
     start binary inside virtualized environment and return pwnlib.tubes.process.process using Pwnvirt.start()
 
@@ -53,14 +51,14 @@ class pwnvirt(ABC):
     _fast = False
 
     def __init__(self,
-                 binary: str,
+                 binary,
                  libs=False,
-                 files: Union[str, list[str]] = None,
-                 packages: List[str] = None,
+                 files=None,
+                 packages=None,
                  symbols=True,
-                 tmp: bool = False,
-                 gdb_port: int = 0,
-                 fast: bool = False):
+                 tmp=False,
+                 gdb_port=0,
+                 fast=False):
 
         self._path = binary
         self._gdb_port = gdb_port
@@ -103,21 +101,19 @@ class pwnvirt(ABC):
             for file in files:
                 self._sync(file)
 
-    @abstractmethod
-    def _vm_setup(self) -> None:
+    def _vm_setup(self):
         """
         setup virtualized machine
         """
         pass
 
-    @abstractmethod
-    def _ssh_setup(self) -> None:
+    def _ssh_setup(self):
         """
         setup ssh connection
         """
         pass
 
-    def _sync(self, file: str) -> bool:
+    def _sync(self, file):
         """
         upload file on remote if it doesn't exist
         Arguments:
@@ -137,7 +133,7 @@ class pwnvirt(ABC):
     _SSHFS_TEMPLATE = \
         'sshfs -p {port} -o StrictHostKeyChecking=no,ro,IdentityFile={keyfile} {user}@{host}:{remote_dir} {local_dir}'
 
-    def _mount(self, remote_dir: str, local_dir: str) -> None:
+    def _mount(self, remote_dir, local_dir):
         """
         mount remote dir on locally using sshfs
 
@@ -159,7 +155,7 @@ class pwnvirt(ABC):
         log.info(cmd)
         os.system(cmd)
 
-    def _lock(self, typ: str) -> None:
+    def _lock(self, typ):
         """
         create lock file vor current virtualization type
 
@@ -174,7 +170,7 @@ class pwnvirt(ABC):
         with open(pwnvirt.LOCKFILE, 'w') as lfile:
             lfile.write(typ)
 
-    def _mount_lib(self, remote_lib: str = '/usr/lib') -> None:
+    def _mount_lib(self, remote_lib='/usr/lib'):
         """
         mount the lib directory of remote
 
@@ -189,7 +185,7 @@ class pwnvirt(ABC):
             log.info('mounting libs in sysroot')
             self._mount(remote_lib, pwnvirt.SYSROOT_LIB)
 
-    def system(self, cmd: str) -> pwnlib.tubes.ssh.ssh_channel:
+    def system(self, cmd):
         """
         executes command on vm, interface to :class: pwnlib.tubes.ssh.ssh.system
 
@@ -208,7 +204,7 @@ class pwnvirt(ABC):
     LIBC6_DEBUG = 'libc6-dbg'
     LIBC6_I386 = 'libc6-i386'
 
-    def _install_packages(self, packages: Iterable) -> None:
+    def _install_packages(self, packages):
         """
         install packages on remote machine
 
@@ -219,9 +215,9 @@ class pwnvirt(ABC):
         """
         self.system("sudo apt update").recvall()
         packages_str = " ".join(packages)
-        self.system(f"sudo NEEDRESTART_MODE=a apt install -y {packages_str}").recvall()
+        self.system("sudo NEEDRESTART_MODE=a apt install -y {}".format(packages_str)).recvall()
 
-    def put(self, file: str, remote: str = None) -> None:
+    def put(self, file, remote=None):
         """
         upload file or dir on vm
 
@@ -237,7 +233,7 @@ class pwnvirt(ABC):
         else:
             self._ssh.upload(file, remote=remote)
 
-    def pull(self, file: str, local: str = None) -> None:
+    def pull(self, file, local=None):
         """
         download file or dir on vm
 
@@ -262,7 +258,7 @@ class pwnvirt(ABC):
         """
         self._ssh.close()
 
-    def libs(self, directory=None) -> None:
+    def libs(self, directory=None):
         """
         Downloads the libraries referred to by a file.
         This is done by running ldd on the remote server, parsing the output and downloading the relevant files.
@@ -275,8 +271,7 @@ class pwnvirt(ABC):
         for lib in self._ssh._libs_remote(self._binary).keys():
             self.pull(lib, directory + '/' + os.path.basename(lib))
 
-    def debug(self, argv: list[str] = None, ssh=None, gdb_args=None, gdbscript='', sysroot=None,
-              **kwargs) -> pwnlib.tubes.process.process:
+    def debug(self, argv=None, ssh=None, gdb_args=None, gdbscript='', sysroot=None, **kwargs):
         """
         run binary in vm with gdb (pwnlib feature set)
 
@@ -311,14 +306,14 @@ class pwnvirt(ABC):
             sysroot = pwnvirt.SYSROOT_LIB
 
         if sysroot is not None:
-            gdbscript = f"set debug-file-directory {pwnvirt.SYSROOT_LIB_DEBUG}\n" + gdbscript
+            gdbscript = "set debug-file-directory {}\n".format(pwnvirt.SYSROOT_LIB_DEBUG) + gdbscript
 
-        gdb_args += ["-ex", f"file -readnow {self._path}"]
+        gdb_args += ["-ex", "file -readnow {}".format(self._path)]
 
         return pwnlib.gdb.debug([self._binary] + argv, ssh=self._ssh, gdb_args=gdb_args, port=self._gdb_port,
                                 gdbscript=gdbscript, sysroot=sysroot, **kwargs)
 
-    def process(self, argv: list[str] = None, **kwargs) -> pwnlib.tubes.process.process:
+    def process(self, argv=None, **kwargs):
         """
         run binary in vm as process
 
@@ -337,12 +332,12 @@ class pwnvirt(ABC):
         return self._ssh.process([self._binary] + argv, **kwargs)
 
     def start(self,
-              argv: list[str] = None,
-              gdbscript: str = '',
-              api: bool = None,
-              sysroot: str = None,
-              gdb_args: list = None,
-              **kwargs) -> pwnlib.tubes.process.process:
+              argv=None,
+              gdbscript='',
+              api=None,
+              sysroot=None,
+              gdb_args=None,
+              **kwargs):
         """
         start binary on remote and return pwnlib.tubes.process.process
 

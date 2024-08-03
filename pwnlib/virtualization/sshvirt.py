@@ -68,13 +68,13 @@ class sshvirt(pwnvirt):
     _ssh = None
 
     def __init__(self,
-                 binary: str,
-                 user: str = DEFAULT_USER,
-                 host: str = DEFAULT_HOST,
-                 port: int = DEFAULT_PORT,
-                 keyfile: str = None,
-                 password: str = None,
-                 ignore_config: bool = False,
+                 binary,
+                 user=DEFAULT_USER,
+                 host=DEFAULT_HOST,
+                 port=DEFAULT_PORT,
+                 keyfile=None,
+                 password=None,
+                 ignore_config=False,
                  **kwargs):
         self._user = user
         self._host = host
@@ -87,7 +87,7 @@ class sshvirt(pwnvirt):
 
         super().__init__(binary=binary, **kwargs)
 
-    def bind(self, port: int) -> int:
+    def bind(self, port):
         """
         bind port from ssh connection locally
         :param port:
@@ -107,7 +107,7 @@ class sshvirt(pwnvirt):
 
         return port
 
-    def _vm_setup(self) -> None:
+    def _vm_setup(self):
         """
         pass
         """
@@ -115,7 +115,7 @@ class sshvirt(pwnvirt):
 
     _TRIES = 3  # three times the charm
 
-    def _ssh_setup(self) -> None:
+    def _ssh_setup(self):
         """
         setup ssh connection
         """
@@ -140,4 +140,3 @@ class sshvirt(pwnvirt):
                     progress.status('Trying again')
                 # shorter pause for first two tries
                 time.sleep(1 if i == 0 else 10)
-
