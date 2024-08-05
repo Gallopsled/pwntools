@@ -717,12 +717,13 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
     # gdbserver outputs a message when a client connects
     garbage = gdbserver.recvline(timeout=1)
-
     # Some versions of gdbserver output an additional message
-    try:
-        garbage2 = gdbserver.recvline_startswith(b"Remote debugging from host ", timeout=2)
-    except EOFError:
-        pass
+    message = b"Remote debugging from host "
+    if not garbage.startswith(message):
+        try:
+            garbage2 = gdbserver.recvline_startswith(message, timeout=2)
+        except EOFError:
+            pass
 
     return gdbserver
 
