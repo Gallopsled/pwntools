@@ -764,10 +764,19 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         >>> asm("lea rax, [rip+0]", arch = 'amd64')
         b'H\x8d\x05\x00\x00\x00\x00'
         >>> cached_time = time.time() - start
-        >>> uncached_time > cached_time * 2
+        >>> uncached_time > cached_time
         True
     """
     result = b''
+
+    assembler = _assembler()
+    linker    = _linker()
+    objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
+    code      = ''
+    code      += _arch_header()
+    code      += cpp(shellcode)
+
+    log.debug('Assembling\n%s' % code)
 
     cache_file = None
     if context.cache_dir:
@@ -776,8 +785,9 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             os.makedirs(cache_dir)
 
         # Include the context in the hash in addition to the shellcode
-        hash_params = '{}_{}_{}_{}_{}_{}_{}'.format(vma, extract, shared, context.arch, context.os, context.bits, context.endianness)
-        asm_hash = sha1sumhex(_encode(shellcode) + _encode(hash_params))
+        hash_params = '{}_{}_{}'.format(vma, extract, shared)
+        fingerprint_params = _encode(code) + _encode(hash_params) + _encode(' '.join(assembler)) + _encode(' '.join(linker)) + _encode(' '.join(objcopy))
+        asm_hash = sha1sumhex(fingerprint_params)
         cache_file = os.path.join(cache_dir, asm_hash)
         if os.path.exists(cache_file):
             log.debug('Using cached assembly output from %r', cache_file)
@@ -791,15 +801,6 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             step3 = os.path.join(tmpdir, 'step3')
             shutil.copy(cache_file, step3)
             return step3
-
-    assembler = _assembler()
-    linker    = _linker()
-    objcopy   = _objcopy() + ['-j', '.shellcode', '-Obinary']
-    code      = ''
-    code      += _arch_header()
-    code      += cpp(shellcode)
-
-    log.debug('Assembling\n%s' % code)
 
     tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
     step1     = path.join(tmpdir, 'step1')
