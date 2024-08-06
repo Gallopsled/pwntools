@@ -219,9 +219,22 @@ class Ret2dlresolvePayload(object):
         elf (ELF): Binary to search
         symbol (str): Function to search for
         args (list): List of arguments to pass to the function
+        data_addr (int|None): The address where the payload will 
+            be written to. If not provided, a suitable address will
+            be chosen automatically (recommended).
+        resolution_addr (int|None): The address where the location
+            of the resolved symbol will be written to. If not provided
+            will be equal to data_addr.
 
     Returns:
-        A ``Ret2dlresolvePayload`` object which can be passed to ``rop.ret2dlresolve``
+        A ``Ret2dlresolvePayload`` object. It can be passed to ``rop.ret2dlresolve``
+        for automatic exploitation.
+
+        If that is not suitable the object generates useful values (.reloc_index 
+        and .payload) which can be used to aid manual exploitation. In this case
+        it is recommended to set .resolution_addr to the GOT address of an easily
+        callable function (do not set it when passing the object to 
+        rop.ret2dlresolve).
     """
     def __init__(self, elf, symbol, args, data_addr=None):
         self.elf = elf
