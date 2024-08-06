@@ -206,6 +206,9 @@ def which_binutils(util, check_version=False):
     if platform.system() == 'Darwin':
         utils = ['g'+util, util]
 
+    if platform.system() == 'Windows':
+        utils = [util + '.exe']
+
     for arch in arches:
         for gutil in utils:
             # e.g. objdump
@@ -220,7 +223,7 @@ def which_binutils(util, check_version=False):
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
-                for dir in environ['PATH'].split(':'):
+                for dir in environ['PATH'].split(os.pathsep):
                     for res in sorted(glob(path.join(dir, pattern))):
                         if check_version:
                             ver = check_binutils_version(res)
@@ -458,16 +461,34 @@ def cpp(shellcode):
         '311\n'
     """
     code = _include_header() + shellcode
-    cmd  = [
-        'cpp',
-        '-C',
-        '-nostdinc',
-        '-undef',
-        '-P',
-        '-I' + _incdir,
-        '/dev/stdin'
-    ]
-    return _run(cmd, code).strip('\n').rstrip() + '\n'
+    if platform.system() == 'Windows':
+        # Windows doesn't have /dev/stdin
+        cpp = which_binutils('cpp')
+        temp_file = tempfile.NamedTemporaryFile('w', delete=False)
+        temp_file.write(code)
+        temp_file.flush()
+        code = None
+        input_file = temp_file.name
+    else:
+        cpp = 'cpp'
+        input_file = '/dev/stdin'
+        temp_file = None
+
+    try:
+        cmd  = [
+            cpp,
+            '-C',
+            '-nostdinc',
+            '-undef',
+            '-P',
+            '-I' + _incdir,
+            input_file
+        ]
+        return _run(cmd, code).strip('\n').rstrip() + '\n'
+    finally:
+        if temp_file is not None:
+            temp_file.close()
+            os.unlink(temp_file.name)
 
 
 @LocalContext
