@@ -90,6 +90,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2427][2427] Document behaviour of remote()'s sni argument as string.
 - [#2382][2382] added optional port, gdb_args and gdbserver_args parameters to gdb.debug()
 - [#2435][2435] Speed up gdbserver handshake in gdb.debug()
+- [#2437][2437] Support asm/disasm on Windows
 
 [2371]: https://github.com/Gallopsled/pwntools/pull/2371
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
@@ -108,6 +109,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2405]: https://github.com/Gallopsled/pwntools/pull/2405
 [2427]: https://github.com/Gallopsled/pwntools/pull/2405
 [2382]: https://github.com/Gallopsled/pwntools/pull/2382
+[2437]: https://github.com/Gallopsled/pwntools/pull/2437
 
 ## 4.13.0 (`beta`)
 
