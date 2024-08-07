@@ -61,6 +61,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.hashes import sha1sumhex
 from pwnlib.util.packing import _encode
+from pwnlib.version import __version__
 
 log = getLogger(__name__)
 
@@ -785,7 +786,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             os.makedirs(cache_dir)
 
         # Include the context in the hash in addition to the shellcode
-        hash_params = '{}_{}_{}'.format(vma, extract, shared)
+        hash_params = '{}_{}_{}_{}'.format(vma, extract, shared, __version__)
         fingerprint_params = _encode(code) + _encode(hash_params) + _encode(' '.join(assembler)) + _encode(' '.join(linker)) + _encode(' '.join(objcopy))
         asm_hash = sha1sumhex(fingerprint_params)
         cache_file = os.path.join(cache_dir, asm_hash)
