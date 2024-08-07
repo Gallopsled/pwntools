@@ -1099,6 +1099,24 @@ def js_unescape(s, **kwargs):
     return b''.join(res)
 
 def tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))):
+    r"""tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))) -> bytes
+
+    Escape data for terminal output. This is useful when sending data to a
+    terminal that may interpret certain bytes as control characters.
+
+    Check ``stty --all`` for the current settings on your terminal.
+
+    Arguments:
+        s (bytes): The data to escape
+        lnext (bytes): The byte to prepend to escape the next character. Defaults to ^V.
+        dangerous (bytes): The bytes to escape
+
+    Returns:
+        The escaped data.
+
+    >>> tty_escape(b'abc\x04d\x18e')
+    b'abc\x16\x04d\x16\x18e'
+    """
     s = s.replace(lnext, lnext * 2)
     for b in bytearray(dangerous):
         if b in lnext: continue
