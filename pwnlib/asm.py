@@ -460,35 +460,21 @@ def cpp(shellcode):
         >>> cpp("SYS_setresuid", os = "freebsd")
         '311\n'
     """
-    code = _include_header() + shellcode
     if platform.system() == 'Windows':
-        # Windows doesn't have /dev/stdin
         cpp = which_binutils('cpp')
-        temp_file = tempfile.NamedTemporaryFile('w', delete=False)
-        temp_file.write(code)
-        temp_file.flush()
-        code = None
-        input_file = temp_file.name
     else:
         cpp = 'cpp'
-        input_file = '/dev/stdin'
-        temp_file = None
 
-    try:
-        cmd  = [
-            cpp,
-            '-C',
-            '-nostdinc',
-            '-undef',
-            '-P',
-            '-I' + _incdir,
-            input_file
-        ]
-        return _run(cmd, code).strip('\n').rstrip() + '\n'
-    finally:
-        if temp_file is not None:
-            temp_file.close()
-            os.unlink(temp_file.name)
+    code = _include_header() + shellcode
+    cmd  = [
+        cpp,
+        '-C',
+        '-nostdinc',
+        '-undef',
+        '-P',
+        '-I' + _incdir,
+    ]
+    return _run(cmd, code).strip('\n').rstrip() + '\n'
 
 
 @LocalContext
