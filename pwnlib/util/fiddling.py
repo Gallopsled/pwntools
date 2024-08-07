@@ -1114,12 +1114,12 @@ def tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))):
     Returns:
         The escaped data.
 
-    >>> tty_escape(b'abc\x04d\x18e')
-    b'abc\x16\x04d\x16\x18e'
+    >>> tty_escape(b'abc\x04d\x18e\x16f')
+    b'abc\x16\x04d\x16\x18e\x16\x16f'
     """
     s = s.replace(lnext, lnext * 2)
     for b in bytearray(dangerous):
+        b = bytes(bytearray([b]))
         if b in lnext: continue
-        b = bytearray([b])
         s = s.replace(b, lnext + b)
     return s
