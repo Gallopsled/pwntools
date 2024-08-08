@@ -206,6 +206,9 @@ def which_binutils(util, check_version=False):
     if platform.system() == 'Darwin':
         utils = ['g'+util, util]
 
+    if platform.system() == 'Windows':
+        utils = [util + '.exe']
+
     for arch in arches:
         for gutil in utils:
             # e.g. objdump
@@ -220,7 +223,7 @@ def which_binutils(util, check_version=False):
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
-                for dir in environ['PATH'].split(':'):
+                for dir in environ['PATH'].split(os.pathsep):
                     for res in sorted(glob(path.join(dir, pattern))):
                         if check_version:
                             ver = check_binutils_version(res)
@@ -457,15 +460,19 @@ def cpp(shellcode):
         >>> cpp("SYS_setresuid", os = "freebsd")
         '311\n'
     """
+    if platform.system() == 'Windows':
+        cpp = which_binutils('cpp')
+    else:
+        cpp = 'cpp'
+
     code = _include_header() + shellcode
     cmd  = [
-        'cpp',
+        cpp,
         '-C',
         '-nostdinc',
         '-undef',
         '-P',
         '-I' + _incdir,
-        '/dev/stdin'
     ]
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 
