@@ -72,6 +72,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
+- [#2436][2436] Add resolution_addr parameter to Ret2dlresolvePayload
 - [#2371][2371] Add functions for retrieving process mappings
 - [#2360][2360] Add offline parameter for `search_by_hash` series function
 - [#2356][2356] Add local libc database provider for libcdb
@@ -92,6 +93,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2435][2435] Speed up gdbserver handshake in gdb.debug()
 - [#2437][2437] Support asm/disasm on Windows
 
+[2436]: https://github.com/Gallopsled/pwntools/pull/2436
 [2371]: https://github.com/Gallopsled/pwntools/pull/2371
 [2360]: https://github.com/Gallopsled/pwntools/pull/2360
 [2356]: https://github.com/Gallopsled/pwntools/pull/2356
