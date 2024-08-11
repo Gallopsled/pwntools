@@ -144,7 +144,10 @@ class JumpTable(object):
     def __repr__(self):
         structure=[]
         for i in self.vars_:
-            structure.append(" %s: %#x" % (i, getattr(self, i)))
+            if isinstance(e, bytes):
+                structure.append(" %s: %s" % {i, e})
+            else:
+                structure.append(" %s: %#x" % (i, e))
         return "{"+ "\n".join(structure)+"}"
 
     def __len__(self):
