@@ -59,6 +59,9 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util.hashes import sha1sumhex
+from pwnlib.util.packing import _encode
+from pwnlib.version import __version__
 
 log = getLogger(__name__)
 
@@ -758,8 +761,21 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         b'0@*\x00'
         >>> asm("la %r0, 42", arch = 's390', bits=64)
         b'A\x00\x00*'
+
+        The output is cached:
+
+        >>> start = time.time()
+        >>> asm("lea rax, [rip+0]", arch = 'amd64')
+        b'H\x8d\x05\x00\x00\x00\x00'
+        >>> uncached_time = time.time() - start
+        >>> start = time.time()
+        >>> asm("lea rax, [rip+0]", arch = 'amd64')
+        b'H\x8d\x05\x00\x00\x00\x00'
+        >>> cached_time = time.time() - start
+        >>> uncached_time > cached_time
+        True
     """
-    result = ''
+    result = b''
 
     assembler = _assembler()
     linker    = _linker()
@@ -769,6 +785,30 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
     code      += cpp(shellcode)
 
     log.debug('Assembling\n%s' % code)
+
+    cache_file = None
+    if context.cache_dir:
+        cache_dir = os.path.join(context.cache_dir, 'asm-cache')
+        if not os.path.isdir(cache_dir):
+            os.makedirs(cache_dir)
+
+        # Include the context in the hash in addition to the shellcode
+        hash_params = '{}_{}_{}_{}'.format(vma, extract, shared, __version__)
+        fingerprint_params = _encode(code) + _encode(hash_params) + _encode(' '.join(assembler)) + _encode(' '.join(linker)) + _encode(' '.join(objcopy))
+        asm_hash = sha1sumhex(fingerprint_params)
+        cache_file = os.path.join(cache_dir, asm_hash)
+        if os.path.exists(cache_file):
+            log.debug('Using cached assembly output from %r', cache_file)
+            if extract:
+                with open(cache_file, 'rb') as f:
+                    return f.read()
+
+            # Create a temporary copy of the cached file to avoid modification.
+            tmpdir = tempfile.mkdtemp(prefix = 'pwn-asm-')
+            atexit.register(shutil.rmtree, tmpdir)
+            step3 = os.path.join(tmpdir, 'step3')
+            shutil.copy(cache_file, step3)
+            return step3
 
     tmpdir    = tempfile.mkdtemp(prefix = 'pwn-asm-')
     step1     = path.join(tmpdir, 'step1')
@@ -817,6 +857,8 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             shutil.copy(step2, step3)
 
         if not extract:
+            if cache_file is not None:
+                shutil.copy(step3, cache_file)
             return step3
 
         _run(objcopy + [step3, step4])
@@ -829,6 +871,10 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         log.exception("An error occurred while assembling:\n%s" % lines)
     else:
         atexit.register(lambda: shutil.rmtree(tmpdir))
+
+    if cache_file is not None and result != b'':
+        with open(cache_file, 'wb') as f:
+            f.write(result)
 
     return result
 
