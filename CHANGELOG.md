@@ -72,26 +72,26 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.0 (`dev`)
 
-- [#2436][2436] Add resolution_addr parameter to Ret2dlresolvePayload
-- [#2371][2371] Add functions for retrieving process mappings
-- [#2360][2360] Add offline parameter for `search_by_hash` series function
 - [#2356][2356] Add local libc database provider for libcdb
+- [#2360][2360] Add offline parameter for `search_by_hash` series function
+- [#2388][2388] libcdb: add `offline_only` to `search_by_symbol_offsets`
 - [#2374][2374] libcdb.unstrip_libc: debug symbols are fetched only if not present
 - [#2327][2327] Add basic support to debug processes on Windows
-- [#2322][2322] Add basic RISCV64 shellcraft support
+- [#2437][2437] Support asm/disasm on Windows
 - [#2330][2330] Change `context.newline` when setting `context.os` to `"windows"`
+- [#2322][2322] Add basic RISCV64 shellcraft support
+- [#2376][2376] Return buffered data on first EOF in tube.readline()
+- [#2371][2371] Add functions for retrieving process mappings
+- [#2398][2398] Add support for generating multiple shellcodes at a time in shellcraft
 - [#2389][2389] Fix passing bytes to `context.log_file` and `crc.BitPolynom`
 - [#2391][2391] Fix error message when passing invalid kwargs to `xor`
-- [#2376][2376] Return buffered data on first EOF in tube.readline()
 - [#2387][2387] Convert apport_corefile() output from bytes-like object to string
-- [#2388][2388] libcdb: add `offline_only` to `search_by_symbol_offsets`
-- [#2398][2398] Add support for generating multiple shellcodes at a time in shellcraft
 - [#2415][2415] Add shellcraft template for IPv6 socket
 - [#2405][2405] Add "none" ssh authentication method
 - [#2427][2427] Document behaviour of remote()'s sni argument as string.
 - [#2382][2382] added optional port, gdb_args and gdbserver_args parameters to gdb.debug()
 - [#2435][2435] Speed up gdbserver handshake in gdb.debug()
-- [#2437][2437] Support asm/disasm on Windows
+- [#2436][2436] Add resolution_addr parameter to Ret2dlresolvePayload
 
 [2436]: https://github.com/Gallopsled/pwntools/pull/2436
 [2371]: https://github.com/Gallopsled/pwntools/pull/2371
