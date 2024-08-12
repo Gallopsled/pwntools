@@ -42,6 +42,12 @@ repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
     $ wget https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
     $ brew install ./binutils-$ARCH.rb
 
+Windows
+^^^^^^^^^^^^^^^^
+
+Windows support is experimental. You can try installing a prebuilt version of binutils
+for your desired architecture from the `GNU Toolchains <https://gnutoolchains.com/>`__ project.
+
 Alternate OSes
 ^^^^^^^^^^^^^^^^
 

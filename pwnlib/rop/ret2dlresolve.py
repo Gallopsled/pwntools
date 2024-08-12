@@ -219,11 +219,24 @@ class Ret2dlresolvePayload(object):
         elf (ELF): Binary to search
         symbol (str): Function to search for
         args (list): List of arguments to pass to the function
+        data_addr (int|None): The address where the payload will 
+            be written to. If not provided, a suitable address will
+            be chosen automatically (recommended).
+        resolution_addr (int|None): The address where the location
+            of the resolved symbol will be written to. If not provided
+            will be equal to data_addr.
 
     Returns:
-        A ``Ret2dlresolvePayload`` object which can be passed to ``rop.ret2dlresolve``
+        A ``Ret2dlresolvePayload`` object. It can be passed to ``rop.ret2dlresolve``
+        for automatic exploitation.
+
+        If that is not suitable the object generates useful values (.reloc_index 
+        and .payload) which can be used to aid manual exploitation. In this case
+        it is recommended to set .resolution_addr to the GOT address of an easily
+        callable function (do not set it when passing the object to 
+        rop.ret2dlresolve).
     """
-    def __init__(self, elf, symbol, args, data_addr=None):
+    def __init__(self, elf, symbol, args, data_addr=None, resolution_addr=None):
         self.elf = elf
         self.elf_load_address_fixup = self.elf.address - self.elf.load_addr
         self.strtab = elf.dynamic_value_by_tag("DT_STRTAB") + self.elf_load_address_fixup
@@ -236,6 +249,7 @@ class Ret2dlresolvePayload(object):
         self.unreliable = False
 
         self.data_addr = data_addr if data_addr is not None else self._get_recommended_address()
+        self.resolution_addr = resolution_addr if resolution_addr is not None else self.data_addr
 
         # Will be set when built
         self.reloc_index = -1
@@ -302,11 +316,11 @@ class Ret2dlresolvePayload(object):
         # ElfRel
         rel_addr = self.jmprel + self.reloc_index * ElfRel.size
         rel_type = 7
-        rel = ElfRel(r_offset=self.data_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
+        rel = ElfRel(r_offset=self.resolution_addr, r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
         
         # When a program's PIE is enabled, r_offset should be the relative address, not the absolute address
         if self.elf.pie:
-            rel = ElfRel(r_offset=self.data_addr - (self.elf.load_addr + self.elf_load_address_fixup), r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
+            rel = ElfRel(r_offset=self.resolution_addr - (self.elf.load_addr + self.elf_load_address_fixup), r_info=(index<<ELF_R_SYM_SHIFT)+rel_type)
         
         self.payload = fit({
             symbol_name_addr - self.data_addr: symbol_name,
@@ -325,6 +339,7 @@ class Ret2dlresolvePayload(object):
         log.debug("Symbol name addr: %s", hex(symbol_name_addr))
         log.debug("Version index addr: %s", hex(ver_addr))
         log.debug("Data addr: %s", hex(self.data_addr))
+        log.debug("Resolution addr: %s", hex(self.resolution_addr))
         if not self.elf.memory[ver_addr]:
             log.warn("Ret2dlresolve is likely impossible in this ELF "
                      "(too big gap between text and writable sections).\n"
