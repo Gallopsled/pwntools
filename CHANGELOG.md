@@ -9,10 +9,10 @@ The table below shows which release corresponds to each branch, and what date th
 
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
-| [4.14.0](#4140-dev)  | `dev`   |
-| [4.13.0](#4130-beta)  | `beta`    |
-| [4.12.1](#4121)  |          |
-| [4.12.0](#4120-stable)  | `stable`   | Feb 22, 2024
+| [4.15.0](#4150-dev)  | `dev`    |
+| [4.14.0](#4140-beta)  | `beta`   |
+| [4.13.0](#4130-stable)  | `stable`    | Aug 12, 2024
+| [4.12.0](#4120)  |          | Feb 22, 2024
 | [4.11.1](#4111)  |          | Nov 14, 2023
 | [4.11.0](#4110)  |          | Sep 15, 2023
 | [4.10.0](#4100)  |          | May 21, 2023
@@ -70,7 +70,11 @@ The table below shows which release corresponds to each branch, and what date th
 | [3.0.0](#300)    |          | Aug 20, 2016
 | [2.2.0](#220)    |          | Jan 5, 2015
 
-## 4.14.0 (`dev`)
+## 4.15.0 (`dev`)
+
+
+
+## 4.14.0 (`beta`)
 
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2360][2360] Add offline parameter for `search_by_hash` series function
@@ -114,7 +118,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2435]: https://github.com/Gallopsled/pwntools/pull/2435
 [2437]: https://github.com/Gallopsled/pwntools/pull/2437
 
-## 4.13.0 (`beta`)
+## 4.13.0 (`stable`)
 
 - [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 - [#2277][2277] elf: Resolve more relocations into GOT entries
@@ -144,6 +148,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2268][2268] Add a `flatten` argument to `ssh.libs`
 - [#2347][2347] Fix/workaround Unicorn Engine 1GB limit that calls exit()
 - [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
+- [#2373][2373] Fix displaying bright color variation in terminal output
+- [#2378][2378] Don't go though a shell in `gdb.debug`
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -170,16 +176,10 @@ The table below shows which release corresponds to each branch, and what date th
 [2268]: https://github.com/Gallopsled/pwntools/pull/2268
 [2347]: https://github.com/Gallopsled/pwntools/pull/2347
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
-
-## 4.12.1
-
-- [#2373][2373] Fix displaying bright color variation in terminal output
-- [#2378][2378] Don't go though a shell in `gdb.debug`
-
 [2373]: https://github.com/Gallopsled/pwntools/pull/2373
 [2378]: https://github.com/Gallopsled/pwntools/pull/2378
 
-## 4.12.0 (`stable`)
+## 4.12.0
 
 - [#2202][2202] Fix `remote` and `listen` in sagemath
 - [#2117][2117] Add -p (--prefix) and -s (--separator) arguments to `hex` command
