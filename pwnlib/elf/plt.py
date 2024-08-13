@@ -2,6 +2,7 @@
 """
 from __future__ import division
 import logging
+import sys
 
 from pwnlib.args import args
 from pwnlib.log import getLogger
@@ -61,6 +62,9 @@ def __ensure_memory_to_run_unicorn():
 
     This is a bug in Unicorn Engine, see: https://github.com/unicorn-engine/unicorn/issues/1766
     """
+    # Can only mmap files on Windows, would need to use VirtualAlloc.
+    if sys.platform == "win32":
+        return
     try:
         from mmap import mmap, MAP_ANON, MAP_PRIVATE, PROT_EXEC, PROT_READ, PROT_WRITE
 
