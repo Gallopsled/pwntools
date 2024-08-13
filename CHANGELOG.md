@@ -73,8 +73,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.15.0 (`dev`)
 
 - [#2358][2358] Cache output of `asm()`
+- [#2444][2444] Add `ELF.close()` to release resources
 
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
+[2444]: https://github.com/Gallopsled/pwntools/pull/2444
 
 ## 4.14.0 (`beta`)
 
