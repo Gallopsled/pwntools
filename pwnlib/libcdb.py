@@ -42,7 +42,7 @@ def _turbofast_extract_build_id(path):
      ... +--------+
     """
     data = read(path, 0x1000)
-    # search NT_GNU_BUILD_ID and b"GNU\x00"
+    # search NT_GNU_BUILD_ID and b"GNU\x00" (type+name)
     idx = data.find(bytes.fromhex("03000000 474e5500"))
     if idx == -1:
         return enhex(b'')
@@ -224,14 +224,14 @@ PROVIDERS = {
 }
 
 def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_only=False):
-    """search_by_hash(str, str, bool, bool) -> bytes
+    """search_by_hash(str, str, bool, bool) -> str
     Arguments:
         search_target(str):
-            The identifier used for searching the libc. This could be a hex encoded ID (`hex_encoded_id`) or
-            a library name (`libs_id`). Depending on `search_type`, this can represent different types of 
-            encoded values or names.
+            Use for searching the libc. This could be a hex encoded ID (`hex_encoded_id`) or a library
+            name (`libs_id`). Depending on `search_type`, this can represent different types of encoded 
+            values or names.
         search_type(str):
-            The type of the search to be performed, it shoule be one of the keys in the `TYPES` dictionary.
+            The type of the search to be performed, it should be one of the keys in the `TYPES` dictionary.
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
