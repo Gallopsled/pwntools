@@ -24,7 +24,7 @@ from pwnlib.util.web import wget
 log = getLogger(__name__)
 
 TYPES = {
-    'id': None,
+    'libs_id': None,
     'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
     'sha1': sha1filehex,
     'sha256': sha256filehex,
@@ -44,7 +44,7 @@ NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
 def provider_libcdb(hex_encoded_id, search_type):
-    if search_type == 'id':
+    if search_type == 'libs_id':
         return None
 
     # Deferred import because it's slow
@@ -117,7 +117,7 @@ def provider_libc_rip(hex_encoded_id, search_type):
 
 # Check if the local system libc matches the requested hash.
 def provider_local_system(hex_encoded_id, search_type):
-    if search_type == 'id':
+    if search_type == 'libs_id':
         return None
     shell_path = os.environ.get('SHELL', None) or '/bin/sh'
     if not os.path.exists(shell_path):
@@ -140,7 +140,8 @@ def provider_local_database(hex_encoded_id, search_type):
     if not localdb.is_dir():
         return None
 
-    if search_type == "id":
+    # Handle the specific search type 'libs_id'
+    if search_type == 'libs_id':
         libc_list = list(localdb.rglob("%s.so" % hex_encoded_id))
         if len(libc_list) == 0:
             return None
@@ -593,7 +594,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, search_type="id"):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, search_type='build_id'):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -694,7 +695,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     selected_libc = _handle_multiple_matching_libcs(matching_list)
     return search_by_hash(selected_libc[match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
 
-def search_by_id(libs_id, unstrip=True, offline_only=False):
+def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
     """
     Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
 
@@ -718,7 +719,7 @@ def search_by_id(libs_id, unstrip=True, offline_only=False):
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
-    return search_by_hash(libs_id, 'id', unstrip, offline_only)
+    return search_by_hash(libs_id, 'libs_id', unstrip, offline_only)
 
 def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
     """
@@ -863,11 +864,15 @@ def _pack_libs_info(path, libs_id, libs_url, syms):
     info["download_url"] = ""
 
     for search_type, hash_func in TYPES.items():
-        if search_type == "id":
+        # pass libs_id
+        if search_type == 'libs_id':
             continue
 
         # replace 'build_id' to 'buildid'
-        info[search_type.replace("_", "")] = hash_func(path)
+        if search_type == 'build_id':
+            search_type = search_type.replace("_", "")
+
+        info[search_type] = hash_func(path)
 
     default_symbol_list = [
         "__libc_start_main_ret", "dup2", "printf", "puts", "read", "system", "str_bin_sh"
