@@ -23,7 +23,7 @@ from pwnlib.util.web import wget
 
 log = getLogger(__name__)
 
-HASHES = {
+TYPES = {
     'id': None,
     'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
     'sha1': sha1filehex,
@@ -43,8 +43,8 @@ NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
 # https://gitlab.com/libcdb/libcdb wasn't updated after 2019,
 # but still is a massive database of older libc binaries.
-def provider_libcdb(hex_encoded_id, hash_type):
-    if hash_type == 'id':
+def provider_libcdb(hex_encoded_id, search_type):
+    if search_type == 'id':
         return None
 
     # Deferred import because it's slow
@@ -52,7 +52,7 @@ def provider_libcdb(hex_encoded_id, hash_type):
     from six.moves import urllib
 
     # Build the URL using the requested hash type
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % hash_type
+    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % search_type
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -62,7 +62,7 @@ def provider_libcdb(hex_encoded_id, hash_type):
             data = wget(url, timeout=20)
 
             if not data:
-                log.warn_once("Could not fetch libc for %s %s from libcdb", hash_type, hex_encoded_id)
+                log.warn_once("Could not fetch libc for %s %s from libcdb", search_type, hex_encoded_id)
                 break
             
             # GitLab serves up symlinks with
@@ -70,7 +70,7 @@ def provider_libcdb(hex_encoded_id, hash_type):
                 url = os.path.dirname(url) + '/'
                 url = urllib.parse.urljoin(url.encode('utf-8'), data)
     except requests.RequestException as e:
-        log.warn_once("Failed to fetch libc for %s %s from libcdb: %s", hash_type, hex_encoded_id, e)
+        log.warn_once("Failed to fetch libc for %s %s from libcdb: %s", search_type, hex_encoded_id, e)
     return data
 
 def query_libc_rip(params):
@@ -90,16 +90,16 @@ def query_libc_rip(params):
         return None
 
 # https://libc.rip/
-def provider_libc_rip(hex_encoded_id, hash_type):
+def provider_libc_rip(hex_encoded_id, search_type):
     # Build the request for the hash type
     # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
-    if hash_type == 'build_id':
-        hash_type = 'buildid'
-    params = {hash_type: hex_encoded_id}
+    if search_type == 'build_id':
+        search_type = 'buildid'
+    params = {search_type: hex_encoded_id}
 
     libc_match = query_libc_rip(params)
     if not libc_match:
-        log.warn_once("Could not find libc info for %s %s on libc.rip", hash_type, hex_encoded_id)
+        log.warn_once("Could not find libc info for %s %s on libc.rip", search_type, hex_encoded_id)
         return None
 
     if len(libc_match) > 1:
@@ -111,13 +111,13 @@ def provider_libc_rip(hex_encoded_id, hash_type):
     data = wget(url, timeout=20)
 
     if not data:
-        log.warn_once("Could not fetch libc binary for %s %s from libc.rip", hash_type, hex_encoded_id)
+        log.warn_once("Could not fetch libc binary for %s %s from libc.rip", search_type, hex_encoded_id)
         return None
     return data
 
 # Check if the local system libc matches the requested hash.
-def provider_local_system(hex_encoded_id, hash_type):
-    if hash_type == 'id':
+def provider_local_system(hex_encoded_id, search_type):
+    if search_type == 'id':
         return None
     shell_path = os.environ.get('SHELL', None) or '/bin/sh'
     if not os.path.exists(shell_path):
@@ -127,12 +127,12 @@ def provider_local_system(hex_encoded_id, hash_type):
     if not local_libc:
         log.debug('Cannot lookup libc from shell %r. Skipping local system libc matching.', shell_path)
         return None
-    if HASHES[hash_type](local_libc.path) == hex_encoded_id:
+    if TYPES[search_type](local_libc.path) == hex_encoded_id:
         return local_libc.data
     return None
 
 # Offline search https://github.com/niklasb/libc-database for hash type
-def provider_local_database(hex_encoded_id, hash_type):
+def provider_local_database(hex_encoded_id, search_type):
     if not context.local_libcdb:
         return None
 
@@ -140,15 +140,15 @@ def provider_local_database(hex_encoded_id, hash_type):
     if not localdb.is_dir():
         return None
 
-    if hash_type == "id":
+    if search_type == "id":
         libc_list = list(localdb.rglob("%s.so" % hex_encoded_id))
         if len(libc_list) == 0:
             return None
         return read(libc_list[0])
 
-    log.debug("Searching local libc database, %s: %s", hash_type, hex_encoded_id)
+    log.debug("Searching local libc database, %s: %s", search_type, hex_encoded_id)
     for libc_path in localdb.rglob("*.so"):
-        if hex_encoded_id == HASHES[hash_type](libc_path):
+        if hex_encoded_id == TYPES[search_type](libc_path):
             return read(libc_path)
 
     return None
@@ -195,11 +195,11 @@ PROVIDERS = {
     "online": [provider_libcdb, provider_libc_rip]
 }
 
-def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline_only=False):
-    assert hash_type in HASHES, hash_type
+def search_by_hash(hex_encoded_id, search_type='build_id', unstrip=True, offline_only=False):
+    assert search_type in TYPES, search_type
 
     # Ensure that the libcdb cache directory exists
-    cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, hash_type)
+    cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, search_type)
     if cache_valid:
         return cache
     
@@ -213,12 +213,12 @@ def search_by_hash(hex_encoded_id, hash_type='build_id', unstrip=True, offline_o
 
     # Run through all available libc database providers to see if we have a match.
     for provider in providers:
-        data = provider(hex_encoded_id, hash_type)
+        data = provider(hex_encoded_id, search_type)
         if data and data.startswith(b'\x7FELF'):
             break
 
     if not data:
-        log.warn_once("Could not find libc for %s %s anywhere", hash_type, hex_encoded_id)
+        log.warn_once("Could not find libc for %s %s anywhere", search_type, hex_encoded_id)
 
     # Save whatever we got to the cache
     write(cache, data or b'')
@@ -267,7 +267,7 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
 
     return cache
 
-def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
+def _check_elf_cache(cache_type, hex_encoded_id, search_type):
     """
     Check if there already is an ELF file for this hash in the cache.
 
@@ -280,7 +280,7 @@ def _check_elf_cache(cache_type, hex_encoded_id, hash_type):
     True
     """
     # Ensure that the cache directory exists
-    cache_dir = os.path.join(context.cache_dir, cache_type, hash_type)
+    cache_dir = os.path.join(context.cache_dir, cache_type, search_type)
 
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
@@ -593,7 +593,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, hash_type="id"):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, search_type="id"):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -618,7 +618,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         offline_only(bool):
             When pass `offline_only=True`, restricts search mode to offline sources only,
             disable online lookup. Defaults to `False`, and enable both offline and online providers.
-        hash_type(str):
+        search_type(str):
             An option to select searched hash.
 
     Returns:
@@ -638,7 +638,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         >>> for buildid in matched_libcs: # doctest +SKIP
         ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
     """
-    assert hash_type in HASHES, hash_type
+    assert search_type in TYPES, search_type
 
     for symbol, address in symbols.items():
         if isinstance(address, int):
@@ -676,23 +676,23 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
         return [libc['buildid'] for libc in matching_list]
 
     # replace 'build_id' to 'buildid'
-    match_type = hash_type.replace("_", "")
+    match_type = search_type.replace("_", "")
 
     # If there's only one match, return it directly
     if len(matching_list) == 1:
-        return search_by_hash(matching_list[0][match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
+        return search_by_hash(matching_list[0][match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_list):
-            return search_by_hash(matching_list[select_index - 1][match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
+            return search_by_hash(matching_list[select_index - 1][match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
             return None
 
     # Handle multiple matches interactively if no index is specified
     selected_libc = _handle_multiple_matching_libcs(matching_list)
-    return search_by_hash(selected_libc[match_type], hash_type=hash_type, unstrip=unstrip, offline_only=offline_only)
+    return search_by_hash(selected_libc[match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
 
 def search_by_id(libs_id, unstrip=True, offline_only=False):
     """
@@ -862,12 +862,12 @@ def _pack_libs_info(path, libs_id, libs_url, syms):
     info["libs_url"] = libs_url
     info["download_url"] = ""
 
-    for hash_type, hash_func in HASHES.items():
-        if hash_type == "id":
+    for search_type, hash_func in TYPES.items():
+        if search_type == "id":
             continue
 
         # replace 'build_id' to 'buildid'
-        info[hash_type.replace("_", "")] = hash_func(path)
+        info[search_type.replace("_", "")] = hash_func(path)
 
     default_symbol_list = [
         "__libc_start_main_ret", "dup2", "printf", "puts", "read", "system", "str_bin_sh"
