@@ -8,6 +8,7 @@ import os
 import time
 import six
 import tempfile
+import struct
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -23,9 +24,35 @@ from pwnlib.util.web import wget
 
 log = getLogger(__name__)
 
+
+def _turbofast_extract_build_id(path):
+    """
+    Elf_External_Note:
+
+    0x00 +--------+
+         | namesz | <- Size of entry's owner string
+    0x04 +--------+
+         | descsz | <- Size of the note descriptor
+    0x08 +--------+
+         |  type  | <- Interpretation of the descriptor
+    0x0c +--------+
+         |  name  | <- Start of the name+desc data
+     ... +--------
+         |  desc  |
+     ... +--------+
+    """
+    data = read(path, 0x1000)
+    # search NT_GNU_BUILD_ID and b"GNU\x00"
+    idx = data.find(bytes.fromhex("03000000 474e5500"))
+    if idx == -1:
+        return enhex(b'')
+    descsz, = struct.unpack("<L", data[idx-4: idx])
+    return enhex(data[idx+8: idx+8+descsz])
+
+
 TYPES = {
     'libs_id': None,
-    'build_id': lambda path: enhex(ELF(path, checksec=False).buildid or b''),
+    'build_id': _turbofast_extract_build_id,
     'sha1': sha1filehex,
     'sha256': sha256filehex,
     'md5': md5filehex,
@@ -200,7 +227,7 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
     """search_by_hash(str, str, bool, bool) -> bytes
     Arguments:
         search_target(str):
-            The identifier used for searching the libc. This could be a hex encoded ID (`hex_encoded_id`), 
+            The identifier used for searching the libc. This could be a hex encoded ID (`hex_encoded_id`) or
             a library name (`libs_id`). Depending on `search_type`, this can represent different types of 
             encoded values or names.
         search_type(str):
