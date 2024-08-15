@@ -90,16 +90,16 @@ def query_libc_rip(params):
         return None
 
 # https://libc.rip/
-def provider_libc_rip(hex_encoded_id, search_type):
+def provider_libc_rip(search_target, search_type):
     # Build the request for the hash type
     # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
     if search_type == 'build_id':
         search_type = 'buildid'
-    params = {search_type: hex_encoded_id}
+    params = {search_type: search_target}
 
     libc_match = query_libc_rip(params)
     if not libc_match:
-        log.warn_once("Could not find libc info for %s %s on libc.rip", search_type, hex_encoded_id)
+        log.warn_once("Could not find libc info for %s %s on libc.rip", search_type, search_target)
         return None
 
     if len(libc_match) > 1:
@@ -111,7 +111,7 @@ def provider_libc_rip(hex_encoded_id, search_type):
     data = wget(url, timeout=20)
 
     if not data:
-        log.warn_once("Could not fetch libc binary for %s %s from libc.rip", search_type, hex_encoded_id)
+        log.warn_once("Could not fetch libc binary for %s %s from libc.rip", search_type, search_target)
         return None
     return data
 
@@ -132,7 +132,7 @@ def provider_local_system(hex_encoded_id, search_type):
     return None
 
 # Offline search https://github.com/niklasb/libc-database for hash type
-def provider_local_database(hex_encoded_id, search_type):
+def provider_local_database(search_target, search_type):
     if not context.local_libcdb:
         return None
 
@@ -142,14 +142,14 @@ def provider_local_database(hex_encoded_id, search_type):
 
     # Handle the specific search type 'libs_id'
     if search_type == 'libs_id':
-        libc_list = list(localdb.rglob("%s.so" % hex_encoded_id))
+        libc_list = list(localdb.rglob("%s.so" % search_target))
         if len(libc_list) == 0:
             return None
         return read(libc_list[0])
 
-    log.debug("Searching local libc database, %s: %s", search_type, hex_encoded_id)
+    log.debug("Searching local libc database, %s: %s", search_type, search_target)
     for libc_path in localdb.rglob("*.so"):
-        if hex_encoded_id == TYPES[search_type](libc_path):
+        if search_target == TYPES[search_type](libc_path):
             return read(libc_path)
 
     return None
@@ -196,11 +196,28 @@ PROVIDERS = {
     "online": [provider_libcdb, provider_libc_rip]
 }
 
-def search_by_hash(hex_encoded_id, search_type='build_id', unstrip=True, offline_only=False):
+def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_only=False):
+    """search_by_hash(str, str, bool, bool) -> bytes
+    Arguments:
+        search_target(str):
+            The identifier used for searching the libc. This could be a hex encoded ID (`hex_encoded_id`), 
+            a library name (`libs_id`). Depending on `search_type`, this can represent different types of 
+            encoded values or names.
+        search_type(str):
+            The type of the search to be performed, it shoule be one of the keys in the `TYPES` dictionary.
+        unstrip(bool):
+            Try to fetch debug info for the libc and apply it to the downloaded file.
+        offline_only(bool):
+            If True, restricts the search to offline providers only (local database). If False, it will also
+            search online providers. Default is False.
+
+    Returns:
+        The path to the cached directory containing the downloaded libraries.
+    """
     assert search_type in TYPES, search_type
 
     # Ensure that the libcdb cache directory exists
-    cache, cache_valid = _check_elf_cache('libcdb', hex_encoded_id, search_type)
+    cache, cache_valid = _check_elf_cache('libcdb', search_target, search_type)
     if cache_valid:
         return cache
     
@@ -214,12 +231,12 @@ def search_by_hash(hex_encoded_id, search_type='build_id', unstrip=True, offline
 
     # Run through all available libc database providers to see if we have a match.
     for provider in providers:
-        data = provider(hex_encoded_id, search_type)
+        data = provider(search_target, search_type)
         if data and data.startswith(b'\x7FELF'):
             break
 
     if not data:
-        log.warn_once("Could not find libc for %s %s anywhere", search_type, hex_encoded_id)
+        log.warn_once("Could not find libc for %s %s anywhere", search_type, search_target)
 
     # Save whatever we got to the cache
     write(cache, data or b'')
@@ -268,7 +285,7 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
 
     return cache
 
-def _check_elf_cache(cache_type, hex_encoded_id, search_type):
+def _check_elf_cache(cache_type, search_target, search_type):
     """
     Check if there already is an ELF file for this hash in the cache.
 
@@ -288,7 +305,7 @@ def _check_elf_cache(cache_type, hex_encoded_id, search_type):
 
     # If we already downloaded the file, and it looks even passingly like
     # a valid ELF file, return it.
-    cache = os.path.join(cache_dir, hex_encoded_id)
+    cache = os.path.join(cache_dir, search_target)
 
     if not os.path.exists(cache):
         return cache, False
@@ -300,7 +317,7 @@ def _check_elf_cache(cache_type, hex_encoded_id, search_type):
         # Retry failed lookups after some time
         if time.time() > os.path.getmtime(cache) + NEGATIVE_CACHE_EXPIRY:
             return cache, False
-        log.info_once("Skipping invalid cached ELF %s", hex_encoded_id)
+        log.info_once("Skipping invalid cached ELF %s", search_target)
         return None, False
 
     log.info_once("Using cached data from %r", cache)
