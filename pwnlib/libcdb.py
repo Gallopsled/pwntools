@@ -57,6 +57,13 @@ TYPES = {
     'sha256': sha256filehex,
     'md5': md5filehex,
 }
+
+# mapping for search result
+MAP_TYPES = {
+    'libs_id': 'id',
+    'build_id': 'buildid'
+}
+
 DEBUGINFOD_SERVERS = [
     'https://debuginfod.elfutils.org/',
 ]
@@ -120,8 +127,9 @@ def query_libc_rip(params):
 def provider_libc_rip(search_target, search_type):
     # Build the request for the hash type
     # https://github.com/niklasb/libc-database/blob/master/searchengine/api.yml
-    if search_type == 'build_id':
-        search_type = 'buildid'
+    if search_type in MAP_TYPES.keys():
+        search_type = MAP_TYPES[search_type]
+
     params = {search_type: search_target}
 
     libc_match = query_libc_rip(params)
@@ -720,8 +728,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     if return_as_list:
         return [libc['buildid'] for libc in matching_list]
 
-    # replace 'build_id' to 'buildid'
-    match_type = search_type.replace("_", "")
+    if search_type in MAP_TYPES.keys():
+        match_type = MAP_TYPES[search_type]
 
     # If there's only one match, return it directly
     if len(matching_list) == 1:
@@ -912,9 +920,9 @@ def _pack_libs_info(path, libs_id, libs_url, syms):
         if search_type == 'libs_id':
             continue
 
-        # replace 'build_id' to 'buildid'
-        if search_type == 'build_id':
-            search_type = search_type.replace("_", "")
+        # replace search_type
+        if search_type in MAP_TYPES.keys():
+            search_type = MAP_TYPES[search_type]
 
         info[search_type] = hash_func(path)
 
