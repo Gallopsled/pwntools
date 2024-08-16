@@ -58,7 +58,7 @@ TYPES = {
     'md5': md5filehex,
 }
 
-# mapping for search result
+# mapping for search result (same as libc.rip)
 MAP_TYPES = {
     'libs_id': 'id',
     'build_id': 'buildid'
