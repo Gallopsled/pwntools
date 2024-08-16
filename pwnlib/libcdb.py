@@ -45,7 +45,7 @@ def _turbofast_extract_build_id(path):
     # search NT_GNU_BUILD_ID and b"GNU\x00" (type+name)
     idx = data.find(bytes.fromhex("03000000 474e5500"))
     if idx == -1:
-        return enhex(b'')
+        return enhex(ELF(path, checksec=False).buildid or b'')
     descsz, = struct.unpack("<L", data[idx-4: idx])
     return enhex(data[idx+8: idx+8+descsz])
 
