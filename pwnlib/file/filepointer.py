@@ -178,7 +178,7 @@ class FileStructure(object):
         for i in self.vars_:
             e = getattr(self, i)
             if isinstance(e, bytes):
-                structure.append(" %s: %s" % {i, e})
+                structure.append(" %s: %s" % (i, e))
             else:
                 structure.append(" %s: %#x" % (i, e))
         return "{"+ "\n".join(structure)+"}"
