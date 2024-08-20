@@ -1210,7 +1210,7 @@ def overlap_structure(*structs):
     Parameters:
         structs: ``str``, ``bytes`` and ``list[int]`` are all acceptable,
             as long as the argument is "len-able", iterable and serving ints.
-            Note ``str``s will be used as ``bytes`` object.
+            Note ``str`` will be used as ``bytes`` object.
 
     Raises:
         ValueError: 2 non-zero values on the same index. Carry `msg` of

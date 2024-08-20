@@ -31,7 +31,7 @@ from pwnlib.encoders import *
 from pwnlib.exception import PwnlibException
 from pwnlib.gdb import attach, debug_assembly, debug_shellcode
 from pwnlib.filesystem import *
-from pwnlib.file import *
+from pwnlib.structs import *
 from pwnlib.flag import *
 from pwnlib.fmtstr import FmtStr, fmtstr_payload, fmtstr_split
 from pwnlib.log import getLogger
