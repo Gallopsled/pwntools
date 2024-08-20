@@ -1202,7 +1202,7 @@ del op, size, end, sign
 del name, routine, mod
 
 def overlap_structure(*structs):
-    """overlap_structure(*structs: tuple[bytes_like]) -> bytes
+    r"""overlap_structure(*structs: tuple[bytes_like]) -> bytes
 
     Unpacks bytes_like structures and overlap them up. Check the example
     below for more detail.
@@ -1210,6 +1210,7 @@ def overlap_structure(*structs):
     Parameters:
         structs: ``str``, ``bytes`` and ``list[int]`` are all acceptable,
             as long as the argument is "len-able", iterable and serving ints.
+            Note ``str``s will be used as ``bytes`` object.
 
     Raises:
         ValueError: 2 non-zero values on the same index. Carry `msg` of
@@ -1222,14 +1223,12 @@ def overlap_structure(*structs):
 
     Examples:
 
-        >>> x = bytes.fromhex('41 42 43 44')
-        >>> y = '\0\0\0\0\0\0\0\0\0xyz'
-        >>> z = [0, 0, 0, 0, 33, 34, 35, 36]
+        >>> x = p32(0x7ffffe30)
+        >>> y = [0, 0, 0, 0, 33, 34, 35, 36]
+        >>> overlap_structure(x, y)
+        b'0\xfe\xff\x7f!"#$'
+        >>> z = p32(0xbeef)
         >>> overlap_structure(x, y, z)
-        <stdin>:1: BytesWarning: Text is not bytes; assuming ASCII, no guarantees. See https://docs.pwntools.com/#bytes
-        b'ABCD!"#$\x00xyz'
-        >>> w = p32(0xbeef)
-        >>> overlap_structure(w, x, y, z)
         Traceback (most recent call last):
         ...
         ValueError: Conflict values at index 0, 1
@@ -1237,17 +1236,17 @@ def overlap_structure(*structs):
     if len(structs) == 1:
         return structs[0]
 
-    maxlen = max(len(e) for e in structs)
+    # convert str to bytes first to calc accurate length
+    itr = [_need_bytes(s) if isinstance(s, str) else s for s in structs]
+    maxlen = max(len(e) for e in itr)
     final = [0] * maxlen
-    errs = []
+    errs = set()
 
-    for s in structs:
-        if isinstance(s, str):
-            s = _need_bytes(s)
+    for s in itr:
         for i, e in enumerate(s):
             if e > 0:
                 if final[i]:
-                    errs.append(i)
+                    errs.add(i)
                 final[i] = e
 
     if errs:
