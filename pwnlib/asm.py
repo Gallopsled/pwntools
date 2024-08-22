@@ -247,8 +247,9 @@ def _assembler():
     B = '-%s' % context.bits
 
     assemblers = {
-        'i386'   : [gas, B],
-        'amd64'  : [gas, B],
+        # GAS accepts word size for x86 as long options
+        'i386'   : [gas, '-'+B],
+        'amd64'  : [gas, '-'+B],
 
         # Most architectures accept -EL or -EB
         'thumb'  : [gas, '-mthumb', E],
