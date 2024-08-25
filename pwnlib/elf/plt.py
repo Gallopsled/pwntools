@@ -2,7 +2,6 @@
 """
 from __future__ import division
 import logging
-import sys
 
 from pwnlib.args import args
 from pwnlib.log import getLogger
