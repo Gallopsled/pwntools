@@ -62,9 +62,6 @@ def __ensure_memory_to_run_unicorn():
 
     This is a bug in Unicorn Engine, see: https://github.com/unicorn-engine/unicorn/issues/1766
     """
-    # Can only mmap files on Windows, would need to use VirtualAlloc.
-    if sys.platform == "win32":
-        return
     try:
         from mmap import mmap, MAP_ANON, MAP_PRIVATE, PROT_EXEC, PROT_READ, PROT_WRITE
 
@@ -74,6 +71,9 @@ def __ensure_memory_to_run_unicorn():
         mm.close()
     except OSError:
         raise OSError("Cannot allocate 1GB memory to run Unicorn Engine")
+    except ImportError:
+        # Can only mmap files on Windows, would need to use VirtualAlloc.
+        pass
 
 
 def prepare_unicorn_and_context(elf, got, address, data):
