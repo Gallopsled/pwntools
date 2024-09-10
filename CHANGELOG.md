@@ -73,8 +73,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.15.0 (`dev`)
 
 - [#2358][2358] Cache output of `asm()`
+- [#2457][2457] Catch exception of non-ELF files in checksec.
 
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
+[2457]: https://github.com/Gallopsled/pwntools/pull/2457
 
 ## 4.14.0 (`beta`)
 
