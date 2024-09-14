@@ -74,9 +74,11 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#2358][2358] Cache output of `asm()`
 - [#2457][2457] Catch exception of non-ELF files in checksec.
+- [#2459][2459] GDB 8.3+ rpyc detection
 
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
 [2457]: https://github.com/Gallopsled/pwntools/pull/2457
+[2459]: https://github.com/Gallopsled/pwntools/pull/2459 
 
 ## 4.14.0 (`beta`)
 
