@@ -730,6 +730,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     if search_type in MAP_TYPES.keys():
         match_type = MAP_TYPES[search_type]
+    else:
+        match_type = search_type
 
     # If there's only one match, return it directly
     if len(matching_list) == 1:
