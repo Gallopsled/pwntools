@@ -123,9 +123,11 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2445][2445] Fix parsing the PLT on Windows
 - [#2466][2466] Fix PLT emulation with Unicorn 2.1.0
 - [#2466][2466] Switch to PyPi Simple API for update checks
+- [#2467][2467] Fix loading at all on Windows
 
 [2445]: https://github.com/Gallopsled/pwntools/pull/2445
 [2466]: https://github.com/Gallopsled/pwntools/pull/2466
+[2467]: https://github.com/Gallopsled/pwntools/pull/2467
 
 ## 4.13.0 (`stable`)
 
