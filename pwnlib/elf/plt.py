@@ -169,8 +169,8 @@ def emulate_plt_instructions_inner(uc, elf, got, pc, data):
         return False
 
     hooks = [
-        uc.hook_add(U.UC_HOOK_MEM_READ | U.UC_HOOK_MEM_READ_UNMAPPED,
-                    hook_mem, stopped_addr),
+        uc.hook_add(U.UC_HOOK_MEM_READ, hook_mem, stopped_addr),
+        uc.hook_add(U.UC_HOOK_MEM_READ_UNMAPPED, hook_mem, stopped_addr),
     ]
 
     # callback for tracing instructions
