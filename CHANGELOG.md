@@ -72,10 +72,12 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.15.0 (`dev`)
 
+- [#2471][2471] Properly close spawned kitty window
 - [#2358][2358] Cache output of `asm()`
 - [#2457][2457] Catch exception of non-ELF files in checksec.
 - [#2444][2444] Add `ELF.close()` to release resources
 
+[2471]: https://github.com/Gallopsled/pwntools/pull/2471
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
 [2457]: https://github.com/Gallopsled/pwntools/pull/2457
 [2444]: https://github.com/Gallopsled/pwntools/pull/2444
