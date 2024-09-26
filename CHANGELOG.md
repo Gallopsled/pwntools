@@ -131,7 +131,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2467]: https://github.com/Gallopsled/pwntools/pull/2467
 [2469]: https://github.com/Gallopsled/pwntools/pull/2469
 
-
 ## 4.13.0 (`stable`)
 
 - [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
