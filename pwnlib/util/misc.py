@@ -481,7 +481,7 @@ end tell
                 if terminal == 'qdbus':
                     os.kill(pid, signal.SIGHUP)
                 elif terminal == 'kitty':
-                    subprocess.Popen(["kitten", "@", "close-window", "--match", f"id:{kittyid}"])
+                    subprocess.Popen(["kitten", "@", "close-window", "--match", "id:{}".format(kittyid)])
                 else:
                     os.kill(pid, signal.SIGTERM)
             except OSError:
