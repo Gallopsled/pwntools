@@ -161,6 +161,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2233][2233] Fix gdb.debug: exe parameter now respected, allow empty argv
 - [#2373][2373] Fix displaying bright color variation in terminal output
 - [#2378][2378] Don't go though a shell in `gdb.debug`
+- [#2469][2469] GDB 15+ rpyc detection
 
 [2242]: https://github.com/Gallopsled/pwntools/pull/2242
 [2277]: https://github.com/Gallopsled/pwntools/pull/2277
@@ -189,6 +190,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2233]: https://github.com/Gallopsled/pwntools/pull/2233
 [2373]: https://github.com/Gallopsled/pwntools/pull/2373
 [2378]: https://github.com/Gallopsled/pwntools/pull/2378
+[2469]: https://github.com/Gallopsled/pwntools/pull/2469
 
 ## 4.12.0
 
