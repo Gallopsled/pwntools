@@ -441,6 +441,11 @@ end tell
             tmp.flush()
             os.chmod(tmp.name, 0o700)
             argv = [which(terminal), tmp.name]
+    # cmd.exe does not support WSL UNC paths as working directory
+    # so it gets reset to %WINDIR% before starting wsl again.
+    # Set the working directory correctly in WSL.
+    elif terminal == 'cmd.exe':
+        argv[-1] = "cd '{}' && {}".format(os.getcwd(), argv[-1])
 
     log.debug("Launching a new terminal: %r" % argv)
 
