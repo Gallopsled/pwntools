@@ -82,6 +82,8 @@ def pid_by_name(name):
         try:
             if p.exe() == name:
                 return True
+            if p.cmdline()[0] == name:
+                return True
         except Exception:
             pass
         return False
