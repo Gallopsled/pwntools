@@ -213,6 +213,27 @@ jobs:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
 
+  windows-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade --editable .
+    
+    - name: Sanity checks
+      run: |
+        python -bb -c 'from pwn import *'
+        python -bb examples/text.py
 
   upload-coverage:
     runs-on: ubuntu-latest
