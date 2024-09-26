@@ -364,6 +364,14 @@ class ELF(ELFFile):
         self._libs = None
         self._maps = None
 
+    def close(self):
+        """close() -> None
+
+        Close the ELF file and release all resources associated with it.
+        """
+        super(ELF, self).close()
+        self.file.close()
+
     @staticmethod
     @LocalContext
     def from_assembly(assembly, *a, **kw):
