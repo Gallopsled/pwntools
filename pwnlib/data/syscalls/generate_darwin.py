@@ -1,16 +1,16 @@
-
 # ./pwnlib/data/includes/darwin/aarch64.h
 # ./pwnlib/constants/darwin/aarch64.py
 
 # https://github.com/nullgemm/instant_macos_sdk (old sdk here, please use real macos device)
+# https://github.com/joseluisq/macosx-sdks (old sdk here, please use real macos device)
 # /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/sys/
 
 from pathlib import Path
 import re
 import sys
 
-# In the future, you should change the version of `MacOSX14.sdk`
-sdk_path = Path('/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/sys/')
+# In the future, you should change the version of `MacOSX15.sdk`
+sdk_path = Path('/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/sys/')
 if not sdk_path.exists():
     print('missing MacOSX sdk')
     exit(1)

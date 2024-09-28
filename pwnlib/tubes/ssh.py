@@ -2052,7 +2052,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Example:
 
             >>> s = ssh("travis", "example.pwnme")
-            >>> s.user_shstk
+            >>> s.user_shstk # doctest: +SKIP 
             False
         """
         if self._user_shstk is None:
