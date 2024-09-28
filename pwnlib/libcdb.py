@@ -748,7 +748,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
 def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
     """
-    Given a hex-encoded Build ID, attempt to download a matching libc from libcdb.
+    Given a Libs ID, attempt to download a matching libc from libcdb.
 
     Arguments:
         libs_id(str):
