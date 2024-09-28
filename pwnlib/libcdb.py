@@ -764,9 +764,9 @@ def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
 
     Examples:
 
-        >>> None == search_by_id('XX')
+        >>> None == search_by_libs_id('XX')
         True
-        >>> filename = search_by_id('libc6_2.31-3_amd64')
+        >>> filename = search_by_libs_id('libc6_2.31-3_amd64')
         >>> hex(ELF(filename).symbols.read)
         '0xeef40'
     """
