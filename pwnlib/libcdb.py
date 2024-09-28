@@ -15,7 +15,7 @@ from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
-from pwnlib.util.fiddling import enhex
+from pwnlib.util.fiddling import enhex, unhex
 from pwnlib.util.hashes import sha1filehex, sha256filehex, md5filehex
 from pwnlib.util.misc import read
 from pwnlib.util.misc import which
@@ -43,7 +43,7 @@ def _turbofast_extract_build_id(path):
     """
     data = read(path, 0x1000)
     # search NT_GNU_BUILD_ID and b"GNU\x00" (type+name)
-    idx = data.find(bytes.fromhex("03000000 474e5500"))
+    idx = data.find(unhex("03000000474e5500"))
     if idx == -1:
         return enhex(ELF(path, checksec=False).buildid or b'')
     descsz, = struct.unpack("<L", data[idx-4: idx])
