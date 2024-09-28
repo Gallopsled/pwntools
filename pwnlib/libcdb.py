@@ -728,26 +728,23 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
     if return_as_list:
         return [libc['buildid'] for libc in matching_list]
 
-    if search_type in MAP_TYPES.keys():
-        match_type = MAP_TYPES[search_type]
-    else:
-        match_type = search_type
+    mapped_type = MAP_TYPES.get(search_type, search_type)
 
     # If there's only one match, return it directly
     if len(matching_list) == 1:
-        return search_by_hash(matching_list[0][match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
+        return search_by_hash(matching_list[0][mapped_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
 
     # If a specific index is provided, validate it and return the selected libc
     if select_index is not None:
         if select_index > 0 and select_index <= len(matching_list):
-            return search_by_hash(matching_list[select_index - 1][match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
+            return search_by_hash(matching_list[select_index - 1][mapped_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
         else:
             log.error('Invalid selected libc index. %d is not in the range of 1-%d.', select_index, len(matching_list))
             return None
 
     # Handle multiple matches interactively if no index is specified
     selected_libc = _handle_multiple_matching_libcs(matching_list)
-    return search_by_hash(selected_libc[match_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
+    return search_by_hash(selected_libc[mapped_type], search_type=search_type, unstrip=unstrip, offline_only=offline_only)
 
 def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
     """
