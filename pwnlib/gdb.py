@@ -1203,7 +1203,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         cmd += [exe]
 
     if pid and not context.os == 'android':
-        cmd += [str(pid)]
+        cmd += ['-p', str(pid)]
 
     if context.os == 'android' and pid:
         runner  = _get_runner()
@@ -1275,7 +1275,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         else:
             # Check to see if RPyC is installed at all in GDB
             rpyc_check = [gdb_binary, '--nx', '-batch', '-ex',
-                          'python import rpyc; import sys; sys.exit(123)']
+                          'python import rpyc; import gdb; gdb.execute("quit 123")']
 
             if 123 != tubes.process.process(rpyc_check).poll(block=True):
                 log.error('Failed to connect to GDB: rpyc is not installed')
