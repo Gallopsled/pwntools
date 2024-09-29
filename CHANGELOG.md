@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [4.15.0](#4150-dev)  | `dev`    |
 | [4.14.0](#4140-beta)  | `beta`   |
-| [4.13.0](#4130-stable)  | `stable`    | Aug 12, 2024
+| [4.13.1](#4131-stable)  | `stable`    | Sep 29, 2024
+| [4.13.0](#4130)  |          | Aug 12, 2024
 | [4.12.0](#4120)  |          | Feb 22, 2024
 | [4.11.1](#4111)  |          | Nov 14, 2023
 | [4.11.0](#4110)  |          | Sep 15, 2023
@@ -128,18 +129,20 @@ The table below shows which release corresponds to each branch, and what date th
 [2435]: https://github.com/Gallopsled/pwntools/pull/2435
 [2437]: https://github.com/Gallopsled/pwntools/pull/2437
 
-## 4.13.1
+## 4.13.1 (`stable`)
 
 - [#2445][2445] Fix parsing the PLT on Windows
 - [#2466][2466] Fix PLT emulation with Unicorn 2.1.0
 - [#2466][2466] Switch to PyPi Simple API for update checks
 - [#2467][2467] Fix loading at all on Windows
+- [#2469][2469] GDB 15+ rpyc detection
 
 [2445]: https://github.com/Gallopsled/pwntools/pull/2445
 [2466]: https://github.com/Gallopsled/pwntools/pull/2466
 [2467]: https://github.com/Gallopsled/pwntools/pull/2467
+[2469]: https://github.com/Gallopsled/pwntools/pull/2469
 
-## 4.13.0 (`stable`)
+## 4.13.0
 
 - [#2242][2242] Term module revamp: activating special handling of terminal only when necessary
 - [#2277][2277] elf: Resolve more relocations into GOT entries
