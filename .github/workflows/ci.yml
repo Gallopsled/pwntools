@@ -207,11 +207,13 @@ jobs:
       with:
         name: packages
         path: dist/
+        include-hidden-files: true
 
     - uses: actions/upload-artifact@v4
       with:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
+        include-hidden-files: true
 
   windows-test:
     runs-on: windows-latest
