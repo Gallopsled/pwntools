@@ -37,7 +37,7 @@ lookup_parser.add_argument(
 )
 
 lookup_parser.add_argument(
-    '--download-libc',
+    '-d', '--download-libc',
     action = 'store_true',
     default = False,
     help = 'Attempt to download the matching libc.so'
@@ -82,7 +82,7 @@ hash_parser.add_argument(
 )
 
 hash_parser.add_argument(
-    '--download-libc',
+    '-d', '--download-libc',
     action = 'store_true',
     default = False,
     help = 'Attempt to download the matching libc.so'
