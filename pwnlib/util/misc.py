@@ -13,11 +13,13 @@ import subprocess
 import sys
 import tempfile
 import inspect
+import time
 import types
 
 from pwnlib import atexit
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.timeout import Timeout
 from pwnlib.util import fiddling
 from pwnlib.util import lists
 from pwnlib.util import packing
@@ -439,14 +441,21 @@ end tell
             tmp.flush()
             os.chmod(tmp.name, 0o700)
             argv = [which(terminal), tmp.name]
+    # cmd.exe does not support WSL UNC paths as working directory
+    # so it gets reset to %WINDIR% before starting wsl again.
+    # Set the working directory correctly in WSL.
+    elif terminal == 'cmd.exe':
+        argv[-1] = "cd '{}' && {}".format(os.getcwd(), argv[-1])
 
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux':
+    if terminal == 'tmux' or terminal == 'kitty':
         stdout = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
+
+    kittyid = None
 
     if terminal == 'tmux':
         out, _ = p.communicate()
@@ -460,14 +469,42 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
+    elif terminal == 'kitty':
+        pid = p.pid
+        
+        out, _ = p.communicate()
+        try:
+            kittyid = int(out)
+        except ValueError:
+            kittyid = None
+        if kittyid is None:
+            log.error("Could not parse kitty window ID from output (%r)", out)
+    elif terminal == 'cmd.exe':
+        # p.pid is cmd.exe's pid instead of the WSL process we want to start eventually.
+        # I don't know how to trace the execution through Windows and back into the WSL2 VM.
+        # Do a best guess by waiting for a new process matching the command to be run.
+        # Otherwise it's better to return nothing instead of a know wrong pid.
+        from pwnlib.util.proc import pid_by_name
+        pid = None
+        ran_program = command.split(' ')[0] if isinstance(command, six.string_types) else command[0]
+        t = Timeout()
+        with t.countdown(timeout=5):
+            while t.timeout:
+                new_pid = pid_by_name(ran_program)
+                if new_pid and new_pid[0] > p.pid:
+                    pid = new_pid[0]
+                    break
+                time.sleep(0.01)
     else:
         pid = p.pid
 
-    if kill_at_exit:
+    if kill_at_exit and pid:
         def kill():
             try:
                 if terminal == 'qdbus':
                     os.kill(pid, signal.SIGHUP)
+                elif terminal == 'kitty':
+                    subprocess.Popen(["kitten", "@", "close-window", "--match", "id:{}".format(kittyid)], stderr=stderr)
                 else:
                     os.kill(pid, signal.SIGTERM)
             except OSError:

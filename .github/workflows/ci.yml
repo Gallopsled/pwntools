@@ -150,11 +150,18 @@ jobs:
         pwn shellcraft --list |tail
         pwn shellcraft -l --syscalls |tail
         pwn shellcraft -l execve
+        pwn shellcraft -l execve + exit
         pwn shellcraft --show i386.linux.loader_append
+        pwn shellcraft --show i386.linux.loader_append + i386.linux.sh
         pwn shellcraft -f asm --color amd64.linux.sh
+        pwn shellcraft -f asm --color amd64.linux.setreuid + amd64.linux.cat /etc/passwd
+        pwn shellcraft -f asm --color amd64.linux.setreuid = amd64.linux.cat /key+secret --delim =
         pwn shellcraft -f elf amd64.linux.syscalls.exit 0 </dev/null |pwn hex
+        pwn shellcraft -f elf amd64.linux.cat /etc/passwd + amd64.linux.syscalls.exit 0 </dev/null |pwn hex
         pwn shellcraft -f i   --color amd64.linux.cat /etc/passwd </dev/null
+        pwn shellcraft -f i   --color amd64.linux.cat /etc/passwd + amd64.linux.sh </dev/null
         pwn shellcraft -f c   amd64.linux.syscalls.exit 0 </dev/null
+        pwn shellcraft -f c   amd64.linux.cat /etc/passwd + amd64.linux.syscalls.exit 0 </dev/null
         pwn shellcraft -f str aarch64.linux.sh </dev/null
         pwn shellcraft -abr -f elf -o /dev/null amd64.linux.cat /etc/passwd </dev/null
         pwn shellcraft -nzr thumb.linux.syscalls.execve /bin/cat '["/bin/cat", "/etc/os-release"]' </dev/null
@@ -200,12 +207,35 @@ jobs:
       with:
         name: packages
         path: dist/
+        include-hidden-files: true
 
     - uses: actions/upload-artifact@v4
       with:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
+        include-hidden-files: true
 
+  windows-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade --editable .
+    
+    - name: Sanity checks
+      run: |
+        python -bb -c 'from pwn import *'
+        python -bb examples/text.py
 
   upload-coverage:
     runs-on: ubuntu-latest

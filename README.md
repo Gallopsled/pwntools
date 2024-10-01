@@ -37,8 +37,8 @@ Pwntools is best supported on 64-bit Ubuntu LTS releases (14.04, 16.04, 18.04, a
 Python3 is suggested, but Pwntools still works with Python 2.7.  Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
-apt-get update
-apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
+sudo apt-get update
+sudo apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade pwntools
 ```

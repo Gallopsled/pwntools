@@ -59,11 +59,11 @@ if sys.version_info < (3, 4):
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print("You must install the Python development headers!", file=sys.stderr)
-    print("$ apt-get install python-dev", file=sys.stderr)
+    print("$ sudo apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
 setup(
-    version              = '4.14.0dev',
+    version              = '4.15.0dev',
     data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],

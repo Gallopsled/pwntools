@@ -8,6 +8,6 @@ functions.py:
 	wget https://raw.githubusercontent.com/zachriggle/functions/master/functions.py
 
 generate_darwin:
-	python generate_darwin.py "$(ROOT)"
+	python3 generate_darwin.py "$(ROOT)"
 
 .phony: all
