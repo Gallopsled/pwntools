@@ -132,10 +132,10 @@ file_parser.add_argument(
 )
 
 file_parser.add_argument(
-    '--no-unstrip',
+    '--unstrip',
     action = 'store_true',
     default = False,
-    dest = 'no_unstrip',
+    dest = 'unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -276,7 +276,7 @@ def main(args):
                 log.failure('File does not exist %s', args.file)
                 continue
 
-            if not args.no_unstrip:
+            if args.unstrip:
                 libcdb.unstrip_libc(file)
 
             print_libc_elf(ELF(file, checksec=False))
