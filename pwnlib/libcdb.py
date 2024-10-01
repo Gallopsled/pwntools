@@ -674,7 +674,7 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_o
             Return a list of build ids of all matching libc versions
             instead of a path to a downloaded file.
         return_raw(bool):
-            Return raw list of matched libc list.
+            Return raw list of matched libc.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
