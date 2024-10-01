@@ -32,10 +32,74 @@ parser.add_argument('--template', help='Path to a custom template. Tries to use 
                                         os.path.join(printable_data_path, "templates", "pwnup.mako"))
 parser.add_argument('--no-auto', help='Do not automatically detect missing binaries', action='store_false', dest='auto')
 
+def get_docker_image_libraries():
+    """Tries to retrieve challenge libraries from a Docker image built from the Dockerfile in the current working directory.
+    
+    The libraries are retrieved by parsing the output of running ldd on /bin/sh.
+    If the Dockerfile does not have an ENTRYPOINT, assumes that the image is based on a jail.
+    In that case, assumes that the jail is pwn.red/jail which requires "--privileged" and places the child image in /srv,
+    therefore chroots into /srv before running ldd.
+    """
+    log.info("Extracting challenge libraries from Docker image...")
+    dockerfile = open("Dockerfile", "r").read()
+    is_jailed = re.search(r"^ENTRYPOINT", dockerfile, re.MULTILINE) is None
+    try:
+        image_sha = subprocess.check_output(["docker", "build", "-q", "."], shell=False).decode().strip()
+
+        if is_jailed:
+            ldd_command = ["/bin/sh", "-c", "chroot /srv /bin/sh -c 'ldd /bin/sh'"]
+        else:
+            ldd_command = ["-c", "ldd /bin/sh"]
+        ldd_output = subprocess.check_output([
+                "docker",
+                "run",
+                "--rm",
+                *(["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]),
+                image_sha,
+                *ldd_command,
+            ],
+            shell=False
+        ).decode()
+        
+        libc, ld = None, None
+        libc_basename, ld_basename = None, None
+        for line in ldd_output.splitlines():
+            if "libc." in line:
+                libc = line.split("=> ", 1)[1].split(" ", 1)[0].strip()
+                libc_basename = libc.rsplit("/", 1)[1]
+            if "ld-" in line:
+                ld = line.split(" ", 1)[0].strip()
+                ld_basename = ld.rsplit("/", 1)[1]
+
+        if not (libc and ld):
+            return None, None
+
+        for filename, basename in zip([libc, ld], [libc_basename, ld_basename]):
+            if is_jailed:
+                cat_command = ["/bin/sh", "-c", "chroot /srv /bin/sh -c '/bin/cat %s'" % filename]
+            else:
+                cat_command = ["-c", "cat %s" % filename]
+            contents = subprocess.check_output([
+                    "docker",
+                    "run",
+                    "--rm",
+                    *(["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]),
+                    image_sha,
+                    *cat_command,
+                ],
+                shell=False
+            )
+            open(basename, "wb").write(contents)
+
+    except subprocess.CalledProcessError as e:
+        log.error("docker failed with status: %d" % e.returncode)
+    return libc_basename, ld_basename
+
 def detect_missing_binaries(args):
     log.info("Automatically detecting challenge binaries...")
     # look for challenge binary, libc, and ld in current directory
     exe, libc, ld = args.exe, args.libc, None
+    has_dockerfile = False
     other_files = []
     for filename in os.listdir():
         if not os.path.isfile(filename):
@@ -44,6 +108,8 @@ def detect_missing_binaries(args):
             libc = filename
         elif not ld and 'ld-' in filename:
             ld = filename
+        elif filename == "Dockerfile":
+            has_dockerfile = True
         else:
             if os.access(filename, os.X_OK):
                 other_files.append(filename)
@@ -52,6 +118,9 @@ def detect_missing_binaries(args):
             exe = other_files[0]
         elif len(other_files) > 1:
             log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
+    
+    if has_dockerfile and exe and not (libc or ld): 
+        libc, ld = get_docker_image_libraries()
 
     if exe != args.exe:
         log.success("Found challenge binary %r", exe)
