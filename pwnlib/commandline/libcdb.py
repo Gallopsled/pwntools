@@ -179,7 +179,7 @@ def print_libc_info(libc):
     for symbol in libc['symbols'].items():
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
-def print_libc_elf(exe: ELF):
+def print_libc_elf(exe):
     from hashlib import md5, sha1, sha256
 
     log.info('%s', text.red(os.path.basename(exe.path)))
@@ -207,7 +207,7 @@ def print_libc_elf(exe: ELF):
         else:
             log.indented('%25s = %#x', symbol, translate_offset(exe.symbols[symbol], args, exe))
 
-def get_libc_version(exe: ELF):
+def get_libc_version(exe):
     res = re.search(br'libc[ -](\d+\.\d+)', exe.data)
     if res:
         return res.group(1).decode()
@@ -253,14 +253,16 @@ def main(args):
         for libc in matched_libcs:
             print_libc_info(libc)
             if args.download_libc:
-                path = libcdb.search_by_build_id(libc['id'], not args.no_unstrip)
+                path = libcdb.search_by_build_id(libc['buildid'], not args.no_unstrip)
                 if path:
                     shutil.copy(path, './{}.so'.format(libc['id']))
 
     elif args.libc_command == 'hash':
+        inverted_map = {v: k for k, v in libcdb.MAP_TYPES.items()}
+        hash_type = inverted_map.get(args.hash_type, args.hash_type)
+
         for hash_value in args.hash_value:
-            hash_typpe = libcdb.MAP_TYPES.get(args.hash_type, args.hash_type)
-            path = libcdb.search_by_hash(hash_value, hash_typpe, offline_only=args.offline_only, unstrip=not args.no_unstrip,)
+            path = libcdb.search_by_hash(hash_value, hash_type, offline_only=args.offline_only, unstrip=not args.no_unstrip,)
             exe = ELF(path, checksec=False)
             print_libc_elf(exe)
 
