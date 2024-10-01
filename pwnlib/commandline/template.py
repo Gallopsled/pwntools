@@ -53,11 +53,10 @@ def get_docker_image_libraries():
         ldd_output = subprocess.check_output([
                 "docker",
                 "run",
-                "--rm",
-                *(["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]),
-                image_sha,
-                *ldd_command,
-            ],
+                "--rm"
+                ] + (["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]) + [
+                    image_sha,
+                ] + ldd_command,
             shell=False
         ).decode()
         
@@ -83,10 +82,9 @@ def get_docker_image_libraries():
                     "docker",
                     "run",
                     "--rm",
-                    *(["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]),
-                    image_sha,
-                    *cat_command,
-                ],
+                    ] + (["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]) + [
+                        image_sha
+                    ] + cat_command,
                 shell=False
             )
             open(basename, "wb").write(contents)
