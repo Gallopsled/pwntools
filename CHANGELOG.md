@@ -86,6 +86,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2444]: https://github.com/Gallopsled/pwntools/pull/2444
 [2413]: https://github.com/Gallopsled/pwntools/pull/2413
 [2470]: https://github.com/Gallopsled/pwntools/pull/2470
+[2479]: https://github.com/Gallopsled/pwntools/pull/2479
 
 ## 4.14.0 (`beta`)
 
