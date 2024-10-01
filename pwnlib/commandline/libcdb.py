@@ -47,7 +47,7 @@ lookup_parser.add_argument(
     '--no-unstrip',
     action = 'store_true',
     default = False,
-    dest = 'no-unstrip',
+    dest = 'no_unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -55,7 +55,7 @@ lookup_parser.add_argument(
     '--offline-only',
     action = 'store_true',
     default = False,
-    dest = 'offline-only',
+    dest = 'offline_only',
     help = 'Attempt to searching with offline only mode'
 )
 
@@ -92,7 +92,7 @@ hash_parser.add_argument(
     '--no-unstrip',
     action = 'store_true',
     default = False,
-    dest = 'no-unstrip',
+    dest = 'no_unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -100,7 +100,7 @@ hash_parser.add_argument(
     '--offline-only',
     action = 'store_true',
     default = False,
-    dest = 'offline-only',
+    dest = 'offline_only',
     help = 'Attempt to searching with offline only mode'
 )
 
@@ -135,7 +135,7 @@ file_parser.add_argument(
     '--no-unstrip',
     action = 'store_true',
     default = False,
-    dest = 'no-unstrip',
+    dest = 'no_unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -225,19 +225,20 @@ def main(args):
         for libc in matched_libcs:
             print_libc_info(libc)
             if args.download_libc:
-                path = libcdb.search_by_build_id(libc['buildid'], not args.no_unstrip)
+                path = libcdb.search_by_build_id(libc['id'], not args.no_unstrip)
                 if path:
                     shutil.copy(path, './{}.so'.format(libc['id']))
 
     elif args.libc_command == 'hash':
         for hash_value in args.hash_value:
-            cache_path = libcdb.search_by_hash(hash_value, args.hash_type, offline_only=args.offline_only, unstrip=not args.no_unstrip,)
-            exe = ELF(cache_path, checksec=False)
+            hash_typpe = libcdb.MAP_TYPES.get(args.hash_type, args.hash_type)
+            path = libcdb.search_by_hash(hash_value, hash_typpe, offline_only=args.offline_only, unstrip=not args.no_unstrip,)
+            exe = ELF(path, checksec=False)
             print_libc_elf(exe)
 
             if args.download_libc:
                 # if we cannot get actual libc version then copy with cache name
-                shutil.copy(cache_path, './{}.so'.format(get_libc_version(exe) or Path(cache_path).stem))
+                shutil.copy(path, './libc-{}.so'.format(get_libc_version(exe) or Path(path).stem))
 
     elif args.libc_command == 'file':
         for file in args.files:
