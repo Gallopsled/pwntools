@@ -139,6 +139,34 @@ file_parser.add_argument(
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
+fetch_parser = libc_commands.add_parser(
+    'fetch',
+    help = 'Fetch libc database',
+    description = 'Fetch libc database'
+)
+
+fetch_parser.add_argument(
+    'path',
+    nargs = '?',
+    default = context.local_libcdb,
+    help = 'Set libc-database path, If it is empty, the default path will be `context.local_libcdb` (%s)' % context.local_libcdb
+)
+
+fetch_parser.add_argument(
+    '-i', '--init',
+    action = 'store_true',
+    default = False,
+    help = 'Init libc-database'
+)
+
+fetch_parser.add_argument(
+    '-u', '--update',
+    metavar = 'update',
+    nargs = '*',
+    choices = ['all', 'ubuntu', 'debian', 'rpm', 'centos', 'arch', 'alpine', 'kali', 'parrotsec', 'launchpad'],
+    help = 'Fetch the desired libc categories'
+)
+
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
 
 def print_libc_info(libc):
@@ -250,6 +278,14 @@ def main(args):
                 libcdb.unstrip_libc(file)
 
             print_libc_elf(ELF(file, checksec=False))
+
+    elif args.libc_command == 'fetch':
+
+        if args.init:
+            subprocess.check_call(['git', 'clone', "https://github.com/niklasb/libc-database/", args.path])
+
+        elif args.update:
+            subprocess.check_call(['./get'] + args.update, cwd=args.path)
 
 
 if __name__ == '__main__':
