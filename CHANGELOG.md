@@ -79,7 +79,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2444][2444] Add `ELF.close()` to release resources
 - [#2413][2413] libcdb: improve the search speed of `search_by_symbol_offsets` in local libc-database
 - [#2470][2470] Fix waiting for gdb under WSL2
-- [#2478][2478] libcdb-cli: changes for previous updates
+- [#2478][2478] libcdb-cli: add `--offline-only`, refactor unstrip and add fetch parser for download libc-database
 
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
