@@ -45,9 +45,8 @@ lookup_parser.add_argument(
 
 lookup_parser.add_argument(
     '--no-unstrip',
-    action = 'store_true',
-    default = False,
-    dest = 'no_unstrip',
+    action = 'store_false',
+    dest = 'unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -90,9 +89,8 @@ hash_parser.add_argument(
 
 hash_parser.add_argument(
     '--no-unstrip',
-    action = 'store_true',
-    default = False,
-    dest = 'no_unstrip',
+    action = 'store_false',
+    dest = 'unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
@@ -134,9 +132,8 @@ file_parser.add_argument(
 file_parser.add_argument(
     '--unstrip',
     action = 'store_true',
-    default = False,
     dest = 'unstrip',
-    help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
+    help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
 fetch_parser = libc_commands.add_parser(
@@ -248,12 +245,12 @@ def main(args):
             return
 
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = libcdb.search_by_symbol_offsets(symbols, offline_only=args.offline_only, unstrip=not args.no_unstrip, return_raw=True)
+        matched_libcs = libcdb.search_by_symbol_offsets(symbols, offline_only=args.offline_only, return_raw=True)
 
         for libc in matched_libcs:
             print_libc_info(libc)
             if args.download_libc:
-                path = libcdb.search_by_build_id(libc['buildid'], not args.no_unstrip)
+                path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
                 if path:
                     shutil.copy(path, './{}.so'.format(libc['id']))
 
@@ -262,7 +259,7 @@ def main(args):
         hash_type = inverted_map.get(args.hash_type, args.hash_type)
 
         for hash_value in args.hash_value:
-            path = libcdb.search_by_hash(hash_value, hash_type, offline_only=args.offline_only, unstrip=not args.no_unstrip,)
+            path = libcdb.search_by_hash(hash_value, hash_type, unstrip=args.unstrip, offline_only=args.offline_only)
             exe = ELF(path, checksec=False)
             print_libc_elf(exe)
 
