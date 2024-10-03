@@ -28,10 +28,11 @@ jobs:
         set -x
         pip install pylint
         pip install --upgrade -e .
-        pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- > current.txt
+        run_pylint() { pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- | sed 's/line [0-9]\+/line XXXX/g'; }
+        run_pylint > current.txt
         git fetch origin
         git checkout origin/"$GITHUB_BASE_REF"
-        pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- > base.txt
+        run_pylint > base.txt
         if diff base.txt current.txt | grep '>'; then
           false
         fi
