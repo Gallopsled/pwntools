@@ -765,9 +765,10 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         The output is cached:
 
         >>> start = time.time()
-        >>> asm("lea rax, [rip+0]", arch = 'amd64')
+        >>> asm("lea rax, [rip+0]", arch = 'amd64', cache_dir = None) # force uncached time
         b'H\x8d\x05\x00\x00\x00\x00'
         >>> uncached_time = time.time() - start
+        >>> asm("lea rax, [rip+0]", arch = 'amd64') # cache it
         >>> start = time.time()
         >>> asm("lea rax, [rip+0]", arch = 'amd64')
         b'H\x8d\x05\x00\x00\x00\x00'
