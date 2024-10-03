@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from pwn import *
 from pwnlib.commandline import common
+from pwnlib.util.misc import which, parse_ldd_output, write
 
 from sys import stderr
 from mako.lookup import TemplateLookup, Template
@@ -41,7 +42,7 @@ def get_docker_image_libraries():
     Supports regular Docker images as well as jail images.
     """
     with log.progress("Extracting challenge libraries from Docker image") as progress:
-        if not util.misc.which("docker"):
+        if not which("docker"):
             progress.failure("docker command not found")
             return None, None
         # maps jail image name to the root directory of the child image
@@ -104,7 +105,7 @@ def get_docker_image_libraries():
                     stderr=subprocess.PIPE, 
                     shell=False
                 )
-                util.misc.write(basename, contents)
+                write(basename, contents)
 
         except subprocess.CalledProcessError as e:
             print(e.stderr.decode())
