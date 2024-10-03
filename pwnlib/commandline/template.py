@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 from pwn import *
 from pwnlib.commandline import common
 
+from sys import stderr
 from mako.lookup import TemplateLookup, Template
 
 parser = common.parser_commands.add_parser(
@@ -36,61 +38,79 @@ def get_docker_image_libraries():
     """Tries to retrieve challenge libraries from a Docker image built from the Dockerfile in the current working directory.
     
     The libraries are retrieved by parsing the output of running ldd on /bin/sh.
-    If the Dockerfile does not have an ENTRYPOINT, assumes that the image is based on a jail.
-    In that case, assumes that the jail is pwn.red/jail which requires "--privileged" and places the child image in /srv,
-    therefore chroots into /srv before running ldd.
+    Supports regular Docker images as well as jail images.
     """
-    log.info("Extracting challenge libraries from Docker image...")
-    dockerfile = open("Dockerfile", "r").read()
-    is_jailed = re.search(r"^ENTRYPOINT", dockerfile, re.MULTILINE) is None
-    try:
-        image_sha = subprocess.check_output(["docker", "build", "-q", "."], shell=False).decode().strip()
-
-        if is_jailed:
-            ldd_command = ["/bin/sh", "-c", "chroot /srv /bin/sh -c 'ldd /bin/sh'"]
-        else:
-            ldd_command = ["-c", "ldd /bin/sh"]
-        ldd_output = subprocess.check_output([
-                "docker",
-                "run",
-                "--rm"
-                ] + (["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]) + [
-                    image_sha,
-                ] + ldd_command,
-            shell=False
-        ).decode()
-        
-        libc, ld = None, None
-        libc_basename, ld_basename = None, None
-        for line in ldd_output.splitlines():
-            if "libc." in line:
-                libc = line.split("=> ", 1)[1].split(" ", 1)[0].strip()
-                libc_basename = libc.rsplit("/", 1)[1]
-            if "ld-" in line:
-                ld = line.split(" ", 1)[0].strip()
-                ld_basename = ld.rsplit("/", 1)[1]
-
-        if not (libc and ld):
+    with log.progress("Extracting challenge libraries from Docker image") as progress:
+        if not util.misc.which("docker"):
+            progress.failure("docker command not found")
             return None, None
+        # maps jail image name to the root directory of the child image
+        jail_image_to_chroot_dir = {
+            "pwn.red/jail": "/srv",
+        }
+        dockerfile = open("Dockerfile", "r").read()
+        jail = None
+        chroot_dir = "/"
+        for jail_image in jail_image_to_chroot_dir:
+            if re.search(r"^FROM %s" % jail_image, dockerfile, re.MULTILINE):
+                jail = jail_image
+                chroot_dir = jail_image_to_chroot_dir[jail_image]
+                break
+        try:
+            progress.status("Building image")
+            image_sha = subprocess.check_output(["docker", "build", "-q", "."], stderr=subprocess.PIPE, shell=False).decode().strip()
 
-        for filename, basename in zip([libc, ld], [libc_basename, ld_basename]):
-            if is_jailed:
-                cat_command = ["/bin/sh", "-c", "chroot /srv /bin/sh -c '/bin/cat %s'" % filename]
-            else:
-                cat_command = ["-c", "cat %s" % filename]
-            contents = subprocess.check_output([
+            progress.status("Retrieving library paths")
+            ldd_command = ["-c", "chroot %s /bin/sh -c 'ldd /bin/sh'" % chroot_dir]
+            ldd_output = subprocess.check_output([
                     "docker",
                     "run",
                     "--rm",
-                    ] + (["--privileged"] if is_jailed else ["--entrypoint", "/bin/sh"]) + [
-                        image_sha
-                    ] + cat_command,
+                    "--entrypoint",
+                    "/bin/sh",
+                    ] + (["--privileged"] if jail else []) + [
+                        image_sha,
+                    ] + ldd_command,
+                stderr=subprocess.PIPE, 
                 shell=False
-            )
-            open(basename, "wb").write(contents)
+            ).decode()
+            
+            libc, ld = None, None
+            libc_basename, ld_basename = None, None
+            for lib_path in parse_ldd_output(ldd_output):
+                if "libc." in lib_path:
+                    libc = lib_path
+                    libc_basename = os.path.basename(lib_path)
+                if "ld-" in lib_path:
+                    ld = lib_path
+                    ld_basename = os.path.basename(lib_path)
 
-    except subprocess.CalledProcessError as e:
-        log.error("docker failed with status: %d" % e.returncode)
+            if not (libc and ld):
+                progress.failure("Could not find libraries")
+                return None, None
+            
+            progress.status("Copying libraries to current directory")
+            for filename, basename in zip((libc, ld), (libc_basename, ld_basename)):
+                cat_command = ["-c", "chroot %s /bin/sh -c '/bin/cat %s'" % (chroot_dir, filename)]
+                contents = subprocess.check_output([
+                        "docker",
+                        "run",
+                        "--rm",
+                        "--entrypoint",
+                        "/bin/sh",
+                        ] + (["--privileged"] if jail else []) + [
+                            image_sha
+                        ] + cat_command,
+                    stderr=subprocess.PIPE, 
+                    shell=False
+                )
+                util.misc.write(basename, contents)
+
+        except subprocess.CalledProcessError as e:
+            print(e.stderr.decode())
+            log.error("docker failed with status: %d" % e.returncode)
+
+        progress.success("Retrieved libraries from Docker image")
     return libc_basename, ld_basename
 
 def detect_missing_binaries(args):
@@ -99,7 +119,7 @@ def detect_missing_binaries(args):
     exe, libc, ld = args.exe, args.libc, None
     has_dockerfile = False
     other_files = []
-    for filename in os.listdir():
+    for filename in os.listdir("."):
         if not os.path.isfile(filename):
             continue
         if not libc and ('libc-' in filename or 'libc.' in filename):
