@@ -1377,9 +1377,9 @@ class ContextType(object):
     def cache_dir_base(self, new_base):
         """Base directory to use for caching content.
 
-        Changing this to a different value will clear the `cache_dir` path
+        Changing this to a different value will clear the :attr:`cache_dir` path
         stored in TLS since a new path will need to be generated to respect the
-        new `cache_dir_base` value.
+        new :attr:`cache_dir_base` value.
         """
 
         if new_base != self.cache_dir_base:
@@ -1394,6 +1394,9 @@ class ContextType(object):
 
         Note:
             May be either a path string, or :const:`None`.
+            Set to :const:`None` to disable caching.
+            Set to :const:`True` to generate the default cache directory path
+            based on :attr:`cache_dir_base` again.
 
         Example:
 
@@ -1401,11 +1404,17 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
-            >>> del context._tls['cache_dir']
+            >>> context.cache_dir = True
             >>> context.cache_dir is None
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
+            True
+            >>> context.cache_dir = None
+            >>> context.cache_dir is None
+            True
+            >>> context.cache_dir = True
+            >>> context.cache_dir is not None
             True
         """
         try:
@@ -1451,7 +1460,9 @@ class ContextType(object):
 
     @cache_dir.setter
     def cache_dir(self, v):
-        if os.access(v, os.W_OK):
+        if v is True:
+            del self._tls["cache_dir"]
+        elif v is None or os.access(v, os.W_OK):
             # Stash this in TLS for later reuse
             self._tls["cache_dir"] = v
 
