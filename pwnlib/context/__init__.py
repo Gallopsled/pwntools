@@ -594,9 +594,9 @@ class ContextType(object):
             ...         log.debug("DEBUG")
             ...         log.info("INFO")
             ...         log.warn("WARN")
-            [DEBUG] DEBUG
-            [*] INFO
-            [!] WARN
+            [...] DEBUG
+            [...] INFO
+            [...] WARN
         """
         level = 'error'
         if context.log_level <= logging.DEBUG:
@@ -664,7 +664,7 @@ class ContextType(object):
             information is printed.
 
             >>> with context.verbose: func()
-            [DEBUG] Hello
+            [...] Hello
 
         """
         return self.local(log_level='debug')
