@@ -254,6 +254,8 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
     # Ensure that the libcdb cache directory exists
     cache, cache_valid = _check_elf_cache('libcdb', search_target, search_type)
     if cache_valid:
+        if unstrip:
+            unstrip_libc(cache)
         return cache
     
     # We searched for this buildid before, but didn't find anything.
