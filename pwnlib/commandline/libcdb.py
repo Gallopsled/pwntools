@@ -133,7 +133,7 @@ file_parser.add_argument(
     '--unstrip',
     action = 'store_true',
     dest = 'unstrip',
-    help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
+    help = 'Attempt to unstrip the libc binary inplace with debug symbols from a debuginfod server'
 )
 
 fetch_parser = libc_commands.add_parser(
