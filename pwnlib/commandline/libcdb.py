@@ -152,7 +152,7 @@ fetch_parser.add_argument(
 fetch_parser.add_argument(
     '-u', '--update',
     metavar = 'update',
-    nargs = '*',
+    nargs = '+',
     choices = ['all', 'ubuntu', 'debian', 'rpm', 'centos', 'arch', 'alpine', 'kali', 'parrotsec', 'launchpad'],
     help = 'Fetch the desired libc categories'
 )
