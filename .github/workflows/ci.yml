@@ -21,9 +21,10 @@ jobs:
 
     - name: Install RPyC for gdb
       run: |
-        # The version packaged in python3-rpyc is too old on Ubuntu 22.04
+        # The version packaged in python3-rpyc is too old on Ubuntu 24.04
+        # We use ^6.0 from pip.
         sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
-        /usr/bin/python -m pip install rpyc
+        /usr/bin/python -m pip install --break-system-packages rpyc || /usr/bin/python -m pip install rpyc
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
 
     - name: Cache for pip
@@ -223,7 +224,7 @@ jobs:
 
     - name: Install coveralls
       run: |
-        pip install tomli coveralls
+        pip install --break-system-packages tomli coveralls
 
     - name: Upload coverage to coveralls.io
       run: |
