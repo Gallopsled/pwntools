@@ -277,13 +277,14 @@ def main(args):
             subprocess.check_call(['./get'] + args.update, cwd=args.path)
 
         else:
-            if not Path(args.path).exists() and yesno("Would you like to initialize the libc-database repository? "
-                                                      "If the path already exists, this prompt will not display, and automatically upgrade repository."):
-                log.waitfor("init libc-database repository")
-                subprocess.check_call(['git', 'clone', 'https://github.com/niklasb/libc-database/', args.path])
-
-            log.waitfor("upgrade libc-database repository")
-            subprocess.check_call(['git', 'pull'], cwd=args.path)
+            if not Path(args.path).exists():
+                if yesno("Would you like to initialize the libc-database repository? "
+                         "If the path already exists, this prompt will not display, and automatically upgrade repository."):
+                    log.waitfor("init libc-database repository")
+                    subprocess.check_call(['git', 'clone', 'https://github.com/niklasb/libc-database/', args.path])
+            else:
+                log.waitfor("upgrade libc-database repository")
+                subprocess.check_call(['git', 'pull'], cwd=args.path)
 
 
 if __name__ == '__main__':
