@@ -248,4 +248,4 @@ def main(args):
                     log.indented('%25s = %#x', symbol, translate_offset(exe.symbols[symbol], args, exe))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)
