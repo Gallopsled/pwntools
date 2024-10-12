@@ -123,7 +123,7 @@ def current_device(any=False):
 
         >>> device = adb.current_device(any=True)
         >>> device  # doctest: +ELLIPSIS
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_...', model='...', device='generic...')
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone..._...', model='...', device='...')
         >>> device.port
         'emulator'
     """
@@ -259,7 +259,7 @@ class AdbDevice(Device):
         >>> device.os
         'android'
         >>> device.product  # doctest: +ELLIPSIS
-        'sdk_...phone_...'
+        'sdk_...phone..._...'
         >>> device.serial
         'emulator-5554'
     """
@@ -880,7 +880,7 @@ def which(name, all = False, *a, **kw):
         >>> adb.which('sh')
         '/system/bin/sh'
         >>> adb.which('sh', all=True)
-        ['/system/bin/sh']
+        ['/system/bin/sh', '/vendor/bin/sh']
 
         >>> adb.which('foobar') is None
         True
@@ -988,7 +988,7 @@ def proc_exe(pid):
        :skipif: skip_android
 
         >>> adb.proc_exe(1)
-        b'/init'
+        b'/system/bin/init'
     """
     with context.quiet:
         io  = process(['realpath','/proc/%d/exe' % pid])
@@ -1365,7 +1365,7 @@ def compile(source):
         >>> filename = adb.compile(temp)
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
-        b'... /system/lib64/libc.so\n...'
+        b'... /system/lib64/libc++.so\n...'
     """
 
     ndk_build = misc.which('ndk-build')
