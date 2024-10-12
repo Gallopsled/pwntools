@@ -72,6 +72,10 @@ if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
+# Allow to override url with a caching proxy in CI
+LIBC_RIP_URL = os.environ.get("PWN_LIBCRIP_URL", "https://libc.rip").rstrip("/")
+GITLAB_LIBCDB_URL = os.environ.get("PWN_GITLAB_LIBCDB_URL", "https://gitlab.com").rstrip("/")
+
 # Retry failed lookups after some time
 NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
@@ -86,7 +90,7 @@ def provider_libcdb(hex_encoded_id, search_type):
     from six.moves import urllib
 
     # Build the URL using the requested hash type
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % search_type
+    url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -111,7 +115,7 @@ def query_libc_rip(params):
     # Deferred import because it's slow
     import requests
 
-    url = "https://libc.rip/api/find"
+    url = "{}/api/find".format(LIBC_RIP_URL)
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
@@ -143,6 +147,7 @@ def provider_libc_rip(search_target, search_type):
 
     url = libc_match[0]['download_url']
     log.debug("Downloading data from libc.rip: %s", url)
+    url = url.replace("https://libc.rip", LIBC_RIP_URL)
     data = wget(url, timeout=20)
 
     if not data:
@@ -529,7 +534,9 @@ def _find_libc_package_lib_url(libc):
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
         for match in libc_match:
-            yield match['libs_url']
+            # Allow to override url with a caching proxy in CI
+            ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
+            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
     
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)

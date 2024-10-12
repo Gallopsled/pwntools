@@ -12,6 +12,21 @@ jobs:
             os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    services:
+      libcdb-cache:
+        image: nginx
+        volumes:
+          - /home/runner/libcdb-cache:/var/cache/nginx
+        ports:
+          - 3000:3000  # https://debuginfod.elfutils.org proxy cache
+          - 3001:3001  # https://libc.rip/ proxy cache
+          - 3002:3002  # http://archive.ubuntu.com/ proxy cache
+          - 3003:3003  # https://gitlab.com/ proxy cache
+    env:
+      DEBUGINFOD_URLS: http://localhost:3000/
+      PWN_LIBCRIP_URL: http://localhost:3001/
+      PWN_UBUNTU_ARCHIVE_URL: http://localhost:3002/
+      PWN_GITLAB_LIBCDB_URL:  http://localhost:3003/
     steps:
     - uses: actions/checkout@v4
       with:
@@ -21,6 +36,28 @@ jobs:
       run: |
         git fetch origin
         git log --oneline --graph -10
+    
+    - name: Fix libcdb-cache permissions
+      id: fix-perms
+      run: |
+        sudo chown -R runner:runner /home/runner/libcdb-cache
+        echo "date=$(/bin/date -u "+%Y%m%d%H%M%S")" >> $GITHUB_OUTPUT
+
+    - name: Cache for libcdb requests
+      uses: actions/cache@v4
+      with:
+        path: ~/libcdb-cache
+        key: libcdb-python${{ matrix.python_version }}-${{ steps.fix-perms.outputs.date }}
+        restore-keys: |
+          libcdb-python${{ matrix.python_version }}-
+          libcdb-
+
+    - name: Install libcdb-cache service config
+      run: |
+        sudo chown -R 101:101 /home/runner/libcdb-cache
+        container_id=$(docker ps --all --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
+        docker cp ./travis/libcdb_nginx_cache.conf $container_id:/etc/nginx/nginx.conf
+        docker restart $container_id
 
     - name: Install RPyC for gdb
       run: |
@@ -29,11 +66,10 @@ jobs:
         sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
         /usr/bin/python -m pip install --break-system-packages rpyc || /usr/bin/python -m pip install rpyc
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
-
+    
     - name: Cache for pip
       uses: actions/cache@v4
       if: matrix.python_version == '2.7'
-      id: cache-pip
       with:
         path: ~/.cache/pip
         key: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-${{ hashFiles('**/pyproject.toml', '**/requirements*.txt') }}
@@ -224,6 +260,12 @@ jobs:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
         include-hidden-files: true
+    
+    - name: Fix libcdb-cache permissions
+      run: |
+        container_id=$(docker ps --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
+        docker stop $container_id
+        sudo chown -R runner:runner /home/runner/libcdb-cache
 
   windows-test:
     runs-on: windows-latest
