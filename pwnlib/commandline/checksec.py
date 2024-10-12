@@ -41,4 +41,4 @@ def main(args):
             print("{name}: {error}".format(name=f.name, error=e))
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)
