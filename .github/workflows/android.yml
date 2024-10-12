@@ -6,24 +6,21 @@ jobs:
   android-test:
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ['3.10']
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
     - uses: actions/checkout@v4
 
-    - name: Cache for pip
-      uses: actions/cache@v4
-      id: cache-pip
-      with:
-        path: ~/.cache/pip
-        key: ${{ matrix.os }}-cache-pip
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
 
     - name: Install Linux dependencies
       run: |
@@ -34,6 +31,19 @@ jobs:
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
           libc6-dbg
+
+    - name: Cache for avd
+      uses: actions/cache@v4
+      id: cache-avd
+      with:
+        path: |
+          ~/.android
+          /usr/local/lib/android/sdk/emulator
+          /usr/local/lib/android/sdk/platform-tools
+          /usr/local/lib/android/sdk/system-images
+        key: ${{ matrix.os }}-cache-avd-${{ hashFiles('travis/setup_avd*.sh') }}
+        restore-keys: |
+          ${{ matrix.os }}-cache-avd-
 
     - name: Install Android AVD
       run: |

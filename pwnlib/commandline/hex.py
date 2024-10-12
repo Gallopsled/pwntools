@@ -50,4 +50,4 @@ def main(args):
     print(encoded)
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)

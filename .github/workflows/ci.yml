@@ -5,8 +5,11 @@ jobs:
   test:
     strategy:
       matrix:
-        python_version: ['2.7', '3.10']
+        python_version: ['3.10', '3.12']
         os: [ubuntu-latest]
+        include:
+          - python_version: '2.7'
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -21,23 +24,30 @@ jobs:
 
     - name: Install RPyC for gdb
       run: |
-        # The version packaged in python3-rpyc is too old on Ubuntu 22.04
+        # The version packaged in python3-rpyc is too old on Ubuntu 24.04
+        # We use ^6.0 from pip.
         sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
-        /usr/bin/python -m pip install rpyc
+        /usr/bin/python -m pip install --break-system-packages rpyc || /usr/bin/python -m pip install rpyc
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
 
     - name: Cache for pip
       uses: actions/cache@v4
+      if: matrix.python_version == '2.7'
       id: cache-pip
       with:
         path: ~/.cache/pip
-        key: ${{ matrix.os }}-cache-pip
+        key: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-${{ hashFiles('**/pyproject.toml', '**/requirements*.txt') }}
+        restore-keys: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-
 
     - name: Set up Python ${{ matrix.python_version }}
       if: matrix.python_version != '2.7'
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
 
     - name: Set up Python 2.7
       if: matrix.python_version == '2.7'
@@ -203,15 +213,17 @@ jobs:
         python -m build
 
     - uses: actions/upload-artifact@v4
-      if: matrix.python_version != '2.7'
+      if: matrix.python_version == '3.10'
       with:
         name: packages
         path: dist/
+        include-hidden-files: true
 
     - uses: actions/upload-artifact@v4
       with:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
+        include-hidden-files: true
 
 
   upload-coverage:
@@ -229,7 +241,7 @@ jobs:
 
     - name: Install coveralls
       run: |
-        pip install tomli coveralls
+        pip install --break-system-packages tomli coveralls
 
     - name: Upload coverage to coveralls.io
       run: |
