@@ -366,17 +366,17 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             if os.path.exists('/proc/sys/kernel/osrelease'):
                 with open('/proc/sys/kernel/osrelease', 'rb') as f:
                     is_wsl = b'icrosoft' in f.read()
-            if is_wsl and which('cmd.exe') and which('wsl.exe') and which('bash.exe'):
-                terminal    = 'wt.exe'
-                args = []
+            if is_wsl and which('powershell.exe') and which('wsl.exe') and which('bash.exe'):
+                terminal    = 'cmd.exe'
+                args        = ['/c', 'start']
                 distro_name = os.getenv('WSL_DISTRO_NAME')
+                current_dir = os.getcwd()
 
                 # Split pane in Windows Terminal
                 if 'WT_SESSION' in os.environ and which('wt.exe'):
-                    args.extend(['-w', '0', 'split-pane', '-d', '.'])
-
+                    args.extend(['wt.exe', '-w', '0', 'split-pane'])
                 if distro_name:
-                    args.extend(['wsl.exe', '-d', distro_name, 'bash', '-c'])
+                    args.extend(['wsl.exe', '-d', distro_name, '--cd', current_dir, 'bash', '-c'])
                 else:
                     args.extend(['bash.exe', '-c'])
 
