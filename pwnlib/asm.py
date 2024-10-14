@@ -185,6 +185,7 @@ def which_binutils(util, check_version=False):
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
+        'arm':  ['aarch64'],
         'mips64': ['mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
@@ -273,8 +274,8 @@ def _assembler():
         'ia64':    [gas, '-m%ce' % context.endianness[0]],
 
         # riscv64-unknown-elf-as supports riscv32 as well as riscv64
-        'riscv32': [gas, '-march=rv32gc', '-mabi=ilp32'],
-        'riscv64': [gas, '-march=rv64gc', '-mabi=lp64'],
+        'riscv32': [gas, '-march=rv32g', '-mabi=ilp32'],
+        'riscv64': [gas, '-march=rv64g', '-mabi=lp64'],
     }
 
     assembler = assemblers.get(context.arch, [gas])
@@ -852,7 +853,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
                 universal_newlines = True
             ).strip()
             if extract and len(relocs.split('\n')) > 1:
-                log.error('Shellcode contains relocations:\n%s' % relocs)
+                log.warn('Shellcode contains relocations:\n%s' % relocs)
         else:
             shutil.copy(step2, step3)
 

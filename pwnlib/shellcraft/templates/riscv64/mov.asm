@@ -7,7 +7,7 @@
   import six
   log = getLogger('pwnlib.shellcraft.riscv64.mov')
 %>
-<%page args="dst, src"/>
+<%page args="dst, src, c=False"/>
 <%docstring>
 Move src into dst without newlines and null bytes.
 
@@ -26,8 +26,8 @@ Args:
 Example:
 
     >>> print(shellcraft.riscv64.mov('t0', 0).rstrip())
-        c.li t0, 0
-    >>> print(shellcraft.riscv64.mov('t0', 0x2000).rstrip())
+        xor t0, t6, t6
+    >>> print(shellcraft.riscv64.mov('t0', 0x2000, c=True).rstrip())
         c.lui t0, 2 /* mv t0, 0x2000 */
     >>> print(shellcraft.riscv64.mov('t5', 0x601).rstrip())
         xori t5, zero, 0x601
@@ -45,9 +45,9 @@ Example:
         xori t5, t5, 0x61f
     >>> print(shellcraft.riscv64.mov('t0', 0xcafebabe).rstrip())
         li t0, 0xcafebabe
-    >>> print(shellcraft.riscv64.mov('a0', 't2').rstrip())
+    >>> print(shellcraft.riscv64.mov('a0', 't2', c=True).rstrip())
         c.mv a0, t2
-    >>> print(shellcraft.riscv64.mov('t1', 'sp').rstrip())
+    >>> print(shellcraft.riscv64.mov('t1', 'sp', c=True).rstrip())
         c.mv t6, sp
         c.mv t1, t6 /* mv t1, sp */
 
@@ -82,12 +82,16 @@ encodes_no_newline = lambda a, not_a: not (a & 0xf == 0 or (a & 0xff0) >> 8 in [
 % elif src_reg is not None:
 ## Source is a register
 ## Special case where c.mv would produce a newline
-% if src_reg == 2 and dst_reg % 2 == 0:
+%  if c:
+%   if src_reg == 2 and dst_reg % 2 == 0:
     c.mv ${tmp}, ${src}
     c.mv ${dst}, ${tmp} /* mv ${dst}, ${src} */
-% else:
+%   else:
     c.mv ${dst}, ${src}
-% endif
+%   endif
+%  else:
+mv ${dst}, ${src}
+%  endif
 % else:
 ## Source is an immediate, normalize to [0, 2**64)
 
@@ -96,11 +100,22 @@ encodes_no_newline = lambda a, not_a: not (a & 0xf == 0 or (a & 0xff0) >> 8 in [
 
 ## 6-bit immediate for c.li
 % if src < 0x20 or src >= 0xffffffffffffffe0:
+
+%  if c:
     c.li ${dst}, ${pretty(src)}
+%  elif src == 0:
+    xor ${dst}, t6, t6
+%  else:
+    li ${dst}, ${pretty(src)}
+%  endif
 
 ## 6-bit immediate for c.lui
 % elif dst_reg != 2 and src & 0xfff == 0 and ((src>>12) < 0x20 or (src>>12) >= 0xffffffffffffffe0):
+%  if c:
     c.lui ${dst}, ${pretty(src>>12)} /* mv ${dst}, ${pretty(src)} */
+%  else:
+    lui ${dst}, ${pretty(src>>12)} /* mv ${dst}, ${pretty(src)} */
+%  endif
 
 ## 12-bit immediate
 % elif src < 0x800 or src >= 0xfffffffffffff800:

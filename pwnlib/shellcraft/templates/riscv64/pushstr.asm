@@ -60,11 +60,11 @@ Example:
         sd t4, -8(sp)
         addi sp, sp, -8
     >>> print(enhex(asm(shellcraft.riscv64.pushstr("/bin/sh"))))
-    b79e39349b8e7e7bb20e938ebe34b60e938efe22233cd1ff6111
+    b79e39349b8e7e7b939ece00938ebe34939ede00938efe22233cd1ff130181ff
     >>> print(enhex(asm(shellcraft.riscv64.pushstr(""))))
-    232c01fe6111
+    232c01fe130181ff
     >>> print(enhex(asm(shellcraft.riscv64.pushstr("\x00", append_null =  False))))
-    232c01fe6111
+    232c01fe130181ff
 
 Args:
   string (str): The string to push.
