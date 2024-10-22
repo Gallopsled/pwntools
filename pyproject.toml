@@ -38,7 +38,7 @@ dependencies = [
     "mako>=1.0.0",
     "pyelftools>=0.29, <0.30; python_version < '3'",
     "pyelftools>=0.29; python_version >= '3'",
-    "capstone>=3.0.5rc2",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
+    "capstone>=3.0.5rc2, !=6.0.0a1",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
     "ropgadget>=5.3",
     "pyserial>=2.7",
     "requests>=2.0",
