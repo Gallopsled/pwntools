@@ -136,7 +136,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2466][2466] Switch to PyPi Simple API for update checks
 - [#2467][2467] Fix loading at all on Windows
 - [#2469][2469] GDB 15+ rpyc detection
-- [#2493][2493] Fix NX reporting logic for x86_64
+- [#2493][2493] Fix NX reporting logic for amd64
 
 [2445]: https://github.com/Gallopsled/pwntools/pull/2445
 [2466]: https://github.com/Gallopsled/pwntools/pull/2466
