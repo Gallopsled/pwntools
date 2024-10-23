@@ -1924,7 +1924,7 @@ class ELF(ELFFile):
                 return False
             return None
         elif self.arch == 'amd64':
-            return True if non_exec else None
+            return missing or non_exec
         elif self.arch == 'powerpc':
             return not missing
         elif self.arch == 'powerpc64':
