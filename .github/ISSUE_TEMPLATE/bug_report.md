@@ -39,7 +39,7 @@ You should see `[DEBUG]` statements that show what's happening behind the scenes
 
 ## Verify on Ubuntu
 
-If possible, please verify that your issue occurs on 64-bit Ubuntu 18.04.  We provide a Dockerfile based on Ubuntu 18.04 via `docker.io` to make this super simple, no VM required!
+If possible, please verify that your issue occurs on 64-bit Ubuntu 22.04.  We provide a Dockerfile based on Ubuntu 22.04 via `docker.io` to make this super simple, no VM required!
 
 ```sh
 # Download the Docker image

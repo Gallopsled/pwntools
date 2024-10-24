@@ -909,8 +909,8 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            0:   b8 17 00 00 00          mov    eax, 0x17
         >>> print(disasm(unhex('48c7c017000000'), arch = 'amd64'))
            0:   48 c7 c0 17 00 00 00    mov    rax, 0x17
-        >>> print(disasm(unhex('04001fe552009000'), arch = 'arm'))
-           0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
+        >>> print(disasm(unhex('04001fe552009000'), arch = 'arm'))  # doctest: +ELLIPSIS
+           0:   e51f0004        ldr     r0, [pc, #-4]   ...
            4:   00900052        addseq  r0, r0, r2, asr r0
         >>> print(disasm(unhex('4ff00500'), arch = 'thumb', bits=32))
            0:   f04f 0005       mov.w   r0, #5

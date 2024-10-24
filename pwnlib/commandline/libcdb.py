@@ -37,17 +37,10 @@ lookup_parser.add_argument(
 )
 
 lookup_parser.add_argument(
-    '--download-libc',
+    '-d', '--download-libc',
     action = 'store_true',
     default = False,
     help = 'Attempt to download the matching libc.so'
-)
-
-lookup_parser.add_argument(
-    '--unstrip',
-    action = 'store_true',
-    default = True,
-    help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
 lookup_parser.add_argument(
@@ -55,6 +48,14 @@ lookup_parser.add_argument(
     action = 'store_false',
     dest = 'unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
+)
+
+lookup_parser.add_argument(
+    '--offline-only',
+    action = 'store_true',
+    default = False,
+    dest = 'offline_only',
+    help = 'Attempt to searching with offline only mode'
 )
 
 hash_parser = libc_commands.add_parser(
@@ -80,17 +81,10 @@ hash_parser.add_argument(
 )
 
 hash_parser.add_argument(
-    '--download-libc',
+    '-d', '--download-libc',
     action = 'store_true',
     default = False,
     help = 'Attempt to download the matching libc.so'
-)
-
-hash_parser.add_argument(
-    '--unstrip',
-    action = 'store_true',
-    default = True,
-    help = 'Attempt to unstrip the libc binary with debug symbols from a debuginfod server'
 )
 
 hash_parser.add_argument(
@@ -98,6 +92,14 @@ hash_parser.add_argument(
     action = 'store_false',
     dest = 'unstrip',
     help = 'Do NOT attempt to unstrip the libc binary with debug symbols from a debuginfod server'
+)
+
+hash_parser.add_argument(
+    '--offline-only',
+    action = 'store_true',
+    default = False,
+    dest = 'offline_only',
+    help = 'Attempt to searching with offline only mode'
 )
 
 file_parser = libc_commands.add_parser(
@@ -130,25 +132,34 @@ file_parser.add_argument(
 file_parser.add_argument(
     '--unstrip',
     action = 'store_true',
-    default = False,
+    dest = 'unstrip',
     help = 'Attempt to unstrip the libc binary inplace with debug symbols from a debuginfod server'
+)
+
+fetch_parser = libc_commands.add_parser(
+    'fetch',
+    help = 'Fetch libc database',
+    description = 'Fetch libc database. If no argument passed, it will init and upgrade libc-database repository',
+)
+
+fetch_parser.add_argument(
+    'path',
+    nargs = '?',
+    default = context.local_libcdb,
+    help = 'Set libc-database path, If it is empty, the default path will be `context.local_libcdb` (%s)' % context.local_libcdb
+)
+
+fetch_parser.add_argument(
+    '-u', '--update',
+    metavar = 'update',
+    nargs = '+',
+    choices = ['all', 'ubuntu', 'debian', 'rpm', 'centos', 'arch', 'alpine', 'kali', 'parrotsec', 'launchpad'],
+    help = 'Fetch the desired libc categories'
 )
 
 common_symbols = ['dup2', 'printf', 'puts', 'read', 'system', 'write']
 
-def find_libc(params):
-    import requests
-    url    = "https://libc.rip/api/find"
-    result = requests.post(url, json=params, timeout=20)
-    log.debug('Request: %s', params)
-    log.debug('Result: %s', result.json())
-    if result.status_code != 200 or len(result.json()) == 0:
-        log.failure("Could not find libc for %s on libc.rip", params)
-        return []
-
-    return result.json()
-
-def print_libc(libc):
+def print_libc_info(libc):
     log.info('%s', text.red(libc['id']))
     log.indented('\t%-20s %s', text.green('BuildID:'), libc['buildid'])
     log.indented('\t%-20s %s', text.green('MD5:'), libc['md5'])
@@ -158,14 +169,39 @@ def print_libc(libc):
     for symbol in libc['symbols'].items():
         log.indented('\t%25s = %s', symbol[0], symbol[1])
 
-def handle_remote_libc(args, libc):
-    print_libc(libc)
-    if args.download_libc:
-        path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
-        if path:
-            if args.unstrip:
-                libcdb.unstrip_libc(path)
-            shutil.copy(path, './{}.so'.format(libc['id']))
+def print_libc_elf(exe):
+    from hashlib import md5, sha1, sha256
+
+    log.info('%s', text.red(os.path.basename(exe.path)))
+
+    libc_version = get_libc_version(exe)
+    if libc_version:
+        log.indented('%-20s %s', text.green('Version:'), libc_version)
+
+    if exe.buildid:
+        log.indented('%-20s %s', text.green('BuildID:'), enhex(exe.buildid))
+
+    log.indented('%-20s %s', text.green('MD5:'), md5(exe.data).hexdigest())
+    log.indented('%-20s %s', text.green('SHA1:'), sha1(exe.data).hexdigest())
+    log.indented('%-20s %s', text.green('SHA256:'), sha256(exe.data).hexdigest())
+
+    # Always dump the basic list of common symbols
+    log.indented('%s', text.green('Symbols:'))
+    synthetic_symbols = collect_synthetic_symbols(exe)
+
+    symbols = common_symbols + (args.symbols or []) + synthetic_symbols
+    symbols.sort()
+    for symbol in symbols:
+        if symbol not in exe.symbols:
+            log.indented('%25s = %s', symbol, text.red('not found'))
+        else:
+            log.indented('%25s = %#x', symbol, translate_offset(exe.symbols[symbol], args, exe))
+
+def get_libc_version(exe):
+    res = re.search(br'libc[ -](\d+\.\d+)', exe.data)
+    if res:
+        return res.group(1).decode()
+    return None
 
 def translate_offset(offs, args, exe):
     if args.offset:
@@ -182,7 +218,7 @@ def collect_synthetic_symbols(exe):
         available_symbols.append('str_bin_sh')
     except StopIteration:
         pass
-        
+
     libc_start_main_return = exe.libc_start_main_return
     if libc_start_main_return > 0:
         exe.symbols['__libc_start_main_ret'] = libc_start_main_return
@@ -200,52 +236,56 @@ def main(args):
         if len(pairs) % 2 != 0:
             log.failure('Uneven number of arguments. Please provide "symbol offset" pairs')
             return
-        
+
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
-        matched_libcs = find_libc({'symbols': symbols})
+        matched_libcs = libcdb.search_by_symbol_offsets(symbols, offline_only=args.offline_only, return_raw=True)
+
         for libc in matched_libcs:
-            handle_remote_libc(args, libc)
+            print_libc_info(libc)
+            if args.download_libc:
+                path = libcdb.search_by_build_id(libc['buildid'], args.unstrip)
+                if path:
+                    shutil.copy(path, './{}.so'.format(libc['id']))
 
     elif args.libc_command == 'hash':
+        inverted_map = {v: k for k, v in libcdb.MAP_TYPES.items()}
+        hash_type = inverted_map.get(args.hash_type, args.hash_type)
+
         for hash_value in args.hash_value:
-            matched_libcs = find_libc({args.hash_type: hash_value})
-            for libc in matched_libcs:
-                handle_remote_libc(args, libc)
+            path = libcdb.search_by_hash(hash_value, hash_type, unstrip=args.unstrip, offline_only=args.offline_only)
+            exe = ELF(path, checksec=False)
+            print_libc_elf(exe)
+
+            if args.download_libc:
+                # if we cannot get actual libc version then copy with cache name
+                shutil.copy(path, './libc-{}.so'.format(get_libc_version(exe) or Path(path).stem))
 
     elif args.libc_command == 'file':
-        from hashlib import md5, sha1, sha256
         for file in args.files:
             if not os.path.exists(file) or not os.path.isfile(file):
                 log.failure('File does not exist %s', args.file)
                 continue
-            
+
             if args.unstrip:
                 libcdb.unstrip_libc(file)
 
-            exe = ELF(file, checksec=False)
-            log.info('%s', text.red(os.path.basename(file)))
+            print_libc_elf(ELF(file, checksec=False))
 
-            libc_version = re.search(br'libc[ -](\d+\.\d+)', exe.data)
-            if libc_version:
-                log.indented('%-20s %s', text.green('Version:'), libc_version.group(1).decode())
+    elif args.libc_command == 'fetch':
 
-            if exe.buildid:
-                log.indented('%-20s %s', text.green('BuildID:'), enhex(exe.buildid))
-            log.indented('%-20s %s', text.green('MD5:'), md5(exe.data).hexdigest())
-            log.indented('%-20s %s', text.green('SHA1:'), sha1(exe.data).hexdigest())
-            log.indented('%-20s %s', text.green('SHA256:'), sha256(exe.data).hexdigest())
+        if args.update:
+            subprocess.check_call(['./get'] + args.update, cwd=args.path)
 
-            # Always dump the basic list of common symbols
-            log.indented('%s', text.green('Symbols:'))
-            synthetic_symbols = collect_synthetic_symbols(exe)
+        else:
+            if not Path(args.path).exists():
+                if yesno("Would you like to initialize the libc-database repository? "
+                         "If the path already exists, this prompt will not display, and automatically upgrade repository."):
+                    log.waitfor("init libc-database repository")
+                    subprocess.check_call(['git', 'clone', 'https://github.com/niklasb/libc-database/', args.path])
+            else:
+                log.waitfor("upgrade libc-database repository")
+                subprocess.check_call(['git', 'pull'], cwd=args.path)
 
-            symbols = common_symbols + (args.symbols or []) + synthetic_symbols
-            symbols.sort()
-            for symbol in symbols:
-                if symbol not in exe.symbols:
-                    log.indented('%25s = %s', symbol, text.red('not found'))
-                else:
-                    log.indented('%25s = %#x', symbol, translate_offset(exe.symbols[symbol], args, exe))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

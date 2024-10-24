@@ -72,6 +72,10 @@ if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
+# Allow to override url with a caching proxy in CI
+LIBC_RIP_URL = os.environ.get("PWN_LIBCRIP_URL", "https://libc.rip").rstrip("/")
+GITLAB_LIBCDB_URL = os.environ.get("PWN_GITLAB_LIBCDB_URL", "https://gitlab.com").rstrip("/")
+
 # Retry failed lookups after some time
 NEGATIVE_CACHE_EXPIRY = 60 * 60 * 24 * 7 # 1 week
 
@@ -86,7 +90,7 @@ def provider_libcdb(hex_encoded_id, search_type):
     from six.moves import urllib
 
     # Build the URL using the requested hash type
-    url_base = "https://gitlab.com/libcdb/libcdb/raw/master/hashes/%s/" % search_type
+    url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -111,7 +115,7 @@ def query_libc_rip(params):
     # Deferred import because it's slow
     import requests
 
-    url = "https://libc.rip/api/find"
+    url = "{}/api/find".format(LIBC_RIP_URL)
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
@@ -143,6 +147,7 @@ def provider_libc_rip(search_target, search_type):
 
     url = libc_match[0]['download_url']
     log.debug("Downloading data from libc.rip: %s", url)
+    url = url.replace("https://libc.rip", LIBC_RIP_URL)
     data = wget(url, timeout=20)
 
     if not data:
@@ -254,6 +259,8 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
     # Ensure that the libcdb cache directory exists
     cache, cache_valid = _check_elf_cache('libcdb', search_target, search_type)
     if cache_valid:
+        if unstrip:
+            unstrip_libc(cache)
         return cache
     
     # We searched for this buildid before, but didn't find anything.
@@ -529,7 +536,9 @@ def _find_libc_package_lib_url(libc):
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
         for match in libc_match:
-            yield match['libs_url']
+            # Allow to override url with a caching proxy in CI
+            ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
+            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
     
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
@@ -646,7 +655,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, search_type='build_id'):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_only=False, search_type='build_id', return_as_list=False, return_raw=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -665,14 +674,16 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             The libc to select if there are multiple matches (starting at 1).
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
-        return_as_list(bool):
-            Return a list of build ids of all matching libc versions
-            instead of a path to a downloaded file.
         offline_only(bool):
             When pass `offline_only=True`, restricts search mode to offline sources only,
             disable online lookup. Defaults to `False`, and enable both offline and online providers.
         search_type(str):
             An option to select searched hash.
+        return_as_list(bool):
+            Return a list of build ids of all matching libc versions
+            instead of a path to a downloaded file.
+        return_raw(bool):
+            Return raw list of matched libc.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -727,6 +738,9 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     if return_as_list:
         return [libc['buildid'] for libc in matching_list]
+
+    if return_raw:
+        return matching_list
 
     mapped_type = MAP_TYPES.get(search_type, search_type)
 
