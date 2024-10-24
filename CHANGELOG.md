@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2483][2483] Only print `checksec` output of `ELF.libc` when it was printed for the `ELF` already
 - [#2482][2482] Throw error when using `sni` and setting `server_hostname` manually in `remote`
 - [#2478][2478] libcdb-cli: add `--offline-only`, refactor unstrip and add fetch parser for download libc-database
+- [#2484][2484] Allow to disable caching
 
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
@@ -94,6 +95,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2483]: https://github.com/Gallopsled/pwntools/pull/2483
 [2482]: https://github.com/Gallopsled/pwntools/pull/2482
 [2478]: https://github.com/Gallopsled/pwntools/pull/2478
+[2484]: https://github.com/Gallopsled/pwntools/pull/2484
 
 ## 4.14.0 (`beta`)
 
