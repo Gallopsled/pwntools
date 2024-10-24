@@ -79,6 +79,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2444][2444] Add `ELF.close()` to release resources
 - [#2413][2413] libcdb: improve the search speed of `search_by_symbol_offsets` in local libc-database
 - [#2470][2470] Fix waiting for gdb under WSL2
+- [#2479][2479] Support extracting libraries from Docker image in `pwn template`
+- [#2483][2483] Only print `checksec` output of `ELF.libc` when it was printed for the `ELF` already
 - [#2482][2482] Throw error when using `sni` and setting `server_hostname` manually in `remote`
 
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
@@ -87,6 +89,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2444]: https://github.com/Gallopsled/pwntools/pull/2444
 [2413]: https://github.com/Gallopsled/pwntools/pull/2413
 [2470]: https://github.com/Gallopsled/pwntools/pull/2470
+[2479]: https://github.com/Gallopsled/pwntools/pull/2479
+[2483]: https://github.com/Gallopsled/pwntools/pull/2483
 [2482]: https://github.com/Gallopsled/pwntools/pull/2482
 
 ## 4.14.0 (`beta`)
