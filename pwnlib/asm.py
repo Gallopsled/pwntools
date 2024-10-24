@@ -769,6 +769,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
         b'H\x8d\x05\x00\x00\x00\x00'
         >>> uncached_time = time.time() - start
         >>> asm("lea rax, [rip+0]", arch = 'amd64') # cache it
+        b'H\x8d\x05\x00\x00\x00\x00'
         >>> start = time.time()
         >>> asm("lea rax, [rip+0]", arch = 'amd64')
         b'H\x8d\x05\x00\x00\x00\x00'
