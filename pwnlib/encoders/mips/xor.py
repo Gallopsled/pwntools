@@ -41,7 +41,7 @@ decoders = {
     b'\xff\xff\x08\x21',    # addi   t0,t0,-1
     b'\xff\xff\x10\x05',    # bltzal t0,14 <next>
     b'\x82\x82\x08\x28',    # slti   t0,zero,-32126
-    b'\xe2\xff\xfd\x23',    # addi   sp,ra,-30
+    b'\xe0\xff\xfd\x23',    # addi   sp,ra,-32
     b'\x27\x58\x60\x01',    # nor    t3,t3,zero
     b'\x21\xc8\xeb\x03',    # addu   t9,ra,t3
     b'\x82\x82\x17\x28',    # slti   s7,zero,-32126
@@ -72,7 +72,7 @@ decoders = {
     b'\x21\x08\xff\xff',    # addi   t0,t0,-1
     b'\x05\x10\xff\xff',    # bltzal t0,14 <next>
     b'\x28\x08\x82\x82',    # slti   t0,zero,-32126
-    b'\x23\xfd\xff\xe2',    # addi   sp,ra,-30
+    b'\x23\xfd\xff\xe0',    # addi   sp,ra,-32
     b'\x01\x60\x58\x27',    # nor    t3,t3,zero
     b'\x03\xeb\xc8\x21',    # addu   t9,ra,t3
     b'\x28\x17\x82\x82',    # slti   s7,zero,-32126

@@ -714,14 +714,14 @@ class ELF(ELFFile):
 
     @property
     def libs(self):
-        """Dictionary of {path: address} for every library loaded for this ELF."""
+        """Dictionary of ``{path: address}`` for every library loaded for this ELF."""
         if self._libs is None:
             self._populate_libraries()
         return self._libs
 
     @property
     def maps(self):
-        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        """Dictionary of ``{name: address}`` for every mapping in this ELF's address space."""
         if self._maps is None:
             self._populate_libraries()
         return self._maps
