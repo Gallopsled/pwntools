@@ -259,6 +259,8 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
     # Ensure that the libcdb cache directory exists
     cache, cache_valid = _check_elf_cache('libcdb', search_target, search_type)
     if cache_valid:
+        if unstrip:
+            unstrip_libc(cache)
         return cache
     
     # We searched for this buildid before, but didn't find anything.
@@ -653,7 +655,7 @@ def _handle_multiple_matching_libcs(matching_libcs):
     selected_index = options("Select the libc version to use:", [libc['id'] for libc in matching_libcs])
     return matching_libcs[selected_index]
 
-def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as_list=False, offline_only=False, search_type='build_id'):
+def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_only=False, search_type='build_id', return_as_list=False, return_raw=False):
     """
     Lookup possible matching libc versions based on leaked function addresses.
 
@@ -672,14 +674,16 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
             The libc to select if there are multiple matches (starting at 1).
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
-        return_as_list(bool):
-            Return a list of build ids of all matching libc versions
-            instead of a path to a downloaded file.
         offline_only(bool):
             When pass `offline_only=True`, restricts search mode to offline sources only,
             disable online lookup. Defaults to `False`, and enable both offline and online providers.
         search_type(str):
             An option to select searched hash.
+        return_as_list(bool):
+            Return a list of build ids of all matching libc versions
+            instead of a path to a downloaded file.
+        return_raw(bool):
+            Return raw list of matched libc.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
@@ -734,6 +738,9 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, return_as
 
     if return_as_list:
         return [libc['buildid'] for libc in matching_list]
+
+    if return_raw:
+        return matching_list
 
     mapped_type = MAP_TYPES.get(search_type, search_type)
 
