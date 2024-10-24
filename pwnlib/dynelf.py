@@ -652,7 +652,7 @@ class DynELF(object):
                 break
 
             if name:
-                self.status('Skipping %s' % name)
+                self.status('Skipping %r' % name)
 
             cur = leak.field(cur, LinkMap.l_next)
         else:

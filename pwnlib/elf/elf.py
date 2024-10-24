@@ -358,6 +358,7 @@ class ELF(ELFFile):
         self._populate_functions()
         self._populate_kernel_version()
 
+        self._print_checksec = checksec
         if checksec:
             self._describe()
 
@@ -713,14 +714,14 @@ class ELF(ELFFile):
 
     @property
     def libs(self):
-        """Dictionary of {path: address} for every library loaded for this ELF."""
+        """Dictionary of ``{path: address}`` for every library loaded for this ELF."""
         if self._libs is None:
             self._populate_libraries()
         return self._libs
 
     @property
     def maps(self):
-        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        """Dictionary of ``{name: address}`` for every mapping in this ELF's address space."""
         if self._maps is None:
             self._populate_libraries()
         return self._maps
@@ -730,12 +731,13 @@ class ELF(ELFFile):
         """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
         and we can determine the appropriate path to it on the local
         system, returns a new :class:`.ELF` object pertaining to that library.
+        Prints the `checksec` output of the library if it was printed for the original ELF too.
 
         If not found, the value will be :const:`None`.
         """
         for lib in self.libs:
             if '/libc.' in lib or '/libc-' in lib:
-                return ELF(lib)
+                return ELF(lib, self._print_checksec)
 
     def _populate_libraries(self):
         """
