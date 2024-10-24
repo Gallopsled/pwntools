@@ -908,10 +908,9 @@ class ELF(ELFFile):
                 continue
 
             for symbol in _iter_symbols(section):
-                value = symbol.entry.st_value
-                if not value:
+                if not symbol.name:
                     continue
-                self.symbols[symbol.name] = value
+                self.symbols[symbol.name] = symbol.entry.st_value
 
     def _populate_synthetic_symbols(self):
         """Adds symbols from the GOT and PLT to the symbols dictionary.
