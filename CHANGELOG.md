@@ -275,12 +275,14 @@ The table below shows which release corresponds to each branch, and what date th
 
 In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of Pwntools.
 
+- [#1974][1974] Add kCTF Proof of Work challenge generator, solver and verifier
 - [#2062][2062] make pwn cyclic -l work with entry larger than 4 bytes
 - [#2092][2092] shellcraft: dup() is now called dupio() consistently across all supported arches
 - [#2093][2093] setresuid() in shellcraft uses current euid by default
 - [#2125][2125] Allow tube.recvregex to return capture groups
 - [#2144][2144] Removes `p2align 2` `asm()` headers from `x86-32`, `x86-64` and `mips` architectures to avoid inconsistent instruction length when patching binaries
 
+[1974]: https://github.com/Gallopsled/pwntools/pull/1974
 [2062]: https://github.com/Gallopsled/pwntools/pull/2062
 [2092]: https://github.com/Gallopsled/pwntools/pull/2092
 [2093]: https://github.com/Gallopsled/pwntools/pull/2093
