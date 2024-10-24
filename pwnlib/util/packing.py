@@ -1200,3 +1200,56 @@ def _decode(b):
 
 del op, size, end, sign
 del name, routine, mod
+
+def overlap_structure(*structs):
+    r"""overlap_structure(*structs: tuple[bytes_like]) -> bytes
+
+    Unpacks bytes_like structures and overlap them up. Check the example
+    below for more detail.
+
+    Parameters:
+        structs: ``str``, ``bytes`` and ``list[int]`` are all acceptable,
+            as long as the argument is "len-able", iterable and serving ints.
+            Note ``str`` will be used as ``bytes`` object.
+
+    Raises:
+        ValueError: 2 non-zero values on the same index. Carry `msg` of
+            conflicted indexes.
+
+    Returns:
+        A bytes object with overlapped structure, whose length is the max length
+        in ``structs``. If there is only one argument, itself will be returned,
+        no matter what it is.
+
+    Examples:
+
+        >>> x = p32(0x7ffffe30)
+        >>> y = [0, 0, 0, 0, 33, 34, 35, 36]
+        >>> overlap_structure(x, y)
+        b'0\xfe\xff\x7f!"#$'
+        >>> z = p32(0xbeef)
+        >>> overlap_structure(x, y, z)
+        Traceback (most recent call last):
+        ...
+        ValueError: Conflict values at index 0, 1
+    """
+    if len(structs) == 1:
+        return structs[0]
+
+    # convert str to bytes first to calc accurate length
+    itr = [_need_bytes(s) if isinstance(s, str) else s for s in structs]
+    maxlen = max(len(e) for e in itr)
+    final = [0] * maxlen
+    errs = set()
+
+    for s in itr:
+        for i, e in enumerate(s):
+            if e > 0:
+                if final[i]:
+                    errs.add(i)
+                final[i] = e
+
+    if errs:
+        raise ValueError('Conflict values at index %s' % str(errs)[1:-1])
+    return bytes(final)
+
