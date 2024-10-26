@@ -3,10 +3,7 @@ from __future__ import print_function
 
 import glob
 import os
-import platform
-import subprocess
 import sys
-import traceback
 from distutils.command.install import INSTALL_SCHEMES
 from distutils.sysconfig import get_python_inc
 from distutils.util import convert_path
@@ -45,51 +42,28 @@ for filename in glob.glob('pwnlib/commandline/*'):
     if not flag:
         console_scripts.append(script)
 
-install_requires     = ['paramiko>=1.15.2',
-                        'mako>=1.0.0',
-                        'pyelftools>=0.2.4',
-                        'capstone>=3.0.5rc2', # See Gallopsled/pwntools#971, Gallopsled/pwntools#1160
-                        'ropgadget>=5.3',
-                        'pyserial>=2.7',
-                        'requests>=2.0',
-                        'pip>=6.0.8',
-                        'pygments>=2.0',
-                        'pysocks',
-                        'python-dateutil',
-                        'packaging',
-                        'psutil>=3.3.0',
-                        'intervaltree>=3.0',
-                        'sortedcontainers',
-                        # see unicorn-engine/unicorn#1100 and #1170
-                        'unicorn>=1.0.2rc1',
-                        'six>=1.12.0',
-                        'rpyc',
-                        'colored_traceback',
-]
+compat = {}
+if sys.version_info < (3, 4):
+    import site
 
-if platform.python_version_tuple()[0] == '2':
-    install_requires += ['pathlib2']
+    import toml
+    project = toml.load('pyproject.toml')['project']
+    compat['packages'] = find_packages()
+    compat['install_requires'] = project['dependencies']
+    compat['name'] = project['name']
+    # https://github.com/pypa/pip/issues/7953
+    site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
+
 
 # Check that the user has installed the Python development headers
 PythonH = os.path.join(get_python_inc(), 'Python.h')
 if not os.path.exists(PythonH):
     print("You must install the Python development headers!", file=sys.stderr)
-    print("$ apt-get install python-dev", file=sys.stderr)
+    print("$ sudo apt-get install python-dev", file=sys.stderr)
     sys.exit(-1)
 
-# Convert README.md to reStructuredText for PyPI
-long_description = ''
-try:
-    long_description = subprocess.check_output(['pandoc', 'README.md', '--to=rst'], universal_newlines=True)
-except Exception as e:
-    print("Failed to convert README.md through pandoc, proceeding anyway", file=sys.stderr)
-    traceback.print_exc()
-
 setup(
-    name                 = 'pwntools',
-    python_requires      = '>=2.7',
-    packages             = find_packages(),
-    version              = '4.10.0dev',
+    version              = '4.15.0dev',
     data_files           = [('pwntools-doc',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
@@ -105,33 +79,5 @@ setup(
     },
     entry_points = {'console_scripts': console_scripts},
     scripts              = glob.glob("bin/*"),
-    description          = "Pwntools CTF framework and exploit development library.",
-    long_description     = long_description,
-    author               = "Gallopsled et al.",
-    author_email         = "pwntools-users@googlegroups.com",
-    url                  = 'https://pwntools.com',
-    download_url         = "https://github.com/Gallopsled/pwntools/releases",
-    install_requires     = install_requires,
-    license              = "Mostly MIT, some GPL/BSD, see LICENSE-pwntools.txt",
-    keywords             = 'pwntools exploit ctf capture the flag binary wargame overflow stack heap defcon',
-    classifiers          = [
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Topic :: Security',
-        'Topic :: Software Development :: Assemblers',
-        'Topic :: Software Development :: Debuggers',
-        'Topic :: Software Development :: Disassemblers',
-        'Topic :: Software Development :: Embedded Systems',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: System :: System Shells',
-        'Topic :: Utilities',
-    ]
+    **compat
 )

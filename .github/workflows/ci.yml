@@ -5,31 +5,97 @@ jobs:
   test:
     strategy:
       matrix:
-        python-version: [2.7, 3.8]
+        python_version: ['3.10', '3.12']
         os: [ubuntu-latest]
+        include:
+          - python_version: '2.7'
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    services:
+      libcdb-cache:
+        image: nginx
+        volumes:
+          - /home/runner/libcdb-cache:/var/cache/nginx
+        ports:
+          - 3000:3000  # https://debuginfod.elfutils.org proxy cache
+          - 3001:3001  # https://libc.rip/ proxy cache
+          - 3002:3002  # http://archive.ubuntu.com/ proxy cache
+          - 3003:3003  # https://gitlab.com/ proxy cache
+    env:
+      DEBUGINFOD_URLS: http://localhost:3000/
+      PWN_LIBCRIP_URL: http://localhost:3001/
+      PWN_UBUNTU_ARCHIVE_URL: http://localhost:3002/
+      PWN_GITLAB_LIBCDB_URL:  http://localhost:3003/
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 20
 
     - name: Git History
       run: |
         git fetch origin
         git log --oneline --graph -10
+    
+    - name: Fix libcdb-cache permissions
+      id: fix-perms
+      run: |
+        sudo chown -R runner:runner /home/runner/libcdb-cache
+        echo "date=$(/bin/date -u "+%Y%m%d%H%M%S")" >> $GITHUB_OUTPUT
 
+    - name: Cache for libcdb requests
+      uses: actions/cache@v4
+      with:
+        path: ~/libcdb-cache
+        key: libcdb-python${{ matrix.python_version }}-${{ steps.fix-perms.outputs.date }}
+        restore-keys: |
+          libcdb-python${{ matrix.python_version }}-
+          libcdb-
+
+    - name: Install libcdb-cache service config
+      run: |
+        sudo chown -R 101:101 /home/runner/libcdb-cache
+        container_id=$(docker ps --all --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
+        docker cp ./travis/libcdb_nginx_cache.conf $container_id:/etc/nginx/nginx.conf
+        docker restart $container_id
+
+    - name: Install RPyC for gdb
+      run: |
+        # The version packaged in python3-rpyc is too old on Ubuntu 24.04
+        # We use ^6.0 from pip.
+        sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
+        /usr/bin/python -m pip install --break-system-packages rpyc || /usr/bin/python -m pip install rpyc
+        gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
+    
     - name: Cache for pip
-      uses: actions/cache@v1
-      id: cache-pip
+      uses: actions/cache@v4
+      if: matrix.python_version == '2.7'
       with:
         path: ~/.cache/pip
-        key: ${{ matrix.os }}-cache-pip
+        key: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-${{ hashFiles('**/pyproject.toml', '**/requirements*.txt') }}
+        restore-keys: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - name: Set up Python ${{ matrix.python_version }}
+      if: matrix.python_version != '2.7'
+      uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ matrix.python_version }}
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
+
+    - name: Set up Python 2.7
+      if: matrix.python_version == '2.7'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python2.7 python2.7-dev python2-pip-whl
+        sudo ln -sf python2.7 /usr/bin/python
+        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+        sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+        sudo chown -R $USER /usr/local/lib/python2.7
+
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -49,7 +115,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
           ash bash-static dash ksh mksh zsh \
-          pandoc gdb gdbserver socat sshpass \
+          gdb gdbserver socat \
           binutils-multiarch qemu-user-static \
           binutils-aarch64-linux-gnu \
           binutils-arm-linux-gnueabihf \
@@ -58,39 +124,12 @@ jobs:
           binutils-powerpc-linux-gnu \
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
+          binutils-riscv64-linux-gnu \
           gcc-multilib \
-          libc6-dbg
+          libc6-dbg \
+          elfutils \
+          patchelf
       
-    - name: Cache for elfutils
-      uses: actions/cache@v1
-      id: cache-elfutils
-      with:
-        path: ~/.cache/elfutils
-        key: ${{ matrix.os }}-cache-elfutils
-    
-    # Install newer elfutils version due to regression in 0.176 available in focal.
-    - name: Install newer elfutils
-      env:
-        ELFUTILS_VERSION: 0.181
-      run: |
-        if [[ ! -d ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION} ]]
-        then
-          wget -O /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2 https://sourceware.org/elfutils/ftp/${ELFUTILS_VERSION}/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          mkdir -p ~/.cache/elfutils && cd ~/.cache/elfutils
-          tar -xf /tmp/elfutils-${ELFUTILS_VERSION}.tar.bz2
-          cd elfutils-${ELFUTILS_VERSION}
-          LDFLAGS=-Wl,-rpath=/usr/local/lib,--enable-new-dtags ./configure --disable-libdebuginfod --disable-debuginfod && make && sudo make install
-        else
-          cd ~/.cache/elfutils/elfutils-${ELFUTILS_VERSION}
-          sudo make install
-        fi
-        eu-unstrip --version
-
-    - name: Install RPyC for GDB
-      run: |
-        sudo apt-get install -y python3-pip
-        /usr/bin/python3 -m pip install rpyc
-
     - name: Testing Corefiles
       run: |
         ulimit -a
@@ -106,9 +145,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade wheel
+        pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        python setup.py egg_info
         pip install --upgrade --editable .
 
     - name: Sanity checks
@@ -118,7 +156,8 @@ jobs:
       run: pip install -r docs/requirements.txt
 
     - name: Manually install non-broken Unicorn
-      run:  pip install unicorn==1.0.2rc3
+      if:   matrix.python_version == '2.7'
+      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
@@ -126,6 +165,10 @@ jobs:
 
     - name: Coverage doctests
       run: |
+        # Python version installed using setup-python interferes with gdb's python
+        # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
+        # like _socket. This is a workaround.
+        unset LD_LIBRARY_PATH
         PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
     - name: Coverage running examples
@@ -153,11 +196,18 @@ jobs:
         pwn shellcraft --list |tail
         pwn shellcraft -l --syscalls |tail
         pwn shellcraft -l execve
+        pwn shellcraft -l execve + exit
         pwn shellcraft --show i386.linux.loader_append
+        pwn shellcraft --show i386.linux.loader_append + i386.linux.sh
         pwn shellcraft -f asm --color amd64.linux.sh
+        pwn shellcraft -f asm --color amd64.linux.setreuid + amd64.linux.cat /etc/passwd
+        pwn shellcraft -f asm --color amd64.linux.setreuid = amd64.linux.cat /key+secret --delim =
         pwn shellcraft -f elf amd64.linux.syscalls.exit 0 </dev/null |pwn hex
+        pwn shellcraft -f elf amd64.linux.cat /etc/passwd + amd64.linux.syscalls.exit 0 </dev/null |pwn hex
         pwn shellcraft -f i   --color amd64.linux.cat /etc/passwd </dev/null
+        pwn shellcraft -f i   --color amd64.linux.cat /etc/passwd + amd64.linux.sh </dev/null
         pwn shellcraft -f c   amd64.linux.syscalls.exit 0 </dev/null
+        pwn shellcraft -f c   amd64.linux.cat /etc/passwd + amd64.linux.syscalls.exit 0 </dev/null
         pwn shellcraft -f str aarch64.linux.sh </dev/null
         pwn shellcraft -abr -f elf -o /dev/null amd64.linux.cat /etc/passwd </dev/null
         pwn shellcraft -nzr thumb.linux.syscalls.execve /bin/cat '["/bin/cat", "/etc/os-release"]' </dev/null
@@ -166,6 +216,11 @@ jobs:
         pwn disasm --color ff3424c3ebfe
         pwn asm -f hex nop
 
+        pwn hex ABCD
+        pwn hex ABCD --separator ' '
+        pwn hex ABCD --prefix '\x'
+        pwn hex ABCD -p '0x' -s ' '
+
         pwn hex abcd
         pwn unhex 4141 4141
 
@@ -173,6 +228,7 @@ jobs:
         pwn phd -l 0x3d --color=always /etc/os-release
 
         pwn checksec /bin/bash
+        (ulimit -v 500000 && pwn checksec /bin/bash)
 
         pwn errno 2
         pwn errno -1
@@ -181,32 +237,87 @@ jobs:
         pwn constgrep -c freebsd -m ^PROT_ '3 + 4'
         pwn constgrep ^MAP_ 0
         pwn constgrep -e O_RDWR
+        pwn constgrep C
 
         pwn libcdb file /lib/x86_64-linux-gnu/libc.so.6
         pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
+      if: matrix.python_version != '2.7'
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel --universal
+        python -m build
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
+      if: matrix.python_version == '3.10'
       with:
         name: packages
         path: dist/
+        include-hidden-files: true
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ matrix.python_version }}
+        path: .coverage*
+        include-hidden-files: true
+    
+    - name: Fix libcdb-cache permissions
+      run: |
+        container_id=$(docker ps --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
+        docker stop $container_id
+        sudo chown -R runner:runner /home/runner/libcdb-cache
+
+  windows-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade --editable .
+    
+    - name: Sanity checks
+      run: |
+        python -bb -c 'from pwn import *'
+        python -bb examples/text.py
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 20
+
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: coverage-*
+        merge-multiple: true
+
+    - name: Install coveralls
+      run: |
+        pip install --break-system-packages tomli coveralls || pip install tomli coveralls
 
     - name: Upload coverage to coveralls.io
       run: |
         coverage combine
         COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
 
+
   staging-merge:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
     needs: test
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 20
     - name: Push changes to protected branch
@@ -219,22 +330,22 @@ jobs:
         git push origin "$TARGET"
         git push origin --delete "$BRANCH"
 
+
   pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    permissions:
+      id-token: write
     needs: test
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: packages
         path: dist
 
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@v1.1.0
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_password }}
+      uses: pypa/gh-action-pypi-publish@release/v1
 
     - if: failure()
       run: ls -R

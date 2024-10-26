@@ -25,8 +25,18 @@ parser = argparse.ArgumentParser(description='Pwntools Command-line Interface',
                                  prog='pwn')
 parser_commands = parser.add_subparsers(dest='command')
 
-def main(file=sys.argv[0]):
-    import pwnlib.commandline.main
+def main(file=sys.argv[0], command_main=None):
     name = os.path.splitext(os.path.basename(file))[0]
+    if command_main is None:
+        import importlib
+        command_main = importlib.import_module('pwnlib.commandline.%s' % name).main
     sys.argv.insert(1, name)
-    pwnlib.commandline.main.main()
+    entrypoint({name: command_main})
+
+def entrypoint(commands):
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        sys.exit()
+    args = parser.parse_args()
+    with context.local(log_console = sys.stderr):
+        commands[args.command](args)

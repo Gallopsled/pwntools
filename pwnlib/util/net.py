@@ -166,6 +166,7 @@ def interfaces4(all = False):
       IPv4 addresses.
 
     Examples:
+
         >>> interfaces4(all=True) # doctest: +ELLIPSIS
         {...'127.0.0.1'...}
     """
@@ -191,6 +192,7 @@ def interfaces6(all = False):
       IPv6 addresses.
 
     Examples:
+
         >>> interfaces6() # doctest: +ELLIPSIS
         {...'::1'...}
     """

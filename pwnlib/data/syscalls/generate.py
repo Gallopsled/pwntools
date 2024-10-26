@@ -72,7 +72,7 @@ CALL = """
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[index] = arg
+                stack_arguments[name] = arg
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
@@ -100,7 +100,7 @@ CALL = """
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[target] = arg
+                stack_arguments[name] = arg
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
@@ -108,7 +108,7 @@ CALL = """
         if hasattr(pwnlib.constants, syscall):
             break
     else:
-        raise Exception("Could not locate any syscalls: %r" % syscalls)
+        raise Exception("Could not locate any syscalls: %r" % {syscalls!r})
 %>
     /* {name}(${{', '.join(syscall_repr)}}) */
 %for name, arg in string_arguments.items():
@@ -249,7 +249,7 @@ def generate_one(target):
             # Mako is unable to use *vararg and *kwarg, so we just stub in
             # a whole bunch of additional arguments.
             if argname == 'vararg':
-                for j in range(5):
+                for j in range(6):
                     argname = 'vararg_%i' % j
                     argument_names.append(argname)
                     argument_names_.append(argname)

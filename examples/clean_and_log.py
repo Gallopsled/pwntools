@@ -11,18 +11,24 @@ Solution:
 """
 
 from pwn import *
+from multiprocessing import Process
 
-os.system('''((
-echo prefix sometext ;
-echo prefix someothertext ;
-echo here comes the flag ;
-echo LostInTheInterTubes
-) | nc -l 1337) &
-''')
+def submit_data():
+    with context.quiet:
+        with listen(1337) as io:
+            io.wait_for_connection()
+            io.sendline(b'prefix sometext')
+            io.sendline(b'prefix someothertext')
+            io.sendline(b'here comes the flag')
+            io.sendline(b'LostInTheInterTubes')
 
-r = remote('localhost', 1337)
-atexit.register(r.clean_and_log)
+if __name__ == '__main__':
+    p = Process(target=submit_data)
+    p.start()
 
-while True:
-    line = r.recvline()
-    print(re.findall(r'^prefix (\S+)$', line)[0])
+    r = remote('localhost', 1337)
+    atexit.register(r.clean_and_log)
+
+    while True:
+        line = r.recvline()
+        print(re.findall(br'^prefix (\S+)$', line)[0])

@@ -71,6 +71,7 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
+import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
@@ -97,8 +98,8 @@ pwnlib.context.ContextType.defaults['log_console'] = stdout()
 github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
-branch_dev = os.environ.get('GITHUB_BASE_REF') == 'dev'
 skip_android = True
+is_python2 = six.PY2
 '''
 
 autoclass_content = 'both'
@@ -169,7 +170,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -265,8 +266,8 @@ latex_documents = [
    u'2016, Gallopsled et al.', 'manual'),
 ]
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None),
-                       'paramiko': ('https://paramiko-docs.readthedocs.org/en/2.1/', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
+                       'paramiko': ('https://docs.paramiko.org/en/2.1/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -381,8 +382,6 @@ if build_dash:
         html_theme = 'alabaster'
         html_theme_path = [alabaster.get_path()]
         html_theme_options = { 'nosidebar' : True }
-
-    # otherwise, readthedocs.org uses their theme by default, so no need to specify it
 
 
 # -- Customization to Sphinx autodoc generation --------------------------------------------

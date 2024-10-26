@@ -717,15 +717,20 @@ class ROP(object):
             name = ",".join(goodregs)
             stack.append((gadget.address, gadget))
             for r in gadget.regs:
-                moved += context.bytes
-                if r in registers:
-                    stack.append((registers[r], r))
-                else:
-                    stack.append((Padding('<pad %s>' % r), r))
+                if isinstance(r, str):
+                    if r in registers:
+                        stack.append((registers[r], r))
+                    else:
+                        stack.append((Padding('<pad %s>' % r), r))
+                    moved += context.bytes
+                    continue
 
-            for slot in range(moved, gadget.move, context.bytes):
-                left = gadget.move - slot
-                stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                for slot in range(moved, moved + r, context.bytes):
+                    left = gadget.move - slot
+                    stack.append((Padding('<pad %#x>' % left), 'stack padding'))
+                    moved += context.bytes
+
+            assert moved == gadget.move
 
         return stack
 
@@ -1037,10 +1042,6 @@ class ROP(object):
 
         return stack
 
-
-    def find_stack_adjustment(self, slots):
-        self.search(move=slots * context.bytes)
-
     def chain(self, base=None):
         """Build the ROP chain
         
@@ -1167,6 +1168,15 @@ class ROP(object):
             if tuple(gadget.insns)[:n] == tuple(instructions):
                 return gadget
 
+    def _flatten(self, initial_list):
+        # Flatten out any nested lists.
+        flattened_list = []
+        for data in initial_list:
+            if isinstance(data, (list, tuple)):
+                flattened_list.extend(self._flatten(data))
+            else:
+                flattened_list.append(data)
+        return flattened_list
 
     def raw(self, value):
         """Adds a raw integer or string to the ROP chain.
@@ -1174,14 +1184,18 @@ class ROP(object):
         If your architecture requires aligned values, then make
         sure that any given string is aligned!
 
+        When given a list or a tuple of values, the list is
+        flattened before adding every item to the chain.
+
         Arguments:
-            data(int/bytes): The raw value to put onto the rop chain.
+            data(int/bytes/list): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])
         >>> rop.raw('AAAAAAAA')
         >>> rop.raw('BBBBBBBB')
         >>> rop.raw('CCCCCCCC')
+        >>> rop.raw(['DDDD', 'DDDD'])
         >>> print(rop.dump())
         0x0000:          b'AAAA' 'AAAAAAAA'
         0x0004:          b'AAAA'
@@ -1189,10 +1203,16 @@ class ROP(object):
         0x000c:          b'BBBB'
         0x0010:          b'CCCC' 'CCCCCCCC'
         0x0014:          b'CCCC'
+        0x0018:          b'DDDD' 'DDDD'
+        0x001c:          b'DDDD' 'DDDD'
         """
         if self.migrated:
             log.error('Cannot append to a migrated chain')
-        self._chain.append(value)
+
+        if isinstance(value, (list, tuple)):
+            self._chain.extend(self._flatten(value))
+        else:
+            self._chain.append(value)
 
     def migrate(self, next_base):
         """Explicitly set $sp, by using a ``leave; ret`` gadget"""
@@ -1224,6 +1244,9 @@ class ROP(object):
 
     def __get_cachefile_name(self, files):
         """Given an ELF or list of ELF objects, return a cache file for the set of files"""
+        if context.cache_dir is None:
+            return None
+
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         if not os.path.exists(cachedir):
             os.mkdir(cachedir)
@@ -1240,12 +1263,14 @@ class ROP(object):
     @staticmethod
     def clear_cache():
         """Clears the ROP gadget cache"""
+        if context.cache_dir is None:
+            return
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
         shutil.rmtree(cachedir)
 
     def __cache_load(self, elf):
         filename = self.__get_cachefile_name(elf)
-        if not os.path.exists(filename):
+        if filename is None or not os.path.exists(filename):
             return None
         gadgets = eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
@@ -1253,8 +1278,11 @@ class ROP(object):
         return gadgets
 
     def __cache_save(self, elf, data):
+        filename = self.__get_cachefile_name(elf)
+        if filename is None:
+            return
         data = {k + elf.load_addr - elf.address:v for k, v in data.items()}
-        open(self.__get_cachefile_name(elf), 'w+').write(repr(data))
+        open(filename, 'w+').write(repr(data))
 
     def __load(self):
         """Load all ROP gadgets for the selected ELF files"""
@@ -1366,9 +1394,7 @@ class ROP(object):
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
-                    while arg >= context.bytes:
-                        regs.append(hex(arg))
-                        arg -= context.bytes
+                    regs.append(arg)
                 elif ret.match(insn):
                     sp_move += context.bytes
                 elif leave.match(insn):
@@ -1473,6 +1499,7 @@ class ROP(object):
                 .dynamic section. .got.plt entries are a good target. Required
                 for PIE binaries.
         Test:
+
             >>> context.clear(binary=pwnlib.data.elf.ret2dlresolve.get("amd64"))
             >>> r = ROP(context.binary)
             >>> r.ret2csu(1, 2, 3, 4, 5, 6, 7, 8, 9)
@@ -1517,22 +1544,17 @@ class ROP(object):
         # Prioritise non-PIE binaries so we can use _fini
         exes = (elf for elf in self.elfs if not elf.library and elf.bits == 64)
 
-        nonpie = csu = None
+        csu = None
         for elf in exes:
-            if not elf.pie:
-                if '__libc_csu_init' in elf.symbols:
-                    break
-                nonpie = elf
-            elif '__libc_csu_init' in elf.symbols:
+            if '__libc_csu_init' in elf.symbols:
                 csu = elf
+                if not elf.pie:
+                    break
+
+        if csu:
+            elf = csu
         else:
             log.error('No non-library binaries in [elfs]')
-
-        if elf.pie:
-            if nonpie:
-                elf = nonpie
-            elif csu:
-                elf = csu
 
         from .ret2csu import ret2csu
         ret2csu(self, elf, edi, rsi, rdx, rbx, rbp, r12, r13, r14, r15, call)

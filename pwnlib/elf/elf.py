@@ -47,15 +47,15 @@ import tempfile
 
 from six import BytesIO
 
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
-from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.elffile import ELFFile
+from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
 from elftools.elf.gnuversions import GNUVerDefSection
-from elftools.elf.relocation import RelocationSection
+from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
 
@@ -83,7 +83,7 @@ from pwnlib.tubes.process import process
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util.fiddling import unhex
-from pwnlib.util.misc import align, align_down
+from pwnlib.util.misc import align, align_down, which
 from pwnlib.util.sh_string import sh_string
 
 log = getLogger(__name__)
@@ -225,14 +225,7 @@ class ELF(ELFFile):
         super(ELF,self).__init__(self.mmap)
 
         #: :class:`str`: Path to the file
-        self.path = os.path.abspath(path)
-
-        #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
-        #:
-        #: See: :attr:`.ContextType.arch`
-        self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
-            self.arch = self.arch.lower()
+        self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
         self.symbols = dotdict()
@@ -240,7 +233,7 @@ class ELF(ELFFile):
         #: :class:`dotdict` of ``name`` to ``address`` for all Global Offset Table (GOT) entries
         self.got = dotdict()
 
-        #: :class:`dotdict` of ``name`` to ``address`` for all Procedure Linkate Table (PLT) entries
+        #: :class:`dotdict` of ``name`` to ``address`` for all Procedure Linkage Table (PLT) entries
         self.plt = dotdict()
 
         #: :class:`dotdict` of ``name`` to :class:`.Function` for each function in the ELF
@@ -268,17 +261,12 @@ class ELF(ELFFile):
         #: :class:`int`: Pointer width, in bytes
         self.bytes = self.bits // 8
 
-        if self.arch == 'mips':
-            mask = lambda a, b: a & b == b
-            flags = self.header['e_flags']
-
-            if mask(flags, E_FLAGS.EF_MIPS_ARCH_32) \
-            or mask(flags, E_FLAGS.EF_MIPS_ARCH_32R2):
-                pass
-            elif mask(flags, E_FLAGS.EF_MIPS_ARCH_64) \
-            or mask(flags, E_FLAGS.EF_MIPS_ARCH_64R2):
-                self.arch = 'mips64'
-                self.bits = 64
+        #: :class:`str`: Architecture of the file (e.g. ``'i386'``, ``'arm'``).
+        #:
+        #: See: :attr:`.ContextType.arch`
+        self.arch = self.get_machine_arch()
+        if isinstance(self.arch, (bytes, six.text_type)):
+            self.arch = self.arch.lower()
 
         self._sections = None
         self._segments = None
@@ -370,11 +358,20 @@ class ELF(ELFFile):
         self._populate_functions()
         self._populate_kernel_version()
 
+        self._print_checksec = checksec
         if checksec:
             self._describe()
 
         self._libs = None
         self._maps = None
+
+    def close(self):
+        """close() -> None
+
+        Close the ELF file and release all resources associated with it.
+        """
+        super(ELF, self).close()
+        self.file.close()
 
     @staticmethod
     @LocalContext
@@ -460,7 +457,7 @@ class ELF(ELFFile):
 
     def _describe(self, *a, **kw):
         log.info_once(
-            '%s\n%-10s%s-%s-%s\n%s',
+            '%s\n%-12s%s-%s-%s\n%s',
             repr(self.path),
             'Arch:',
             self.arch,
@@ -471,18 +468,22 @@ class ELF(ELFFile):
 
     def get_machine_arch(self):
         return {
-            'EM_X86_64': 'amd64',
-            'EM_386' :'i386',
-            'EM_486': 'i386',
-            'EM_ARM': 'arm',
-            'EM_AARCH64': 'aarch64',
-            'EM_MIPS': 'mips',
-            'EM_PPC': 'powerpc',
-            'EM_PPC64': 'powerpc64',
-            'EM_SPARC32PLUS': 'sparc',
-            'EM_SPARCV9': 'sparc64',
-            'EM_IA_64': 'ia64'
-        }.get(self['e_machine'], self['e_machine'])
+            ('EM_X86_64', 64): 'amd64',
+            ('EM_X86_64', 32): 'amd64', # x32 ABI
+            ('EM_386', 32): 'i386',
+            ('EM_486', 32): 'i386',
+            ('EM_ARM', 32): 'arm',
+            ('EM_AARCH64', 64): 'aarch64',
+            ('EM_MIPS', 32): 'mips',
+            ('EM_MIPS', 64): 'mips64',
+            ('EM_PPC', 32): 'powerpc',
+            ('EM_PPC64', 64): 'powerpc64',
+            ('EM_SPARC32PLUS', 32): 'sparc',
+            ('EM_SPARCV9', 64): 'sparc64',
+            ('EM_IA_64', 64): 'ia64',
+            ('EM_RISCV', 32): 'riscv32',
+            ('EM_RISCV', 64): 'riscv64',
+        }.get((self['e_machine'], self.bits), self['e_machine'])
 
     @property
     def entry(self):
@@ -520,6 +521,29 @@ class ELF(ELFFile):
             if t == seg.header.p_type or t in str(seg.header.p_type):
                 yield seg
 
+    def iter_notes(self):
+        """ 
+        Yields:
+            All the notes in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``n_name``, ``n_type``, and ``n_desc`` fields, amongst
+            others.
+        """
+        for seg in self.iter_segments_by_type('PT_NOTE'):
+            for note in seg.iter_notes():
+                yield note
+
+    def iter_properties(self):
+        """
+        Yields:
+            All the GNU properties in the PT_NOTE segments.  Each result is a dictionary-
+            like object with ``pr_type``, ``pr_datasz``, and ``pr_data`` fields.
+        """
+        for note in self.iter_notes():
+            if note.n_type != 'NT_GNU_PROPERTY_TYPE_0':
+                continue
+            for prop in note.n_desc:
+                yield prop
+                
     def get_segment_for_address(self, address, size=1):
         """get_segment_for_address(address, size=1) -> Segment
 
@@ -690,14 +714,14 @@ class ELF(ELFFile):
 
     @property
     def libs(self):
-        """Dictionary of {path: address} for every library loaded for this ELF."""
+        """Dictionary of ``{path: address}`` for every library loaded for this ELF."""
         if self._libs is None:
             self._populate_libraries()
         return self._libs
 
     @property
     def maps(self):
-        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        """Dictionary of ``{name: address}`` for every mapping in this ELF's address space."""
         if self._maps is None:
             self._populate_libraries()
         return self._maps
@@ -707,12 +731,13 @@ class ELF(ELFFile):
         """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
         and we can determine the appropriate path to it on the local
         system, returns a new :class:`.ELF` object pertaining to that library.
+        Prints the `checksec` output of the library if it was printed for the original ELF too.
 
         If not found, the value will be :const:`None`.
         """
         for lib in self.libs:
             if '/libc.' in lib or '/libc-' in lib:
-                return ELF(lib)
+                return ELF(lib, self._print_checksec)
 
     def _populate_libraries(self):
         """
@@ -927,15 +952,25 @@ class ELF(ELFFile):
             self.symbols['got.' + symbol] = address
 
     def _populate_got(self):
-        """Loads the symbols for all relocations"""
+        """Loads the symbols for all relocations.
+
+            >>> libc = ELF(which('bash')).libc
+            >>> assert 'strchrnul' in libc.got
+            >>> assert 'memcpy' in libc.got
+            >>> assert libc.got.strchrnul != libc.got.memcpy
+        """
         # Statically linked implies no relocations, since there is no linker
         # Could always be self-relocating like Android's linker *shrug*
         if self.statically_linked:
             return
 
+        revsymbols = defaultdict(list)
+        for name, addr in self.symbols.items():
+            revsymbols[addr].append(name)
+
         for section in self.sections:
             # We are only interested in relocations
-            if not isinstance(section, RelocationSection):
+            if not isinstance(section, (RelocationSection, RelrRelocationSection)):
                 continue
 
             # Only get relocations which link to another section (for symbols)
@@ -947,7 +982,13 @@ class ELF(ELFFile):
             for rel in section.iter_relocations():
                 sym_idx  = rel.entry.r_info_sym
 
-                if not sym_idx:
+                if not sym_idx and rel.is_RELA():
+                    # TODO: actually resolve relocations
+                    relocated = rel.entry.r_addend  # sufficient for now
+
+                    symnames = revsymbols[relocated]
+                    for symname in symnames:
+                        self.got[symname] = rel.entry.r_offset
                     continue
 
                 symbol = symbols.get_symbol(sym_idx)
@@ -1061,10 +1102,10 @@ class ELF(ELFFile):
             return
 
         banner = self.string(self.symbols.linux_banner)
-        
+
         # convert banner into a utf-8 string since re.search does not accept bytes anymore
         banner = banner.decode('utf-8')
-        
+
         # 'Linux version 3.18.31-gd0846ecc
         regex = r'Linux version (\S+)'
         match = re.search(regex, banner)
@@ -1114,7 +1155,7 @@ class ELF(ELFFile):
         else:
             log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
             return 0
-        
+
         lines = self.functions['__libc_start_main'].disasm().split('\n')
         exit_addr = hex(self.symbols['exit'])
         calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
@@ -1128,7 +1169,7 @@ class ELF(ELFFile):
             return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
             return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
             return return_from_main
-        
+
         # Starting with glibc-2.34 calling `main` is split out into `__libc_start_call_main`
         ret_addr = find_ret_main_addr(lines, calls)
         # Pre glibc-2.34 case - `main` is called directly
@@ -1142,7 +1183,7 @@ class ELF(ELFFile):
             match = direct_call_pattern.search(line[1])
             if not match:
                 continue
-            
+
             target_addr = int(match.group(1), 0)
             # `__libc_start_call_main` is usually smaller than `__libc_start_main`, so
             # we might disassemble a bit too much, but it's a good dynamic estimate.
@@ -1165,7 +1206,7 @@ class ELF(ELFFile):
             won't work.
 
         Arguments:
-            needle(str): String to search for.
+            needle(bytes): String to search for.
             writable(bool): Search only writable sections.
             executable(bool): Search only executable sections.
 
@@ -1201,13 +1242,14 @@ class ELF(ELFFile):
             segments = self.executable_segments
         else:
             segments = self.segments
-
+        needle = packing._need_bytes(needle)
         for seg in segments:
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
-            zeroed = memsz - seg.header.p_filesz
+            filesz = seg.header.p_filesz
+            zeroed = memsz - filesz
             offset = seg.header.p_offset
-            data   = self.mmap[offset:offset+memsz]
+            data   = self.mmap[offset:offset+filesz]
             data   += b'\x00' * zeroed
             offset = 0
             while True:
@@ -1314,6 +1356,7 @@ class ELF(ELFFile):
             or :const:`None`.
 
         Examples:
+
             >>> bash = ELF(which('bash'))
             >>> bash.vaddr_to_offset(bash.address)
             0
@@ -1346,7 +1389,7 @@ class ELF(ELFFile):
             count(int): Number of bytes to read
 
         Returns:
-            A :class:`str` object, or :const:`None`.
+            A :class:`bytes` object, or :const:`None`.
 
         Examples:
             The simplest example is just to read the ELF header.
@@ -1464,6 +1507,7 @@ class ELF(ELFFile):
             that it stays in the same segment.
 
         Examples:
+
           >>> bash = ELF(which('bash'))
           >>> bash.read(bash.address+1, 3)
           b'ELF'
@@ -1507,7 +1551,7 @@ class ELF(ELFFile):
 
     @property
     def data(self):
-        """:class:`str`: Raw data of the ELF file.
+        """:class:`bytes`: Raw data of the ELF file.
 
         See:
             :meth:`get_data`
@@ -1535,7 +1579,7 @@ class ELF(ELFFile):
         This modifies the ELF in-place.
         The resulting binary can be saved with :meth:`.ELF.save`
         """
-        binary = asm(assembly, vma=address)
+        binary = asm(assembly, vma=address, arch=self.arch, endian=self.endian, bits=self.bits)
         self.write(address, binary)
 
     def bss(self, offset=0):
@@ -1685,61 +1729,244 @@ class ELF(ELFFile):
         Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
         by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
 
-        The **Linux kernel** directly honors ``PT_GNU_STACK`` to `mark the
-        stack as executable.`__
+        ``READ_IMPLIES_EXEC`` is set, according to a set of architecture specific
+        rules, that depend on the CPU features, and the presence of ``PT_GNU_STACK``.
 
-        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L784-L789
+        Unfortunately, :class:`ELF` is not context-aware, so it's not always possible
+        to determine whether the process of a binary that's missing ``PT_GNU_STACK``
+        will have NX or not.
+        
+        The rules are as follows:
+
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | ELF arch  | linux        | GNU_STACK                 | other                                          | NX       |
+            +===========+==============+===========================+================================================+==========+
+            | i386      | < 5.8        | non-exec                  |                                                | enabled  |
+            |           | [#x86_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec           |                                                | enabled  |
+            |           | [#x86_5.8]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | amd64     | < 5.8        | non-exec                  |                                                | enabled  |
+            |           | [#x86_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec / missing |                                                | enabled  |
+            |           | [#x86_5.8]_  |                           |                                                |          |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | arm       | < 5.8        | non-exec*                 |                                                | enabled  |
+            |           | [#arm_5.7]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.8       | exec / non-exec*          |                                                | enabled  |
+            |           | [#arm_5.8]_  +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | mips      | < 5.18       | non-exec*                 |                                                | enabled  |
+            |           | [#mips_5.17]_+---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            |                                                | disabled |
+            |           +--------------+---------------------------+------------------------------------------------+----------+
+            |           | >= 5.18      | exec / non-exec*          |                                                | enabled  |
+            |           | [#mips_5.18]_+---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | powerpc   | [#powerpc]_  | non-exec / exec           |                                                | enabled  |
+            |           |              +---------------------------+------------------------------------------------+----------+
+            |           |              | missing                   |                                                | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | powerpc64 | [#powerpc]_  | exec / non-exec / missing |                                                | enabled  |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | ia64      | [#ia64]_     | non-exec                  |                                                | enabled  |
+            |           |              +---------------------------+------------------------------------------------+----------+
+            |           |              | exec / missing            | e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK == 0 | enabled  |
+            |           |              +                           +------------------------------------------------+----------+
+            |           |              |                           | e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK != 0 | disabled |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+            | the rest  | [#the_rest]_ | exec / non-exec / missing |                                                | enabled  |
+            +-----------+--------------+---------------------------+------------------------------------------------+----------+
+
+            \\* Hardware limitations are ignored.
+
+        If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
+            .. __: https://github.com/torvalds/linux/blob/v6.3/fs/binfmt_elf.c#L1008-L1009
+            .. code-block:: c
+
+                if (elf_read_implies_exec(loc->elf_ex, executable_stack))
+                    current->personality |= READ_IMPLIES_EXEC;
+
+        .. [#x86_5.7]
+            `source <https://github.com/torvalds/linux/blob/v5.7/arch/x86/include/asm/elf.h#L285-L286>`__
+
+            .. code-block:: c
+
+                #define elf_read_implies_exec(ex, executable_stack)	\\
+                    (executable_stack != EXSTACK_DISABLE_X)
+
+        .. [#x86_5.8]
+            `source <https://github.com/torvalds/linux/blob/v5.8/arch/x86/include/asm/elf.h#L305-L306>`__
+
+            .. code-block:: c
+
+                #define elf_read_implies_exec(ex, executable_stack)	\\
+                    (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
+
+            `mmap_is_ia32()`__:
+                .. __: https://github.com/torvalds/linux/blob/v5.8/arch/x86/include/asm/elf.h#L318-L321
+                .. code-block:: c
+
+                    /*
+                     * True on X86_32 or when emulating IA32 on X86_64
+                     */
+                    static inline int mmap_is_ia32(void)
+
+        .. [#arm_5.7]
+            `source <https://github.com/torvalds/linux/blob/v5.7/arch/arm/kernel/elf.c#L85-L92>`__
+
+            .. code-block:: c
+
+                int arm_elf_read_implies_exec(int executable_stack)
+                {
+                    if (executable_stack != EXSTACK_DISABLE_X)
+                        return 1;
+                    if (cpu_architecture() < CPU_ARCH_ARMv6)
+                        return 1;
+                    return 0;
+                }
+
+        .. [#arm_5.8]
+            `source <https://github.com/torvalds/linux/blob/v5.8/arch/arm/kernel/elf.c#L104-L111>`__
+
+            .. code-block:: c
+
+                int arm_elf_read_implies_exec(int executable_stack)
+                {
+                    if (executable_stack == EXSTACK_DEFAULT)
+                        return 1;
+                    if (cpu_architecture() < CPU_ARCH_ARMv6)
+                        return 1;
+                    return 0;
+                }
+
+        .. [#mips_5.17]
+            `source <https://github.com/torvalds/linux/blob/v5.17/arch/mips/kernel/elf.c#L329-L342>`__
+
+            .. code-block:: c
+
+                int mips_elf_read_implies_exec(void *elf_ex, int exstack)
+                {
+                    if (exstack != EXSTACK_DISABLE_X) {
+                        /* The binary doesn't request a non-executable stack */
+                        return 1;
+                    }
+                    if (!cpu_has_rixi) {
+                        /* The CPU doesn't support non-executable memory */
+                        return 1;
+                    }
+                    return 0;
+                }
+
+        .. [#mips_5.18]
+            `source <https://github.com/torvalds/linux/blob/v5.18/arch/mips/kernel/elf.c#L329-L336>`__
+
+            .. code-block:: c
+
+                int mips_elf_read_implies_exec(void *elf_ex, int exstack)
+                {
+                    /*
+                     * Set READ_IMPLIES_EXEC only on non-NX systems that
+                     * do not request a specific state via PT_GNU_STACK.
+                     */
+                    return (!cpu_has_rixi && exstack == EXSTACK_DEFAULT);
+                }
+
+        .. [#powerpc]
+            `source <https://github.com/torvalds/linux/blob/v6.3/arch/powerpc/include/asm/elf.h#L82-L108>`__
+
+            .. code-block:: c
+
+                #ifdef __powerpc64__
+                /* stripped */
+                # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
+                        (exec_stk == EXSTACK_DEFAULT) : 0)
+                #else 
+                # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
+                #endif /* __powerpc64__ */
+
+        .. [#ia64]
+            `source <https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L203-L204>`__
+
+            .. code-block:: c
+
+                #define elf_read_implies_exec(ex, executable_stack)					\\
+                    ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
+
+            EF_IA_64_LINUX_EXECUTABLE_STACK__:
+                .. __: https://github.com/torvalds/linux/blob/v6.3/arch/ia64/include/asm/elf.h#L33
+
+                .. code-block:: c
+
+                    #define EF_IA_64_LINUX_EXECUTABLE_STACK	0x1	/* is stack (& heap) executable by default? */
+
+        .. [#the_rest]
+            `source <https://github.com/torvalds/linux/blob/v6.3/include/linux/elf.h#L13>`__
+
+            .. code-block:: c
+
+                # define elf_read_implies_exec(ex, have_pt_gnu_stack)	0
+        """
+        if not self.executable:
+            return True
+        
+        exec_bit = None
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            exec_bit = bool(seg.header.p_flags & P_FLAGS.PF_X)
+
+        non_exec = exec_bit is False
+        missing = exec_bit is None
+        EF_IA_64_LINUX_EXECUTABLE_STACK = 1
+
+        if self.arch in ['i386', 'arm', 'aarch64', 'mips', 'mips64']:
+            if non_exec:
+                return True
+            elif missing:
+                return False
+            return None
+        elif self.arch == 'amd64':
+            return True if non_exec else None
+        elif self.arch == 'powerpc':
+            return not missing
+        elif self.arch == 'powerpc64':
+            return True
+        elif self.arch == 'ia64':
+            if non_exec:
+                return True
+            return not bool(self['e_flags'] & EF_IA_64_LINUX_EXECUTABLE_STACK)
+
+        return True
+
+    @property
+    def execstack(self):
+        """:class:`bool`: Whether dynamically loading the current binary will make the stack executable.
+
+        This is based on the presence of a program header ``PT_GNU_STACK``,
+        its setting, and the default stack permissions for the architecture.
+
+        If ``PT_GNU_STACK`` is persent, the stack permissions are `set according to it`__:
+
+        .. __: https://github.com/bminor/glibc/blob/glibc-2.37/elf/dl-load.c#L1218-L1220
 
         .. code-block:: c
 
             case PT_GNU_STACK:
-                if (elf_ppnt->p_flags & PF_X)
-                    executable_stack = EXSTACK_ENABLE_X;
-                else
-                    executable_stack = EXSTACK_DISABLE_X;
-                break;
+              stack_flags = ph->p_flags;
+              break;
 
-        Additionally, it then sets ``read_implies_exec``, so that `all readable pages
-        are executable`__.
+        Else, the stack permissions are set according to the architecture defaults
+        as `defined by`__ ``DEFAULT_STACK_PERMS``:
 
-        .. __: https://github.com/torvalds/linux/blob/v4.9/fs/binfmt_elf.c#L849-L850
-
-        .. code-block:: c
-
-            if (elf_read_implies_exec(loc->elf_ex, executable_stack))
-                current->personality |= READ_IMPLIES_EXEC;
-        """
-        if not self.executable:
-            return True
-
-        for seg in self.iter_segments_by_type('GNU_STACK'):
-            return not bool(seg.header.p_flags & P_FLAGS.PF_X)
-
-        # If you NULL out the PT_GNU_STACK section via ELF.disable_nx(),
-        # everything is executable.
-        return False
-
-    @property
-    def execstack(self):
-        """:class:`bool`: Whether the current binary uses an executable stack.
-
-        This is based on the presence of a program header PT_GNU_STACK_
-        being present, and its setting.
-
-            ``PT_GNU_STACK``
-
-            The p_flags member specifies the permissions on the segment
-            containing the stack and is used to indicate whether the stack
-            should be executable. The absense of this header indicates
-            that the stack will be executable.
-
-        In particular, if the header is missing the stack is executable.
-        If the header is present, it may **explicitly** mark that the stack is
-        executable.
-
-        This is only somewhat accurate.  When using the GNU Linker, it usees
-        DEFAULT_STACK_PERMS_ to decide whether a lack of ``PT_GNU_STACK``
-        should mark the stack as executable:
+        .. __: https://github.com/bminor/glibc/blob/glibc-2.37/elf/dl-load.c#L1093-L1096
 
         .. code-block:: c
 
@@ -1754,29 +1981,25 @@ class ELF(ELFFile):
         ::
 
             $ git grep '#define DEFAULT_STACK_PERMS' | grep -v PF_X
-            sysdeps/aarch64/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-            sysdeps/nios2/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-            sysdeps/tile/stackinfo.h:31:#define DEFAULT_STACK_PERMS (PF_R|PF_W)
-
-        .. _PT_GNU_STACK: https://refspecs.linuxbase.org/LSB_3.0.0/LSB-PDA/LSB-PDA/progheader.html
-        .. _DEFAULT_STACK_PERMS: https://github.com/bminor/glibc/blob/glibc-2.25/elf/dl-load.c#L1036-L1038
+            sysdeps/aarch64/stackinfo.h:    #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/arc/stackinfo.h:        #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/csky/stackinfo.h:       #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/ia64/stackinfo.h:       #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/loongarch/stackinfo.h:  #define DEFAULT_STACK_PERMS (PF_R | PF_W)
+            sysdeps/nios2/stackinfo.h:      #define DEFAULT_STACK_PERMS (PF_R|PF_W)
+            sysdeps/riscv/stackinfo.h:      #define DEFAULT_STACK_PERMS (PF_R | PF_W)
         """
-        # Dynamic objects do not have the ability to change the executable state of the stack.
         if not self.executable:
             return False
 
-        # If NX is completely off for the process, the stack is executable.
-        if not self.nx:
-            return True
-
+        # If the ``PT_GNU_STACK`` program header is preset, use it's premissions.
+        for seg in self.iter_segments_by_type('GNU_STACK'):
+            return bool(seg.header.p_flags & P_FLAGS.PF_X)
+        
         # If the ``PT_GNU_STACK`` program header is missing, then use the
-        # default rules.  Only AArch64 gets a non-executable stack by default.
-        for _ in self.iter_segments_by_type('GNU_STACK'):
-            break
-        else:
-            return self.arch != 'aarch64'
-
-        return False
+        # default rules. Out of the supported architectures, only AArch64,
+        # IA-64, and RISC-V get a non-executable stack by default.
+        return self.arch not in ['aarch64', 'ia64', 'riscv32', 'riscv64']
 
     @property
     def canary(self):
@@ -1790,6 +2013,16 @@ class ELF(ELFFile):
     def packed(self):
         """:class:`bool`: Whether the current binary is packed with UPX."""
         return b'UPX!' in self.get_data()[:0xFF]
+
+    @property
+    def stripped(self):
+        """:class:`bool`: Whether the current binary has been stripped of symbols"""
+        return not any(section['sh_type'] == 'SHT_SYMTAB' for section in self.iter_sections())
+
+    @property
+    def debuginfo(self):
+        """:class:`bool`: Whether the current binary has debug information"""
+        return self.get_section_by_name('.debug_info') is not None
 
     @property
     def pie(self):
@@ -1834,61 +2067,74 @@ class ELF(ELFFile):
 
         # Kernel version?
         if self.version and self.version != (0,):
-            res.append('Version:'.ljust(10) + '.'.join(map(str, self.version)))
+            res.append('Version:'.ljust(12) + '.'.join(map(str, self.version)))
         if self.build:
-            res.append('Build:'.ljust(10) + self.build)
+            res.append('Build:'.ljust(12) + self.build)
 
         res.extend([
-            "RELRO:".ljust(10) + {
+            "RELRO:".ljust(12) + {
                 'Full':    green("Full RELRO"),
                 'Partial': yellow("Partial RELRO"),
                 None:      red("No RELRO")
             }[self.relro],
-            "Stack:".ljust(10) + {
+            "Stack:".ljust(12) + {
                 True:  green("Canary found"),
                 False: red("No canary found")
             }[self.canary],
-            "NX:".ljust(10) + {
+            "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
+                None: yellow("NX unknown - GNU_STACK missing"),
             }[self.nx],
-            "PIE:".ljust(10) + {
+            "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
                 False: red("No PIE (%#x)" % self.address)
             }[self.pie],
         ])
 
         # Execstack may be a thing, even with NX enabled, because of glibc
-        if self.execstack and self.nx:
-            res.append("Stack:".ljust(10) + red("Executable"))
+        if self.execstack and self.nx is not False:
+            res.append("Stack:".ljust(12) + red("Executable"))
 
         # Are there any RWX areas in the binary?
         #
         # This will occur if NX is disabled and *any* area is
         # RW, or can expressly occur.
         if self.rwx_segments or (not self.nx and self.writable_segments):
-            res += [ "RWX:".ljust(10) + red("Has RWX segments") ]
+            res += [ "RWX:".ljust(12) + red("Has RWX segments") ]
 
         if self.rpath:
-            res += [ "RPATH:".ljust(10) + red(repr(self.rpath)) ]
+            res += [ "RPATH:".ljust(12) + red(repr(self.rpath)) ]
 
         if self.runpath:
-            res += [ "RUNPATH:".ljust(10) + red(repr(self.runpath)) ]
+            res += [ "RUNPATH:".ljust(12) + red(repr(self.runpath)) ]
 
         if self.packed:
-            res.append('Packer:'.ljust(10) + red("Packed with UPX"))
+            res.append('Packer:'.ljust(12) + red("Packed with UPX"))
 
         if self.fortify:
-            res.append("FORTIFY:".ljust(10) + green("Enabled"))
+            res.append("FORTIFY:".ljust(12) + green("Enabled"))
 
         if self.asan:
-            res.append("ASAN:".ljust(10) + green("Enabled"))
+            res.append("ASAN:".ljust(12) + green("Enabled"))
 
         if self.msan:
-            res.append("MSAN:".ljust(10) + green("Enabled"))
+            res.append("MSAN:".ljust(12) + green("Enabled"))
 
         if self.ubsan:
-            res.append("UBSAN:".ljust(10) + green("Enabled"))
+            res.append("UBSAN:".ljust(12) + green("Enabled"))
+        
+        if self.shadowstack:
+            res.append("SHSTK:".ljust(12) + green("Enabled"))
+        
+        if self.ibt:
+            res.append("IBT:".ljust(12) + green("Enabled"))
+        
+        if not self.stripped:
+            res.append("Stripped:".ljust(12) + red("No"))
+        
+        if self.debuginfo:
+            res.append("Debuginfo:".ljust(12) + red("Yes"))
 
         # Check for Linux configuration, it must contain more than
         # just the version.
@@ -1915,7 +2161,7 @@ class ELF(ELFFile):
 
     @property
     def buildid(self):
-        """:class:`str`: GNU Build ID embedded into the binary"""
+        """:class:`bytes`: GNU Build ID embedded into the binary"""
         section = self.get_section_by_name('.note.gnu.build-id')
         if section:
             return section.data()[16:]
@@ -1946,6 +2192,31 @@ class ELF(ELFFile):
         """:class:`bool`: Whether the current binary was built with
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
+    
+    @property
+    def shadowstack(self):
+        """:class:`bool`: Whether the current binary was built with	
+        Shadow Stack (``SHSTK``)"""
+        if self.arch not in ['i386', 'amd64']:
+            return False
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_SHSTK'] > 0
+        return False
+
+    @property
+    def ibt(self):
+        """:class:`bool`: Whether the current binary was built with
+        Indirect Branch Tracking (``IBT``)"""
+        if self.arch not in ['i386', 'amd64']:
+            return False
+        for prop in self.iter_properties():
+            if prop.pr_type != 'GNU_PROPERTY_X86_FEATURE_1_AND':
+                continue
+            return prop.pr_data & ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS['GNU_PROPERTY_X86_FEATURE_1_IBT'] > 0
+        return False
+
 
     def _update_args(self, kw):
         kw.setdefault('arch', self.arch)
@@ -2071,6 +2342,128 @@ class ELF(ELFFile):
             if self.mmap[offset:offset+4] == PT_GNU_STACK:
                 self.mmap[offset:offset+4] = b'\x00' * 4
                 self.save()
+                # Invalidate the cached segments, ``PT_GNU_STACK`` was removed.
+                self._segments = None
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
+    
+    @staticmethod
+    def set_runpath(exepath, runpath):
+        r"""set_runpath(str, str) -> ELF
+
+        Patches the RUNPATH of the ELF to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        The dynamic loader will look for any needed shared libraries in the given path first,
+        before trying the system library paths. This is useful to run a binary with a different
+        libc binary.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            runpath(str): Path containing the needed libraries.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_runpath(ls_path, './libs')
+            >>> e.runpath == b'./libs'
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-rpath', runpath, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching RUNPATH failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def set_interpreter(exepath, interpreter_path):
+        r"""set_interpreter(str, str) -> ELF
+
+        Patches the interpreter of the ELF to the given binary using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        When running the binary, the new interpreter will be used to load the ELF.
+
+        Arguments:
+            exepath(str): Path to the binary to patch.
+            interpreter_path(str): Path to the ld.so dynamic loader.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.set_interpreter(ls_path, '/tmp/correct_ld.so')
+            >>> e.linker == b'/tmp/correct_ld.so'
+            True
+        """
+        # patch the interpreter
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        try:
+            subprocess.check_output(['patchelf', '--set-interpreter', interpreter_path, exepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            log.failure('Patching interpreter failed (%d): %r', e.returncode, e.stdout)
+        return ELF(exepath, checksec=False)
+
+    @staticmethod
+    def patch_custom_libraries(exe_path, custom_library_path, create_copy=True, suffix='_remotelibc'):
+        r"""patch_custom_libraries(str, str, bool, str) -> ELF
+
+        Looks for the interpreter binary in the given path and patches the binary to use
+        it if available. Also patches the RUNPATH to the given path using the `patchelf utility <https://github.com/NixOS/patchelf>`_.
+
+        Arguments:
+            exe_path(str): Path to the binary to patch.
+            custom_library_path(str): Path to a folder containing the libraries.
+            create_copy(bool): Create a copy of the binary and apply the patches to the copy.
+            suffix(str): Suffix to append to the filename when creating the copy to patch.
+
+        Returns:
+            A new ELF instance is returned after patching the binary with the external ``patchelf`` tool.
+
+        Example:
+
+            >>> tmpdir = tempfile.mkdtemp()
+            >>> linker_path = os.path.join(tmpdir, 'ld-mock.so')
+            >>> write(linker_path, b'loader')
+            >>> ls_path = os.path.join(tmpdir, 'ls')
+            >>> _ = shutil.copy(which('ls'), ls_path)
+            >>> e = ELF.patch_custom_libraries(ls_path, tmpdir)
+            >>> e.runpath.decode() == tmpdir
+            True
+            >>> e.linker.decode() == linker_path
+            True
+        """
+        if not which('patchelf'):
+            log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
+            return None
+        
+        # Create a copy of the ELF to patch instead of the original file.
+        if create_copy:
+            import shutil
+            patched_path = exe_path + suffix
+            shutil.copy2(exe_path, patched_path)
+            exe_path = patched_path
+
+        # Set interpreter in ELF to the one in the library path.
+        interpreter_name = [filename for filename in os.listdir(custom_library_path) if filename.startswith('ld-')]
+        if interpreter_name:
+            interpreter_path = os.path.realpath(os.path.join(custom_library_path, interpreter_name[0]))
+            ELF.set_interpreter(exe_path, interpreter_path)
+        else:
+            log.warn("Couldn't find ld.so in library path. Interpreter not set.")
+
+        # Set RUNPATH to library path in order to find other libraries.
+        return ELF.set_runpath(exe_path, custom_library_path)

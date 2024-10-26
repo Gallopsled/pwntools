@@ -1,5 +1,4 @@
-<% from pwnlib.shellcraft import common %>
-<%docstring>Returns code to switch from amd64 to i386 mode.
+<%docstring>Returns code to switch from amd64 to i386 mode. Trashes eax, ecx, edx.
 
 Note that you most surely want to set up some stack (and place this code)
 in low address space before (or afterwards).</%docstring>

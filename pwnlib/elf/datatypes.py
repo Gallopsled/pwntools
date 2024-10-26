@@ -399,6 +399,15 @@ class Elf64_Sym(ctypes.Structure):
                 ("st_value", Elf64_Addr),
                 ("st_size", Elf64_Xword),]
 
+class Elf64_Rel(ctypes.Structure):
+    _fields_ = [("r_offset", Elf64_Addr),
+                ("r_info", Elf64_Xword),
+                ("r_addend", Elf64_Sxword),]
+
+class Elf32_Rel(ctypes.Structure):
+    _fields_ = [("r_offset", Elf32_Addr),
+                ("r_info", Elf32_Word),]
+
 class Elf32_Link_Map(ctypes.Structure):
     _fields_ = [("l_addr", Elf32_Addr),
                 ("l_name", Elf32_Addr),
@@ -630,29 +639,6 @@ class Elf32_auxv_t(ctypes.Structure):
 class Elf64_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint64),
                 ('a_val', ctypes.c_uint64),]
-
-def generate_prpsinfo(long):
-    return [
-        ('pr_state', byte),
-        ('pr_sname', char),
-        ('pr_zomb', byte),
-        ('pr_nice', byte),
-        ('pr_flag', long),
-        ('pr_uid', ctypes.c_ushort),
-        ('pr_gid', ctypes.c_ushort),
-        ('pr_pid', ctypes.c_int),
-        ('pr_ppid', ctypes.c_int),
-        ('pr_pgrp', ctypes.c_int),
-        ('pr_sid', ctypes.c_int),
-        ('pr_fname', char * 16),
-        ('pr_psargs', char * 80)
-    ]
-
-class elf_prpsinfo_32(ctypes.Structure):
-    _fields_ = generate_prpsinfo(Elf32_Addr)
-
-class elf_prpsinfo_64(ctypes.Structure):
-    _fields_ = generate_prpsinfo(Elf64_Addr)
 
 def generate_siginfo(int_t, long_t):
     class siginfo_t(ctypes.Structure):

@@ -66,6 +66,7 @@ from pwnlib import tubes
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.device import Device
+from pwnlib.exception import PwnlibException
 from pwnlib.log import getLogger
 from pwnlib.protocols.adb import AdbClient
 from pwnlib.util.packing import _decode
@@ -122,7 +123,7 @@ def current_device(any=False):
 
         >>> device = adb.current_device(any=True)
         >>> device  # doctest: +ELLIPSIS
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_armv7', model='sdk ...phone armv7', device='generic')
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone..._...', model='...', device='...')
         >>> device.port
         'emulator'
     """
@@ -252,13 +253,13 @@ class AdbDevice(Device):
 
         >>> device = adb.wait_for_device()
         >>> device.arch
-        'arm'
+        'amd64'
         >>> device.bits
-        32
+        64
         >>> device.os
         'android'
         >>> device.product  # doctest: +ELLIPSIS
-        'sdk_...phone_armv7'
+        'sdk_...phone..._...'
         >>> device.serial
         'emulator-5554'
     """
@@ -879,7 +880,7 @@ def which(name, all = False, *a, **kw):
         >>> adb.which('sh')
         '/system/bin/sh'
         >>> adb.which('sh', all=True)
-        ['/system/bin/sh']
+        ['/system/bin/sh', '/vendor/bin/sh']
 
         >>> adb.which('foobar') is None
         True
@@ -987,7 +988,7 @@ def proc_exe(pid):
        :skipif: skip_android
 
         >>> adb.proc_exe(1)
-        b'/init'
+        b'/system/bin/init'
     """
     with context.quiet:
         io  = process(['realpath','/proc/%d/exe' % pid])
@@ -1364,14 +1365,18 @@ def compile(source):
         >>> filename = adb.compile(temp)
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
-        b'... /system/bin/linker\n...'
+        b'... /system/lib64/libc++.so\n...'
     """
 
     ndk_build = misc.which('ndk-build')
     if not ndk_build:
         # Ensure that we can find the NDK.
-        ndk = os.environ.get('NDK', None)
-        if ndk is None:
+        for envvar in ('NDK', 'ANDROID_NDK', 'ANDROID_NDK_ROOT',
+                       'ANDROID_NDK_HOME', 'ANDROID_NDK_LATEST_HOME'):
+            ndk = os.environ.get(envvar)
+            if ndk is not None:
+                break
+        else:
             log.error('$NDK must be set to the Android NDK directory')
         ndk_build = os.path.join(ndk, 'ndk-build')
 
@@ -1486,8 +1491,9 @@ class Partitions(object):
     @context.quietfunc
     def by_name_dir(self):
         try:
-            return next(find('/dev/block/platform','by-name'))
-        except StopIteration:
+            with context.local(log_level=logging.FATAL):
+                return next(find('/dev/block/platform','by-name'))
+        except (StopIteration, PwnlibException):
             return '/dev/block'
 
     @context.quietfunc
@@ -1587,7 +1593,10 @@ def uninstall(package, *arguments):
 @context.quietfunc
 def packages():
     """Returns a list of packages installed on the system"""
-    packages = process(['pm', 'list', 'packages']).recvall()
+    # Decodes the received bytes as UTF-8 per:
+    # https://developer.android.com/reference/java/nio/charset/Charset#defaultCharset()
+    # where it is specified that UTF-8 is the default charset for Android.
+    packages = process(['pm', 'list', 'packages']).recvall().decode('utf-8')
     return [line.split('package:', 1)[-1] for line in packages.splitlines()]
 
 @context.quietfunc

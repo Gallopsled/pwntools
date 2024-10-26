@@ -2,11 +2,11 @@ from __future__ import division
 
 _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
-    'BUILD_LIST','BUILD_MAP','BUILD_TUPLE','BUILD_SET',
+    'BUILD_LIST','BUILD_MAP', 'MAP_ADD', 'BUILD_TUPLE','BUILD_SET',
     'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
     'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
     'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
-    'COPY', 'RESUME',
+    'COPY', 'RESUME', 'RETURN_CONST'
     ]
 
 _expr_codes = _const_codes + [
@@ -29,8 +29,8 @@ def _get_opcodes(codeobj):
     Extract the actual opcodes as a list from a code object
 
     >>> c = compile("[1 + 2, (1,2)]", "", "eval")
-    >>> _get_opcodes(c)
-    [100, 100, 103, 83]
+    >>> _get_opcodes(c)  # doctest: +ELLIPSIS
+    [...100, 100, 103, 83]
     """
     import dis
     if hasattr(dis, 'get_instructions'):

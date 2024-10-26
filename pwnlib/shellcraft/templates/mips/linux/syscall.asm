@@ -54,6 +54,12 @@ Example:
         ...               'MAP_PRIVATE | MAP_ANONYMOUS',
         ...               -1, 0).rstrip())
             /* call mmap2(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE | MAP_ANONYMOUS', -1, 0) */
+            li $t0, -1
+            sw $t0, -4($sp)
+            addi $sp, $sp, -4
+            slti $t0, $zero, 0xFFFF /* $t0 = 0 */
+            sw $t0, -4($sp)
+            addi $sp, $sp, -4
             slti $a0, $zero, 0xFFFF /* $a0 = 0 */
             li $t9, ~0x1000
             not $a1, $t9
@@ -82,7 +88,6 @@ Example:
             syscall 0x40404
 </%docstring>
 <%
-  append_cdq = False
   if isinstance(syscall, (str, text_type, Constant)) and str(syscall).startswith('SYS_'):
       syscall_repr = str(syscall)[4:] + "(%s)"
       args = []
@@ -102,12 +107,22 @@ Example:
       args.pop()
   syscall_repr = syscall_repr % ', '.join(args)
 
+  register_arguments = dict()
+  stack_arguments = []
   registers = abi.register_arguments
   arguments = [syscall, arg0, arg1, arg2, arg3, arg4, arg5]
-  regctx    = dict(zip(registers, arguments))
+  for index, arg in enumerate(arguments):
+    if index < len(registers):
+      target = registers[index]
+      register_arguments[target] = arg
+    elif arg is not None:
+      stack_arguments.append(arg)
 %>\
     /* call ${syscall_repr} */
+%for arg in stack_arguments:
+    ${mips.push(arg)}
+%endfor
 %if any(a is not None for a in arguments):
-    ${mips.setregs(regctx)}
+    ${mips.setregs(register_arguments)}
 %endif
     syscall 0x40404

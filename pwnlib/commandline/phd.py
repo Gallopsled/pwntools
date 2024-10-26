@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 from __future__ import absolute_import
 from __future__ import division
 
@@ -110,4 +109,4 @@ def main(args):
         pass
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

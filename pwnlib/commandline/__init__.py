@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 __all__ = [
     'asm',
     'checksec',

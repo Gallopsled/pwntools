@@ -13,7 +13,8 @@ log = getLogger(__name__)
 
 class listen(sock):
     r"""Creates an TCP or UDP-socket to receive data on. It supports
-    both IPv4 and IPv6.
+    both IPv4 and IPv6. You need to call :meth:`wait_for_connection`
+    before using the listen socket.
 
     The returned object supports all the methods from
     :class:`pwnlib.tubes.sock` and :class:`pwnlib.tubes.tube`.
@@ -46,6 +47,7 @@ class listen(sock):
         >>> # and it works with ipv6 by defaut, too!
         >>> l = listen()
         >>> r = remote('::1', l.lport)
+        >>> _ = l.wait_for_connection()
         >>> r.sendline(b'Bye-bye')
         >>> l.recvline()
         b'Bye-bye\n'
@@ -77,6 +79,9 @@ class listen(sock):
     def __init__(self, port=0, bindaddr='::',
                  fam='any', typ='tcp', *args, **kwargs):
         super(listen, self).__init__(*args, **kwargs)
+
+        # convert port to string for sagemath support
+        port = str(port)
 
         fam = self._get_family(fam)
         typ = self._get_type(typ)

@@ -5,6 +5,7 @@ Args:
     return_value: Value to return
 
 Examples:
+
     >>> with context.local(arch='arm'):
     ...     print(enhex(asm(shellcraft.ret())))
     ...     print(enhex(asm(shellcraft.ret(0))))

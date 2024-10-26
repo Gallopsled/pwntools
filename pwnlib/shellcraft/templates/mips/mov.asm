@@ -69,7 +69,7 @@ if not dst.startswith('$'):
     log.error("Registers must start with $")
     return
 
-if isinstance(src, str) and dst.startswith('$') and dst not in registers.mips:
+if isinstance(dst, str) and dst.startswith('$') and dst not in registers.mips:
     log.error("Unknown register %r" % dst)
     return
 
@@ -130,8 +130,8 @@ if src_reg == 0:
 % else:
 <%
 a,b = fiddling.xor_pair(srcp, avoid = '\x00\n')
-a = hex(packing.unpack(a, 32))
-b = hex(packing.unpack(b, 32))
+a = '%#x' % packing.unpack(a, 32)
+b = '%#x' % packing.unpack(b, 32)
 %>
     li ${tmp_reg}, ${a} ^ ${pretty(src)}
     li ${dst}, ${a}

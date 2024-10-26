@@ -153,9 +153,9 @@ class module(ModuleType):
             if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
             else:       return '%s (%s)'     % (n,self.pretty(int(n)))
         elif abs(n) < 10:
-            return str(n)
+            return '%d' % n
         else:
-            return hex(n)
+            return '%#x' % n
 
     def okay(self, s, *a, **kw):
         if isinstance(s, six.integer_types):

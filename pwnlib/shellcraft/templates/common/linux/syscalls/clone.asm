@@ -5,7 +5,7 @@ import pwnlib.constants
 import pwnlib.shellcraft
 import six
 %>
-<%docstring>clone(fn, child_stack, flags, arg, vararg_0, vararg_1, vararg_2, vararg_3, vararg_4) -> str
+<%docstring>clone(fn, child_stack, flags, arg, vararg_0, vararg_1, vararg_2, vararg_3, vararg_4, vararg_5) -> str
 
 Invokes the syscall clone.
 
@@ -20,7 +20,7 @@ Arguments:
 Returns:
     int
 </%docstring>
-<%page args="fn=0, child_stack=0, flags=0, arg=0, vararg_0=None, vararg_1=None, vararg_2=None, vararg_3=None, vararg_4=None"/>
+<%page args="fn=0, child_stack=0, flags=0, arg=0, vararg_0=None, vararg_1=None, vararg_2=None, vararg_3=None, vararg_4=None, vararg_5=None"/>
 <%
     abi = pwnlib.abi.ABI.syscall()
     stack = abi.stack
@@ -30,8 +30,8 @@ Returns:
     can_pushstr = ['child_stack', 'arg']
     can_pushstr_array = []
 
-    argument_names = ['fn', 'child_stack', 'flags', 'arg', 'vararg_0', 'vararg_1', 'vararg_2', 'vararg_3', 'vararg_4']
-    argument_values = [fn, child_stack, flags, arg, vararg_0, vararg_1, vararg_2, vararg_3, vararg_4]
+    argument_names = ['fn', 'child_stack', 'flags', 'arg', 'vararg_0', 'vararg_1', 'vararg_2', 'vararg_3', 'vararg_4', 'vararg_5']
+    argument_values = [fn, child_stack, flags, arg, vararg_0, vararg_1, vararg_2, vararg_3, vararg_4, vararg_5]
 
     # Load all of the arguments into their destination registers / stack slots.
     register_arguments = dict()
@@ -52,7 +52,7 @@ Returns:
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[index] = arg
+                stack_arguments[name] = arg
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
@@ -80,7 +80,7 @@ Returns:
                 target = regs[index]
                 register_arguments[target] = arg
             elif arg is not None:
-                stack_arguments[target] = arg
+                stack_arguments[name] = arg
 
     # Some syscalls have different names on various architectures.
     # Determine which syscall number to use for the current architecture.
@@ -88,7 +88,7 @@ Returns:
         if hasattr(pwnlib.constants, syscall):
             break
     else:
-        raise Exception("Could not locate any syscalls: %r" % syscalls)
+        raise Exception("Could not locate any syscalls: %r" % ['SYS_clone'])
 %>
     /* clone(${', '.join(syscall_repr)}) */
 %for name, arg in string_arguments.items():

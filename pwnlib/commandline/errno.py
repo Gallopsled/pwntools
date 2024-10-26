@@ -46,4 +46,4 @@ def main(args):
   print(os.strerror(value))
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)

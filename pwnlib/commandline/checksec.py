@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 from __future__ import absolute_import
 from __future__ import division
 
@@ -36,7 +35,10 @@ def main(args):
         return
 
     for f in files:
-        e = ELF(f.name)
+        try:
+            e = ELF(f.name)
+        except Exception as e:
+            print("{name}: {error}".format(name=f.name, error=e))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    common.main(__file__, main)

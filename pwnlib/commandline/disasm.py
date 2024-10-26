@@ -1,9 +1,9 @@
-#!/usr/bin/env python2
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import argparse
+import re
 import string
 import sys
 
@@ -77,21 +77,37 @@ def main(args):
         from pygments.formatters import TerminalFormatter
         from pwnlib.lexer import PwntoolsLexer
 
-        offsets = disasm(dat, vma=safeeval.const(args.address), instructions=False, byte=False)
-        bytes   = disasm(dat, vma=safeeval.const(args.address), instructions=False, offset=False)
-        instrs  = disasm(dat, vma=safeeval.const(args.address), byte=False, offset=False)
-        # instrs  = highlight(instrs, PwntoolsLexer(), TerminalFormatter())
+        dis = disasm(dat, vma=safeeval.const(args.address))
 
-        for o,b,i in zip(*map(str.splitlines, (offsets, bytes, instrs))):
-            b = b.replace('00', text.red('00'))
-            b = b.replace('0a', text.red('0a'))
-            i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
-            i = i.replace(',',', ')
+        # Note: those patterns are copied from disasm function
+        pattern = '^( *[0-9a-f]+: *)((?:[0-9a-f]+ )+ *)(.*)'
+        lines = []
+        for line in dis.splitlines():
+            match = re.search(pattern, line)
+            if not match:
+                # Append as one element tuple
+                lines.append((line,))
+                continue
 
-            print(o,b,i)
+            groups = match.groups()
+            o, b, i = groups
+
+            lines.append((o, b, i))
+
+
+        highlight_bytes = lambda t: ''.join(map(lambda x: x.replace('00', text.red('00')).replace('0a', text.red('0a')), group(2, t)))
+        for line in lines:
+            if len(line) == 3:
+                o, b, i = line
+                b = ' '.join(highlight_bytes(bb) for bb in b.split(' '))
+                i = highlight(i.strip(), PwntoolsLexer(), TerminalFormatter()).strip()
+                i = i.replace(',',', ')
+                print(o,b,i)
+            else:
+                print(line[0])
         return
 
     print(disasm(dat, vma=safeeval.const(args.address)))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

@@ -12,9 +12,10 @@ from pwnlib.term import termcap
 from pwnlib.term import text
 
 # Re-exports (XXX: Are these needed?)
-output = term.output
-width =  term.width
+term.update_geometry()
+width = term.width
 height = term.height
+output = term.output
 getkey = key.get
 Keymap = keymap.Keymap
 

@@ -12,6 +12,7 @@ the crc32-sum of ``'A'*40000``.
 An obvious optimization would be to actually generate some lookup-tables.
 
 This doctest is to ensure that the known data are accurate:
+
     >>> known = sys.modules['pwnlib.util.crc.known']
     >>> known.all_crcs == known.generate()
     True
@@ -73,6 +74,8 @@ class BitPolynom(object):
 
     def __init__(self, n):
         if isinstance(n, (bytes, six.text_type)):
+            from pwnlib.util.packing import _need_text
+            n = _need_text(n)
             self.n = 0
             x = BitPolynom(2)
             try:
@@ -338,6 +341,7 @@ class Module(types.ModuleType):
             data(str): The data to checksum.
 
         Example:
+
             >>> print(%s(b'123456789'))
             %d
     """ % (name, name, polynom, width, init, refin, refout, xorout, extra_doc, name, check)
@@ -354,6 +358,7 @@ class Module(types.ModuleType):
             data(str): The data to checksum.
 
         Example:
+
             >>> print(cksum(b'123456789'))
             930766865
         """
@@ -371,6 +376,7 @@ class Module(types.ModuleType):
             data(str): Data for which the checksum is known.
 
         Example:
+
             >>> find_crc_function(b'test', 46197)
             [<function crc_crc_16_dnp at ...>]
         """
