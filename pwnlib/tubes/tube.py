@@ -1087,7 +1087,7 @@ class tube(Timeout, Logger):
 
         The file is uploaded in base64-encoded chunks by appending to a file
         and then decompressing it:
-        
+
         ```
         loop:
             echo <chunk> | base64 -d >> <target_path>.<compression>
@@ -1168,11 +1168,15 @@ class tube(Timeout, Logger):
             compressed_path = target_path + '.xz'
         elif compression_mode == 'gzip':
             import gzip
-            compressed_data = gzip.compress(data, compresslevel=9)
+            from six import BytesIO
+            f = BytesIO()
+            with gzip.GzipFile(fileobj=f, mode='wb', compresslevel=9) as g:
+                g.write(data)
+            compressed_data = f.getvalue()
             compressed_path = target_path + '.gz'
         else:
             compressed_path = target_path
-        
+
         # Don't compress if it doesn't reduce the size.
         if len(compressed_data) >= len(data):
             compression_mode = None
@@ -1186,12 +1190,12 @@ class tube(Timeout, Logger):
                 if None in chunk:
                     chunk = chunk[:chunk.index(None)]
                 if idx == 0:
-                    self.sendlineafter(end_markerb, "echo {} | base64 -d > {}{}".format(fiddling.b64e(bytes(chunk)), compressed_path, echo_end).encode())
+                    self.sendlineafter(end_markerb, "echo {} | base64 -d > {}{}".format(fiddling.b64e(bytearray(chunk)), compressed_path, echo_end).encode())
                 else:
-                    self.sendlineafter(end_markerb, "echo {} | base64 -d >> {}{}".format(fiddling.b64e(bytes(chunk)), compressed_path, echo_end).encode())
+                    self.sendlineafter(end_markerb, "echo {} | base64 -d >> {}{}".format(fiddling.b64e(bytearray(chunk)), compressed_path, echo_end).encode())
                 p.status('{}/{} {}'.format(idx+1, len(data)//chunk_size+1, misc.size(idx*chunk_size + len(chunk))))
             p.success(misc.size(len(data)))
-        
+
         # Decompress the file and set the permissions.
         if compression_mode is not None:
             self.sendlineafter(end_markerb, '{} -d -f {}{}'.format(compression_mode, compressed_path, echo_end).encode())
