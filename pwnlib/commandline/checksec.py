@@ -4,7 +4,7 @@ from __future__ import division
 import argparse
 import sys
 
-from pwnlib.elf import ELF
+from pwn import *
 from pwnlib.commandline import common
 
 parser = common.parser_commands.add_parser(
@@ -41,4 +41,4 @@ def main(args):
             print("{name}: {error}".format(name=f.name, error=e))
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)

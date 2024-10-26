@@ -1,9 +1,12 @@
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 from pwn import *
 from pwnlib.commandline import common
+from pwnlib.util.misc import which, parse_ldd_output, write
 
+from sys import stderr
 from mako.lookup import TemplateLookup, Template
 
 parser = common.parser_commands.add_parser(
@@ -32,18 +35,100 @@ parser.add_argument('--template', help='Path to a custom template. Tries to use 
                                         os.path.join(printable_data_path, "templates", "pwnup.mako"))
 parser.add_argument('--no-auto', help='Do not automatically detect missing binaries', action='store_false', dest='auto')
 
+def get_docker_image_libraries():
+    """Tries to retrieve challenge libraries from a Docker image built from the Dockerfile in the current working directory.
+    
+    The libraries are retrieved by parsing the output of running ldd on /bin/sh.
+    Supports regular Docker images as well as jail images.
+    """
+    with log.progress("Extracting challenge libraries from Docker image") as progress:
+        if not which("docker"):
+            progress.failure("docker command not found")
+            return None, None
+        # maps jail image name to the root directory of the child image
+        jail_image_to_chroot_dir = {
+            "pwn.red/jail": "/srv",
+        }
+        dockerfile = open("Dockerfile", "r").read()
+        jail = None
+        chroot_dir = "/"
+        for jail_image in jail_image_to_chroot_dir:
+            if re.search(r"^FROM %s" % jail_image, dockerfile, re.MULTILINE):
+                jail = jail_image
+                chroot_dir = jail_image_to_chroot_dir[jail_image]
+                break
+        try:
+            progress.status("Building image")
+            image_sha = subprocess.check_output(["docker", "build", "-q", "."], stderr=subprocess.PIPE, shell=False).decode().strip()
+
+            progress.status("Retrieving library paths")
+            ldd_command = ["-c", "chroot %s /bin/sh -c 'ldd /bin/sh'" % chroot_dir]
+            ldd_output = subprocess.check_output([
+                    "docker",
+                    "run",
+                    "--rm",
+                    "--entrypoint",
+                    "/bin/sh",
+                    ] + (["--privileged"] if jail else []) + [
+                        image_sha,
+                    ] + ldd_command,
+                stderr=subprocess.PIPE, 
+                shell=False
+            ).decode()
+            
+            libc, ld = None, None
+            libc_basename, ld_basename = None, None
+            for lib_path in parse_ldd_output(ldd_output):
+                if "libc." in lib_path:
+                    libc = lib_path
+                    libc_basename = os.path.basename(lib_path)
+                if "ld-" in lib_path:
+                    ld = lib_path
+                    ld_basename = os.path.basename(lib_path)
+
+            if not (libc and ld):
+                progress.failure("Could not find libraries")
+                return None, None
+            
+            progress.status("Copying libraries to current directory")
+            for filename, basename in zip((libc, ld), (libc_basename, ld_basename)):
+                cat_command = ["-c", "chroot %s /bin/sh -c '/bin/cat %s'" % (chroot_dir, filename)]
+                contents = subprocess.check_output([
+                        "docker",
+                        "run",
+                        "--rm",
+                        "--entrypoint",
+                        "/bin/sh",
+                        ] + (["--privileged"] if jail else []) + [
+                            image_sha
+                        ] + cat_command,
+                    stderr=subprocess.PIPE, 
+                    shell=False
+                )
+                write(basename, contents)
+
+        except subprocess.CalledProcessError as e:
+            print(e.stderr.decode())
+            log.error("docker failed with status: %d" % e.returncode)
+
+        progress.success("Retrieved libraries from Docker image")
+    return libc_basename, ld_basename
+
 def detect_missing_binaries(args):
     log.info("Automatically detecting challenge binaries...")
     # look for challenge binary, libc, and ld in current directory
     exe, libc, ld = args.exe, args.libc, None
+    has_dockerfile = False
     other_files = []
-    for filename in os.listdir():
+    for filename in os.listdir("."):
         if not os.path.isfile(filename):
             continue
         if not libc and ('libc-' in filename or 'libc.' in filename):
             libc = filename
         elif not ld and 'ld-' in filename:
             ld = filename
+        elif filename == "Dockerfile":
+            has_dockerfile = True
         else:
             if os.access(filename, os.X_OK):
                 other_files.append(filename)
@@ -52,6 +137,9 @@ def detect_missing_binaries(args):
             exe = other_files[0]
         elif len(other_files) > 1:
             log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
+    
+    if has_dockerfile and exe and not (libc or ld): 
+        libc, ld = get_docker_image_libraries()
 
     if exe != args.exe:
         log.success("Found challenge binary %r", exe)
@@ -122,5 +210,5 @@ def main(args):
         except OSError: pass
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)
     

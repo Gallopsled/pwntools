@@ -34,4 +34,4 @@ def main(a):
     getattr(sys.stdout, 'buffer', sys.stdout).write(elf.get_data())
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

@@ -25,8 +25,8 @@ def partition(lst, f, save_keys = False):
 
       >>> partition([1,2,3,4,5], lambda x: x&1)
       [[1, 3, 5], [2, 4]]
-      >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True)
-      OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
+      >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True) == collections.OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
+      True
     """
     d = collections.OrderedDict()
 
