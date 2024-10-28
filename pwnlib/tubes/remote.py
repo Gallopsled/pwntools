@@ -139,7 +139,7 @@ class remote(sock):
             Instance of pwnlib.tubes.remote.remote.
         """
         s = socket
-        host, port = s.getpeername()
+        host, port = s.getpeername()[:2]
         return remote(host, port, fam=s.family, typ=s.type, sock=s)
 
 class tcp(remote):
