@@ -27,6 +27,11 @@ def pidof(target):
     - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the
       remote end of `target` if it is running on the host.  Otherwise an
       empty list.
+    - :class:`pwnlib.tubes.ssh.ssh_channel`: singleton list of the PID of
+      `target` on the remote system.
+    - :class:`tuple`: singleton list of the PID at the local end of the
+        connection to `target` if it is running on the host.  Otherwise an
+        empty list.
 
     Arguments:
         target(object):  The target whose PID(s) to find.
@@ -38,7 +43,7 @@ def pidof(target):
 
         >>> l = tubes.listen.listen()
         >>> p = process(['curl', '-s', 'http://127.0.0.1:%d'%l.lport])
-        >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.lport))
+        >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.rport))
         True
     """
     if isinstance(target, tubes.ssh.ssh_channel):
@@ -51,7 +56,7 @@ def pidof(target):
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tuple):
-        match = sock_match(None, target)
+        match = sock_match(target, None)
         return [c.pid for c in psutil.net_connections() if match(c)]
 
     elif isinstance(target, tubes.process.process):

@@ -950,6 +950,8 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             Process name.  The youngest process is selected.
         :obj:`tuple`
             Host, port pair of a listening ``gdbserver``
+            Tries to look up the target exe from the ``gdbserver`` commandline,
+            requires explicit ``exe`` argument if the target exe is not in the commandline.
         :class:`.process`
             Process to connect to
         :class:`.sock`
@@ -1034,6 +1036,30 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
+        >>> server.close()
+
+        Attach to a gdbserver / gdbstub running on the local machine
+        by specifying the host and port tuple it is listening on.
+        (gdbserver always listens on 0.0.0.0)
+
+        >>> gdbserver = process(['gdbserver', '1.2.3.4:12345', '/bin/bash'])
+        >>> gdbserver.recvline_contains(b'Listening on port', timeout=10)
+        b'Listening on port 12345'
+        >>> pid = gdb.attach(('0.0.0.0', 12345), gdbscript='''
+        ... tbreak main
+        ... commands
+        ... call puts("Hello from gdbserver debugger!")
+        ... continue
+        ... end
+        ... ''')
+        >>> gdbserver.recvline(timeout=10)  # doctest: +ELLIPSIS
+        b'Remote debugging from host 127.0.0.1, ...\n'
+        >>> gdbserver.recvline(timeout=10)
+        b'Hello from gdbserver debugger!\n'
+        >>> gdbserver.sendline(b'echo Hello from bash && exit')
+        >>> gdbserver.recvline(timeout=10)
+        b'Hello from bash\n'
+        >>> gdbserver.close()
 
         Attach to processes running on a remote machine via an SSH :class:`.ssh` process
 
