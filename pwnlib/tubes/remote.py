@@ -53,6 +53,13 @@ class remote(sock):
         >>> r = remote.fromsocket(s)
         >>> r.recvn(4)
         b'HTTP'
+        >>> s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        >>> s.connect(('2606:4700:4700::1111', 80))
+        >>> s.send(b'GET ' + b'\r\n'*2)
+        8
+        >>> r = remote.fromsocket(s)
+        >>> r.recvn(4)
+        b'HTTP'
     """
 
     def __init__(self, host, port,

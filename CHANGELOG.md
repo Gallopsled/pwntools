@@ -129,6 +129,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2435]: https://github.com/Gallopsled/pwntools/pull/2435
 [2437]: https://github.com/Gallopsled/pwntools/pull/2437
 
+## 4.13.2
+
+- [#2497][2497] Fix remote.fromsocket() to handle AF_INET6 socket
+
+[2497]: https://github.com/Gallopsled/pwntools/pull/2497
+
 ## 4.13.1 (`stable`)
 
 - [#2445][2445] Fix parsing the PLT on Windows
