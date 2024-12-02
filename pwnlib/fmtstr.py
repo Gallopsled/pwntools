@@ -1009,7 +1009,7 @@ class FmtStr(object):
 
         Arguments:
             addr(int): the address where you want to write
-            data(int): the data that you want to write ``addr``
+            data(int or bytes): the data that you want to write ``addr``
 
         Returns:
             None
@@ -1023,6 +1023,10 @@ class FmtStr(object):
             >>> f.write(0x08040506, 0x1337babe)
             >>> f.execute_writes()
             b'%19c%16$hhn%36c%17$hhn%131c%18$hhn%4c%19$hhn\t\x05\x04\x08\x08\x05\x04\x08\x07\x05\x04\x08\x06\x05\x04\x08'
+            >>> f2 = FmtStr(send_fmt_payload, offset=5)
+            >>> f2.write(0x08040506, p16(0x1337))
+            >>> f2.execute_writes()
+            b'%19c%11$hhn%36c%12$hhnaa\x07\x05\x04\x08\x06\x05\x04\x08'
 
         """
         self.writes[addr] = data
