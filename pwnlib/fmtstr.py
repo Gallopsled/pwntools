@@ -841,6 +841,12 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     The overflows argument is a format-string-length to output-amount tradeoff:
     Larger values for ``overflows`` produce shorter format strings that generate more output at runtime.
 
+    The writes argument is a dictionary with address/value pairs like ``{addr: value, addr2: value2}``.
+    If the value is an ``int`` datatype, it will be automatically casted into a bytestring with the length of a ``long`` (8 bytes in 64-bit, 4 bytes in 32-bit).
+    If a specific number of bytes is intended to be written (such as only a single byte, single short, or single int and not an entire long),
+    then provide a bytestring like `b'\x37\x13'` or `p16(0x1337)`. 
+    Note that the ``write_size`` argument does not determine **total** bytes written, only the size of each consecutive write.
+
     Arguments:
         offset(int): the first formatter's offset you control
         writes(dict): dict with addr, value ``{addr: value, addr2: value2}``
@@ -857,6 +863,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: p32(0x1337babe)}, write_size='int')
+        b'%322419390c%3$na\x00\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
         b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
@@ -872,6 +880,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
         b'c%3$naaa\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: b'\x01'}, write_size='byte')
+	b'c%3$hhna\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
         >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
