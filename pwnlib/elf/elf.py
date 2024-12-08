@@ -52,6 +52,7 @@ from collections import namedtuple, defaultdict
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
+from elftools.elf.dynamic import DynamicSection
 from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
 from elftools.elf.gnuversions import GNUVerDefSection
@@ -1607,7 +1608,7 @@ class ELF(ELFFile):
         dt      = None
         dynamic = self.get_section_by_name('.dynamic')
 
-        if not dynamic:
+        if not dynamic or not isinstance(dynamic, DynamicSection):
             return None
 
         try:
