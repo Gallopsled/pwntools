@@ -844,7 +844,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     The writes argument is a dictionary with address/value pairs like ``{addr: value, addr2: value2}``.
     If the value is an ``int`` datatype, it will be automatically casted into a bytestring with the length of a ``long`` (8 bytes in 64-bit, 4 bytes in 32-bit).
     If a specific number of bytes is intended to be written (such as only a single byte, single short, or single int and not an entire long),
-    then provide a bytestring like `b'\x37\x13'` or `p16(0x1337)`. 
+    then provide a bytestring like ``b'\x37\x13'`` or ``p16(0x1337)``.
     Note that the ``write_size`` argument does not determine **total** bytes written, only the size of each consecutive write.
 
     Arguments:
