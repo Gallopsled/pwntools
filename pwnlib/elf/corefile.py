@@ -238,8 +238,8 @@ class Corefile(ELF):
     Registers can be accessed directly, e.g. via ``core_obj.eax`` and enumerated
     via :data:`Corefile.registers`.
 
-    Memory can be accessed directly via :meth:`.read` or :meth:`.write`, and also
-    via :meth:`.pack` or :meth:`.unpack` or even :meth:`.string`.
+    Memory can be accessed directly via :meth:`pwnlib.elf.elf.ELF.read` or :meth:`pwnlib.elf.elf.ELF.write`, and also
+    via :meth:`pwnlib.elf.elf.ELF.pack` or :meth:`pwnlib.elf.elf.ELF.unpack` or even :meth:`.string`.
 
     Arguments:
         core: Path to the core file.  Alternately, may be a :class:`.process` instance,
@@ -376,8 +376,8 @@ class Corefile(ELF):
         >>> core.exe.data[0:4]
         b'\x7fELF'
 
-        It also supports all of the features of :class:`ELF`, so you can :meth:`.read`
-        or :meth:`.write` or even the helpers like :meth:`.pack` or :meth:`.unpack`.
+        It also supports all of the features of :class:`ELF`, so you can :meth:`pwnlib.elf.elf.ELF.read`
+        or :meth:`pwnlib.elf.elf.ELF.write` or even the helpers like :meth:`pwnlib.elf.elf.ELF.pack` or :meth:`pwnlib.elf.elf.ELF.unpack`.
 
         Don't forget to call :meth:`.ELF.save` to save the changes to disk.
 

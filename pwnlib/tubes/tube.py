@@ -1088,12 +1088,12 @@ class tube(Timeout, Logger):
         The file is uploaded in base64-encoded chunks by appending to a file
         and then decompressing it:
 
-        ```
-        loop:
-            echo <chunk> | base64 -d >> <target_path>.<compression>
-        <compression> -d -f <target_path>.<compression>
-        chmod <chmod_flags> <target_path>
-        ```
+        .. code-block::
+
+            loop:
+                echo <chunk> | base64 -d >> <target_path>.<compression>
+            <compression> -d -f <target_path>.<compression>
+            chmod <chmod_flags> <target_path>
 
         It is assumed that a `base64` command is available on the target system.
         When ``compression`` is ``auto`` the best compression utility available

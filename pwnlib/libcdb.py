@@ -766,12 +766,12 @@ def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
 
     Arguments:
         libs_id(str):
-            Libs ID (e.g. 'libc6_...') of the library
+            Libs ID (e.g. ``'libc6_...'``) of the library
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
         offline_only(bool):
-            When pass `offline_only=True`, restricts search mode to offline sources only,
-            disable online lookup. Defaults to `False`, and enable both offline and online providers.
+            When pass ``offline_only=True``, restricts search mode to offline sources only,
+            disable online lookup. Defaults to :const:`False`, and enable both offline and online providers.
 
     Returns:
         Path to the downloaded library on disk, or :const:`None`.
