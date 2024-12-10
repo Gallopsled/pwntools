@@ -959,7 +959,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             Can be any socket type, including :class:`.listen` or :class:`.remote`.
         :class:`.ssh_channel`
             Remote process spawned via :meth:`.ssh.process`.
-            This will use the GDB installed on the remote machine.
+            **This will use the GDB installed on the remote machine.**
             If a password is required to connect, the ``sshpass`` program must be installed.
 
     Examples:
@@ -1076,6 +1076,19 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         >>> io.sendline(b'This will be echoed back')
         >>> io.recvline(timeout=1)
         b'This will be echoed back\n'
+        >>> io.close()
+
+        As for attaching to remote gdbserver, assuming you have a socat server delivering
+        gdbserver: ``socat TCP-LISTEN:1336,reuseaddr,fork 'EXEC:"gdbserver :1337 /bin/bash"'``,
+        we can connect to gdbserver and attach to it: (Note that when connection with gdbserver
+        established, ``/bin/bash`` will stop at _start, waiting our gdb to attach.)
+
+        >>> io = remote('127.0.0.1', 1336)
+        >>> _ = gdb.attach(('127.0.0.1', 1337), exe='/bin/bash')
+        >>> # press 'c' in gdb then
+        >>> io.sendline(b'echo Hello')
+        >>> io.recvline()
+        b'Hello\n'
         >>> io.close()
     """
     if context.noptrace:
