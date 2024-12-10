@@ -73,6 +73,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.15.0 (`dev`)
 
+- [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
 - [#2471][2471] Properly close spawned kitty window
 - [#2358][2358] Cache output of `asm()`
 - [#2457][2457] Catch exception of non-ELF files in checksec.
@@ -87,6 +88,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2291][2291] Fix attaching to a gdbserver with tuple `gdb.attach(('0.0.0.0',12345))`
 - [#2410][2410] Add `tube.upload_manually` to upload files in chunks
 
+[2504]: https://github.com/Gallopsled/pwntools/pull/2504
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
 [2457]: https://github.com/Gallopsled/pwntools/pull/2457
