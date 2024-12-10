@@ -1078,18 +1078,19 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'This will be echoed back\n'
         >>> io.close()
 
-        As for attaching to remote gdbserver, assuming you have a socat server delivering
-        gdbserver: ``socat TCP-LISTEN:1336,reuseaddr,fork 'EXEC:"gdbserver :1337 /bin/bash"'``,
-        we can connect to gdbserver and attach to it: (Note that when connection with gdbserver
-        established, ``/bin/bash`` will stop at _start, waiting our gdb to attach.)
+        To attach to remote gdbserver, assume you have a socat server delivering gdbserver
+        with ``socat TCP-LISTEN:1336,reuseaddr,fork 'EXEC:"gdbserver :1337 /bin/bash"'``,
+        then you can connect to gdbserver and attach to it by:
+        (When connection with gdbserver established, ``/bin/bash`` will pause at ``_start``,
+        waiting for our gdb to attach.)
 
-        >>> io = remote('127.0.0.1', 1336)
-        >>> _ = gdb.attach(('127.0.0.1', 1337), exe='/bin/bash')
+        >>> io = remote('127.0.0.1', 1336)  # doctest: +SKIP
+        >>> _ = gdb.attach(('127.0.0.1', 1337), exe='/bin/bash')  # doctest: +SKIP
         >>> # press 'c' in gdb then
-        >>> io.sendline(b'echo Hello')
-        >>> io.recvline()
+        >>> io.sendline(b'echo Hello')  # doctest: +SKIP
+        >>> io.recvline()  # doctest: +SKIP
         b'Hello\n'
-        >>> io.close()
+        >>> io.close()  # doctest: +SKIP
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
