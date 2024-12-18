@@ -398,6 +398,11 @@ autodoc_default_options = {'special-members': None, 'private-members': None}
 
 class _DummyClass(object): pass
 
+# doctest optionflags for platform-specific tests
+# they are skipped on other platforms
+WINDOWS = doctest.register_optionflag('WINDOWS')
+LINUX = doctest.register_optionflag('LINUX')
+
 class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
         sup = super(Py2OutputChecker, self).check_output
@@ -425,6 +430,41 @@ class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
                 return False
         return True
 
+import sphinx.ext.doctest
+
+class PlatformDocTestRunner(sphinx.ext.doctest.SphinxDocTestRunner):
+    def run(self, test, compileflags=None, out=None, clear_globs=True):
+        original_optionflags = self.optionflags | test.globs.get('doctest_additional_flags', 0)
+        def filter_platform(example):
+            optionflags = original_optionflags
+            if example.options:
+                for (optionflag, val) in example.options.items():
+                    if val:
+                        optionflags |= optionflag
+                    else:
+                        optionflags &= ~optionflag
+
+            if (optionflags & WINDOWS) == WINDOWS and sys.platform != 'win32':
+                return False
+            if (optionflags & LINUX) == LINUX and sys.platform != 'linux':
+                return False
+            return True
+                
+        test.examples[:] = [example for example in test.examples if filter_platform(example)]
+            
+        return super(PlatformDocTestRunner, self).run(test, compileflags, out, clear_globs)
+
+class PlatformDocTestBuilder(sphinx.ext.doctest.DocTestBuilder):
+    _test_runner = None
+
+    @property
+    def test_runner(self):
+        return self._test_runner
+    
+    @test_runner.setter
+    def test_runner(self, value):
+        self._test_runner = PlatformDocTestRunner(value._checker, value._verbose, value.optionflags)
+
 def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     if checker is None:
         checker = Py2OutputChecker()
@@ -432,10 +472,10 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
 
 if 'doctest' in sys.argv:
     def setup(app):
-        pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
+        app.add_builder(PlatformDocTestBuilder, override=True)
+        # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     if sys.version_info[:1] < (3,):
-        import sphinx.ext.doctest
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
     else:
         # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
@@ -444,8 +484,16 @@ if 'doctest' in sys.argv:
         paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
         paramiko.util.safe_string = lambda x: '' # function result never *actually used*
     class EndlessLoop(Exception): pass
-    def alrm_handler(sig, frame):
-        signal.alarm(180) # three minutes
-        raise EndlessLoop()
-    signal.signal(signal.SIGALRM, alrm_handler)
-    signal.alarm(600) # ten minutes
+    if sys.platform == 'win32':
+        def alrm_handler():
+            raise EndlessLoop()
+        import threading
+        timer = threading.Timer(600, alrm_handler)
+        timer.daemon = True
+        timer.start()
+    else:
+        def alrm_handler(sig, frame):
+            signal.alarm(180) # three minutes
+            raise EndlessLoop()
+        signal.signal(signal.SIGALRM, alrm_handler)
+        signal.alarm(600) # ten minutes

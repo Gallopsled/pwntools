@@ -324,7 +324,7 @@ class ContextType(object):
         >>> _=(thread.start(), thread.join())
         90
         >>> # Pwnthread uses the correct context from creation-time
-        >>> _=(pwnthread.start(), pwnthread.join())
+        >>> _=(pwnthread.start(), pwnthread.join()) # doctest: +LINUX
         00000000
         >>> nop()
         00f020e3
@@ -870,6 +870,9 @@ class ContextType(object):
 
         Examples:
 
+        .. doctest::
+            :options: +LINUX
+
             >>> context.clear()
             >>> context.arch, context.bits
             ('i386', 32)
@@ -1078,7 +1081,7 @@ class ContextType(object):
             >>> context.log_level = 'warn'
             >>> log.warn("Hello")
             [!] Hello
-            >>> context.log_console=open('/dev/null', 'w')
+            >>> context.log_console=open(os.devnull, 'w')
             >>> log.warn("Hello")
             >>> context.clear()
         """
@@ -1405,7 +1408,7 @@ class ContextType(object):
             True
             >>> os.chmod(cache_dir, 0o000)
             >>> context.cache_dir = True
-            >>> context.cache_dir is None
+            >>> context.cache_dir is None # doctest: +LINUX
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
