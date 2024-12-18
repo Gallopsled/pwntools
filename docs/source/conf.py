@@ -483,17 +483,24 @@ if 'doctest' in sys.argv:
         import binascii
         paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
         paramiko.util.safe_string = lambda x: '' # function result never *actually used*
-    class EndlessLoop(Exception): pass
-    if sys.platform == 'win32':
-        def alrm_handler():
-            raise EndlessLoop()
-        import threading
-        timer = threading.Timer(600, alrm_handler)
+    class EndlessLoop(BaseException): pass
+    def sigabrt_handler(signum, frame):
+        raise EndlessLoop()
+    # thread.interrupt_main received the signum parameter in Python 3.10
+    if sys.version_info >= (3, 10):
+        signal.signal(signal.SIGABRT, sigabrt_handler)
+    def alrm_handler():
+        try:
+            import thread
+        except ImportError:
+            import _thread as thread
+        # pre Python 3.10 this raises a KeyboardInterrupt in the main thread.
+        # it might not show a traceback in that case, but it will stop the endless loop.
+        thread.interrupt_main(signal.SIGABRT)
+        timer = threading.Timer(interval=180, function=alrm_handler) # three minutes
         timer.daemon = True
         timer.start()
-    else:
-        def alrm_handler(sig, frame):
-            signal.alarm(180) # three minutes
-            raise EndlessLoop()
-        signal.signal(signal.SIGALRM, alrm_handler)
-        signal.alarm(600) # ten minutes
+    import threading
+    timer = threading.Timer(interval=600, function=alrm_handler) # ten minutes
+    timer.daemon = True
+    timer.start()
