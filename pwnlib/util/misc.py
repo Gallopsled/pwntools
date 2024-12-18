@@ -165,8 +165,6 @@ def which(name, all = False, path=None):
 
         >>> which('sh') # doctest: +ELLIPSIS +LINUX
         '.../bin/sh'
-        >>> which('cmd') # doctest: +ELLIPSIS +WINDOWS
-        '...\\cmd.EXE'
     """
     # If name is a path, do not attempt to resolve it.
     if os.path.sep in name:

@@ -471,13 +471,13 @@ def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
     doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
 
 if 'doctest' in sys.argv:
-    def setup(app):
-        app.add_builder(PlatformDocTestBuilder, override=True)
-        # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
     if sys.version_info[:1] < (3,):
         sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
     else:
+        def setup(app):
+            app.add_builder(PlatformDocTestBuilder, override=True)
+            # app.connect('autodoc-skip-member', dont_skip_any_doctests)
         # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
         import paramiko.client
         import binascii
