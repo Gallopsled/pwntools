@@ -3,6 +3,9 @@
    from pwn import *
    from pwnlib.tubes.server import server
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+
 :mod:`pwnlib.tubes.sock` --- Sockets
 ===========================================================
 

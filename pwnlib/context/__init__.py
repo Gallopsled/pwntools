@@ -308,6 +308,10 @@ class ContextType(object):
         'little'
         >>> context.bits
         32
+
+    .. doctest::
+        :options: +LINUX
+
         >>> def nop():
         ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
@@ -324,7 +328,7 @@ class ContextType(object):
         >>> _=(thread.start(), thread.join())
         90
         >>> # Pwnthread uses the correct context from creation-time
-        >>> _=(pwnthread.start(), pwnthread.join()) # doctest: +LINUX
+        >>> _=(pwnthread.start(), pwnthread.join())
         00000000
         >>> nop()
         00f020e3

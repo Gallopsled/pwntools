@@ -5,6 +5,9 @@
    from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
    import shutil
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+
 :mod:`pwnlib.elf.elf` --- ELF Files
 ===========================================================
 

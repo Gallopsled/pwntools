@@ -284,14 +284,29 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade --editable .
     
+    - name: Install documentation dependencies
+      run: pip install -r docs/requirements.txt
+    
     - name: Sanity checks
       run: |
         python -bb -c 'from pwn import *'
         python -bb examples/text.py
+    
+    - name: Coverage doctests
+      run: |
+        python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-windows
+        path: .coverage*
+        include-hidden-files: true
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: 
+      - test
+      - windows-test
     steps:
     - uses: actions/checkout@v4
       with:
