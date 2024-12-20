@@ -1391,6 +1391,8 @@ class ROP(object):
                 if pop.match(insn):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
+                    if 'sp' in insn:
+                        sp_move += 9999999
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
