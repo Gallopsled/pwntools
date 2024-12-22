@@ -123,7 +123,7 @@ def read(path, count=-1, skip=0):
 
     Examples:
 
-        >>> read('/proc/self/exe')[:4] # doctest: +LINUX
+        >>> read('/proc/self/exe')[:4] # doctest: +LINUX +TODO
         b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
@@ -163,7 +163,7 @@ def which(name, all = False, path=None):
 
     Example:
 
-        >>> which('sh') # doctest: +ELLIPSIS +LINUX
+        >>> which('sh') # doctest: +ELLIPSIS +POSIX +TODO
         '.../bin/sh'
     """
     # If name is a path, do not attempt to resolve it.

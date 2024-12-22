@@ -19,6 +19,7 @@
 
    context.clear()
 
+   # TODO: Remove global LINUX flag
    import doctest
    doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
 

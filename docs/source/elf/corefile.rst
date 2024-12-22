@@ -19,7 +19,7 @@
    os.environ.setdefault('SHELL', '/bin/sh')
 
    import doctest
-   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['POSIX']
 
 
 :mod:`pwnlib.elf.corefile` --- Core Files

@@ -889,7 +889,7 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
     Example:
 
     .. doctest::
-      :options: +LINUX
+      :options: +POSIX +TODO
 
       >>> mbruteforce(lambda x: x == 'hello', string.ascii_lowercase, length = 10)
       'hello'

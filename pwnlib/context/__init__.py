@@ -310,7 +310,7 @@ class ContextType(object):
         32
 
     .. doctest::
-        :options: +LINUX
+        :options: +POSIX +TODO
 
         >>> def nop():
         ...   print(enhex(pwnlib.asm.asm('nop')))
@@ -875,7 +875,7 @@ class ContextType(object):
         Examples:
 
         .. doctest::
-            :options: +LINUX
+            :options: +POSIX +TODO
 
             >>> context.clear()
             >>> context.arch, context.bits
@@ -1412,7 +1412,7 @@ class ContextType(object):
             True
             >>> os.chmod(cache_dir, 0o000)
             >>> context.cache_dir = True
-            >>> context.cache_dir is None # doctest: +LINUX
+            >>> context.cache_dir is None # doctest: +POSIX +TODO
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir

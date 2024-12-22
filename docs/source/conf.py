@@ -402,6 +402,10 @@ class _DummyClass(object): pass
 # they are skipped on other platforms
 WINDOWS = doctest.register_optionflag('WINDOWS')
 LINUX = doctest.register_optionflag('LINUX')
+POSIX = doctest.register_optionflag('POSIX')
+
+# doctest optionflag for tests that haven't been looked at yet
+TODO = doctest.register_optionflag('TODO')
 
 class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
     def check_output(self, want, got, optionflags):
@@ -447,6 +451,8 @@ class PlatformDocTestRunner(sphinx.ext.doctest.SphinxDocTestRunner):
             if (optionflags & WINDOWS) == WINDOWS and sys.platform != 'win32':
                 return False
             if (optionflags & LINUX) == LINUX and sys.platform != 'linux':
+                return False
+            if (optionflags & POSIX) == POSIX and os.name != 'posix':
                 return False
             return True
                 

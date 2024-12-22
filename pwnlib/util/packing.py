@@ -990,7 +990,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ['H', 'e', 'l', 'l', 'o', b'?']
 
     .. doctest::
-        :options: +LINUX
+        :options: +POSIX +TODO
 
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()

@@ -281,7 +281,7 @@ def test(original):
     r"""Tests the output provided by a shell interpreting a string
 
     .. doctest::
-        :options: +LINUX
+        :options: +POSIX
 
         >>> test(b'foobar')
         >>> test(b'foo bar')
