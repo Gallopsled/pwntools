@@ -471,6 +471,7 @@ def cpp(shellcode):
     code = _include_header() + shellcode
     cmd  = [
         cpp,
+        '-Wno-unused-command-line-argument',
         '-C',
         '-nostdinc',
         '-undef',

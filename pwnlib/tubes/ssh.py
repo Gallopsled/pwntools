@@ -450,7 +450,7 @@ class ssh_connecter(sock):
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
             except Exception as e:
-                self.exception(e.message)
+                self.exception(str(e))
                 raise
 
             try:
