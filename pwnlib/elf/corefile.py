@@ -1510,7 +1510,10 @@ class CorefileFinder(object):
         # should be unique enough that we can just glob.
 
         boot_id = read('/proc/sys/kernel/random/boot_id').strip().decode()
-        path = self.exe.replace('/', '_')
+
+        # Use the absolute path of the executable
+        # Apport uses the executable's pathname in the core filename
+        path = os.path.abspath(self.exe).replace('/', '_').replace('.', '_')
 
         # Format the name
         corefile_name = 'core.{path}.{uid}.{boot_id}.{pid}.*'.format(
