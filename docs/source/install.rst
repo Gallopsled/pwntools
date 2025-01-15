@@ -1,7 +1,7 @@
 Installation
 ============
 
-Pwntools is best supported on 64-bit Ubuntu LTS releases (14.04, 16.04, 18.04, and 20.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
+Pwntools is best supported on 64-bit Ubuntu LTS releases (22.04 and 24.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
 Prerequisites
 -------------
@@ -36,6 +36,8 @@ Python3
 
 Python2 (Deprecated)
 ^^^^^^^^^^^^^^^^^^^^
+
+Python2 support has been removed in Pwntools v5.0.0.  The last version to support Python2 was v4.15.0.
 
 NOTE: Pwntools maintainers STRONGLY recommend using Python3 for all future Pwntools-based scripts and projects.
 

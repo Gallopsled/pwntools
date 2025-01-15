@@ -99,7 +99,6 @@ github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 skip_android = True
-is_python2 = six.PY2
 '''
 
 autoclass_content = 'both'
@@ -388,7 +387,6 @@ if build_dash:
 
 
 # -- Customization to Sphinx autodoc generation --------------------------------------------
-import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
@@ -396,53 +394,16 @@ def dont_skip_any_doctests(app, what, name, obj, skip, options):
 
 autodoc_default_options = {'special-members': None, 'private-members': None}
 
-class _DummyClass(object): pass
-
-class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
-    def check_output(self, want, got, optionflags):
-        sup = super(Py2OutputChecker, self).check_output
-        if sup(want, got, optionflags):
-            return True
-        try:
-            rly_want = pwnlib.util.safeeval.const(want)
-            if sup(repr(rly_want), got, optionflags):
-                return True
-            rly_got = pwnlib.util.safeeval.const(got)
-            if rly_want == rly_got:
-                return True
-        except ValueError:
-            pass
-        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        if sup(rly_want, got, optionflags):
-            return True
-        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        if sup(rly_want, got, optionflags):
-            return True
-        for wantl, gotl in six.moves.zip_longest(want.splitlines(), got.splitlines(), fillvalue=''):
-            rly_want1 = '['.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in wantl.split('['))
-            rly_want2 = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in wantl.split(' '))
-            if not sup(rly_want1, gotl, optionflags) and not sup(rly_want2, gotl, optionflags):
-                return False
-        return True
-
-def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
-    if checker is None:
-        checker = Py2OutputChecker()
-    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
-
 if 'doctest' in sys.argv:
     def setup(app):
         pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
 
-    if sys.version_info[:1] < (3,):
-        import sphinx.ext.doctest
-        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
-    else:
-        # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
-        import paramiko.client
-        import binascii
-        paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
-        paramiko.util.safe_string = lambda x: '' # function result never *actually used*
+    # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
+    import paramiko.client
+    import binascii
+    paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
+    paramiko.util.safe_string = lambda x: '' # function result never *actually used*
+
     class EndlessLoop(Exception): pass
     def alrm_handler(sig, frame):
         signal.alarm(180) # three minutes

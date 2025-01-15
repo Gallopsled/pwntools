@@ -587,9 +587,6 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
     Using GDB Python API:
 
-    .. doctest::
-       :skipif: is_python2
-
         Debug a new process
 
         >>> io = gdb.debug(['echo', 'foo'], api=True)
@@ -987,9 +984,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Using GDB Python API:
-
-        .. doctest::
-           :skipif: is_python2
 
             >>> io = process('bash')
 

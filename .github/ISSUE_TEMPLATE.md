@@ -4,7 +4,7 @@ Thanks for contributing to Pwntools!
 
 When reporting an issue, be sure that you are running the latest released version of pwntools (`pip install --upgrade pwntools`).
 
-Please verify that your issue occurs on 64-bit Ubuntu 14.04.  You can use the Dockerfile on `docker.io` for quick testing.
+Please verify that your issue occurs on 64-bit Ubuntu 22.04.  You can use the Dockerfile on `docker.io` for quick testing.
 
 ```
 $ docker pull pwntools/pwntools:stable
