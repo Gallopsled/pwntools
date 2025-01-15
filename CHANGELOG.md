@@ -74,6 +74,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2519][2519] Drop Python 2.7 support / Require Python 3.10
+
+[2519]: https://github.com/Gallopsled/pwntools/pull/2519
 
 ## 4.15.0 (`beta`)
 - [#2508][2508] Ignore a warning when compiling with asm on nix
