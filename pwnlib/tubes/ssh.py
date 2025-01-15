@@ -1217,7 +1217,9 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self.run(attr).recvall().strip()
 
     def __getattr__(self, attr):
-        """Permits member access to run commands over SSH
+        """Permits member access to run commands over SSH.
+
+        Supports other keyword arguments which are passed to :meth:`.system`.
 
         Examples:
 
@@ -1228,6 +1230,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             b'travis'
             >>> s.echo(['huh','yay','args'])
             b'huh yay args'
+            >>> s.echo('value: $MYENV', env={'MYENV':'the env'})
+            b'value: the env'
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -1239,7 +1243,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             raise AttributeError
 
         @LocalContext
-        def runner(*args):
+        def runner(*args, **kwargs):
             if len(args) == 1 and isinstance(args[0], (list, tuple)):
                 command = [attr]
                 command.extend(args[0])
@@ -1248,7 +1252,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 command.extend(args)
                 command = b' '.join(packing._need_bytes(arg, min_wrong=0x80) for arg in command)
 
-            return self.run(command).recvall().strip()
+            return self.system(command, **kwargs).recvall().strip()
         return runner
 
     def connected(self):
