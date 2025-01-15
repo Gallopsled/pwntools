@@ -1323,7 +1323,7 @@ class process(tube):
         space.
         """
         from pwnlib.util.proc import memory_maps
-        maps_raw = memory_maps(self.pid)
+        maps_raw = self.poll() is not None and memory_maps(self.pid)
 
         if not maps_raw:
             import pwnlib.elf.elf
