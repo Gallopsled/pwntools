@@ -706,7 +706,7 @@ class ssh(Timeout, Logger):
 
         if self.sftp:
             with context.quiet:
-                self.cwd = packing._decode(self.pwd())
+                self.cwd = packing._decode(self.pwd(tty=False))
         else:
             self.cwd = '.'
 
@@ -1373,7 +1373,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _download_to_cache(self, remote, p, fingerprint=True):
 
         with context.local(log_level='error'):
-            remote = self.readlink('-f',remote)
+            remote = self.readlink('-f', remote, tty=False)
         if not hasattr(remote, 'encode'):
             remote = remote.decode('utf-8')
 
