@@ -1140,7 +1140,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 cwd = wd
 
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
+            c = self.system(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1203,7 +1203,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> print(repr(s['echo hello']))
             b'hello'
         """
-        return self.run(attr).recvall().strip()
+        return self.system(attr).recvall().strip()
 
     def __call__(self, attr):
         """Permits function-style access to run commands over SSH
@@ -1214,7 +1214,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> print(repr(s('echo hello')))
             b'hello'
         """
-        return self.run(attr).recvall().strip()
+        return self.system(attr).recvall().strip()
 
     def __getattr__(self, attr):
         """Permits member access to run commands over SSH.
@@ -1352,7 +1352,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat < ' + sh_string(remote)
-            c = self.run(cmd)
+            c = self.system(cmd)
         data = b''
 
         while True:
@@ -1538,7 +1538,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat > ' + sh_string(remote)
-            s = self.run(cmd, tty=False)
+            s = self.system(cmd, tty=False)
             s.send(data)
             s.shutdown('send')
             data   = s.recvall()
@@ -1596,7 +1596,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 remote_tar = self.mktemp('--suffix=.tar.gz')
                 self.upload_file(local_tar, remote_tar)
 
-                untar = self.run(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
+                untar = self.system(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
                 message = untar.recvrepeat(2)
 
                 if untar.wait() != 0:
