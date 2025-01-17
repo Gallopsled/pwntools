@@ -149,7 +149,7 @@ class Key:
         return self.__str__()
 
     def __eq__(self, other):
-        if   isinstance(other, (six.text_type, six.binary_type)):
+        if   isinstance(other, (str, six.binary_type)):
             return Matcher(other)(self)
         elif isinstance(other, Matcher):
             return other(self)

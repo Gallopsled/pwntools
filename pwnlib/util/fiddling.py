@@ -7,7 +7,6 @@ import binascii
 import random
 import re
 import os
-import six
 import string
 
 from six import BytesIO
@@ -510,7 +509,7 @@ def rol(n, k, word_size = None):
     if not isinstance(k, int):
         raise ValueError("rol(): 'k' must be an integer")
 
-    if isinstance(n, (bytes, six.text_type, list, tuple)):
+    if isinstance(n, (bytes, str, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
     elif isinstance(n, int):
         k = k % word_size
@@ -556,7 +555,7 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    if isinstance(c, six.text_type):
+    if isinstance(c, str):
         c = ord(c)
     t = bytearray(string.ascii_letters + string.digits + string.punctuation + ' ', 'ascii')
     return c in t

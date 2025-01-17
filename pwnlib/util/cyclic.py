@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import string
 
 from pwnlib.context import context, LocalNoarchContext
@@ -362,7 +361,7 @@ def _gen_find(subseq, generator):
     return -1
 
 def _join_sequence(seq, alphabet):
-    if isinstance(alphabet, six.text_type):
+    if isinstance(alphabet, str):
         return ''.join(seq)
     elif isinstance(alphabet, bytes):
         return bytes(bytearray(seq))

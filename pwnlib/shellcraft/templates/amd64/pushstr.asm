@@ -62,7 +62,7 @@ Args:
   append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
-    if isinstance(string, six.text_type):
+    if isinstance(string, str):
         string = string.encode('utf-8')
     if append_null and not string.endswith(b'\x00'):
         string += b'\x00'

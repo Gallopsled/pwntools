@@ -7,8 +7,6 @@ from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing
 
-import six
-
 from pwnlib.util.misc import python_2_bytes_compatible, align
 
 
@@ -115,7 +113,7 @@ class AppendedArgument(Unresolved):
             if isinstance(v, (list, tuple)):
                 self.size += context.bytes
             else:
-                if isinstance(v, six.text_type):
+                if isinstance(v, str):
                     v = packing._need_bytes(v)
                 try:
                     self.size += align(context.bytes, len(v))
@@ -175,7 +173,7 @@ class AppendedArgument(Unresolved):
             for i, value in enumerate(self.values):
                 if isinstance(value, int):
                     rv[i] = value
-                elif isinstance(value, six.text_type):
+                elif isinstance(value, str):
                     value = packing._need_bytes(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
@@ -227,7 +225,7 @@ class Call(object):
     args = []
 
     def __init__(self, name, target, args, abi=None, before=()):
-        assert isinstance(name, (bytes, six.text_type))
+        assert isinstance(name, (bytes, str))
         # assert isinstance(target, int)
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()

@@ -82,7 +82,7 @@ class SSHPath(PosixPath):
             return other
 
         # We don't want unicode
-        if isinstance(other, six.text_type):
+        if isinstance(other, str):
             return str(other)
 
         # We also don't want binary

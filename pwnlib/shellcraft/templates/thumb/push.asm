@@ -50,7 +50,7 @@ Example:
 value_orig = value
 is_register = value in registers.arm
 
-if not is_register and isinstance(value, (six.binary_type, six.text_type)):
+if not is_register and isinstance(value, (six.binary_type, str)):
     try:
         with ctx.local(arch = 'thumb'):
             value = constants.eval(value)

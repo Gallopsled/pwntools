@@ -34,7 +34,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import collections
-import six
 import struct
 import sys
 import warnings
@@ -661,7 +660,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
         if isinstance(k, int):
             if k >= large_key:
                 k = fill(pack(k))
-        elif isinstance(k, (six.text_type, bytearray, bytes)):
+        elif isinstance(k, (str, bytearray, bytes)):
             k = fill(_need_bytes(k, stacklevel, 0x80))
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
@@ -731,7 +730,7 @@ def _flat(args, preprocessor, packer, filler, stacklevel=1):
             filler, val = _fit(arg, preprocessor, packer, filler, stacklevel + 1)
         elif isinstance(arg, bytes):
             val = arg
-        elif isinstance(arg, six.text_type):
+        elif isinstance(arg, str):
             val = _need_bytes(arg, stacklevel + 1)
         elif isinstance(arg, int):
             val = packer(arg)
@@ -906,7 +905,7 @@ def flat(*args, **kwargs):
     length       = kwargs.pop('length', None)
     stacklevel   = kwargs.pop('stacklevel', 0)
 
-    if isinstance(filler, (str, six.text_type)):
+    if isinstance(filler, (str, str)):
         filler = bytearray(_need_bytes(filler))
 
     if kwargs != {}:
@@ -1056,7 +1055,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     # Otherwise get `src` in canonical form, i.e. a string of at most `count`
     # bytes
-    if isinstance(src, six.text_type):
+    if isinstance(src, str):
         if count:
             # The only way to know where the `seek`th byte is, is to decode, but
             # we only need to decode up to the first `seek + count` code points
@@ -1114,7 +1113,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         truncate = skip + len(src)
 
     # UTF-8 encode unicode `dst`
-    if isinstance(dst, six.text_type):
+    if isinstance(dst, str):
         dst = dst.encode('utf8')
         utf8 = True
     else:
@@ -1178,7 +1177,7 @@ def _need_bytes(s, level=1, min_wrong=0):
     return s.encode(encoding, errors)
 
 def _need_text(s, level=1):
-    if isinstance(s, (str, six.text_type)):
+    if isinstance(s, (str, str)):
         return s   # already text
 
     if not isinstance(s, (bytes, bytearray)):
@@ -1211,7 +1210,7 @@ def _encode(s):
     return s.encode(context.encoding)
 
 def _decode(b):
-    if isinstance(b, (str, six.text_type)):
+    if isinstance(b, (str, str)):
         return b   # already text
 
     if context.encoding == 'auto':

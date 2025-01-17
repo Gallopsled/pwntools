@@ -367,7 +367,6 @@ import itertools
 import os
 import re
 import shutil
-import six
 import string
 import struct
 import sys
@@ -603,7 +602,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (bytes, six.text_type)):
+        elif isinstance(elfs, (bytes, str)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -843,7 +842,7 @@ class ROP(object):
             return str(object)
         if isinstance(object, int):
             return self.unresolve(object)
-        if isinstance(object, (bytes, six.text_type)):
+        if isinstance(object, (bytes, str)):
             return repr(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
@@ -893,7 +892,7 @@ class ROP(object):
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
@@ -1014,7 +1013,7 @@ class ROP(object):
             if isinstance(slot, int):
                 pass
 
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 pass
 
             elif isinstance(slot, AppendedArgument):

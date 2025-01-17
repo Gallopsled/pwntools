@@ -214,13 +214,13 @@ def normalize_argv_env(argv, env, log, level=2):
     # - Each string must not contain '\x00'
     #
     argv = argv or []
-    if isinstance(argv, (six.text_type, six.binary_type)):
+    if isinstance(argv, (str, six.binary_type)):
         argv = [argv]
 
     if not isinstance(argv, (list, tuple)):
         log.error('argv must be a list or tuple: %r' % argv)
 
-    if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
+    if not all(isinstance(arg, (str, bytes, bytearray)) for arg in argv):
         log.error("argv must be strings or bytes: %r" % argv)
 
     # Create a duplicate so we can modify it
@@ -247,13 +247,13 @@ def normalize_argv_env(argv, env, log, level=2):
         env_items = env
     if env:
         for k,v in env_items:
-            if not isinstance(k, (bytes, six.text_type)):
+            if not isinstance(k, (bytes, str)):
                 log.error('Environment keys must be strings: %r' % k)
             # Check if = is in the key, Required check since we sometimes call ctypes.execve directly
             # https://github.com/python/cpython/blob/025995feadaeebeef5d808f2564f0fd65b704ea5/Modules/posixmodule.c#L6476
             if b'=' in packing._encode(k):
                 log.error('Environment keys may not contain "=": %r' % (k))
-            if not isinstance(v, (bytes, six.text_type)):
+            if not isinstance(v, (bytes, str)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
             v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
@@ -771,7 +771,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     cwd        = cwd or '.'
 
     # Validate, since failures on the remote side will suck.
-    if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
+    if not isinstance(executable, (str, six.binary_type, bytearray)):
         log.error("executable / argv[0] must be a string: %r" % executable)
     executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 

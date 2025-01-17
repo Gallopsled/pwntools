@@ -60,7 +60,7 @@ Example:
 <%
 log = getLogger(__name__)
 src_orig = src
-if isinstance(src, (six.binary_type, six.text_type)):
+if isinstance(src, (six.binary_type, str)):
     src = src.strip()
     if src.lower() in registers.arm:
         src = src.lower()

@@ -364,7 +364,7 @@ class tube(Timeout, Logger):
 
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
         delims = tuple(map(packing._need_bytes, delims))
 
@@ -660,7 +660,7 @@ class tube(Timeout, Logger):
             >>> t.recvline_contains((b'car', b'train'))
             b'bicycle car train'
         """
-        if isinstance(items, (bytes, bytearray, six.text_type)):
+        if isinstance(items, (bytes, bytearray, str)):
             items = (items,)
         items = tuple(map(packing._need_bytes, items))
 
@@ -698,7 +698,7 @@ class tube(Timeout, Logger):
             b'World'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
         delims = tuple(map(packing._need_bytes, delims))
 
@@ -730,7 +730,7 @@ class tube(Timeout, Logger):
             b'Kaboodle'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
 
         delims = tuple(packing._need_bytes(delim) + self.newline for delim in delims)
@@ -766,7 +766,7 @@ class tube(Timeout, Logger):
             b'Bla blubb blargh\n'
         """
 
-        if isinstance(regex, (bytes, bytearray, six.text_type)):
+        if isinstance(regex, (bytes, bytearray, str)):
             regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 
@@ -793,7 +793,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
         """
 
-        if isinstance(regex, (bytes, bytearray, six.text_type)):
+        if isinstance(regex, (bytes, bytearray, str)):
             regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 

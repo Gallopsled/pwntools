@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import six
 import tempfile
 
 from pwnlib.log import getLogger
@@ -70,7 +69,7 @@ def wget(url, save=None, timeout=5, **kwargs):
 
         # Save to the target file if provided
         if save:
-            if not isinstance(save, (bytes, six.text_type)):
+            if not isinstance(save, (bytes, str)):
                 save = os.path.basename(url)
                 save = save or tempfile.NamedTemporaryFile(dir='.', delete=False).name
             with open(save,'wb+') as f:
