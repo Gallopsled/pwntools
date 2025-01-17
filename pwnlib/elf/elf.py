@@ -44,9 +44,8 @@ import re
 import subprocess
 import tempfile
 
-from six import BytesIO
-
 from collections import namedtuple, defaultdict
+from io import BytesIO
 
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES

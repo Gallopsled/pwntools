@@ -441,7 +441,7 @@ def unstrip_libc(filename):
     return True
 
 def _extract_tarfile(cache_dir, data_filename, tarball):
-    from six import BytesIO
+    from io import BytesIO
     import tarfile
     # Handle zstandard compression, since tarfile only supports gz, bz2, and xz.
     if data_filename.endswith('.zst') or data_filename.endswith('.zstd'):
@@ -528,7 +528,7 @@ def _extract_debfile(cache_dir, package_filename, package):
                 return _extract_tarfile(cache_dir, data_filename, tarball)
     else:
         import unix_ar
-        from six import BytesIO
+        from io import BytesIO
         ar_file = unix_ar.open(BytesIO(package))
         try:
             data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
@@ -538,7 +538,7 @@ def _extract_debfile(cache_dir, package_filename, package):
             ar_file.close()
 
 def _extract_pkgfile(cache_dir, package_filename, package):
-    from six import BytesIO
+    from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
 def _find_libc_package_lib_url(libc):

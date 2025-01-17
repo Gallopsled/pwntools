@@ -9,7 +9,7 @@ import re
 import os
 import string
 
-from six import BytesIO
+from io import BytesIO
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context

@@ -1223,7 +1223,7 @@ class tube(Timeout, Logger):
             compressed_path = target_path + '.xz'
         elif compression_mode == 'gzip':
             import gzip
-            from six import BytesIO
+            from io import BytesIO
             f = BytesIO()
             with gzip.GzipFile(fileobj=f, mode='wb', compresslevel=9) as g:
                 g.write(data)
