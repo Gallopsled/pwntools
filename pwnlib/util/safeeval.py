@@ -21,8 +21,6 @@ _expr_codes = _const_codes + [
 
 _values_codes = _expr_codes + ['LOAD_NAME']
 
-import six
-
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
 
@@ -39,7 +37,7 @@ def _get_opcodes(codeobj):
     opcodes = []
     s = codeobj.co_code
     while i < len(s):
-        code = six.indexbytes(s, i)
+        code = s[i]
         opcodes.append(code)
         if code >= dis.HAVE_ARGUMENT:
             i += 3

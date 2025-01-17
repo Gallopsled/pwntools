@@ -1,7 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import pretty
-    import six
 %>\
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -72,7 +71,7 @@ Args:
     def okay(s):
         return b'\n' not in s and b'\0' not in s
 
-    if six.indexbytes(string, -1) >= 128:
+    if string[-1] >= 128:
         extend = b'\xff'
     else:
         extend = b'\x00'

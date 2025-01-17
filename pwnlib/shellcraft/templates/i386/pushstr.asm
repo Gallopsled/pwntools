@@ -1,7 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import pretty, okay
-    import six
 %>
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -78,7 +77,7 @@ if append_null:
 if not string:
     return
 
-if six.indexbytes(string, -1) >= 128:
+if string[-1] >= 128:
     extend = b'\xff'
 else:
     extend = b'\x00'
