@@ -9,6 +9,7 @@ import time
 import six
 import tempfile
 import struct
+import sys
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -498,7 +499,7 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
 
 def _extract_debfile(cache_dir, package_filename, package):
     # Extract data.tar in the .deb archive.
-    if six.PY2:
+    if sys.version_info < (3, 6):
         if not which('ar'):
             log.error('Missing command line tool "ar" to extract .deb archive. Please install "ar" first.')
 
