@@ -397,7 +397,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 
     argv = [which(terminal)] + args
 
-    if isinstance(command, six.string_types):
+    if isinstance(command, str):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
@@ -493,7 +493,7 @@ end tell
         # Otherwise it's better to return nothing instead of a know wrong pid.
         from pwnlib.util.proc import pid_by_name
         pid = None
-        ran_program = command.split(' ')[0] if isinstance(command, six.string_types) else command[0]
+        ran_program = command.split(' ')[0] if isinstance(command, str) else command[0]
         t = Timeout()
         with t.countdown(timeout=5):
             while t.timeout:

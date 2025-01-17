@@ -1263,7 +1263,7 @@ class Property(object):
             >>> adb.properties.ro.build.version.sdk == "24"
             True
         """
-        if isinstance(other, six.string_types):
+        if isinstance(other, str):
             return str(self) == other
         return super(Property, self).__eq__(other)
 

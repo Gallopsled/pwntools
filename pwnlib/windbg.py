@@ -63,8 +63,6 @@ import signal
 
 import subprocess
 
-import six
-
 from pwnlib import tubes
 from pwnlib.context import LocalContext
 from pwnlib.context import context
@@ -115,7 +113,7 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
         return tubes.process.process(args, executable=exe, env=env, creationflags=creationflags)
     
     windbgscript = windbgscript or ''
-    if isinstance(windbgscript, six.string_types):
+    if isinstance(windbgscript, str):
         windbgscript = windbgscript.split('\n')
     # resume main thread
     windbgscript = ['~0m'] + windbgscript
@@ -213,7 +211,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
     cmd.extend(['-p', str(pid)])
 
     windbgscript = windbgscript or ''
-    if isinstance(windbgscript, six.string_types):
+    if isinstance(windbgscript, str):
         windbgscript = windbgscript.split('\n')
     if isinstance(windbgscript, list):
         windbgscript = ';'.join(script.strip() for script in windbgscript if script.strip())
