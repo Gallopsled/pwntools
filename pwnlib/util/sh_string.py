@@ -258,7 +258,7 @@ def test_all():
     test('ab') ##
     test('a b') ##
     test(r"a\'b") ##
-    everything_1 = b''.join(six.int2byte(c) for c in range(1,256))
+    everything_1 = b''.join(bytes((c,)) for c in range(1,256))
     for s in everything_1:
         test(s)
         test(s*4)
@@ -271,7 +271,7 @@ def test_all():
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256)) ##
+    everything_2 = b''.join(bytes((c,)) * 2 for c in range(1,256)) ##
     test(everything_2)
 
     test(randoms(1000, everything_1))
