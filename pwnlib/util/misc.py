@@ -214,7 +214,7 @@ def normalize_argv_env(argv, env, log, level=2):
     # - Each string must not contain '\x00'
     #
     argv = argv or []
-    if isinstance(argv, (str, six.binary_type)):
+    if isinstance(argv, (str, bytes)):
         argv = [argv]
 
     if not isinstance(argv, (list, tuple)):
@@ -771,7 +771,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     cwd        = cwd or '.'
 
     # Validate, since failures on the remote side will suck.
-    if not isinstance(executable, (str, six.binary_type, bytearray)):
+    if not isinstance(executable, (str, bytes, bytearray)):
         log.error("executable / argv[0] must be a string: %r" % executable)
     executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 

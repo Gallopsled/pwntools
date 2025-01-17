@@ -86,7 +86,7 @@ class SSHPath(PosixPath):
             return str(other)
 
         # We also don't want binary
-        if isinstance(other, six.binary_type):
+        if isinstance(other, bytes):
             return str(_decode(other))
 
     def _new(self, path, *a, **kw):

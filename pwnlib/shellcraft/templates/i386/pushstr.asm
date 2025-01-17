@@ -70,7 +70,7 @@ else:
 
 if append_null:
     string += b'\x00'
-    if isinstance(original, six.binary_type):
+    if isinstance(original, bytes):
         original += b'\x00'
     elif isinstance(original, str):
         original += '\x00'

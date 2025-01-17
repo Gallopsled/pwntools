@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import string
 import sys
 import tarfile
@@ -1813,7 +1812,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         status = 0
 
-        if symlink and not isinstance(symlink, (six.binary_type, str)):
+        if symlink and not isinstance(symlink, (bytes, str)):
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')

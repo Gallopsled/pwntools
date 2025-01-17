@@ -20,7 +20,6 @@ This doctest is to ensure that the known data are accurate:
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import sys
 import types
 
@@ -297,7 +296,7 @@ class Module(types.ModuleType):
             # refin is not meaningful in this case
             inlen = len(data)
             p = BitPolynom(int(''.join('1' if v else '0' for v in data), 2))
-        elif isinstance(data, six.binary_type):
+        elif isinstance(data, bytes):
             inlen = len(data)*8
             if refin:
                 data = fiddling.bitswap(data)

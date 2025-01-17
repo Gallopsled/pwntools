@@ -3,7 +3,6 @@ import collections
 import pwnlib.abi
 import pwnlib.constants
 import pwnlib.shellcraft
-import six
 %>
 <%docstring>acct(name) -> str
 
@@ -52,7 +51,7 @@ Returns:
 
         # The argument is not a register.  It is a string value, and we
         # are expecting a string value
-        elif name in can_pushstr and isinstance(arg, (six.binary_type, str)):
+        elif name in can_pushstr and isinstance(arg, (bytes, str)):
             if isinstance(arg, str):
                 arg = arg.encode('utf-8')
             string_arguments[name] = arg
