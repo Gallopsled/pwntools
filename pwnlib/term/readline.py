@@ -4,7 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import io
-import six
 import sys
 import os
 
@@ -497,8 +496,4 @@ def init():
             return getattr(self._fd, k)
     sys.stdin = Wrapper(sys.stdin)
 
-    if six.PY2:
-        builtins.raw_input = raw_input
-        builtins.input = eval_input
-    else:
-        builtins.input = str_input
+    builtins.input = str_input

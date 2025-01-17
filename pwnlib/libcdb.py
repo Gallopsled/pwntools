@@ -6,7 +6,6 @@ from __future__ import division
 
 import os
 import time
-import six
 import tempfile
 import struct
 import sys
@@ -453,19 +452,6 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
         tarball.close()
         tarball = decompressed_tar
 
-    if six.PY2 and data_filename.endswith('.xz'):
-        # Python 2's tarfile doesn't support xz, so we need to decompress it first.
-        # Shell out to xz, since the Python 2 pylzma module is broken.
-        # (https://github.com/fancycode/pylzma/issues/67)
-        if not which('xz'):
-            log.error('Couldn\'t find "xz" in PATH. Please install xz first.')
-        import subprocess
-        try:
-            uncompressed_tarball = subprocess.check_output(['xz', '--decompress', '--stdout', tarball.name])
-            tarball = BytesIO(uncompressed_tarball)
-        except subprocess.CalledProcessError:
-            log.error('Failed to decompress xz archive.')
-
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
         lib_dir = None
@@ -499,43 +485,15 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
 
 def _extract_debfile(cache_dir, package_filename, package):
     # Extract data.tar in the .deb archive.
-    if sys.version_info < (3, 6):
-        if not which('ar'):
-            log.error('Missing command line tool "ar" to extract .deb archive. Please install "ar" first.')
-
-        import atexit
-        import shutil
-        import subprocess
-
-        # Use mkdtemp instead of TemporaryDirectory because the latter is not available in Python 2.
-        tempdir = tempfile.mkdtemp(prefix=".pwntools-tmp")
-        atexit.register(shutil.rmtree, tempdir)
-        with tempfile.NamedTemporaryFile(mode='wb', dir=tempdir) as debfile:
-            debfile.write(package)
-            debfile.flush()
-            try:
-                files_in_deb = subprocess.check_output(['ar', 't', debfile.name]).split(b'\n')
-            except subprocess.CalledProcessError:
-                log.error('Failed to list files in .deb archive.')
-            [data_filename] = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)
-
-            try:
-                subprocess.check_call(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
-            except subprocess.CalledProcessError:
-                log.error('Failed to extract data.tar from .deb archive.')
-
-            with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
-                return _extract_tarfile(cache_dir, data_filename, tarball)
-    else:
-        import unix_ar
-        from io import BytesIO
-        ar_file = unix_ar.open(BytesIO(package))
-        try:
-            data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
-            tarball = ar_file.open(data_filename)
-            return _extract_tarfile(cache_dir, data_filename, tarball)
-        finally:
-            ar_file.close()
+    import unix_ar
+    from io import BytesIO
+    ar_file = unix_ar.open(BytesIO(package))
+    try:
+        data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
+        tarball = ar_file.open(data_filename)
+        return _extract_tarfile(cache_dir, data_filename, tarball)
+    finally:
+        ar_file.close()
 
 def _extract_pkgfile(cache_dir, package_filename, package):
     from io import BytesIO

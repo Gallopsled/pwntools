@@ -6,7 +6,6 @@ import abc
 import logging
 import os
 import re
-import six
 import string
 import subprocess
 import sys
@@ -1197,9 +1196,7 @@ class tube(Timeout, Logger):
 
         # Detect available compression utility, fallback to uncompressed upload.
         compression_mode = None
-        possible_compression = ['gzip']
-        if six.PY3:
-            possible_compression.insert(0, 'xz')
+        possible_compression = ('xz', 'gzip')
         if not prompt:
             self.sendline("echo {}".format(end_marker).encode())
         if compression == 'auto':

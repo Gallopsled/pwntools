@@ -146,8 +146,6 @@ import platform
 import psutil
 import random
 import re
-import six
-import six.moves
 import socket
 import tempfile
 from threading import Event
@@ -1285,10 +1283,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     # connect to the GDB Python API bridge
     from rpyc import BgServingThread
     from rpyc.utils.factory import unix_connect
-    if six.PY2:
-        retriable = socket.error
-    else:
-        retriable = ConnectionRefusedError, FileNotFoundError
 
     t = Timeout()
     with t.countdown(10):
@@ -1296,7 +1290,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             try:
                 conn = unix_connect(socket_path)
                 break
-            except retriable:
+            except (ConnectionRefusedError, FileNotFoundError):
                 time.sleep(0.1)
         else:
             # Check to see if RPyC is installed at all in GDB

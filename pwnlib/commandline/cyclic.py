@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
-import six
 import string
 import sys
 
@@ -11,6 +10,7 @@ pwnlib.args.free_form = False
 
 from pwn import *
 from pwnlib.commandline import common
+from pwnlib.util.packing import _encode
 
 parser = common.parser_commands.add_parser(
     'cyclic',
@@ -64,10 +64,7 @@ def main(args):
     subsize  = args.length
 
     if args.lookup:
-        pat = args.lookup
-
-        if six.PY3:
-            pat = bytes(pat, encoding='utf-8')
+        pat = _encode(args.lookup)
 
         try:
             pat = int(pat, 0)
