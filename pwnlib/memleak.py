@@ -5,8 +5,6 @@ import ctypes
 import functools
 import string
 
-from six.moves import range
-
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.packing import pack, _p8lu

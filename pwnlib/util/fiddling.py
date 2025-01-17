@@ -10,7 +10,6 @@ import os
 import string
 
 from six import BytesIO
-from six.moves import range
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context

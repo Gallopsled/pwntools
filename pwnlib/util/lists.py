@@ -2,8 +2,6 @@ from __future__ import division
 
 import collections
 
-from six.moves import range
-
 
 def partition(lst, f, save_keys = False):
     """partition(lst, f, save_keys = False) -> list

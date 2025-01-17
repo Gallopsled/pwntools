@@ -38,8 +38,6 @@ import struct
 import sys
 import warnings
 
-from six.moves import range
-
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
