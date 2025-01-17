@@ -88,7 +88,7 @@ def provider_libcdb(hex_encoded_id, search_type):
 
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     # Build the URL using the requested hash type
     url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
@@ -306,7 +306,7 @@ def _search_debuginfo_by_hash(base_url, hex_encoded_id):
     """
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     # Check if we tried this buildid before.
     cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
