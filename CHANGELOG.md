@@ -74,6 +74,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
+
+[2524]: https://github.com/Gallopsled/pwntools/pull/2524
 
 ## 4.15.0 (`beta`)
 - [#2508][2508] Ignore a warning when compiling with asm on nix
