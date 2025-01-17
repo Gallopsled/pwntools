@@ -7,7 +7,7 @@
 # https://www.python.org/dev/peps/pep-0237/
 # https://mail.python.org/pipermail/python-dev/2006-June/065918.html
 #
-from six.moves import builtins
+import builtins
 
 original_hex = builtins.hex
 

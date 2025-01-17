@@ -482,7 +482,7 @@ def init():
     global safeeval
     # defer imports until initialization
     import sys
-    from six.moves import builtins
+    import builtins
     from pwnlib.util import safeeval
 
     class Wrapper:
