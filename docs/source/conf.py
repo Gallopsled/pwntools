@@ -362,7 +362,7 @@ def linkcode_resolve(domain, info):
         if isinstance(val, property):
             val = val.fget
 
-        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType, type)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-L%d' % (first, first + len(lines) - 1)
