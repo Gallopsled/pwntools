@@ -106,7 +106,7 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
         instruction of the entry point.
     """
     if isinstance(
-        args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)
+        args, (int, tubes.process.process, tubes.ssh.ssh_channel)
     ):
         log.error("Use windbg.attach() to debug a running process")
 
@@ -187,7 +187,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
 
     # let's see if we can find a pid to attach to
     pid = None
-    if isinstance(target, six.integer_types):
+    if isinstance(target, int):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):

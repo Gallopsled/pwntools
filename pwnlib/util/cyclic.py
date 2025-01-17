@@ -217,7 +217,7 @@ def cyclic_find(subseq, alphabet = None, n = None):
     if n is None:
         n = context.cyclic_size
 
-    if isinstance(subseq, six.integer_types):
+    if isinstance(subseq, int):
         if subseq >= 2**(8*n):
             # Assumption: The user has given an integer that is more than 2**(8n) bits, but would otherwise fit within
             #  a register of size 2**(8m) where m is a multiple of four
@@ -339,7 +339,7 @@ def cyclic_metasploit_find(subseq, sets = None):
     """
     sets = sets or [ string.ascii_uppercase.encode(), string.ascii_lowercase.encode(), string.digits.encode() ]
 
-    if isinstance(subseq, six.integer_types):
+    if isinstance(subseq, int):
         subseq = packing.pack(subseq, 'all', 'little', False)
 
     return _gen_find(subseq, metasploit_pattern(sets))

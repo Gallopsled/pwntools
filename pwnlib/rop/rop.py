@@ -413,7 +413,7 @@ class Padding(object):
         self.name = name
 
 def _slot_len(x):
-    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+    if isinstance(x, (int, Unresolved, Padding, Gadget)):
         return context.bytes
     else:
         return len(packing.flat(x))
@@ -456,7 +456,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
-            elif isinstance(data, six.integer_types):
+            elif isinstance(data, int):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -788,7 +788,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, six.integer_types):
+        if isinstance(resolvable, int):
             return resolvable
 
     def unresolve(self, value):
@@ -841,7 +841,7 @@ class ROP(object):
         """
         if isinstance(object, enums):
             return str(object)
-        if isinstance(object, six.integer_types):
+        if isinstance(object, int):
             return self.unresolve(object)
         if isinstance(object, (bytes, six.text_type)):
             return repr(object)
@@ -886,7 +886,7 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
@@ -1011,7 +1011,7 @@ class ROP(object):
         size  = (stack.next - base)
         slot_address = base
         for i, slot in enumerate(stack):
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 pass
 
             elif isinstance(slot, (bytes, six.text_type)):
@@ -1136,7 +1136,7 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                if not isinstance(value, six.integer_types + (Unresolved,)):
+                if not isinstance(value, (int, Unresolved)):
                     frame[register] = AppendedArgument(value)
                 else:
                     frame[register] = value

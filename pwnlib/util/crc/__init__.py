@@ -81,13 +81,13 @@ class BitPolynom(object):
             try:
                 for p in n.split('+'):
                     k = safeeval.values(p.strip(), {'x': x, 'X': x})
-                    assert isinstance(k, (BitPolynom,)+six.integer_types)
+                    assert isinstance(k, (BitPolynom, int))
                     k = int(k)
                     assert k >= 0
                     self.n ^= k
             except (ValueError, NameError, AssertionError):
                 raise ValueError("Not a valid polynomial: %s" % n)
-        elif isinstance(n, six.integer_types):
+        elif isinstance(n, int):
             if n >= 0:
                 self.n = n
             else:

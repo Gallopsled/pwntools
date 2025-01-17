@@ -110,7 +110,7 @@ if not src in registers.arm:
 %>
 % if dst == src:
   /* moving ${src} into ${dst}, but this is a no-op */
-% elif not isinstance(src, six.integer_types):
+% elif not isinstance(src, int):
     mov ${dst}, ${src}
 % else:
   <%

@@ -5,7 +5,6 @@ import ctypes
 import functools
 import string
 
-import six
 from six.moves import range
 
 from pwnlib.context import context
@@ -166,7 +165,7 @@ class MemLeak(object):
             the type of ``field``.
         """
 
-        if isinstance(expected, six.integer_types):
+        if isinstance(expected, int):
             expected = pack(expected, bytes=obj.size)
         elif not isinstance(expected, bytes):
             raise TypeError("Expected value must be an int or bytes")

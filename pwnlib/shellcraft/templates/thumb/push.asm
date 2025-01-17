@@ -60,7 +60,7 @@ if not is_register and isinstance(value, (six.binary_type, six.text_type)):
 
 % if is_register:
     push {${value}}
-% elif isinstance(value, six.integer_types):
+% elif isinstance(value, int):
     /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', thumb.pushstr(packing.pack(value), False), 1)}
 % else:

@@ -627,7 +627,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         >>> ssh_io.close()
         >>> shell.close()
     """
-    if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
+    if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
     if isinstance(args, (bytes, six.text_type)):
@@ -1112,7 +1112,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, six.integer_types):
+    if   isinstance(target, int):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):

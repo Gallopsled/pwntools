@@ -115,7 +115,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         endianness = context.endianness
         sign       = context.sign
 
-        if not isinstance(number, six.integer_types):
+        if not isinstance(number, int):
             raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
 
         if not isinstance(sign, bool):
@@ -137,7 +137,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
                 if not sign:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
-        elif not isinstance(word_size, six.integer_types) or word_size <= 0:
+        elif not isinstance(word_size, int) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
         if sign:
@@ -214,7 +214,7 @@ def unpack(data, word_size = None):
     # Verify that word_size make sense
     if word_size == 'all':
         word_size = len(data) * 8
-    elif not isinstance(word_size, six.integer_types) or word_size <= 0:
+    elif not isinstance(word_size, int) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
     byte_size = (word_size + 7) // 8
@@ -658,7 +658,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
     pieces_ = dict()
     large_key = 2**(context.word_size-8)
     for k, v in pieces.items():
-        if isinstance(k, six.integer_types):
+        if isinstance(k, int):
             if k >= large_key:
                 k = fill(pack(k))
         elif isinstance(k, (six.text_type, bytearray, bytes)):
@@ -733,7 +733,7 @@ def _flat(args, preprocessor, packer, filler, stacklevel=1):
             val = arg
         elif isinstance(arg, six.text_type):
             val = _need_bytes(arg, stacklevel + 1)
-        elif isinstance(arg, six.integer_types):
+        elif isinstance(arg, int):
             val = packer(arg)
         elif isinstance(arg, bytearray):
             val = bytes(arg)
@@ -1098,7 +1098,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 break
             if isinstance(b, bytes):
                 src_ += b
-            elif isinstance(b, six.integer_types):
+            elif isinstance(b, int):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
                 src_ += _p8lu(b)
