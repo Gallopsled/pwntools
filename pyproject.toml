@@ -49,7 +49,6 @@ dependencies = [
     "intervaltree>=3.0",
     "sortedcontainers",
     "unicorn>=2.0.1",
-    "six>=1.12.0",
     "rpyc",
     "colored_traceback",
     "unix-ar; python_version>='3.6'",

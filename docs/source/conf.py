@@ -14,7 +14,6 @@
 import os
 import doctest
 import signal
-import six
 import subprocess
 import sys
 
@@ -71,7 +70,6 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
