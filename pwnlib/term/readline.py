@@ -379,7 +379,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
     # XXX circular imports
     from pwnlib.term import term_mode
     if not term_mode:
-        six.print_(prompt, end='', flush=True)
+        print(prompt, end='', flush=True)
         return getattr(sys.stdin, 'buffer', sys.stdin).readline(_size).rstrip(b'\n')
     show_suggestions = False
     eof = False
