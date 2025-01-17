@@ -241,7 +241,6 @@ and should therefore be compatible with ``dash``.
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import string
 import subprocess
 
@@ -299,7 +298,7 @@ def test(original):
     if not isinstance(input, str):
         input = input.decode('latin1')
 
-    cmdstr = six.b('/bin/echo %s' % input)
+    cmdstr = ('/bin/echo %s' % input).encode('latin1')
 
     SUPPORTED_SHELLS = [
         ['ash', '-c', cmdstr],
