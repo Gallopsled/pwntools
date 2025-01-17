@@ -7,7 +7,7 @@ from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing
 
-from pwnlib.util.misc import python_2_bytes_compatible, align
+from pwnlib.util.misc import align
 
 
 class Unresolved(object):
@@ -56,7 +56,6 @@ class StackAdjustment(Unresolved):
     pass
 
 
-@python_2_bytes_compatible
 class AppendedArgument(Unresolved):
     r"""
     Encapsulates information about a pointer argument, and the data

@@ -6,7 +6,6 @@ import errno
 import os
 import re
 import signal
-import six
 import socket
 import stat
 import string
@@ -694,17 +693,6 @@ def register_sizes(regs, in_sizes):
             smaller[r] = [r_ for r_ in l if sizes[r_] < sizes[r]]
 
     return lists.concat(regs), sizes, bigger, smaller
-
-
-def python_2_bytes_compatible(klass):
-    """
-    A class decorator that defines __str__ methods under Python 2.
-    Under Python 3 it does nothing.
-    """
-    if six.PY2:
-        if '__str__' not in klass.__dict__:
-            klass.__str__ = klass.__bytes__
-    return klass
 
 def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
