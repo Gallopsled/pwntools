@@ -74,6 +74,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 - [#2526][2526] Properly make use of extra arguments in `packing` utilities.
+  `sign` parameter requires keyword syntax to specify it.
 
 ## 4.15.0 (`beta`)
 - [#2508][2508] Ignore a warning when compiling with asm on nix
