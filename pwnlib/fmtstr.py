@@ -33,6 +33,9 @@ Let's use this program as an example:
 
 We can automate the exploitation of the process like so:
 
+.. doctest::
+    :options: +POSIX +TODO
+
     >>> program = pwnlib.data.elf.fmtstr.get('i386')
     >>> def exec_fmt(payload):
     ...     p = process(program)

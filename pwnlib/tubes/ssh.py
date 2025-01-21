@@ -706,7 +706,7 @@ class ssh(Timeout, Logger):
 
         if self.sftp:
             with context.quiet:
-                self.cwd = packing._decode(self.pwd())
+                self.cwd = packing._decode(self.pwd(tty=False))
         else:
             self.cwd = '.'
 
@@ -1140,7 +1140,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 cwd = wd
 
         with context.local(log_level = 'ERROR'):
-            c = self.run(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
+            c = self.system(process, tty, cwd = cwd, env = env, timeout = Timeout.default)
             data = c.recvall()
             retcode = c.wait()
             c.close()
@@ -1203,7 +1203,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> print(repr(s['echo hello']))
             b'hello'
         """
-        return self.run(attr).recvall().strip()
+        return self.system(attr).recvall().strip()
 
     def __call__(self, attr):
         """Permits function-style access to run commands over SSH
@@ -1214,10 +1214,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> print(repr(s('echo hello')))
             b'hello'
         """
-        return self.run(attr).recvall().strip()
+        return self.system(attr).recvall().strip()
 
     def __getattr__(self, attr):
-        """Permits member access to run commands over SSH
+        """Permits member access to run commands over SSH.
+
+        Supports other keyword arguments which are passed to :meth:`.system`.
 
         Examples:
 
@@ -1228,6 +1230,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             b'travis'
             >>> s.echo(['huh','yay','args'])
             b'huh yay args'
+            >>> s.echo('value: $MYENV', env={'MYENV':'the env'})
+            b'value: the env'
         """
         bad_attrs = [
             'trait_names',          # ipython tab-complete
@@ -1239,7 +1243,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             raise AttributeError
 
         @LocalContext
-        def runner(*args):
+        def runner(*args, **kwargs):
             if len(args) == 1 and isinstance(args[0], (list, tuple)):
                 command = [attr]
                 command.extend(args[0])
@@ -1248,7 +1252,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 command.extend(args)
                 command = b' '.join(packing._need_bytes(arg, min_wrong=0x80) for arg in command)
 
-            return self.run(command).recvall().strip()
+            return self.system(command, **kwargs).recvall().strip()
         return runner
 
     def connected(self):
@@ -1348,7 +1352,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat < ' + sh_string(remote)
-            c = self.run(cmd)
+            c = self.system(cmd)
         data = b''
 
         while True:
@@ -1369,7 +1373,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
     def _download_to_cache(self, remote, p, fingerprint=True):
 
         with context.local(log_level='error'):
-            remote = self.readlink('-f',remote)
+            remote = self.readlink('-f', remote, tty=False)
         if not hasattr(remote, 'encode'):
             remote = remote.decode('utf-8')
 
@@ -1534,7 +1538,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat > ' + sh_string(remote)
-            s = self.run(cmd, tty=False)
+            s = self.system(cmd, tty=False)
             s.send(data)
             s.shutdown('send')
             data   = s.recvall()
@@ -1592,7 +1596,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 remote_tar = self.mktemp('--suffix=.tar.gz')
                 self.upload_file(local_tar, remote_tar)
 
-                untar = self.run(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
+                untar = self.system(b'cd %s && tar -xzf %s' % (sh_string(remote), sh_string(remote_tar)))
                 message = untar.recvrepeat(2)
 
                 if untar.wait() != 0:

@@ -18,6 +18,9 @@
    # Set the environment here so it's not in the middle of our tests.
    os.environ.setdefault('SHELL', '/bin/sh')
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['POSIX']
+
 
 :mod:`pwnlib.elf.corefile` --- Core Files
 ===========================================================
