@@ -39,6 +39,9 @@ class MemLeak(object):
 
     Example:
 
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> import pwnlib
         >>> binsh = pwnlib.util.misc.read('/bin/sh')
         >>> @pwnlib.memleak.MemLeak
