@@ -7,6 +7,9 @@
    from pwnlib.elf import ELF
    from pwnlib.tubes.process import process
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+
 :mod:`pwnlib.rop.srop` --- Sigreturn Oriented Programming
 ==========================================================
 

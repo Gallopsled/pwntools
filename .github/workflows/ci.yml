@@ -284,10 +284,25 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade --editable .
     
+    - name: Install documentation dependencies
+      run: pip install -r docs/requirements.txt
+    
     - name: Sanity checks
       run: |
         python -bb -c 'from pwn import *'
         python -bb examples/text.py
+    
+    - name: Coverage doctests
+      run: |
+        python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
+
+    # FIXME: Paths are broken when uploading coverage on ubuntu
+    # coverage.exceptions.NoSource: No source for code: '/home/runner/work/pwntools/pwntools/D:\a\pwntools\pwntools\pwn\__init__.py'.
+    # - uses: actions/upload-artifact@v4
+    #   with:
+    #     name: coverage-windows
+    #     path: .coverage*
+    #     include-hidden-files: true
 
   upload-coverage:
     runs-on: ubuntu-latest

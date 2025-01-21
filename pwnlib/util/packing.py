@@ -332,7 +332,7 @@ for op,size,end,sign in iters.product(ops, sizes, ends, signs):
 #
 # Make normal user-oriented packers, e.g. p8
 #
-def _do_packing(op, size, number):
+def _do_packing(op, size, number, endianness=None):
 
     name = "%s%s" % (op,size)
     mod = sys.modules[__name__]
@@ -342,7 +342,7 @@ def _do_packing(op, size, number):
     bs = getattr(mod, "_%sbs" % (name))
     bu = getattr(mod, "_%sbu" % (name))
 
-    endian = context.endian
+    endian = endianness or context.endian
     signed = context.signed
     return {("little", True ):  ls,
             ("little", False):  lu,
@@ -350,7 +350,7 @@ def _do_packing(op, size, number):
             ("big",    False):  bu}[endian, signed](number, 3)
 
 @LocalNoarchContext
-def p8(number, endianness = None, sign = None, **kwargs):
+def p8(number, endianness = None, **kwargs):
     """p8(number, endianness, sign, ...) -> bytes
 
     Packs an 8-bit integer
@@ -365,10 +365,10 @@ def p8(number, endianness = None, sign = None, **kwargs):
     Returns:
         The packed number as a byte string
     """
-    return _do_packing('p', 8, number)
+    return _do_packing('p', 8, number, endianness)
 
 @LocalNoarchContext
-def p16(number, endianness = None, sign = None, **kwargs):
+def p16(number, endianness = None, **kwargs):
     """p16(number, endianness, sign, ...) -> bytes
 
     Packs an 16-bit integer
@@ -382,11 +382,18 @@ def p16(number, endianness = None, sign = None, **kwargs):
 
     Returns:
         The packed number as a byte string
+
+    Examples:
+
+        >>> p16(0x4142, 'big')
+        b'AB'
+        >>> p16(0x4142, endianness='big')
+        b'AB'
     """
-    return _do_packing('p', 16, number)
+    return _do_packing('p', 16, number, endianness)
 
 @LocalNoarchContext
-def p32(number, endianness = None, sign = None, **kwargs):
+def p32(number, endianness = None, **kwargs):
     """p32(number, endianness, sign, ...) -> bytes
 
     Packs an 32-bit integer
@@ -400,11 +407,18 @@ def p32(number, endianness = None, sign = None, **kwargs):
 
     Returns:
         The packed number as a byte string
+
+    Examples:
+
+        >>> p32(0x41424344, 'big')
+        b'ABCD'
+        >>> p32(0x41424344, endianness='big')
+        b'ABCD'
     """
-    return _do_packing('p', 32, number)
+    return _do_packing('p', 32, number, endianness)
 
 @LocalNoarchContext
-def p64(number, endianness = None, sign = None, **kwargs):
+def p64(number, endianness = None, **kwargs):
     """p64(number, endianness, sign, ...) -> bytes
 
     Packs an 64-bit integer
@@ -418,11 +432,18 @@ def p64(number, endianness = None, sign = None, **kwargs):
 
     Returns:
         The packed number as a byte string
+
+    Examples:
+
+        >>> p64(0x4142434445464748, 'big')
+        b'ABCDEFGH'
+        >>> p64(0x4142434445464748, endianness='big')
+        b'ABCDEFGH'
     """
-    return _do_packing('p', 64, number)
+    return _do_packing('p', 64, number, endianness)
 
 @LocalNoarchContext
-def u8(data, endianness = None, sign = None, **kwargs):
+def u8(data, endianness = None, **kwargs):
     """u8(data, endianness, sign, ...) -> int
 
     Unpacks an 8-bit integer
@@ -437,10 +458,10 @@ def u8(data, endianness = None, sign = None, **kwargs):
     Returns:
         The unpacked number
     """
-    return _do_packing('u', 8, data)
+    return _do_packing('u', 8, data, endianness)
 
 @LocalNoarchContext
-def u16(data, endianness = None, sign = None, **kwargs):
+def u16(data, endianness = None, **kwargs):
     """u16(data, endianness, sign, ...) -> int
 
     Unpacks an 16-bit integer
@@ -455,10 +476,10 @@ def u16(data, endianness = None, sign = None, **kwargs):
     Returns:
         The unpacked number
     """
-    return _do_packing('u', 16, data)
+    return _do_packing('u', 16, data, endianness)
 
 @LocalNoarchContext
-def u32(data, endianness = None, sign = None, **kwargs):
+def u32(data, endianness = None, **kwargs):
     """u32(data, endianness, sign, ...) -> int
 
     Unpacks an 32-bit integer
@@ -473,10 +494,10 @@ def u32(data, endianness = None, sign = None, **kwargs):
     Returns:
         The unpacked number
     """
-    return _do_packing('u', 32, data)
+    return _do_packing('u', 32, data, endianness)
 
 @LocalNoarchContext
-def u64(data, endianness = None, sign = None, **kwargs):
+def u64(data, endianness = None, **kwargs):
     """u64(data, endianness, sign, ...) -> int
 
     Unpacks an 64-bit integer
@@ -491,7 +512,7 @@ def u64(data, endianness = None, sign = None, **kwargs):
     Returns:
         The unpacked number
     """
-    return _do_packing('u', 64, data)
+    return _do_packing('u', 64, data, endianness)
 
 def make_packer(word_size = None, sign = None, **kwargs):
     """make_packer(word_size = None, endianness = None, sign = None) -> number → str
@@ -775,7 +796,7 @@ def flat(*args, **kwargs):
     Examples:
 
         (Test setup, please ignore)
-    
+
         >>> context.clear()
 
         Basic usage of :meth:`flat` works similar to the pack() routines.
@@ -822,7 +843,7 @@ def flat(*args, **kwargs):
 
         Dictionary usage permits directly using values derived from :func:`.cyclic`.
         See :func:`.cyclic`, :function:`pwnlib.context.context.cyclic_alphabet`, and :data:`.context.cyclic_size`
-        for more options.  
+        for more options.
 
         The cyclic pattern can be provided as either the text or hexadecimal offset.
 
@@ -873,7 +894,7 @@ def flat(*args, **kwargs):
 
         Negative indices are also supported, though this only works for integer
         keys.
-    
+
         >>> flat({-4: b'x', -1: b'A', 0: b'0', 4: b'y'})
         b'xaaA0aaay'
     """
@@ -988,6 +1009,10 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)
         ['H', 'e', 'l', 'l', 'o', b'?']
+
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'
