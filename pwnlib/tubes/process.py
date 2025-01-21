@@ -767,9 +767,13 @@ class process(tube):
 
         if IS_WINDOWS:
             with self.countdown(timeout=timeout):
-                while self.timeout and self._read_queue.empty():
+                while self.timeout and self._read_queue.empty() and self._read_thread.is_alive():
                     time.sleep(0.01)
-                return not self._read_queue.empty()
+                if not self._read_queue.empty():
+                    return True
+                if not self._read_thread.is_alive():
+                    raise EOFError
+                return False
 
         try:
             if timeout is None:

@@ -3,6 +3,9 @@
    from pwn import *
    context.clear(arch='riscv64')
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+
 :mod:`pwnlib.shellcraft.riscv64` --- Shellcode for RISCV64
 ==========================================================
 

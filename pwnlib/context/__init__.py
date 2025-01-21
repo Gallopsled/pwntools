@@ -308,6 +308,10 @@ class ContextType(object):
         'little'
         >>> context.bits
         32
+
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> def nop():
         ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
@@ -870,6 +874,9 @@ class ContextType(object):
 
         Examples:
 
+        .. doctest::
+            :options: +POSIX +TODO
+
             >>> context.clear()
             >>> context.arch, context.bits
             ('i386', 32)
@@ -1078,7 +1085,7 @@ class ContextType(object):
             >>> context.log_level = 'warn'
             >>> log.warn("Hello")
             [!] Hello
-            >>> context.log_console=open('/dev/null', 'w')
+            >>> context.log_console=open(os.devnull, 'w')
             >>> log.warn("Hello")
             >>> context.clear()
         """
@@ -1405,7 +1412,7 @@ class ContextType(object):
             True
             >>> os.chmod(cache_dir, 0o000)
             >>> context.cache_dir = True
-            >>> context.cache_dir is None
+            >>> context.cache_dir is None # doctest: +POSIX +TODO
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
