@@ -81,7 +81,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
 - [#2522][2522] Support starting a kitty debugging window with the 'kitten' command
-- [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
 - [#2526][2526] Properly make use of extra arguments in `packing` utilities. `sign` parameter requires keyword syntax to specify it.
 - [#2517][2517] Allow to passthru kwargs on `ssh.__getattr__` convenience function to fix SSH motd problems
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
@@ -108,7 +107,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
 [2522]: https://github.com/Gallopsled/pwntools/pull/2522
-[2524]: https://github.com/Gallopsled/pwntools/pull/2524
 [2526]: https://github.com/Gallopsled/pwntools/pull/2526
 [2517]: https://github.com/Gallopsled/pwntools/pull/2517
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
@@ -138,6 +136,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2772][2772] fix(packing): `dd()` no longer crashes on a `bytearray` destination
 - [#2787][2787] gdb.corefile: Run gdb directly to prevent detach race
 - [#2795][2795] regsort: Fix self-assignment detection through register aliases
+- [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -146,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2772]: https://github.com/Gallopsled/pwntools/pull/2772
 [2787]: https://github.com/Gallopsled/pwntools/pull/2787
 [2795]: https://github.com/Gallopsled/pwntools/pull/2795
+[2524]: https://github.com/Gallopsled/pwntools/pull/2524
 
 ## 4.15.0 (`stable`)
 
