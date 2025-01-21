@@ -750,6 +750,12 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
+    if context.gdb_binary:
+        gdb = misc.which(context.gdb_binary)
+        if not gdb:
+            log.warn_once('Path to gdb binary `{}` not found'.format(context.gdb_binary))
+        return gdb
+
     gdb = misc.which('pwntools-gdb') or misc.which('gdb')
 
     if not context.native:
