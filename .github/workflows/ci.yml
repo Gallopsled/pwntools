@@ -33,7 +33,7 @@ jobs:
       run: |
         git fetch origin
         git log --oneline --graph -10
-    
+
     - name: Fix libcdb-cache permissions
       id: fix-perms
       run: |
@@ -102,11 +102,12 @@ jobs:
           binutils-s390x-linux-gnu \
           binutils-sparc64-linux-gnu \
           binutils-riscv64-linux-gnu \
+          binutils-loongarch64-linux-gnu \
           gcc-multilib \
           libc6-dbg \
           elfutils \
           patchelf
-      
+
     - name: Testing Corefiles
       run: |
         ulimit -a
@@ -232,7 +233,7 @@ jobs:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
         include-hidden-files: true
-    
+
     - name: Fix libcdb-cache permissions
       run: |
         container_id=$(docker ps --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
@@ -255,15 +256,15 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install --upgrade --editable .
-    
+
     - name: Install documentation dependencies
       run: pip install -r docs/requirements.txt
-    
+
     - name: Sanity checks
       run: |
         python -bb -c 'from pwn import *'
         python -bb examples/text.py
-    
+
     - name: Coverage doctests
       run: |
         python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest

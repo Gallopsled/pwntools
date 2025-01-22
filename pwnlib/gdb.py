@@ -250,7 +250,7 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
 def _execve_script(argv, executable, env, ssh):
     """_execve_script(argv, executable, env, ssh) -> str
 
-    Returns the filename of a python script that calls 
+    Returns the filename of a python script that calls
     execve the specified program with the specified arguments.
     This script is suitable to call with gdbservers ``--wrapper`` option,
     so we have more control over the environment of the debugged process.
@@ -281,7 +281,7 @@ def _execve_script(argv, executable, env, ssh):
     log.debug("Created execve wrapper script %s:\n%s", tmp.name, script)
 
     return tmp.name
-    
+
 
 def _gdbserver_args(pid=None, path=None, port=0, gdbserver_args=None, args=None, which=None, env=None, python_wrapper_script=None):
     """_gdbserver_args(pid=None, path=None, args=None, which=None, env=None) -> list
@@ -348,7 +348,7 @@ def _gdbserver_args(pid=None, path=None, port=0, gdbserver_args=None, args=None,
                 env_args.append(b'%s=%s' % (key, env.pop(key)))
             else:
                 env_args.append(b'%s=%s' % (key, env[key]))
-    
+
     if python_wrapper_script is not None:
         gdbserver_args += ['--wrapper', python_wrapper_script, '--']
     elif env is not None:
@@ -521,7 +521,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io.interactive() # doctest: +SKIP
         >>> io.close()
-        
+
         Start a new process with modified argv[0]
 
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh")
@@ -657,7 +657,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
     if ssh or context.native or (context.os == 'android'):
         if len(args) > 0 and which(packing._decode(args[0])) == packing._decode(exe):
             args = _gdbserver_args(gdbserver_args=gdbserver_args, args=args, port=port, which=which, env=env)
-        
+
         else:
             # GDBServer is limited in it's ability to manipulate argv[0]
             # but can use the ``--wrapper`` option to execute commands and catches
@@ -734,6 +734,7 @@ def get_gdb_arch():
         'sparc64': 'sparc:v9',
         'riscv32': 'riscv:rv32',
         'riscv64': 'riscv:rv64',
+        'loongarch64': 'Loongarch64',
     }.get(context.arch, context.arch)
 
 def binary():
@@ -1163,7 +1164,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         if proc.exe(pid).endswith('/socat') and time.sleep(0.1) and proc.children(pid):
             pid = proc.children(pid)[0]
 
-        # We may attach to the remote process after the fork but before it performs an exec.  
+        # We may attach to the remote process after the fork but before it performs an exec.
         # If an exe is provided, wait until the process is actually running the expected exe
         # before we attach the debugger.
         t = Timeout()

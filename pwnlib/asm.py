@@ -190,6 +190,7 @@ def which_binutils(util, check_version=False):
         'sparc64': ['sparc'],
         'riscv32': ['riscv32', 'riscv64', 'riscv'],
         'riscv64': ['riscv64', 'riscv32', 'riscv'],
+        'loongarch64': ['loongarch64', 'loong64'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
@@ -275,6 +276,9 @@ def _assembler():
         # riscv64-unknown-elf-as supports riscv32 as well as riscv64
         'riscv32': [gas, '-march=rv32gc', '-mabi=ilp32'],
         'riscv64': [gas, '-march=rv64gc', '-mabi=lp64'],
+
+        # loongarch64 supports none of -64, -EB, -EL or -march
+        'loongarch64'  : [gas],
     }
 
     assembler = assemblers.get(context.arch, [gas])
@@ -376,6 +380,7 @@ def _bfdname():
         'powerpc64' : 'elf64-powerpc',
         'riscv32' : 'elf%d-%sriscv' % (context.bits, E),
         'riscv64' : 'elf%d-%sriscv' % (context.bits, E),
+        'loongarch64' : 'elf%d-loongarch' % context.bits,
         'vax'     : 'elf32-vax',
         's390'    : 'elf%d-s390' % context.bits,
         'sparc'   : 'elf32-sparc',
@@ -400,6 +405,7 @@ def _bfdarch():
         'thumb':     'arm',
         'riscv32':   'riscv',
         'riscv64':   'riscv',
+        'loongarch64': 'loongarch64'
     }
 
     if arch in convert:

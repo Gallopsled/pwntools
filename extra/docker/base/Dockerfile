@@ -3,7 +3,7 @@
 # Based on Ubuntu
 ############################################################
 
-FROM ubuntu:jammy
+FROM ubuntu:noble
 MAINTAINER Maintainer Gallopsled et al.
 
 ENV LANG en_US.UTF-8
@@ -33,6 +33,7 @@ RUN apt-get update \
         binutils-powerpc64-linux-gnu \
         binutils-sparc64-linux-gnu \
         binutils-riscv64-linux-gnu \
+        binutils-loongarch64-linux-gnu \
         tmux \
         patchelf \
     && locale-gen en_US.UTF-8 \

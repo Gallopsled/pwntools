@@ -424,6 +424,7 @@ class ContextType(object):
         'powerpc64': big_64,
         'riscv32':   little_32,
         'riscv64':   little_64,
+        'loongarch64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -796,7 +797,9 @@ class ContextType(object):
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64'),
                      ('rv32', 'riscv32'),
-                     ('rv64', 'riscv64')]
+                     ('rv64', 'riscv64'),
+                     ('loong64', 'loongarch64'),
+                     ('la64', 'loongarch64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -1096,7 +1099,7 @@ class ContextType(object):
 
     @_validator
     def local_libcdb(self, path):
-        """ 
+        """
         Sets path to local libc-database, get more information for libc-database:
         https://github.com/niklasb/libc-database
 
@@ -1510,7 +1513,7 @@ class ContextType(object):
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
-    
+
     @_validator
     def throw_eof_on_incomplete_line(self, v):
         """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
