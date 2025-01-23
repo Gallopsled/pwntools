@@ -74,6 +74,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2530][2530] Do NOT error when passing directory arguments in `checksec`.
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
 - [#2522][2522] Support starting a kitty debugging window with the 'kitten' command
 - [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
