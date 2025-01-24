@@ -1166,26 +1166,29 @@ class tube(Timeout, Logger):
 
         Examples:
 
-        >>> l = listen()
-        >>> l.spawn_process('/bin/sh')
-        >>> r = remote('127.0.0.1', l.lport)
-        >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
-        >>> r.sendline(b'cat ./payload')
-        >>> r.recvline()
-        b'some\\xca\\xfedata\\n'
+        .. doctest::
+            :options: +POSIX +TODO
 
-        >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
-        >>> r.sendline(b'sha256sum ./cyclic_pattern')
-        >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
-        True
+            >>> l = listen()
+            >>> l.spawn_process('/bin/sh')
+            >>> r = remote('127.0.0.1', l.lport)
+            >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
+            >>> r.sendline(b'cat ./payload')
+            >>> r.recvline()
+            b'some\\xca\\xfedata\\n'
 
-        >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
-        >>> r.upload_manually(blob.data, prompt=b'')
-        >>> r.sendline(b'./payload')
-        >>> r.recvline()
-        b'Hello world!\\n'
-        >>> r.close()
-        >>> l.close()
+            >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
+            >>> r.sendline(b'sha256sum ./cyclic_pattern')
+            >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
+            True
+
+            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
+            >>> r.upload_manually(blob.data, prompt=b'')
+            >>> r.sendline(b'./payload')
+            >>> r.recvline()
+            b'Hello world!\\n'
+            >>> r.close()
+            >>> l.close()
         """
         echo_end = ""
         if not prompt:

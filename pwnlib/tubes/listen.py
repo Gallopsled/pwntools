@@ -36,13 +36,16 @@ class listen(sock):
         >>> r.recvline()
         b'Hello\n'
 
-        >>> # It works with ipv4 by default
-        >>> l = listen()
-        >>> l.spawn_process('/bin/sh')
-        >>> r = remote('127.0.0.1', l.lport)
-        >>> r.sendline(b'echo Goodbye')
-        >>> r.recvline()
-        b'Goodbye\n'
+        .. doctest::
+            :options: +POSIX +TODO
+            
+            >>> # It works with ipv4 by default
+            >>> l = listen()
+            >>> l.spawn_process('/bin/sh')
+            >>> r = remote('127.0.0.1', l.lport)
+            >>> r.sendline(b'echo Goodbye')
+            >>> r.recvline()
+            b'Goodbye\n'
 
         >>> # and it works with ipv6 by defaut, too!
         >>> l = listen()

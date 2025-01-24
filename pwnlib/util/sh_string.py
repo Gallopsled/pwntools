@@ -280,16 +280,19 @@ def test_all():
 def test(original):
     r"""Tests the output provided by a shell interpreting a string
 
-    >>> test(b'foobar')
-    >>> test(b'foo bar')
-    >>> test(b'foo bar\n')
-    >>> test(b"foo'bar")
-    >>> test(b"foo\\\\bar")
-    >>> test(b"foo\\\\'bar")
-    >>> test(b"foo\\x01'bar")
-    >>> test(b'\n')
-    >>> test(b'\xff')
-    >>> test(os.urandom(16 * 1024).replace(b'\x00', b''))
+    .. doctest::
+        :options: +POSIX
+
+        >>> test(b'foobar')
+        >>> test(b'foo bar')
+        >>> test(b'foo bar\n')
+        >>> test(b"foo'bar")
+        >>> test(b"foo\\\\bar")
+        >>> test(b"foo\\\\'bar")
+        >>> test(b"foo\\x01'bar")
+        >>> test(b'\n')
+        >>> test(b'\xff')
+        >>> test(os.urandom(16 * 1024).replace(b'\x00', b''))
     """
     input = sh_string(original)
 
