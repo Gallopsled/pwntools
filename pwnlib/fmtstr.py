@@ -972,12 +972,16 @@ class FmtStr(object):
             return b"\x7f"
 
         fmtstr = fit({
-          self.padlen: b"START%%%d$sEND" % (self.offset + 16//context.bytes),
+          self.padlen: b"START%%%d$sEND" % (self.offset),
           16 + self.padlen: addr
         })
 
         leak = self.execute_fmt(fmtstr)
-        leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+        try:
+            leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
+        except IndexError:
+            # FIXME: Let's hope not to find a collision :)
+            leak = leak[leak.find(b'START') + 5:]
 
         leak += b"\x00"
 
