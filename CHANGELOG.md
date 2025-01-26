@@ -112,6 +112,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2476]: https://github.com/Gallopsled/pwntools/pull/2476
 [2364]: https://github.com/Gallopsled/pwntools/pull/2364
 
+## 4.14.1
+
+- [#2533][2533] Fix installation on Python 3.5 and lower
+
+[2533]: https://github.com/Gallopsled/pwntools/pull/2533
+
 ## 4.14.0 (`stable`)
 
 - [#2356][2356] Add local libc database provider for libcdb
