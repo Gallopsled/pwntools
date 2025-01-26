@@ -363,6 +363,7 @@ class ContextType(object):
         'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
+        'gdb_binary': "",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
@@ -1541,6 +1542,20 @@ class ContextType(object):
         the necessary requirements for the gdbinit.
 
         If set to an empty string, GDB will use the default `~/.gdbinit`.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def gdb_binary(self, value):
+        """Path to the binary that is used when running GDB locally.
+
+        This is useful when you have multiple versions of gdb installed or the gdb binary is
+        called something different.
+
+        If set to an empty string, pwntools will try to search for a reasonable gdb binary from 
+        the path.
 
         Default value is ``""``.
         """
