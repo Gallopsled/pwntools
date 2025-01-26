@@ -34,7 +34,7 @@ To get you started, we've provided some example solutions for past CTF challenge
 
 Pwntools is best supported on 64-bit Ubuntu LTS releases (22.04 and 24.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).  
 
-Pwntools requires Python 3.10 since version 5.0.0.  Use Pwntools 4.x for older versions as well as Python 2.7. Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
+Pwntools supports Python 3.10+ since version 5.0.0.  Use Pwntools 4.x for older versions as well as Python 2.7. Most of the functionality of pwntools is self-contained and Python-only.  You should be able to get running quickly with
 
 ```sh
 sudo apt-get update

@@ -21,10 +21,12 @@ Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-co
 Released Version
 -----------------
 
-pwntools is available as a ``pip`` package for Python3. Version v5.0.0 requires Python3.10 or later.
+pwntools is available as a ``pip`` package for Python3. Version v5.0.0 supports Python3.10 or later. Use v4 if you use earlier versions of Python.
 
 Python3
 ^^^^^^^
+
+The Python version required for installing Pwntools is kept as low as possible on a best-effort basis.  However, new features target Python3.10 and later.
 
 .. code-block:: bash
 
