@@ -886,9 +886,14 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     all_atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
     fmt = b""
+    # Predict the size of bytes to substract.
+    # We consider that the pattern ``START%XXX$pEND`` is always used.
+    # This is because ``prefix`` got placed after ``payload``.
+    search_pattern = "START%{}$pEND".format(offset)
+    reverse_offset = len(search_pattern) + (len(search_pattern) % context.bytes)
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
+        fmt, data = make_payload_dollar(offset + data_offset - (reverse_offset // context.bytes), all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:
@@ -935,7 +940,7 @@ class FmtStr(object):
 
     def leak_stack(self, offset, prefix=b""):
         payload = b"START%%%d$pEND" % offset
-        leak = self.execute_fmt(prefix + payload)
+        leak = self.execute_fmt(payload + prefix)
         try:
             leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
