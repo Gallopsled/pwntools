@@ -81,6 +81,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2526][2526] Properly make use of extra arguments in `packing` utilities. `sign` parameter requires keyword syntax to specify it.
 - [#2517][2517] Allow to passthru kwargs on `ssh.__getattr__` convenience function to fix SSH motd problems
 - [#2527][2527] Allow setting debugger path via `context.gdb_binary`
+- [#2535][2535] Remove `six` Python 2 compatibility layer dependency
 
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
@@ -89,6 +90,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2526]: https://github.com/Gallopsled/pwntools/pull/2526
 [2517]: https://github.com/Gallopsled/pwntools/pull/2517
 [2527]: https://github.com/Gallopsled/pwntools/pull/2527
+[2535]: https://github.com/Gallopsled/pwntools/pull/2535
 
 ## 4.15.0 (`beta`)
 
