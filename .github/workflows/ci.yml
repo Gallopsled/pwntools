@@ -7,9 +7,6 @@ jobs:
       matrix:
         python_version: ['3.10', '3.12']
         os: [ubuntu-latest]
-        include:
-          - python_version: '2.7'
-            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     services:
@@ -66,17 +63,8 @@ jobs:
         sudo apt-get update && sudo apt-get install -y python3-pip gdb gdbserver
         /usr/bin/python -m pip install --break-system-packages rpyc || /usr/bin/python -m pip install rpyc
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
-    
-    - name: Cache for pip
-      uses: actions/cache@v4
-      if: matrix.python_version == '2.7'
-      with:
-        path: ~/.cache/pip
-        key: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-${{ hashFiles('**/pyproject.toml', '**/requirements*.txt') }}
-        restore-keys: ${{ matrix.os }}-${{ matrix.python_version }}-cache-pip-
 
     - name: Set up Python ${{ matrix.python_version }}
-      if: matrix.python_version != '2.7'
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
@@ -84,17 +72,6 @@ jobs:
         cache-dependency-path: |
           **/pyproject.toml
           **/requirements*.txt
-
-    - name: Set up Python 2.7
-      if: matrix.python_version == '2.7'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          python2.7 python2.7-dev python2-pip-whl
-        sudo ln -sf python2.7 /usr/bin/python
-        export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
-        sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
-        sudo chown -R $USER /usr/local/lib/python2.7
 
 
     - name: Verify tag against version
@@ -154,10 +131,6 @@ jobs:
 
     - name: Install documentation dependencies
       run: pip install -r docs/requirements.txt
-
-    - name: Manually install non-broken Unicorn
-      if:   matrix.python_version == '2.7'
-      run:  pip install unicorn==2.0.0rc7
 
     - name: Disable yama ptrace_scope
       run: |
@@ -244,7 +217,6 @@ jobs:
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
     - name: Build source and wheel distributions
-      if: matrix.python_version != '2.7'
       run: |
         python -m build
 

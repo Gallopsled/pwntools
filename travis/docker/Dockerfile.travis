@@ -1,7 +1,6 @@
 
 # Some additional debugging tools that are useful
-RUN python2.7 -m pip install --no-cache-dir ipdb && \
-    python3 -m pip install --no-cache-dir ipdb
+RUN python3 -m pip install --no-cache-dir ipdb
 
 # Install debugging utilities
 USER root
@@ -41,14 +40,14 @@ RUN mkdir -m 0700 ~/.ssh && \
 
 # Add the doctest entrypoint to /usr/bin so we don't have to supply the full path
 USER root
-ADD doctest2 doctest3 /usr/bin
+ADD doctest3 /usr/bin
 
 # Switch back to pwntools to actually run the image
 USER pwntools
 WORKDIR /home/pwntools
 
 # Copy in the Doctest script
-COPY doctest2 doctest3 tmux.sh /home/pwntools
+COPY doctest3 tmux.sh /home/pwntools
 
 # Do everything in UTF-8 mode!
 ENV LANG=C.UTF-8

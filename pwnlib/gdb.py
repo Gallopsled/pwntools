@@ -587,9 +587,6 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
     Using GDB Python API:
 
-    .. doctest::
-       :skipif: is_python2
-
         Debug a new process
 
         >>> io = gdb.debug(['echo', 'foo'], api=True)
@@ -750,6 +747,12 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
+    if context.gdb_binary:
+        gdb = misc.which(context.gdb_binary)
+        if not gdb:
+            log.warn_once('Path to gdb binary `{}` not found'.format(context.gdb_binary))
+        return gdb
+
     gdb = misc.which('pwntools-gdb') or misc.which('gdb')
 
     if not context.native:
@@ -987,9 +990,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         b'Hello from bash\n'
 
         Using GDB Python API:
-
-        .. doctest::
-           :skipif: is_python2
 
             >>> io = process('bash')
 
