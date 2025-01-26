@@ -82,7 +82,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
 - [#2526][2526] Properly make use of extra arguments in `packing` utilities. `sign` parameter requires keyword syntax to specify it.
 - [#2517][2517] Allow to passthru kwargs on `ssh.__getattr__` convenience function to fix SSH motd problems
-- [#2527][2527] Allow setting debugger path via `context.gdb_binary`
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2529][2529] Add LoongArch64 support
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
@@ -96,7 +95,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2524]: https://github.com/Gallopsled/pwntools/pull/2524
 [2526]: https://github.com/Gallopsled/pwntools/pull/2526
 [2517]: https://github.com/Gallopsled/pwntools/pull/2517
-[2527]: https://github.com/Gallopsled/pwntools/pull/2527
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2529]: https://github.com/Gallopsled/pwntools/pull/2529
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
@@ -151,6 +149,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2587][2587] Support longer function names in Windows `getexport` shellcode
 - [#2596][2596] Ignore `colored_traceback` error when TERM envvar is unset
 - [#2579][2579] Fix poll error in `process.libs()` and clean up maps parsing
+- [#2602][2602] Allow setting debugger path via context.gdb_binary
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
@@ -160,6 +159,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2587]: https://github.com/Gallopsled/pwntools/pull/2587
 [2596]: https://github.com/Gallopsled/pwntools/pull/2596
 [2579]: https://github.com/Gallopsled/pwntools/pull/2579
+[2602]: https://github.com/Gallopsled/pwntools/pull/2602
 
 ## 4.14.1 (`stable`)
 
