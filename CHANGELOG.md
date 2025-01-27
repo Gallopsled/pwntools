@@ -135,6 +135,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2435][2435] Speed up gdbserver handshake in gdb.debug()
 - [#2436][2436] Add resolution_addr parameter to Ret2dlresolvePayload
 - [#2497][2497] Fix remote.fromsocket() to handle AF_INET6 socket
+- [#2532][2532] Fix various bugs from FmtStr()/fmtstr_payload()
 
 [2436]: https://github.com/Gallopsled/pwntools/pull/2436
 [2371]: https://github.com/Gallopsled/pwntools/pull/2371
@@ -157,6 +158,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2435]: https://github.com/Gallopsled/pwntools/pull/2435
 [2437]: https://github.com/Gallopsled/pwntools/pull/2437
 [2497]: https://github.com/Gallopsled/pwntools/pull/2497
+[2532]: https://github.com/Gallopsled/pwntools/pull/2532
 
 ## 4.13.1
 
