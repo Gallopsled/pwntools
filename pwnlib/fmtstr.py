@@ -889,7 +889,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     # Predict the size of bytes to substract.
     # We consider that the pattern ``START%XXX$pEND`` is always used.
     # This is because ``prefix`` got placed after ``payload``.
-    search_pattern = "START%{}$pEND".format(offset)
+    search_pattern = "START%%d$pEND" % offset
     reverse_offset = len(search_pattern) + (len(search_pattern) % context.bytes)
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
