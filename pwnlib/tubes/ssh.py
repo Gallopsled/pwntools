@@ -441,14 +441,34 @@ class ssh_connecter(sock):
         # keep the parent from being garbage collected in some cases
         self.parent = parent
 
+        # keep reference to tunnel process to avoid garbage collection
+        self.tunnel = None
+
         self.host  = parent.host
         self.rhost = host
         self.rport = port
 
+        import paramiko.ssh_exception
         msg = 'Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host)
         with self.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
+            except paramiko.ssh_exception.ChannelException as e:
+                # Workaround AllowTcpForwarding no in sshd_config
+                if e.args != (1, 'Administratively prohibited'):
+                    self.exception(str(e))
+                    raise e
+                
+                self.debug('Failed to open channel, trying to connect to remote port manually using netcat.')
+                if parent.which('nc'):
+                    ncat = 'nc'
+                elif parent.which('ncat'):
+                    ncat = 'ncat'
+                else:
+                    self.exception('Could not find ncat or nc on remote. Cannot connect to remote port.')
+                    raise
+                self.tunnel = parent.process([ncat, host, str(port)])
+                self.sock = self.tunnel.sock
             except Exception as e:
                 self.exception(str(e))
                 raise
@@ -949,6 +969,7 @@ class ssh(Timeout, Logger):
             self.upload_data(script, tmpfile)
             return tmpfile
 
+        executable = executable or argv[0]
         if self.isEnabledFor(logging.DEBUG):
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
