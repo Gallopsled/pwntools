@@ -464,8 +464,10 @@ class ssh_connecter(sock):
                     ncat = 'nc'
                 elif parent.which('ncat'):
                     ncat = 'ncat'
+                elif parent.which('netcat'):
+                    ncat = 'netcat'
                 else:
-                    self.exception('Could not find ncat or nc on remote. Cannot connect to remote port.')
+                    self.exception('Could not find ncat, nc or netcat on remote. Cannot connect to remote port.')
                     raise
                 self.tunnel = parent.process([ncat, host, str(port)])
                 self.sock = self.tunnel.sock
