@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2527][2527] Allow setting debugger path via `context.gdb_binary`
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2529][2529] Add LoongArch64 support
+- [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
@@ -93,6 +94,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2527]: https://github.com/Gallopsled/pwntools/pull/2527
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2529]: https://github.com/Gallopsled/pwntools/pull/2529
+[2542]: https://github.com/Gallopsled/pwntools/pull/2542
 
 ## 4.15.0 (`beta`)
 
