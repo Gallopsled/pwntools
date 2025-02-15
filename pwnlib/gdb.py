@@ -1084,13 +1084,18 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         (When connection with gdbserver established, ``/bin/bash`` will pause at ``_start``,
         waiting for our gdb to attach.)
 
-        >>> io = remote('127.0.0.1', 1336)  # doctest: +SKIP
-        >>> _ = gdb.attach(('127.0.0.1', 1337), exe='/bin/bash')  # doctest: +SKIP
-        >>> # press 'c' in gdb then
-        >>> io.sendline(b'echo Hello')  # doctest: +SKIP
-        >>> io.recvline()  # doctest: +SKIP
+        A typical case is a sample can't run locally as some dependencies is missing,
+        so this sample is provided by remote server or docker.
+
+        >>> with context.local(log_level='warning'):
+        ...     server = process(['socat', 'TCP-LISTEN:1336,reuseaddr,fork', 'EXEC:"gdbserver :1337 /bin/bash"'])
+        ...     io = remote('127.0.0.1', 1336)
+        ...     _ = gdb.attach(('127.0.0.1', 1337), 'c', '/bin/bash')
+        ...     io.sendline(b'echo Hello')
+        ...     io.recvline()
+        ...     io.close()
+        ...     server.close()
         b'Hello\n'
-        >>> io.close()  # doctest: +SKIP
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
