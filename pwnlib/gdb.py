@@ -1089,6 +1089,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
         >>> with context.local(log_level='warning'):
         ...     server = process(['socat', 'TCP-LISTEN:1336,reuseaddr,fork', 'EXEC:"gdbserver :1337 /bin/bash"'])
+        ...     sleep(1) # wait for socat to bind
         ...     io = remote('127.0.0.1', 1336)
         ...     _ = gdb.attach(('127.0.0.1', 1337), 'c', '/bin/bash')
         ...     io.sendline(b'echo Hello')
