@@ -308,6 +308,10 @@ class ContextType(object):
         'little'
         >>> context.bits
         32
+
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> def nop():
         ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
@@ -359,6 +363,7 @@ class ContextType(object):
         'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
+        'gdb_binary': "",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
@@ -419,6 +424,7 @@ class ContextType(object):
         'powerpc64': big_64,
         'riscv32':   little_32,
         'riscv64':   little_64,
+        'loongarch64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -594,9 +600,9 @@ class ContextType(object):
             ...         log.debug("DEBUG")
             ...         log.info("INFO")
             ...         log.warn("WARN")
-            [DEBUG] DEBUG
-            [*] INFO
-            [!] WARN
+            [...] DEBUG
+            [...] INFO
+            [...] WARN
         """
         level = 'error'
         if context.log_level <= logging.DEBUG:
@@ -664,7 +670,7 @@ class ContextType(object):
             information is printed.
 
             >>> with context.verbose: func()
-            [DEBUG] Hello
+            [...] Hello
 
         """
         return self.local(log_level='debug')
@@ -791,7 +797,9 @@ class ContextType(object):
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64'),
                      ('rv32', 'riscv32'),
-                     ('rv64', 'riscv64')]
+                     ('rv64', 'riscv64'),
+                     ('loong64', 'loongarch64'),
+                     ('la64', 'loongarch64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -869,6 +877,9 @@ class ContextType(object):
         Data type is a :class:`pwnlib.elf.ELF` object.
 
         Examples:
+
+        .. doctest::
+            :options: +POSIX +TODO
 
             >>> context.clear()
             >>> context.arch, context.bits
@@ -1078,7 +1089,7 @@ class ContextType(object):
             >>> context.log_level = 'warn'
             >>> log.warn("Hello")
             [!] Hello
-            >>> context.log_console=open('/dev/null', 'w')
+            >>> context.log_console=open(os.devnull, 'w')
             >>> log.warn("Hello")
             >>> context.clear()
         """
@@ -1088,7 +1099,7 @@ class ContextType(object):
 
     @_validator
     def local_libcdb(self, path):
-        """ 
+        """
         Sets path to local libc-database, get more information for libc-database:
         https://github.com/niklasb/libc-database
 
@@ -1405,7 +1416,7 @@ class ContextType(object):
             True
             >>> os.chmod(cache_dir, 0o000)
             >>> context.cache_dir = True
-            >>> context.cache_dir is None
+            >>> context.cache_dir is None # doctest: +POSIX +TODO
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
@@ -1502,7 +1513,7 @@ class ContextType(object):
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
-    
+
     @_validator
     def throw_eof_on_incomplete_line(self, v):
         """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
@@ -1534,6 +1545,20 @@ class ContextType(object):
         the necessary requirements for the gdbinit.
 
         If set to an empty string, GDB will use the default `~/.gdbinit`.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def gdb_binary(self, value):
+        """Path to the binary that is used when running GDB locally.
+
+        This is useful when you have multiple versions of gdb installed or the gdb binary is
+        called something different.
+
+        If set to an empty string, pwntools will try to search for a reasonable gdb binary from 
+        the path.
 
         Default value is ``""``.
         """

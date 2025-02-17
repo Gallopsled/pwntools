@@ -93,6 +93,7 @@ def prepare_unicorn_and_context(elf, got, address, data):
         'thumb': U.UC_ARCH_ARM,
         'riscv32': U.UC_ARCH_RISCV,
         'riscv64': U.UC_ARCH_RISCV,
+        # 'loongarch64': U.UC_ARCH_LOONGARCH, <-- Not actually supported
     }.get(elf.arch, None)
 
     if arch is None:

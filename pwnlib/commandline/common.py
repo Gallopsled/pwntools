@@ -33,6 +33,13 @@ def main(file=sys.argv[0], command_main=None):
     sys.argv.insert(1, name)
     entrypoint({name: command_main})
 
+def deprecated_main():
+    file=sys.argv[0]
+    name = os.path.splitext(os.path.basename(file))[0]
+    import warnings
+    warnings.warn("The '%s' command is deprecated and will be removed in a future version. Please use 'pwn %s' instead." % (name, name), DeprecationWarning, stacklevel=2)
+    main(file)
+
 def entrypoint(commands):
     if len(sys.argv) < 2:
         parser.print_usage()

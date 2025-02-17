@@ -52,6 +52,7 @@ from collections import namedtuple, defaultdict
 from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
+from elftools.elf.dynamic import DynamicSection
 from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
 from elftools.elf.gnuversions import GNUVerDefSection
@@ -483,6 +484,7 @@ class ELF(ELFFile):
             ('EM_IA_64', 64): 'ia64',
             ('EM_RISCV', 32): 'riscv32',
             ('EM_RISCV', 64): 'riscv64',
+            ('EM_LOONGARCH', 64): 'loongarch64',
         }.get((self['e_machine'], self.bits), self['e_machine'])
 
     @property
@@ -522,7 +524,7 @@ class ELF(ELFFile):
                 yield seg
 
     def iter_notes(self):
-        """ 
+        """
         Yields:
             All the notes in the PT_NOTE segments.  Each result is a dictionary-
             like object with ``n_name``, ``n_type``, and ``n_desc`` fields, amongst
@@ -543,7 +545,7 @@ class ELF(ELFFile):
                 continue
             for prop in note.n_desc:
                 yield prop
-                
+
     def get_segment_for_address(self, address, size=1):
         """get_segment_for_address(address, size=1) -> Segment
 
@@ -1607,7 +1609,7 @@ class ELF(ELFFile):
         dt      = None
         dynamic = self.get_section_by_name('.dynamic')
 
-        if not dynamic:
+        if not dynamic or not isinstance(dynamic, DynamicSection):
             return None
 
         try:
@@ -1735,7 +1737,7 @@ class ELF(ELFFile):
         Unfortunately, :class:`ELF` is not context-aware, so it's not always possible
         to determine whether the process of a binary that's missing ``PT_GNU_STACK``
         will have NX or not.
-        
+
         The rules are as follows:
 
             +-----------+--------------+---------------------------+------------------------------------------------+----------+
@@ -1890,7 +1892,7 @@ class ELF(ELFFile):
                 /* stripped */
                 # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
                         (exec_stk == EXSTACK_DEFAULT) : 0)
-                #else 
+                #else
                 # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
                 #endif /* __powerpc64__ */
 
@@ -1918,7 +1920,7 @@ class ELF(ELFFile):
         """
         if not self.executable:
             return True
-        
+
         exec_bit = None
         for seg in self.iter_segments_by_type('GNU_STACK'):
             exec_bit = bool(seg.header.p_flags & P_FLAGS.PF_X)
@@ -1995,7 +1997,7 @@ class ELF(ELFFile):
         # If the ``PT_GNU_STACK`` program header is preset, use it's premissions.
         for seg in self.iter_segments_by_type('GNU_STACK'):
             return bool(seg.header.p_flags & P_FLAGS.PF_X)
-        
+
         # If the ``PT_GNU_STACK`` program header is missing, then use the
         # default rules. Out of the supported architectures, only AArch64,
         # IA-64, and RISC-V get a non-executable stack by default.
@@ -2123,16 +2125,16 @@ class ELF(ELFFile):
 
         if self.ubsan:
             res.append("UBSAN:".ljust(12) + green("Enabled"))
-        
+
         if self.shadowstack:
             res.append("SHSTK:".ljust(12) + green("Enabled"))
-        
+
         if self.ibt:
             res.append("IBT:".ljust(12) + green("Enabled"))
-        
+
         if not self.stripped:
             res.append("Stripped:".ljust(12) + red("No"))
-        
+
         if self.debuginfo:
             res.append("Debuginfo:".ljust(12) + red("Yes"))
 
@@ -2192,10 +2194,10 @@ class ELF(ELFFile):
         """:class:`bool`: Whether the current binary was built with
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
-    
+
     @property
     def shadowstack(self):
-        """:class:`bool`: Whether the current binary was built with	
+        """:class:`bool`: Whether the current binary was built with
         Shadow Stack (``SHSTK``)"""
         if self.arch not in ['i386', 'amd64']:
             return False
@@ -2347,7 +2349,7 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
-    
+
     @staticmethod
     def set_runpath(exepath, runpath):
         r"""set_runpath(exepath, runpath) -> ELF
@@ -2449,7 +2451,7 @@ class ELF(ELFFile):
         if not which('patchelf'):
             log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
             return None
-        
+
         # Create a copy of the ELF to patch instead of the original file.
         if create_copy:
             import shutil

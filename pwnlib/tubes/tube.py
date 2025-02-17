@@ -46,6 +46,44 @@ class tube(Timeout, Logger):
         self._newline = None
         atexit.register(self.close)
 
+    def _normalize_keepends_drop(self, keepends, drop, drop_default):
+        '''
+        >>> t = tube()
+        >>> t._normalize_keepends_drop(None, None, True)
+        True
+        >>> t._normalize_keepends_drop(None, None, False)
+        False
+        >>> t._normalize_keepends_drop(None, True, True)
+        True
+        >>> t._normalize_keepends_drop(None, True, False)
+        True
+        >>> t._normalize_keepends_drop(True, None, True)
+        False
+        >>> t._normalize_keepends_drop(True, None, False)
+        False
+        >>> t._normalize_keepends_drop(None, False, True)
+        False
+        >>> t._normalize_keepends_drop(None, False, False)
+        False
+        >>> t._normalize_keepends_drop(False, None, True)
+        True
+        >>> t._normalize_keepends_drop(False, None, False)
+        True
+        >>> t._normalize_keepends_drop(False, True, False)
+        Traceback (most recent call last):
+            ...
+        pwnlib.exception.PwnlibException: 'drop' and 'keepends' arguments cannot be used together.
+        '''
+        if keepends is not None:
+            self.warn_once("'keepends' argument is deprecated. Use 'drop' instead.")
+        if drop is None and keepends is None:
+            return drop_default
+        elif drop is not None:
+            if keepends is not None:
+                self.error("'drop' and 'keepends' arguments cannot be used together.")
+            return drop
+        return not keepends
+
     @property
     def newline(self):
         r'''Character sent with methods like sendline() or used for recvline().
@@ -100,7 +138,7 @@ class tube(Timeout, Logger):
             >>> t.recv() == b'Woohoo'
             True
             >>> with context.local(log_level='debug'):
-            ...    _ = t.recv() # doctest: +ELLIPSIS
+            ...    _ = t.recv()
             [...] Received 0xc bytes:
                 b'Hello, world'
         """
@@ -265,7 +303,7 @@ class tube(Timeout, Logger):
             >>> t.recv_raw = lambda *a: time.sleep(0.01) or b'a'
             >>> t.recvn(10, timeout=0.05)
             b''
-            >>> t.recvn(10, timeout=0.06) # doctest: +ELLIPSIS
+            >>> t.recvn(10, timeout=0.06)
             b'aaaaaa...'
         """
         # Keep track of how much data has been received
@@ -370,8 +408,8 @@ class tube(Timeout, Logger):
 
         return b''
 
-    def recvlines(self, numlines=2**20, keepends=False, timeout=default):
-        r"""recvlines(numlines, keepends=False, timeout=default) -> list of bytes objects
+    def recvlines(self, numlines=2**20, keepends=None, drop=None, timeout=default):
+        r"""recvlines(numlines, drop=True, timeout=default) -> list of bytes objects
 
         Receive up to ``numlines`` lines.
 
@@ -383,7 +421,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             numlines(int): Maximum number of lines to receive
-            keepends(bool): Keep newlines at the end of each line (:const:`False`).
+            drop(bool): Drop newlines at the end of each line (:const:`True`).
             timeout(int): Maximum timeout
 
         Raises:
@@ -404,15 +442,20 @@ class tube(Timeout, Logger):
             [b'Foo', b'Bar', b'Baz']
             >>> t.recvlines(3, True)
             [b'Foo\n', b'Bar\n', b'Baz\n']
+            >>> t.recvlines(3, drop=False)
+            [b'Foo\n', b'Bar\n', b'Baz\n']
         """
+        drop = self._normalize_keepends_drop(keepends, drop, True)
+        del keepends
+
         lines = []
         with self.countdown(timeout):
             for _ in range(numlines):
                 try:
-                    # We must set 'keepends' to True here so that we can
+                    # We must set 'drop' to False here so that we can
                     # restore the original, unmodified data to the buffer
                     # in the event of a timeout.
-                    res = self.recvline(keepends=True, timeout=timeout)
+                    res = self.recvline(drop=False, timeout=timeout)
                 except Exception:
                     self.unrecv(b''.join(lines))
                     raise
@@ -422,13 +465,13 @@ class tube(Timeout, Logger):
                 else:
                     break
 
-        if not keepends:
+        if drop:
             lines = [line.rstrip(self.newline) for line in lines]
 
         return lines
 
-    def recvlinesS(self, numlines=2**20, keepends=False, timeout=default):
-        r"""recvlinesS(numlines, keepends=False, timeout=default) -> str list
+    def recvlinesS(self, numlines=2**20, keepends=None, drop=None, timeout=default):
+        r"""recvlinesS(numlines, drop=True, timeout=default) -> str list
 
         This function is identical to :meth:`recvlines`, but decodes
         the received bytes into string using :func:`context.encoding`.
@@ -444,10 +487,10 @@ class tube(Timeout, Logger):
             >>> t.recvlinesS(3)
             ['Foo', 'Bar', 'Baz']
         """
-        return [packing._decode(x) for x in self.recvlines(numlines, keepends, timeout)]
+        return [packing._decode(x) for x in self.recvlines(numlines, keepends=keepends, drop=drop, timeout=timeout)]
 
-    def recvlinesb(self, numlines=2**20, keepends=False, timeout=default):
-        r"""recvlinesb(numlines, keepends=False, timeout=default) -> bytearray list
+    def recvlinesb(self, numlines=2**20, keepends=None, drop=None, timeout=default):
+        r"""recvlinesb(numlines, drop=True, timeout=default) -> bytearray list
 
         This function is identical to :meth:`recvlines`, but returns a bytearray.
 
@@ -461,10 +504,10 @@ class tube(Timeout, Logger):
             >>> t.recvlinesb(3)
             [bytearray(b'Foo'), bytearray(b'Bar'), bytearray(b'Baz')]
         """
-        return [bytearray(x) for x in self.recvlines(numlines, keepends, timeout)]
+        return [bytearray(x) for x in self.recvlines(numlines, keepends=keepends, drop=drop, timeout=timeout)]
 
-    def recvline(self, keepends=True, timeout=default):
-        r"""recvline(keepends=True, timeout=default) -> bytes
+    def recvline(self, keepends=None, drop=None, timeout=default):
+        r"""recvline(drop=False, timeout=default) -> bytes
 
         Receive a single line from the tube.
 
@@ -480,7 +523,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty byte string (``b''``) is returned.
 
         Arguments:
-            keepends(bool): Keep the line ending (:const:`True`).
+            drop(bool): Drop the line ending (:const:`False`).
             timeout(int): Timeout
 
         Raises:
@@ -503,10 +546,10 @@ class tube(Timeout, Logger):
             b'Foo\n'
             >>> t.recvline()
             b'Bar\r\n'
-            >>> t.recvline(keepends = False)
+            >>> t.recvline(False)
             b'Baz'
             >>> t.newline = b'\r\n'
-            >>> t.recvline(keepends = False)
+            >>> t.recvline(drop=True)
             b'Foo\nBar'
             >>> t = tube()
             >>> def _recv_eof(n):
@@ -520,13 +563,16 @@ class tube(Timeout, Logger):
             b'real line\n'
             >>> t.recvline()
             b'trailing data'
-            >>> t.recvline() # doctest: +ELLIPSIS
+            >>> t.recvline()
             Traceback (most recent call last):
-            ...
+                ...
             EOFError
         """
+        drop = self._normalize_keepends_drop(keepends, drop, False)
+        del keepends
+
         try:
-            return self.recvuntil(self.newline, drop = not keepends, timeout = timeout)
+            return self.recvuntil(self.newline, drop=drop, timeout=timeout)
         except EOFError:
             if not context.throw_eof_on_incomplete_line and self.buffer.size > 0:
                 if context.throw_eof_on_incomplete_line is None:
@@ -534,8 +580,8 @@ class tube(Timeout, Logger):
                 return self.buffer.get()
             raise
 
-    def recvline_pred(self, pred, keepends=False, timeout=default):
-        r"""recvline_pred(pred, keepends=False) -> bytes
+    def recvline_pred(self, pred, keepends=None, drop=None, timeout=default):
+        r"""recvline_pred(pred, drop=True, timeout=default) -> bytes
 
         Receive data until ``pred(line)`` returns a truthy value.
         Drop all other data.
@@ -546,6 +592,7 @@ class tube(Timeout, Logger):
         Arguments:
             pred(callable): Function to call.  Returns the line for which
                 this function returns :const:`True`.
+            drop(bool): Drop the line ending (:const:`True`).
 
         Examples:
 
@@ -553,18 +600,22 @@ class tube(Timeout, Logger):
             >>> t.recv_raw = lambda n: b"Foo\nBar\nBaz\n"
             >>> t.recvline_pred(lambda line: line == b"Bar\n")
             b'Bar'
-            >>> t.recvline_pred(lambda line: line == b"Bar\n", keepends=True)
+            >>> t.recvline_pred(lambda line: line == b"Bar\n", True)
+            b'Bar\n'
+            >>> t.recvline_pred(lambda line: line == b"Bar\n", drop=False)
             b'Bar\n'
             >>> t.recvline_pred(lambda line: line == b'Nope!', timeout=0.1)
             b''
         """
+        drop = self._normalize_keepends_drop(keepends, drop, True)
+        del keepends
 
         tmpbuf = Buffer()
         line   = b''
         with self.countdown(timeout):
             while self.countdown_active():
                 try:
-                    line = self.recvline(keepends=True)
+                    line = self.recvline(drop=False)
                 except Exception:
                     self.buffer.unget(tmpbuf)
                     raise
@@ -574,22 +625,23 @@ class tube(Timeout, Logger):
                     return b''
 
                 if pred(line):
-                    if not keepends:
-                        line = line[:-len(self.newline)]
+                    if drop:
+                        line = line.rstrip(self.newline)
                     return line
                 else:
                     tmpbuf.add(line)
 
         return b''
 
-    def recvline_contains(self, items, keepends = False, timeout = default):
-        r"""
+    def recvline_contains(self, items, keepends=None, drop=None, timeout=default):
+        r"""recvline_contains(items, drop=True, timeout=default) -> bytes
+
         Receive lines until one line is found which contains at least
         one of `items`.
 
         Arguments:
             items(str,tuple): List of strings to search for, or a single string.
-            keepends(bool): Return lines with newlines if :const:`True`
+            drop(bool): Drop the line ending (:const:`True`).
             timeout(int): Timeout, in seconds
 
         Examples:
@@ -615,10 +667,10 @@ class tube(Timeout, Logger):
         def pred(line):
             return any(d in line for d in items)
 
-        return self.recvline_pred(pred, keepends, timeout)
+        return self.recvline_pred(pred, keepends=keepends, drop=drop, timeout=timeout)
 
-    def recvline_startswith(self, delims, keepends=False, timeout=default):
-        r"""recvline_startswith(delims, keepends=False, timeout=default) -> bytes
+    def recvline_startswith(self, delims, keepends=None, drop=None, timeout=default):
+        r"""recvline_startswith(delims, drop=True, timeout=default) -> bytes
 
         Keep receiving lines until one is found that starts with one of
         `delims`.  Returns the last line received.
@@ -628,7 +680,7 @@ class tube(Timeout, Logger):
 
         Arguments:
             delims(str,tuple): List of strings to search for, or string of single characters
-            keepends(bool): Return lines with newlines if :const:`True`
+            drop(bool): Drop the line ending (:const:`True`).
             timeout(int): Timeout, in seconds
 
         Returns:
@@ -640,7 +692,7 @@ class tube(Timeout, Logger):
             >>> t.recv_raw = lambda n: b"Hello\nWorld\nXylophone\n"
             >>> t.recvline_startswith((b'W',b'X',b'Y',b'Z'))
             b'World'
-            >>> t.recvline_startswith((b'W',b'X',b'Y',b'Z'), True)
+            >>> t.recvline_startswith((b'W',b'X',b'Y',b'Z'), drop=False)
             b'Xylophone\n'
             >>> t.recvline_startswith(b'Wo')
             b'World'
@@ -652,10 +704,11 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(lambda line: any(map(line.startswith, delims)),
                                   keepends=keepends,
+                                  drop=drop,
                                   timeout=timeout)
 
-    def recvline_endswith(self, delims, keepends=False, timeout=default):
-        r"""recvline_endswith(delims, keepends=False, timeout=default) -> bytes
+    def recvline_endswith(self, delims, keepends=None, drop=None, timeout=default):
+        r"""recvline_endswith(delims, drop=True, timeout=default) -> bytes
 
         Keep receiving lines until one is found that ends with one of
         `delims`.  Returns the last line received.
@@ -671,7 +724,7 @@ class tube(Timeout, Logger):
             >>> t.recv_raw = lambda n: b'Foo\nBar\nBaz\nKaboodle\n'
             >>> t.recvline_endswith(b'r')
             b'Bar'
-            >>> t.recvline_endswith((b'a',b'b',b'c',b'd',b'e'), True)
+            >>> t.recvline_endswith((b'a',b'b',b'c',b'd',b'e'), drop=False)
             b'Kaboodle\n'
             >>> t.recvline_endswith(b'oodle')
             b'Kaboodle'
@@ -684,6 +737,7 @@ class tube(Timeout, Logger):
 
         return self.recvline_pred(lambda line: any(map(line.endswith, delims)),
                                   keepends=keepends,
+                                  drop=drop,
                                   timeout=timeout)
 
     def recvregex(self, regex, exact=False, timeout=default, capture=False):
@@ -726,8 +780,8 @@ class tube(Timeout, Logger):
         else:
             return self.recvpred(pred, timeout = timeout)
 
-    def recvline_regex(self, regex, exact=False, keepends=False, timeout=default):
-        """recvline_regex(regex, exact=False, keepends=False, timeout=default) -> bytes
+    def recvline_regex(self, regex, exact=False, keepends=None, drop=None, timeout=default):
+        """recvline_regex(regex, exact=False, drop=True, timeout=default) -> bytes
 
         Wrapper around :func:`recvline_pred`, which will return when a regex
         matches a line.
@@ -748,7 +802,7 @@ class tube(Timeout, Logger):
         else:
             pred = regex.search
 
-        return self.recvline_pred(pred, keepends = keepends, timeout = timeout)
+        return self.recvline_pred(pred, keepends=keepends, drop=drop, timeout=timeout)
 
     def recvrepeat(self, timeout=default):
         """recvrepeat(timeout=default) -> bytes
@@ -1064,8 +1118,8 @@ class tube(Timeout, Logger):
             >>> t.connected_raw = lambda d: True
             >>> t.fileno        = lambda: 1234
             >>> with context.local(log_level='info'):
-            ...     data = t.clean_and_log() #doctest: +ELLIPSIS
-            [DEBUG] Received 0xb bytes:
+            ...     data = t.clean_and_log()
+            [...] Received 0xb bytes:
                 b'hooray_data'
             >>> data
             b'hooray_data'
@@ -1112,26 +1166,29 @@ class tube(Timeout, Logger):
 
         Examples:
 
-        >>> l = listen()
-        >>> l.spawn_process('/bin/sh')
-        >>> r = remote('127.0.0.1', l.lport)
-        >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
-        >>> r.sendline(b'cat ./payload')
-        >>> r.recvline()
-        b'some\\xca\\xfedata\\n'
+        .. doctest::
+            :options: +POSIX +TODO
 
-        >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
-        >>> r.sendline(b'sha256sum ./cyclic_pattern')
-        >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
-        True
+            >>> l = listen()
+            >>> l.spawn_process('/bin/sh')
+            >>> r = remote('127.0.0.1', l.lport)
+            >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
+            >>> r.sendline(b'cat ./payload')
+            >>> r.recvline()
+            b'some\\xca\\xfedata\\n'
 
-        >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
-        >>> r.upload_manually(blob.data, prompt=b'')
-        >>> r.sendline(b'./payload')
-        >>> r.recvline()
-        b'Hello world!\\n'
-        >>> r.close()
-        >>> l.close()
+            >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
+            >>> r.sendline(b'sha256sum ./cyclic_pattern')
+            >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
+            True
+
+            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
+            >>> r.upload_manually(blob.data, prompt=b'')
+            >>> r.sendline(b'./payload')
+            >>> r.recvline()
+            b'Hello world!\\n'
+            >>> r.close()
+            >>> l.close()
         """
         echo_end = ""
         if not prompt:
@@ -1440,7 +1497,7 @@ class tube(Timeout, Logger):
             send
             send
             send
-            >>> t.shutdown('bad_value') #doctest: +ELLIPSIS
+            >>> t.shutdown('bad_value')
             Traceback (most recent call last):
             ...
             KeyError: "direction must be in ['in', 'out', 'read', 'recv', 'send', 'write']"
@@ -1474,7 +1531,7 @@ class tube(Timeout, Logger):
             send
             send
             send
-            >>> t.connected('bad_value') #doctest: +ELLIPSIS
+            >>> t.connected('bad_value')
             Traceback (most recent call last):
             ...
             KeyError: "direction must be in ['any', 'in', 'out', 'read', 'recv', 'send', 'write']"

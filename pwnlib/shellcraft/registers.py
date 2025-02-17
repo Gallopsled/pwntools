@@ -110,6 +110,43 @@ riscv = {
 
 riscv_list = list(riscv)
 
+loongarch64 = {
+    'r0' :  0, 'zero': 0,
+    'r1' :  1, 'ra':  1,
+    'r2' :  2, 'tp':  2,
+    'r3' :  3, 'sp':  3,
+    'r4' :  4, 'a0':  4, 'v0':  4,
+    'r5' :  5, 'a1':  5, 'v1':  5,
+    'r6' :  6, 'a2':  6,
+    'r7' :  7, 'a3':  7,
+    'r8' :  8, 'a4':  8,
+    'r9' :  9, 'a5':  9,
+    'r10': 10, 'a6': 10,
+    'r11': 11, 'a7': 11,
+    'r12': 12, 't0': 12,
+    'r13': 13, 't1': 13,
+    'r14': 14, 't2': 14,
+    'r15': 15, 't3': 15,
+    'r16': 16, 't4': 16,
+    'r17': 17, 't5': 17,
+    'r18': 18, 't6': 18,
+    'r19': 19, 't7': 19,
+    'r20': 20, 't8': 20,
+    'r21': 21, 'u0': 21, # u0 is only used by Linux kernel
+    'r22': 22, 'fp': 22, 's9': 22,
+    'r23': 23, 's0': 23,
+    'r24': 24, 's1': 24,
+    'r25': 25, 's2': 25,
+    'r26': 26, 's3': 26,
+    'r27': 27, 's4': 27,
+    'r28': 28, 't5': 28,
+    'r29': 29, 't6': 29,
+    'r30': 30, 't7': 30,
+    'r31': 31, 't8': 31,
+}
+
+loongarch64_list = list(loongarch64)
+
 # x86/amd64 registers in decreasing size
 i386_ordered = [
     ['rax', 'eax', 'ax', 'al'],
@@ -253,6 +290,7 @@ def current():
         'powerpc': powerpc,
         'riscv32': riscv,
         'riscv64': riscv,
+        'loongarch64': loongarch64,
     }[context.arch]
 
 # def is_register(sz):

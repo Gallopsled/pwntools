@@ -767,9 +767,13 @@ class process(tube):
 
         if IS_WINDOWS:
             with self.countdown(timeout=timeout):
-                while self.timeout and self._read_queue.empty():
+                while self.timeout and self._read_queue.empty() and self._read_thread.is_alive():
                     time.sleep(0.01)
-                return not self._read_queue.empty()
+                if not self._read_queue.empty():
+                    return True
+                if not self._read_thread.is_alive():
+                    raise EOFError
+                return False
 
         try:
             if timeout is None:
@@ -1326,7 +1330,7 @@ class process(tube):
         space.
         """
         from pwnlib.util.proc import memory_maps
-        maps_raw = memory_maps(self.pid)
+        maps_raw = self.poll() is not None and memory_maps(self.pid)
 
         if not maps_raw:
             import pwnlib.elf.elf
