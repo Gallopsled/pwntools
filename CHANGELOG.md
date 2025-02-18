@@ -83,6 +83,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2527][2527] Allow setting debugger path via `context.gdb_binary`
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2529][2529] Add LoongArch64 support
+- [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
 - [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
 
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
@@ -94,6 +95,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2527]: https://github.com/Gallopsled/pwntools/pull/2527
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2529]: https://github.com/Gallopsled/pwntools/pull/2529
+[2506]: https://github.com/Gallopsled/pwntools/pull/2506
 [2504]: https://github.com/Gallopsled/pwntools/pull/2504
 
 ## 4.15.0 (`beta`)
@@ -115,7 +117,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2502][2502] Fix loading ELF files without valid .dynamic section
 - [#2476][2476] Deprecate 'keepends' argument in favor of 'drop' in `tube.recvline*`
 - [#2364][2364] Deprecate direct commandline scripts invocation and exclude nonsense ones
-- [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
 
 [2508]: https://github.com/Gallopsled/pwntools/pull/2508
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
@@ -134,7 +135,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2502]: https://github.com/Gallopsled/pwntools/pull/2502
 [2476]: https://github.com/Gallopsled/pwntools/pull/2476
 [2364]: https://github.com/Gallopsled/pwntools/pull/2364
-[2506]: https://github.com/Gallopsled/pwntools/pull/2506
 
 ## 4.14.1
 
