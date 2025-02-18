@@ -1510,7 +1510,18 @@ class CorefileFinder(object):
         # should be unique enough that we can just glob.
 
         boot_id = read('/proc/sys/kernel/random/boot_id').strip().decode()
-        path = self.exe.replace('/', '_')
+
+        # Use the absolute path of the executable
+        # Apport uses the executable's path to determine the core dump filename
+        #
+        # Reference source:
+        # https://github.com/canonical/apport/blob/4bbb179b8f92989bf7c1ee3692074f35d70ef3e8/data/apport#L110
+        # https://github.com/canonical/apport/blob/4bbb179b8f92989bf7c1ee3692074f35d70ef3e8/apport/fileutils.py#L599
+        #
+        # Apport calls `get_core_path` with `options.executable_path`, which corresponds to
+        # the executable's pathname, as specified by the `%E` placeholder
+        # in the core pattern (see `man core` and `apport --help`).
+        path = os.path.abspath(self.exe).replace('/', '_').replace('.', '_')
 
         # Format the name
         corefile_name = 'core.{path}.{uid}.{boot_id}.{pid}.*'.format(

@@ -1,5 +1,6 @@
 from __future__ import division
 
+import json
 import base64
 import errno
 import os
@@ -123,7 +124,7 @@ def read(path, count=-1, skip=0):
 
     Examples:
 
-        >>> read('/proc/self/exe')[:4]
+        >>> read('/proc/self/exe')[:4] # doctest: +LINUX +TODO
         b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
@@ -163,7 +164,7 @@ def which(name, all = False, path=None):
 
     Example:
 
-        >>> which('sh') # doctest: +ELLIPSIS
+        >>> which('sh') # doctest: +ELLIPSIS +POSIX +TODO
         '.../bin/sh'
     """
     # If name is a path, do not attempt to resolve it.
@@ -450,12 +451,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal == 'kitty':
+    if terminal == 'tmux' or terminal in ('kitty', 'kitten'):
         stdout = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
-
-    kittyid = None
 
     if terminal == 'tmux':
         out, _ = p.communicate()
@@ -469,9 +468,8 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
-    elif terminal == 'kitty':
-        pid = p.pid
-        
+    elif terminal in ('kitty', 'kitten'):
+        pid = None
         out, _ = p.communicate()
         try:
             kittyid = int(out)
@@ -479,6 +477,15 @@ end tell
             kittyid = None
         if kittyid is None:
             log.error("Could not parse kitty window ID from output (%r)", out)
+        else:
+            lsout, _ = subprocess.Popen(["kitten", "@", "ls", "--match", "id:%d" % kittyid], stdin=stdin, stdout=stdout, stderr=stderr).communicate()
+            try:
+                lsj = json.loads(lsout)
+                pid = int(lsj[0]["tabs"][0]["windows"][0]["pid"])
+            except json.JSONDecodeError as e:
+                pid = None
+                log.error("Json decode failed while parsing 'kitten @ ls' output (%r) (error: %r)", lsout, e)
+            
     elif terminal == 'cmd.exe':
         # p.pid is cmd.exe's pid instead of the WSL process we want to start eventually.
         # I don't know how to trace the execution through Windows and back into the WSL2 VM.
@@ -503,8 +510,6 @@ end tell
             try:
                 if terminal == 'qdbus':
                     os.kill(pid, signal.SIGHUP)
-                elif terminal == 'kitty':
-                    subprocess.Popen(["kitten", "@", "close-window", "--match", "id:{}".format(kittyid)], stderr=stderr)
                 else:
                     os.kill(pid, signal.SIGTERM)
             except OSError:

@@ -4,6 +4,9 @@
    from pwn import *
    adb = pwnlib.adb
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['LINUX']
+
 :mod:`pwnlib.adb` --- Android Debug Bridge
 =====================================================
 
