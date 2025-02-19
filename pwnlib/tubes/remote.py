@@ -113,10 +113,7 @@ class remote(sock):
 
         async def async_getaddrinfo(host, port, fam=0, typ=0, proto=0, flags=0):
             loop = asyncio.get_running_loop()
-            try:
-                result = await loop.getaddrinfo(host, port, family=fam, type=typ, proto=proto, flags=flags)
-            except asyncio.exceptions.CancelledError:
-                result = []
+            result = await loop.getaddrinfo(host, port, family=fam, type=typ, proto=proto, flags=flags)
             return result
 
         def run_async_in_thread(coro):
@@ -132,8 +129,13 @@ class remote(sock):
         def sync_getaddrinfo(*args):
             # Run in a separate thread to avoid deadlocks when users nest eventloops.
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(run_async_in_thread, async_getaddrinfo(*args))
-                return future.result()
+                try:
+                    future = executor.submit(run_async_in_thread, async_getaddrinfo(*args))
+                    return future.result()
+                except asyncio.exceptions.CancelledError:
+                    return []
+                except socket.gaierror:
+                    return []
 
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
             hostnames = sync_getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE)
