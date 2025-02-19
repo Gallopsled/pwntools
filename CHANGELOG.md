@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2545][2545] SSH: fix download/upload with -1 exit status
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
