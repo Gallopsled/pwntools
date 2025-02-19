@@ -85,6 +85,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2529][2529] Add LoongArch64 support
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
 - [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
+- [#2442][2442] Add convenient exploit for `_IO_wide_data`
 
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
@@ -97,6 +98,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2529]: https://github.com/Gallopsled/pwntools/pull/2529
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
 [2504]: https://github.com/Gallopsled/pwntools/pull/2504
+[2442]: https://github.com/Gallopsled/pwntools/pull/2442
 
 ## 4.15.0 (`beta`)
 
