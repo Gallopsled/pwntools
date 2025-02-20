@@ -574,7 +574,7 @@ class ssh(Timeout, Logger):
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
                  cache=True, ssh_agent=False, ignore_config=False, raw=False, 
-                 auth_none=False, *a, **kw):
+                 auth_none=False, disabled_algorithms=None, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -593,6 +593,7 @@ class ssh(Timeout, Logger):
             ignore_config(bool): If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
             raw(bool): If :const:`True`, assume a non-standard shell and don't probe the environment
             auth_none(bool): If :const:`True`, try to authenticate with no authentication methods
+            disabled_algorithms(dict): Mapping of algorithm type and list of algorithms identifier to disable. Passed directly to paramiko.
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -682,7 +683,7 @@ class ssh(Timeout, Logger):
                 proxy_sock = None
 
             try:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config, disabled_algorithms=disabled_algorithms)
             except paramiko.BadHostKeyException as e:
                 self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
