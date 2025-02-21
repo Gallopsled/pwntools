@@ -24,6 +24,7 @@ __all__ = [
     'log',
     'memleak',
     'pep237',
+    'pow',
     'regsort',
     'replacements',
     'rop',
