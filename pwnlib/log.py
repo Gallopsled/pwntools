@@ -98,7 +98,6 @@ import logging
 import os
 import random
 import re
-import six
 import string
 import sys
 import threading
@@ -284,7 +283,7 @@ class Logger(object):
         self._logger = logger
 
     def _getlevel(self, levelString):
-        if isinstance(levelString, six.integer_types):
+        if isinstance(levelString, int):
             return levelString
         return logging._levelNames[levelString.upper()]
 

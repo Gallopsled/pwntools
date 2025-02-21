@@ -98,7 +98,6 @@ from __future__ import division
 import logging
 import re
 from operator import itemgetter
-from six.moves import range
 from sortedcontainers import SortedList
 
 from pwnlib.log import getLogger

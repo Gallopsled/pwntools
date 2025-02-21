@@ -34,12 +34,9 @@ from __future__ import absolute_import
 from __future__ import division
 
 import collections
-import six
 import struct
 import sys
 import warnings
-
-from six.moves import range
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
@@ -115,8 +112,8 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
         endianness = context.endianness
         sign       = context.sign
 
-        if not isinstance(number, six.integer_types):
-            raise ValueError("pack(): number must be of type (int,long) (got %r)" % type(number))
+        if not isinstance(number, int):
+            raise ValueError("pack(): number must be of type int (got %r)" % type(number))
 
         if not isinstance(sign, bool):
             raise ValueError("pack(): sign must be either True or False (got %r)" % sign)
@@ -137,7 +134,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
                 if not sign:
                     raise ValueError("pack(): number does not fit within word_size")
                 word_size = ((number + 1).bit_length() | 7) + 1
-        elif not isinstance(word_size, six.integer_types) or word_size <= 0:
+        elif not isinstance(word_size, int) or word_size <= 0:
             raise ValueError("pack(): word_size must be a positive integer or the string 'all'")
 
         if sign:
@@ -214,7 +211,7 @@ def unpack(data, word_size = None):
     # Verify that word_size make sense
     if word_size == 'all':
         word_size = len(data) * 8
-    elif not isinstance(word_size, six.integer_types) or word_size <= 0:
+    elif not isinstance(word_size, int) or word_size <= 0:
         raise ValueError("unpack(): word_size must be a positive integer or the string 'all'")
 
     byte_size = (word_size + 7) // 8
@@ -658,10 +655,10 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
     pieces_ = dict()
     large_key = 2**(context.word_size-8)
     for k, v in pieces.items():
-        if isinstance(k, six.integer_types):
+        if isinstance(k, int):
             if k >= large_key:
                 k = fill(pack(k))
-        elif isinstance(k, (six.text_type, bytearray, bytes)):
+        elif isinstance(k, (str, bytearray, bytes)):
             k = fill(_need_bytes(k, stacklevel, 0x80))
         else:
             raise TypeError("flat(): offset must be of type int or str, but got '%s'" % type(k))
@@ -731,9 +728,9 @@ def _flat(args, preprocessor, packer, filler, stacklevel=1):
             filler, val = _fit(arg, preprocessor, packer, filler, stacklevel + 1)
         elif isinstance(arg, bytes):
             val = arg
-        elif isinstance(arg, six.text_type):
+        elif isinstance(arg, str):
             val = _need_bytes(arg, stacklevel + 1)
-        elif isinstance(arg, six.integer_types):
+        elif isinstance(arg, int):
             val = packer(arg)
         elif isinstance(arg, bytearray):
             val = bytes(arg)
@@ -906,7 +903,7 @@ def flat(*args, **kwargs):
     length       = kwargs.pop('length', None)
     stacklevel   = kwargs.pop('stacklevel', 0)
 
-    if isinstance(filler, (str, six.text_type)):
+    if isinstance(filler, str):
         filler = bytearray(_need_bytes(filler))
 
     if kwargs != {}:
@@ -1056,7 +1053,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     # Otherwise get `src` in canonical form, i.e. a string of at most `count`
     # bytes
-    if isinstance(src, six.text_type):
+    if isinstance(src, str):
         if count:
             # The only way to know where the `seek`th byte is, is to decode, but
             # we only need to decode up to the first `seek + count` code points
@@ -1098,7 +1095,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
                 break
             if isinstance(b, bytes):
                 src_ += b
-            elif isinstance(b, six.integer_types):
+            elif isinstance(b, int):
                 if b > 255 or b < 0:
                     raise ValueError("dd(): Source value %d at index %d is not in range [0;255]" % (b, i))
                 src_ += _p8lu(b)
@@ -1114,7 +1111,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         truncate = skip + len(src)
 
     # UTF-8 encode unicode `dst`
-    if isinstance(dst, six.text_type):
+    if isinstance(dst, str):
         dst = dst.encode('utf8')
         utf8 = True
     else:
@@ -1178,7 +1175,7 @@ def _need_bytes(s, level=1, min_wrong=0):
     return s.encode(encoding, errors)
 
 def _need_text(s, level=1):
-    if isinstance(s, (str, six.text_type)):
+    if isinstance(s, str):
         return s   # already text
 
     if not isinstance(s, (bytes, bytearray)):
@@ -1211,7 +1208,7 @@ def _encode(s):
     return s.encode(context.encoding)
 
 def _decode(b):
-    if isinstance(b, (str, six.text_type)):
+    if isinstance(b, str):
         return b   # already text
 
     if context.encoding == 'auto':

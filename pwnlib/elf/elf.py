@@ -41,11 +41,10 @@ import gzip
 import mmap
 import os
 import re
-import six
 import subprocess
 import tempfile
 
-from six import BytesIO
+from io import BytesIO
 
 from collections import namedtuple, defaultdict
 
@@ -266,7 +265,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
+        if isinstance(self.arch, (bytes, str)):
             self.arch = self.arch.lower()
 
         self._sections = None

@@ -367,7 +367,6 @@ import itertools
 import os
 import re
 import shutil
-import six
 import string
 import struct
 import sys
@@ -392,7 +391,6 @@ from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
-from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
@@ -413,7 +411,7 @@ class Padding(object):
         self.name = name
 
 def _slot_len(x):
-    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+    if isinstance(x, (int, Unresolved, Padding, Gadget)):
         return context.bytes
     else:
         return len(packing.flat(x))
@@ -456,7 +454,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
-            elif isinstance(data, six.integer_types):
+            elif isinstance(data, int):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -473,7 +471,6 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-@python_2_bytes_compatible
 class ROP(object):
     r"""Class which simplifies the generation of ROP-chains.
 
@@ -603,7 +600,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (bytes, six.text_type)):
+        elif isinstance(elfs, (bytes, str)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -788,7 +785,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, six.integer_types):
+        if isinstance(resolvable, int):
             return resolvable
 
     def unresolve(self, value):
@@ -841,9 +838,9 @@ class ROP(object):
         """
         if isinstance(object, enums):
             return str(object)
-        if isinstance(object, six.integer_types):
+        if isinstance(object, int):
             return self.unresolve(object)
-        if isinstance(object, (bytes, six.text_type)):
+        if isinstance(object, (bytes, str)):
             return repr(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
@@ -886,14 +883,14 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
@@ -1011,10 +1008,10 @@ class ROP(object):
         size  = (stack.next - base)
         slot_address = base
         for i, slot in enumerate(stack):
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 pass
 
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 pass
 
             elif isinstance(slot, AppendedArgument):
@@ -1136,7 +1133,7 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                if not isinstance(value, six.integer_types + (Unresolved,)):
+                if not isinstance(value, (int, Unresolved)):
                     frame[register] = AppendedArgument(value)
                 else:
                     frame[register] = value

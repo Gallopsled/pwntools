@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import argparse
-import six
 import string
 import sys
 
@@ -47,6 +46,7 @@ group = parser.add_mutually_exclusive_group(required=False)
 group.add_argument(
     '-l', '-o', '--offset', '--lookup',
     dest = 'lookup',
+    type = str.encode,
     metavar = 'lookup_value',
     help = 'Do a lookup instead printing the alphabet',
 )
@@ -65,9 +65,6 @@ def main(args):
 
     if args.lookup:
         pat = args.lookup
-
-        if six.PY3:
-            pat = bytes(pat, encoding='utf-8')
 
         try:
             pat = int(pat, 0)

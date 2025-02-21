@@ -1,5 +1,4 @@
 <%
-  import six
   from pwnlib.regsort import regsort
   from pwnlib.constants import Constant, eval
   from pwnlib.shellcraft import registers
@@ -45,7 +44,7 @@ if isinstance(edx, str):
     except NameError:
         pass
 
-if isinstance(eax, six.integer_types) and isinstance(edx, six.integer_types) and eax >> 31 == edx:
+if isinstance(eax, int) and isinstance(edx, int) and eax >> 31 == edx:
     cdq = True
     reg_context.pop('edx')
 

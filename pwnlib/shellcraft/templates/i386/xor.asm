@@ -1,5 +1,4 @@
 <%
-  import six
   from pwnlib.shellcraft import pretty, common, i386, registers
   from pwnlib.util.packing import pack, unpack
   from pwnlib.context import context as ctx
@@ -46,7 +45,7 @@ else:
     key_str = key
     key_int = key
 
-    if isinstance(key, six.integer_types):
+    if isinstance(key, int):
         key_str = pack(key, bytes=4)
     else:
         key_int = unpack(key, 'all')

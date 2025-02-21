@@ -3,7 +3,6 @@ from __future__ import division
 
 import argparse
 import os
-import six
 import sys
 import types
 
@@ -280,8 +279,8 @@ def main(args):
 
     code_array = []
     for (name, func, func_args) in funcs:
-        defargs = len(six.get_function_defaults(func) or ())
-        reqargs = six.get_function_code(func).co_argcount - defargs
+        defargs = len(func.__defaults__ or ())
+        reqargs = func.__code__.co_argcount - defargs
 
         if len(func_args) < reqargs:
             if defargs > 0:

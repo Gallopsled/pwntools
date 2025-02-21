@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import string
 import sys
 import tarfile
@@ -68,7 +67,7 @@ class ssh_channel(sock):
         self.env  = env
         self.process = process
         self.cwd  = cwd or '.'
-        if isinstance(cwd, six.text_type):
+        if isinstance(cwd, str):
             cwd = packing._need_bytes(cwd, 2, 0x80)
 
         env = env or {}
@@ -76,7 +75,7 @@ class ssh_channel(sock):
 
         if isinstance(process, (list, tuple)):
             process = b' '.join(sh_string(packing._need_bytes(s, 2, 0x80)) for s in process)
-        if isinstance(process, six.text_type):
+        if isinstance(process, str):
             process = packing._need_bytes(process, 2, 0x80)
 
         if process and cwd:
@@ -1813,12 +1812,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         status = 0
 
-        if symlink and not isinstance(symlink, (six.binary_type, six.text_type)):
+        if symlink and not isinstance(symlink, (bytes, str)):
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
             
-        if isinstance(wd, six.text_type):
+        if isinstance(wd, str):
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:

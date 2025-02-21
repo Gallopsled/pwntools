@@ -35,7 +35,7 @@ supported by ``pwnlib.util.safeeval.expr``.
 from __future__ import absolute_import
 from __future__ import division
 
-from six.moves import configparser
+import configparser
 import os
 
 registered_configs = {}
