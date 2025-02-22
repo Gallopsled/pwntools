@@ -173,6 +173,7 @@ class DynELF(object):
                 path = elf.path
 
             # Load a fresh copy of the ELF
+            # why suppress log ?
             with context.local(log_level='error'):
                 w = self.waitfor("Loading from %r" % path)
                 self.elf = ELF(path)
@@ -573,6 +574,7 @@ class DynELF(object):
                 log.info("Trying lookup based on Build ID: %s", build_id)
                 path = libcdb.search_by_build_id(build_id)
                 if path:
+                    # why suppress log ?
                     with context.local(log_level='error'):
                         e = ELF(path)
                         e.address = dynlib.libbase

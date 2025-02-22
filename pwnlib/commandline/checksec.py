@@ -34,7 +34,7 @@ def main(args):
 
     for f in files:
         try:
-            e = ELF(f)
+            e = ELF(f, checksec=True)
         except Exception as e:
             print("{name}: {error}".format(name=f, error=e))
 

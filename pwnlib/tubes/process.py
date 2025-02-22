@@ -476,10 +476,8 @@ class process(tube):
         binfmt helpers installed for QEMU.
         """
         # Get the ELF binary for the target executable
-        with context.quiet:
-            # XXX: Cyclic imports :(
-            from pwnlib.elf import ELF
-            binary = ELF(self.executable)
+        from pwnlib.elf import ELF
+        binary = ELF(self.executable)
 
         # If we're on macOS, this will never work.  Bail now.
         # if platform.mac_ver()[0]:
@@ -892,7 +890,7 @@ class process(tube):
         """maps() -> [mapping]
 
         Returns a list of process mappings.
-        
+
         A mapping object has the following fields:
             addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
 
@@ -900,7 +898,7 @@ class process(tube):
             read, write, execute, private, shared, string
 
         Example:
-      
+
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
@@ -937,8 +935,8 @@ class process(tube):
             pmmap_ext = namedtuple(
                 'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
 
-            
-        Here is an example of a pmmap_ext entry: 
+
+        Here is an example of a pmmap_ext entry:
 
         .. code-block:: python
 
@@ -946,7 +944,7 @@ class process(tube):
         """
 
         permissions = namedtuple("permissions", "read write execute private shared string")
-        mapping = namedtuple("mapping", 
+        mapping = namedtuple("mapping",
             "addr address start end size perms path rss pss shared_clean shared_dirty private_clean private_dirty referenced anonymous swap")
         # addr = address (alias) = start (alias)
 
@@ -976,11 +974,11 @@ class process(tube):
             single(bool=True): Whether to only return the first
                 mapping matched, or all of them.
 
-        Returns found mapping(s) in process memory according to 
+        Returns found mapping(s) in process memory according to
         path_value.
 
         Example:
-            
+
             >>> p = process(['cat'])
             >>> mapping = p.get_mapping('[stack]')
             >>> mapping.path == '[stack]'
@@ -1039,7 +1037,7 @@ class process(tube):
 
         """
         return self.get_mapping('[stack]', single)
-    
+
     def heap_mapping(self, single=True):
         """heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
@@ -1071,7 +1069,7 @@ class process(tube):
 
         """
         return self.get_mapping('[heap]', single)
-    
+
     def vdso_mapping(self, single=True):
         """vdso_mapping(single=True) -> mapping
         vdso_mapping(False) -> [mapping]
@@ -1100,7 +1098,7 @@ class process(tube):
 
         """
         return self.get_mapping('[vdso]', single)
-    
+
     def vvar_mapping(self, single=True):
         """vvar_mapping(single=True) -> mapping
         vvar_mapping(False) -> [mapping]
@@ -1129,7 +1127,7 @@ class process(tube):
 
         """
         return self.get_mapping('[vvar]', single)
-    
+
     def libc_mapping(self, single=True):
         """libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
@@ -1139,7 +1137,7 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns either the first libc mapping found in process memory,
-        or all libc mappings, depending on "single". 
+        or all libc mappings, depending on "single".
 
         Example:
 
@@ -1183,7 +1181,7 @@ class process(tube):
             if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
                 l_mappings.append(mapping)
         return l_mappings
-    
+
     def musl_mapping(self, single=True):
         """musl_mapping(single=True) -> mapping
         musl_mapping(False) -> [mapping]
@@ -1193,7 +1191,7 @@ class process(tube):
                 mapping matched, or all of them.
 
         Returns either the first musl mapping found in process memory,
-        or all musl mappings, depending on "single". 
+        or all musl mappings, depending on "single".
         """
         all_maps = self.maps()
 
@@ -1203,14 +1201,14 @@ class process(tube):
                 if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
                     return mapping
             return None
-        
+
         m_mappings = []
         for mapping in all_maps:
             lib_basename = os.path.basename(mapping.path)
             if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
                 m_mappings.append(mapping)
         return m_mappings
-    
+
     def elf_mapping(self, single=True):
         """elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
@@ -1274,10 +1272,10 @@ class process(tube):
 
         # Expecting this to be sorted
         lib_mappings = self.get_mapping(path_value, single=False)
-        
+
         if len(lib_mappings) == 0:
             return 0
-    
+
         is_contiguous = True
         total_size = lib_mappings[0].size
         for i in range(1, len(lib_mappings)):
@@ -1293,7 +1291,7 @@ class process(tube):
 
     def address_mapping(self, address):
         """address_mapping(address) -> mapping
-        
+
         Returns the mapping at the specified address.
 
         Example:
@@ -1333,10 +1331,8 @@ class process(tube):
         maps_raw = self.poll() is not None and memory_maps(self.pid)
 
         if not maps_raw:
-            import pwnlib.elf.elf
-
-            with context.quiet:
-                return pwnlib.elf.elf.ELF(self.executable).maps
+            from pwnlib.elf import ELF
+            return ELF(self.executable, checksec=False).maps
 
         # Enumerate all of the libraries actually loaded right now.
         maps = {}
@@ -1358,7 +1354,7 @@ class process(tube):
         return maps
 
     @property
-    def libc(self):
+    def libc(self, checksec=False):
         """libc() -> ELF
 
         Returns an ELF for the libc for the current process.
@@ -1378,7 +1374,7 @@ class process(tube):
         for lib, address in self.libs().items():
             lib_basename = os.path.basename(lib)
             if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
-                e = ELF(lib)
+                e = ELF(lib, checksec)
                 e.address = address
                 return e
 
@@ -1388,8 +1384,8 @@ class process(tube):
 
         Returns an ELF file for the executable that launched the process.
         """
-        import pwnlib.elf.elf
-        return pwnlib.elf.elf.ELF(self.executable)
+        from pwnlib.elf import ELF
+        return ELF(self.executable)
 
     @property
     def corefile(self):
@@ -1479,7 +1475,7 @@ class process(tube):
             data(bytes): Data to write to the address
 
         Example:
-        
+
             Let's write data to  the beginning of the mapped memory of the  ELF.
 
             >>> context.clear(arch='i386')

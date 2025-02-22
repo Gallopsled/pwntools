@@ -19,9 +19,9 @@ parser.add_argument(
 
 def main(args):
     for f in args.elf:
-        e = ELF(f.name)
+        e = ELF(f.name, checksec=True)
         e.disable_nx()
-        ELF(e.path)
+        ELF(e.path, checksec=True)
 
 if __name__ == '__main__':
     pwnlib.commandline.common.main(__file__, main)

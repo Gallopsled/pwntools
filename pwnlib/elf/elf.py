@@ -212,7 +212,7 @@ class ELF(ELFFile):
     _fill_gaps = True
 
 
-    def __init__(self, path, checksec=True):
+    def __init__(self, path, checksec=False):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.

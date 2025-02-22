@@ -350,7 +350,7 @@ class ssh_process(ssh_channel):
 
         for lib, address in self.libs().items():
             if 'libc.so' in lib:
-                e = ELF(lib)
+                e = ELF(lib, checksec=True)
                 e.address = address
                 return e
 
@@ -360,14 +360,14 @@ class ssh_process(ssh_channel):
 
         Returns an ELF file for the executable that launched the process.
         """
-        import pwnlib.elf.elf
+        from pwnlib.elf import ELF
 
         libs = self.parent.libs(self.executable)
 
         for lib in libs:
             # Cannot just check "executable in lib", see issue #1047
             if lib.endswith(self.executable):
-                return pwnlib.elf.elf.ELF(lib)
+                return ELF(lib, checksec=True)
 
 
     @property

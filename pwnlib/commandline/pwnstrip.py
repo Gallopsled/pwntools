@@ -27,7 +27,7 @@ def main(args):
         sys.stderr.write(p.format_usage())
         sys.exit(0)
 
-    elf = ELF(args.file.name)
+    elf = ELF(args.file.name, checksec=True)
     context.clear(arch=elf.arch)
 
     if args.build_id:

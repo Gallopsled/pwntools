@@ -27,9 +27,7 @@ def main(a):
     offset = int(a.offset, 16)
     bytes  = unhex(a.bytes)
 
-    with context.silent:
-        elf    = ELF(a.elf)
-
+    elf    = ELF(a.elf, checksec=False)
     elf.write(offset, bytes)
     getattr(sys.stdout, 'buffer', sys.stdout).write(elf.get_data())
 
