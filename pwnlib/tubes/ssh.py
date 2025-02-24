@@ -593,7 +593,9 @@ class ssh(Timeout, Logger):
             ignore_config(bool): If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
             raw(bool): If :const:`True`, assume a non-standard shell and don't probe the environment
             auth_none(bool): If :const:`True`, try to authenticate with no authentication methods
-            disabled_algorithms(dict): Mapping of algorithm type and list of algorithms identifier to disable. Passed directly to paramiko.
+            disabled_algorithms(dict):
+                Mapping of algorithm type and list of algorithm identifiers to disable.
+                See :class:`paramiko.transport.Transport` for more information.
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
