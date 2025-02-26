@@ -6,6 +6,7 @@ import abc
 import logging
 import os
 import re
+import select
 import six
 import string
 import subprocess
@@ -18,6 +19,7 @@ from six.moves import range
 from pwnlib import atexit
 from pwnlib import term
 from pwnlib.context import context
+from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.buffer import Buffer
@@ -988,49 +990,61 @@ class tube(Timeout, Logger):
         try:
             os_linesep = os.linesep.encode()
             to_skip = b''
-            while not go.is_set():
-                if term.term_mode:
-                    data = term.readline.readline(prompt = prompt, float = True)
-                    if data.endswith(b'\n') and self.newline != b'\n':
-                        data = data[:-1] + self.newline
-                else:
-                    stdin = getattr(sys.stdin, 'buffer', sys.stdin)
-                    data = stdin.read(1)
-                    # Keep OS's line separator if NOTERM is set and
-                    # the user did not specify a custom newline
-                    # even if stdin is a tty.
-                    if sys.stdin.isatty() and (
-                        term_mode
-                        or context.newline != b"\n"
-                        or self._newline is not None
-                    ):
-                        if to_skip:
-                            if to_skip[:1] != data:
-                                data = os_linesep[: -len(to_skip)] + data
-                            else:
-                                to_skip = to_skip[1:]
-                                if to_skip:
+            while not go.is_set() and self.connected():
+                # Block until there is input on stdin or there's input on the receiving side
+                try:
+                    rfds, _, _ = select.select([sys.stdin, self], [], [])
+                except PwnlibException:
+                    # If the process stops while we're waiting for input, an
+                    # exception will be thrown
+                    go.set()
+                    continue
+
+                # If the there's input on stdin, handle it. Otherwise, on the
+                # next iteration of the loop we'll check if the receiving side disconnected
+                if sys.stdin in rfds:
+                    if term.term_mode:
+                        data = term.readline.readline(prompt = prompt, float = True)
+                        if data.endswith(b'\n') and self.newline != b'\n':
+                            data = data[:-1] + self.newline
+                    else:
+                        stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+                        data = stdin.read(1)
+                        # Keep OS's line separator if NOTERM is set and
+                        # the user did not specify a custom newline
+                        # even if stdin is a tty.
+                        if sys.stdin.isatty() and (
+                            term_mode
+                            or context.newline != b"\n"
+                            or self._newline is not None
+                        ):
+                            if to_skip:
+                                if to_skip[:1] != data:
+                                    data = os_linesep[: -len(to_skip)] + data
+                                else:
+                                    to_skip = to_skip[1:]
+                                    if to_skip:
+                                        continue
+                                    data = self.newline
+                            # If we observe a prefix of the line separator in a tty,
+                            # assume we'll see the rest of it immediately after.
+                            # This could stall until the next character is seen if
+                            # the line separator is started but never finished, but
+                            # that is unlikely to happen in a dynamic tty.
+                            elif data and os_linesep.startswith(data):
+                                if len(os_linesep) > 1:
+                                    to_skip = os_linesep[1:]
                                     continue
                                 data = self.newline
-                        # If we observe a prefix of the line separator in a tty,
-                        # assume we'll see the rest of it immediately after.
-                        # This could stall until the next character is seen if
-                        # the line separator is started but never finished, but
-                        # that is unlikely to happen in a dynamic tty.
-                        elif data and os_linesep.startswith(data):
-                            if len(os_linesep) > 1:
-                                to_skip = os_linesep[1:]
-                                continue
-                            data = self.newline
 
-                if data:
-                    try:
-                        self.send(data)
-                    except EOFError:
+                    if data:
+                        try:
+                            self.send(data)
+                        except EOFError:
+                            go.set()
+                            self.info('Got EOF while sending in interactive')
+                    else:
                         go.set()
-                        self.info('Got EOF while sending in interactive')
-                else:
-                    go.set()
         except KeyboardInterrupt:
             self.info('Interrupted')
             go.set()
