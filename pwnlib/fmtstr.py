@@ -856,30 +856,30 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
 
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
-        b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'%322419390c%2$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
-        b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
+        b'%47806c%3$lln%22649c%4$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
-        b'%190c%7$lln%85c%8$hhn%36c%9$hhn%131c%10$hhnaaaab\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
-        >>> fmtstr_payload(6, {0x8: 0x55d15d2004a0}, badbytes=b'\n')
-        b'%1184c%14$lln%49c%15$hhn%6963c%16$hn%81c%17$hhn%8c%18$hhnaaaabaa\x08\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00'
+        b'%190c%5$lln%85c%6$hhn%36c%7$hhn%131c%8$hhnaaaaba\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        >>> fmtstr_payload(6, {0x8: 0x55d15d2004a0}, badbytes=b"\n")
+        b'%1184c%12$lln%49c%13$hhn%6963c%14$hn%81c%15$hhn%8c%16$hhnaaaabaa\x08\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
-        b'%322419390c%5$na\x00\x00\x00\x00'
+        b'%322419390c%2$na\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
-        b'%4919c%7$hn%42887c%8$hna\x02\x00\x00\x00\x00\x00\x00\x00'
+        b'%4919c%4$hn%42887c%5$hna\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
-        b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        b'%19c%9$hhn%36c%10$hhn%131c%11$hhn%4c%12$hhna\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
-        b'c%3$naaa\x00\x00\x00\x00'
-        >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
-        b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
+        b'c%0$naaa\x00\x00\x00\x00'
+        >>> fmtstr_payload(1, {0x0: b'ÿÿ\x04\x11\x00\x00\x00\x00'}, write_size='short')
+        b'%327679c%4$lln%18c%5$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
         >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%125c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%131c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
         >>> fmtstr_payload(6, {0x404048 : 0xbadbad00}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%229c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%235c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
         >>> fmtstr_payload(6, {0x4040 : 0xbadbad00, 0x4060: 0xbadbad02}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%212c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%218c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
     """
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
