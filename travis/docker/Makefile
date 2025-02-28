@@ -12,7 +12,7 @@ Dockerfile: FORCE
 
 shell bash: image
 	@echo Running interactive shell
-	sudo docker run -it --privileged --net=host --hostname localhost \
+	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
 		--entrypoint ./tmux.sh \
@@ -20,7 +20,7 @@ shell bash: image
 
 doctest3: image FORCE
 	@echo Running doctests
-	sudo docker run -it --privileged --net=host --hostname localhost \
+	docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
 		--mount type=bind,source="$(ROOT)",target=/home/pwntools/pwntools \
 		--env TARGET=$(TARGET) \
@@ -28,7 +28,7 @@ doctest3: image FORCE
 		travis
 
 image: Dockerfile
-	sudo docker build -t travis .
+	docker build -t travis .
 
 FORCE:
 .PHONY: all image doctest3 bash
