@@ -84,3 +84,7 @@ source = [
     "~/.cache/.pwntools-cache-3.13/",
 ]
 disable_warnings = ["module-not-imported"]
+
+[tool.coverage.paths]
+pwnlib = ["pwnlib", "*/pwntools/pwnlib", "*\\pwntools\\pwnlib"]
+pwn = ["pwn", "*/pwntools/pwn", "*\\pwntools\\pwn"]

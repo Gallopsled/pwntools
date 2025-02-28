@@ -240,6 +240,76 @@ jobs:
         docker stop $container_id
         sudo chown -R runner:runner /home/runner/libcdb-cache
 
+  android-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 \
+          gdb gdbserver socat \
+          qemu-user-static \
+          binutils-aarch64-linux-gnu \
+          binutils-arm-linux-gnueabihf \
+          libc6-dbg
+
+    - name: Cache for avd
+      uses: actions/cache@v4
+      id: cache-avd
+      with:
+        path: |
+          ~/.android
+          /usr/local/lib/android/sdk/emulator
+          /usr/local/lib/android/sdk/platform-tools
+          /usr/local/lib/android/sdk/system-images
+        key: ${{ matrix.os }}-cache-avd-${{ hashFiles('travis/setup_avd*.sh') }}
+        restore-keys: |
+          ${{ matrix.os }}-cache-avd-
+
+    - name: Install Android AVD
+      run: |
+        sudo usermod -aG kvm $USER
+        source travis/setup_avd_fast.sh
+        sed -i 's/skip_android = True/skip_android = False/' docs/source/conf.py
+        set | grep ^PATH >.android.env
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade wheel build
+        pip install --upgrade flake8 appdirs
+        pip install --upgrade --editable .
+
+    - name: Sanity checks
+      run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
+
+    - name: Install documentation dependencies
+      run:  pip install -r docs/requirements.txt
+
+    - name: Coverage Doctests (Android Only)
+      run: |
+        source .android.env
+        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-android
+        path: .coverage*
+        include-hidden-files: true
+
   windows-test:
     runs-on: windows-latest
     timeout-minutes: 30
@@ -269,13 +339,11 @@ jobs:
       run: |
         python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
-    # FIXME: Paths are broken when uploading coverage on ubuntu
-    # coverage.exceptions.NoSource: No source for code: '/home/runner/work/pwntools/pwntools/D:\a\pwntools\pwntools\pwn\__init__.py'.
-    # - uses: actions/upload-artifact@v4
-    #   with:
-    #     name: coverage-windows
-    #     path: .coverage*
-    #     include-hidden-files: true
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-windows
+        path: .coverage*
+        include-hidden-files: true
 
   upload-coverage:
     runs-on: ubuntu-latest
