@@ -11,7 +11,6 @@ import operator
 import random
 import time
 from itertools import *
-from six.moves import map, filter, filterfalse, range, zip, zip_longest
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -53,11 +52,8 @@ __all__ = [
     'cycle'                                  ,
     'dropwhile'                              ,
     'groupby'                                ,
-    'filter'                                 ,
     'filterfalse'                            ,
-    'map'                                    ,
     'islice'                                 ,
-    'zip'                                    ,
     'zip_longest'                            ,
     'permutations'                           ,
     'product'                                ,
@@ -887,6 +883,9 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
       threads: Amount of threads to spawn, default is the amount of cores.
 
     Example:
+
+    .. doctest::
+      :options: +POSIX +TODO
 
       >>> mbruteforce(lambda x: x == 'hello', string.ascii_lowercase, length = 10)
       'hello'

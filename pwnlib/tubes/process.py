@@ -767,9 +767,13 @@ class process(tube):
 
         if IS_WINDOWS:
             with self.countdown(timeout=timeout):
-                while self.timeout and self._read_queue.empty():
+                while self.timeout and self._read_queue.empty() and self._read_thread.is_alive():
                     time.sleep(0.01)
-                return not self._read_queue.empty()
+                if not self._read_queue.empty():
+                    return True
+                if not self._read_thread.is_alive():
+                    raise EOFError
+                return False
 
         try:
             if timeout is None:
@@ -888,8 +892,10 @@ class process(tube):
         """maps() -> [mapping]
 
         Returns a list of process mappings.
+        
         A mapping object has the following fields:
             addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
+
         perms is a permissions object, with the following fields:
             read, write, execute, private, shared, string
 
@@ -917,24 +923,25 @@ class process(tube):
             >>> checker_arr == [True] * len(proc_maps) * 5
             True
 
-        """
-
-        """
         Useful information about this can be found at: https://man7.org/linux/man-pages/man5/proc.5.html
         specifically the /proc/pid/maps section.
 
-        memory_maps() returns a list of pmmap_ext objects
+        memory_maps() returns a list of pmmap_ext objects. The definition (from psutil/_pslinux.py) is:
 
-        The definition (from psutil/_pslinux.py) is:
-        pmmap_grouped = namedtuple(
-            'pmmap_grouped',
-            ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
-            'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
-        pmmap_ext = namedtuple(
-            'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
+        .. code-block:: python
+
+            pmmap_grouped = namedtuple(
+                'pmmap_grouped',
+                ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
+                'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
+            pmmap_ext = namedtuple(
+                'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
 
             
         Here is an example of a pmmap_ext entry: 
+
+        .. code-block:: python
+
             pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
         """
 
@@ -1323,7 +1330,7 @@ class process(tube):
         space.
         """
         from pwnlib.util.proc import memory_maps
-        maps_raw = memory_maps(self.pid)
+        maps_raw = self.poll() is not None and memory_maps(self.pid)
 
         if not maps_raw:
             import pwnlib.elf.elf

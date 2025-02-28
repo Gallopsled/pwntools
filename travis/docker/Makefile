@@ -18,7 +18,7 @@ shell bash: image
 		--entrypoint ./tmux.sh \
 		travis
 
-doctest2 doctest3: image FORCE
+doctest3: image FORCE
 	@echo Running doctests
 	sudo docker run -it --privileged --net=host --hostname localhost \
 		--ulimit core=-1:-1 \
@@ -31,4 +31,4 @@ image: Dockerfile
 	sudo docker build -t travis .
 
 FORCE:
-.PHONY: all image doctest2 doctest3 bash
+.PHONY: all image doctest3 bash

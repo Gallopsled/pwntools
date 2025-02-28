@@ -4,7 +4,6 @@
   from pwnlib.log import getLogger
   from pwnlib.shellcraft import eval, pretty, okay
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
-  import six
   log = getLogger('pwnlib.shellcraft.amd64.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -149,7 +148,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, six.integer_types):
+% elif isinstance(src, int):
 ## Special case for zeroes
 ## XORing the 32-bit register clears the high 32 bits as well
     % if src == 0:

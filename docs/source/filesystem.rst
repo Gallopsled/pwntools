@@ -6,6 +6,10 @@
     from pwnlib.tubes.ssh import ssh
     from pwnlib.filesystem import *
 
+    # TODO: Remove global POSIX flag
+    import doctest
+    doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['POSIX']
+
 :mod:`pwnlib.filesystem` --- Manipulating Files Locally and Over SSH
 ====================================================================
 

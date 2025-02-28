@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=44.0", "wheel", "toml; python_version<'3.4'"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -19,7 +19,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3",
     "Topic :: Security",
     "Topic :: Software Development :: Assemblers",
@@ -32,13 +31,12 @@ classifiers = [
 ]
 keywords = ["pwntools", "exploit", "ctf", "capture", "the", "flag", "binary", "wargame", "overflow", "stack", "heap", "defcon"]
 
-requires-python = ">=2.7"
+requires-python = ">=3.6"
 dependencies = [
     "paramiko>=1.15.2",
     "mako>=1.0.0",
-    "pyelftools>=0.29, <0.30; python_version < '3'",
-    "pyelftools>=0.29; python_version >= '3'",
-    "capstone>=3.0.5rc2",  # see Gallopsled/pwntools#971, Gallopsled/pwntools#1160
+    "pyelftools>=0.29",
+    "capstone>=4.0.0",
     "ropgadget>=5.3",
     "pyserial>=2.7",
     "requests>=2.0",
@@ -51,12 +49,9 @@ dependencies = [
     "intervaltree>=3.0",
     "sortedcontainers",
     "unicorn>=2.0.1",
-    "six>=1.12.0",
     "rpyc",
-    "colored_traceback<0.4; python_version < '3'",
-    "colored_traceback; python_version >= '3'",
-    "pathlib2; python_version < '3.4'",
-    "unix-ar; python_version >= '3'",
+    "colored_traceback",
+    "unix-ar",
     "zstandard",
 ]
 
@@ -83,7 +78,13 @@ omit = [
 source = [
     "pwn",
     "pwnlib",
-    "~/.cache/.pwntools-cache-2.7/",
     "~/.cache/.pwntools-cache-3.10/",
+    "~/.cache/.pwntools-cache-3.11/",
+    "~/.cache/.pwntools-cache-3.12/",
+    "~/.cache/.pwntools-cache-3.13/",
 ]
 disable_warnings = ["module-not-imported"]
+
+[tool.coverage.paths]
+pwnlib = ["pwnlib", "*/pwntools/pwnlib", "*\\pwntools\\pwnlib"]
+pwn = ["pwn", "*/pwntools/pwn", "*\\pwntools\\pwn"]

@@ -4,7 +4,6 @@
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
   from pwnlib.log import getLogger
   from pwnlib.shellcraft import riscv64, registers, pretty, okay
-  import six
   log = getLogger('pwnlib.shellcraft.riscv64.mov')
 %>
 <%page args="dst, src"/>

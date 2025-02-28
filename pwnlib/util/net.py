@@ -259,17 +259,17 @@ def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
                 infos |= set(socket.getaddrinfo(sockaddr[0], sockaddr[1], socket.AF_INET6, t, proto, socket.AI_V4MAPPED))
         return infos
 
-    if local is not None:
-        local = sockinfos(local, fam, typ)
-    remote = sockinfos(remote, fam, typ)
+    local = sockinfos(local, fam, typ)
+    if remote is not None:
+        remote = sockinfos(remote, fam, typ)
 
     def match(c):
         laddrs = sockinfos(c.laddr, c.family, c.type)
         raddrs = sockinfos(c.raddr, c.family, c.type)
-        if not (raddrs & remote):
+        if not (laddrs & local):
             return False
-        if local is None:
+        if remote is None:
             return True
-        return bool(laddrs & local)
+        return bool(raddrs & remote)
 
     return match

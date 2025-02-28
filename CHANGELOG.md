@@ -74,8 +74,32 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2519][2519] Drop Python 2.7 support / Require Python 3.10
+- [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
+- [#2522][2522] Support starting a kitty debugging window with the 'kitten' command
+- [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
+- [#2526][2526] Properly make use of extra arguments in `packing` utilities. `sign` parameter requires keyword syntax to specify it.
+- [#2517][2517] Allow to passthru kwargs on `ssh.__getattr__` convenience function to fix SSH motd problems
+- [#2527][2527] Allow setting debugger path via `context.gdb_binary`
+- [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
+- [#2529][2529] Add LoongArch64 support
+- [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
+- [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
+
+[2519]: https://github.com/Gallopsled/pwntools/pull/2519
+[2507]: https://github.com/Gallopsled/pwntools/pull/2507
+[2522]: https://github.com/Gallopsled/pwntools/pull/2522
+[2524]: https://github.com/Gallopsled/pwntools/pull/2524
+[2526]: https://github.com/Gallopsled/pwntools/pull/2526
+[2517]: https://github.com/Gallopsled/pwntools/pull/2517
+[2527]: https://github.com/Gallopsled/pwntools/pull/2527
+[2530]: https://github.com/Gallopsled/pwntools/pull/2530
+[2529]: https://github.com/Gallopsled/pwntools/pull/2529
+[2506]: https://github.com/Gallopsled/pwntools/pull/2506
+[2504]: https://github.com/Gallopsled/pwntools/pull/2504
 
 ## 4.15.0 (`beta`)
+
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
 - [#2358][2358] Cache output of `asm()`
@@ -111,6 +135,14 @@ The table below shows which release corresponds to each branch, and what date th
 [2502]: https://github.com/Gallopsled/pwntools/pull/2502
 [2476]: https://github.com/Gallopsled/pwntools/pull/2476
 [2364]: https://github.com/Gallopsled/pwntools/pull/2364
+
+## 4.14.1
+
+- [#2533][2533] Fix installation on Python 3.5 and lower
+- [#2518][2518] fix: update apport coredump path handling for CorefileFinder
+
+[2533]: https://github.com/Gallopsled/pwntools/pull/2533
+[2518]: https://github.com/Gallopsled/pwntools/pull/2518
 
 ## 4.14.0 (`stable`)
 
@@ -185,7 +217,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2308][2308] Fix WinExec shellcraft to make sure it's 16 byte aligned
 - [#2279][2279] Make `pwn template` always set context.binary
 - [#2310][2310] Add support to start a process on Windows
-- [#2335][2335] Add lookup optimizations in DynELF 
+- [#2335][2335] Add lookup optimizations in DynELF
 - [#2334][2334] Speed up disasm commandline tool with colored output
 - [#2328][2328] Lookup using $PATHEXT file extensions in `which` on Windows
 - [#2189][2189] Explicitly define p64/u64 functions for IDE support
@@ -272,7 +304,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.11.0
 
-- [#2185][2185] make fmtstr module able to create payload without $ notation 
+- [#2185][2185] make fmtstr module able to create payload without $ notation
 - [#2103][2103] Add search for libc binary by leaked function addresses `libcdb.search_by_symbol_offsets()`
 - [#2177][2177] Support for RISC-V 64-bit architecture
 - [#2186][2186] Enhance `ELF.nx` and `ELF.execstack`

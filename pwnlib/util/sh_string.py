@@ -241,7 +241,6 @@ and should therefore be compatible with ``dash``.
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import string
 import subprocess
 
@@ -258,7 +257,7 @@ def test_all():
     test('ab') ##
     test('a b') ##
     test(r"a\'b") ##
-    everything_1 = b''.join(six.int2byte(c) for c in range(1,256))
+    everything_1 = bytes(range(1,256))
     for s in everything_1:
         test(s)
         test(s*4)
@@ -271,7 +270,7 @@ def test_all():
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256)) ##
+    everything_2 = b''.join(bytes([c,c]) for c in range(1,256)) ##
     test(everything_2)
 
     test(randoms(1000, everything_1))
@@ -280,23 +279,26 @@ def test_all():
 def test(original):
     r"""Tests the output provided by a shell interpreting a string
 
-    >>> test(b'foobar')
-    >>> test(b'foo bar')
-    >>> test(b'foo bar\n')
-    >>> test(b"foo'bar")
-    >>> test(b"foo\\\\bar")
-    >>> test(b"foo\\\\'bar")
-    >>> test(b"foo\\x01'bar")
-    >>> test(b'\n')
-    >>> test(b'\xff')
-    >>> test(os.urandom(16 * 1024).replace(b'\x00', b''))
+    .. doctest::
+        :options: +POSIX
+
+        >>> test(b'foobar')
+        >>> test(b'foo bar')
+        >>> test(b'foo bar\n')
+        >>> test(b"foo'bar")
+        >>> test(b"foo\\\\bar")
+        >>> test(b"foo\\\\'bar")
+        >>> test(b"foo\\x01'bar")
+        >>> test(b'\n')
+        >>> test(b'\xff')
+        >>> test(os.urandom(16 * 1024).replace(b'\x00', b''))
     """
     input = sh_string(original)
 
-    if not isinstance(input, str):
-        input = input.decode('latin1')
+    if isinstance(input, str):
+        input = input.encode()
 
-    cmdstr = six.b('/bin/echo %s' % input)
+    cmdstr = b'/bin/echo %s' % input
 
     SUPPORTED_SHELLS = [
         ['ash', '-c', cmdstr],

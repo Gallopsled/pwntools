@@ -1,7 +1,6 @@
 <% from pwnlib.util import lists, packing, fiddling %>
 <% from pwnlib.shellcraft.arm import push %>
 <% from pwnlib.shellcraft import pretty %>
-<% import six %>
 <%page args="string, append_null = True, register='r7'"/>
 <%docstring>
 Pushes a string onto the stack.
@@ -24,7 +23,7 @@ Examples:
 
 </%docstring>
 <%
-    if isinstance(string, six.text_type):
+    if isinstance(string, str):
         string = string.encode('utf-8')
 
     if append_null:

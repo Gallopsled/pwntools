@@ -238,8 +238,8 @@ class Corefile(ELF):
     Registers can be accessed directly, e.g. via ``core_obj.eax`` and enumerated
     via :data:`Corefile.registers`.
 
-    Memory can be accessed directly via :meth:`.read` or :meth:`.write`, and also
-    via :meth:`.pack` or :meth:`.unpack` or even :meth:`.string`.
+    Memory can be accessed directly via :meth:`pwnlib.elf.elf.ELF.read` or :meth:`pwnlib.elf.elf.ELF.write`, and also
+    via :meth:`pwnlib.elf.elf.ELF.pack` or :meth:`pwnlib.elf.elf.ELF.unpack` or even :meth:`.string`.
 
     Arguments:
         core: Path to the core file.  Alternately, may be a :class:`.process` instance,
@@ -376,8 +376,8 @@ class Corefile(ELF):
         >>> core.exe.data[0:4]
         b'\x7fELF'
 
-        It also supports all of the features of :class:`ELF`, so you can :meth:`.read`
-        or :meth:`.write` or even the helpers like :meth:`.pack` or :meth:`.unpack`.
+        It also supports all of the features of :class:`ELF`, so you can :meth:`pwnlib.elf.elf.ELF.read`
+        or :meth:`pwnlib.elf.elf.ELF.write` or even the helpers like :meth:`pwnlib.elf.elf.ELF.pack` or :meth:`pwnlib.elf.elf.ELF.unpack`.
 
         Don't forget to call :meth:`.ELF.save` to save the changes to disk.
 
@@ -1510,7 +1510,18 @@ class CorefileFinder(object):
         # should be unique enough that we can just glob.
 
         boot_id = read('/proc/sys/kernel/random/boot_id').strip().decode()
-        path = self.exe.replace('/', '_')
+
+        # Use the absolute path of the executable
+        # Apport uses the executable's path to determine the core dump filename
+        #
+        # Reference source:
+        # https://github.com/canonical/apport/blob/4bbb179b8f92989bf7c1ee3692074f35d70ef3e8/data/apport#L110
+        # https://github.com/canonical/apport/blob/4bbb179b8f92989bf7c1ee3692074f35d70ef3e8/apport/fileutils.py#L599
+        #
+        # Apport calls `get_core_path` with `options.executable_path`, which corresponds to
+        # the executable's pathname, as specified by the `%E` placeholder
+        # in the core pattern (see `man core` and `apport --help`).
+        path = os.path.abspath(self.exe).replace('/', '_').replace('.', '_')
 
         # Format the name
         corefile_name = 'core.{path}.{uid}.{boot_id}.{pid}.*'.format(

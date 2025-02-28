@@ -1,7 +1,7 @@
 Installation
 ============
 
-Pwntools is best supported on 64-bit Ubuntu LTS releases (14.04, 16.04, 18.04, and 20.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
+Pwntools is best supported on 64-bit Ubuntu LTS releases (22.04 and 24.04).  Most functionality should work on any Posix-like distribution (Debian, Arch, FreeBSD, OSX, etc.).
 
 Prerequisites
 -------------
@@ -21,10 +21,12 @@ Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-co
 Released Version
 -----------------
 
-pwntools is available as a ``pip`` package for both Python2 and Python3.
+pwntools is available as a ``pip`` package for Python3. Version v5.0.0 supports Python3.10 or later. Use v4 if you use earlier versions of Python.
 
 Python3
 ^^^^^^^
+
+The Python version required for installing Pwntools is kept as low as possible on a best-effort basis.  However, new features target Python3.10 and later.
 
 .. code-block:: bash
 
@@ -36,6 +38,8 @@ Python3
 
 Python2 (Deprecated)
 ^^^^^^^^^^^^^^^^^^^^
+
+Python2 support has been removed in Pwntools v5.0.0.  The last version to support Python2 was v4.15.0.
 
 NOTE: Pwntools maintainers STRONGLY recommend using Python3 for all future Pwntools-based scripts and projects.
 

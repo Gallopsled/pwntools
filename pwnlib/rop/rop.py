@@ -367,7 +367,6 @@ import itertools
 import os
 import re
 import shutil
-import six
 import string
 import struct
 import sys
@@ -392,7 +391,6 @@ from pwnlib.util import lists
 from pwnlib.util import packing
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
-from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
@@ -413,7 +411,7 @@ class Padding(object):
         self.name = name
 
 def _slot_len(x):
-    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+    if isinstance(x, (int, Unresolved, Padding, Gadget)):
         return context.bytes
     else:
         return len(packing.flat(x))
@@ -456,7 +454,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
-            elif isinstance(data, six.integer_types):
+            elif isinstance(data, int):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -473,7 +471,6 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-@python_2_bytes_compatible
 class ROP(object):
     r"""Class which simplifies the generation of ROP-chains.
 
@@ -603,7 +600,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (bytes, six.text_type)):
+        elif isinstance(elfs, (bytes, str)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -788,7 +785,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, six.integer_types):
+        if isinstance(resolvable, int):
             return resolvable
 
     def unresolve(self, value):
@@ -841,9 +838,9 @@ class ROP(object):
         """
         if isinstance(object, enums):
             return str(object)
-        if isinstance(object, six.integer_types):
+        if isinstance(object, int):
             return self.unresolve(object)
-        if isinstance(object, (bytes, six.text_type)):
+        if isinstance(object, (bytes, str)):
             return repr(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
@@ -886,14 +883,14 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
@@ -1011,10 +1008,10 @@ class ROP(object):
         size  = (stack.next - base)
         slot_address = base
         for i, slot in enumerate(stack):
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 pass
 
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 pass
 
             elif isinstance(slot, AppendedArgument):
@@ -1136,7 +1133,7 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                if not isinstance(value, six.integer_types + (Unresolved,)):
+                if not isinstance(value, (int, Unresolved)):
                     frame[register] = AppendedArgument(value)
                 else:
                     frame[register] = value
@@ -1391,6 +1388,8 @@ class ROP(object):
                 if pop.match(insn):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
+                    if 'sp' in insn:
+                        sp_move += 9999999
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
@@ -1418,7 +1417,7 @@ class ROP(object):
             if not set(['rsp', 'esp']) & set(regs):
                 self.pivots[sp_move] = addr
 
-        leave = self.search(regs=frame_regs, order='regs')
+        leave = self.search(regs=frame_regs, order='leav')
         if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
@@ -1451,7 +1450,7 @@ class ROP(object):
                 pointer is adjusted.
             regs(list): Minimum list of registers which are popped off the
                 stack.
-            order(str): Either the string 'size' or 'regs'. Decides how to
+            order(str): Either the string 'size', 'leav' or 'regs'. Decides how to
                 order multiple gadgets the fulfill the requirements.
 
         The search will try to minimize the number of bytes popped more than
@@ -1459,7 +1458,9 @@ class ROP(object):
         the address.
 
         If ``order == 'size'``, then gadgets are compared lexicographically
-        by ``(total_moves, total_regs, addr)``, otherwise by ``(total_regs, total_moves, addr)``.
+        by ``(total_moves, total_regs, addr)``, if ``order == 'regs'``,
+        then by ``(total_regs, total_moves, addr)``. ``order == 'leav'``
+        is specifically for ``leave`` insn.
 
         Returns:
             A :class:`.Gadget` object
@@ -1471,8 +1472,9 @@ class ROP(object):
         # Search for an exact match, save the closest match
         key = {
             'size': lambda g: (g.move, len(g.regs), g.address),
-            'regs': lambda g: (len(g.regs), g.move, g.address)
-        }[order]
+            'regs': lambda g: (len(g.regs), g.move, g.address),
+            'leav': lambda g: ('leave' not in g.insns, len(g.regs), g.address)
+        }[order]                # False is prior than True
 
         try:
             result = min(matches, key=key)
