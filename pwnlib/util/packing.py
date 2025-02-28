@@ -839,7 +839,7 @@ def flat(*args, **kwargs):
         b'aaaabaaacaaaAAAAeaaafaaaHello'
 
         Dictionary usage permits directly using values derived from :func:`.cyclic`.
-        See :func:`.cyclic`, :function:`pwnlib.context.context.cyclic_alphabet`, and :data:`.context.cyclic_size`
+        See :func:`.cyclic`, :func:`pwnlib.context.context.cyclic_alphabet`, and :data:`.context.cyclic_size`
         for more options.
 
         The cyclic pattern can be provided as either the text or hexadecimal offset.
