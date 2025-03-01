@@ -177,6 +177,37 @@ def which_binutils(util, check_version=False):
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     arch = context.arch
+    machine = platform.machine()
+
+    if arch == "amd64":
+        pattern = "*86*64*-*-{}".format(util)
+
+        for dir in environ["PATH"].split(os.pathsep):
+            for res in sorted(glob(path.join(dir, pattern))):
+                if check_version:
+                    ver = check_binutils_version(res)
+                    return res, ver
+                return res
+
+        # if target is native, try native command (e.g. "as")
+        if machine in ("x86_64", "amd64"):
+            for dir in environ["PATH"].split(os.pathsep):
+                res = path.join(dir, util)
+                if os.path.exists(res) and os.access(res, os.X_OK):
+                    if check_version:
+                        ver = check_binutils_version(res)
+                        return res, ver
+                    return res
+
+        pattern = "i*86*-*-{}".format(util)
+        for dir in environ["PATH"].split(os.pathsep):
+            for res in sorted(glob(path.join(dir, pattern))):
+                if check_version:
+                    ver = check_binutils_version(res)
+                    return res, ver
+                return res
+
+        print_binutils_instructions(util, context)
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
@@ -195,7 +226,6 @@ def which_binutils(util, check_version=False):
 
     # If one of the candidate architectures matches the native
     # architecture, use that as a last resort.
-    machine = platform.machine()
     machine = 'i386' if machine == 'i686' else machine
     try:
         with context.local(arch = machine):
