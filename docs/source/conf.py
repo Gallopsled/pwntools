@@ -266,7 +266,7 @@ latex_documents = [
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
-                       'paramiko': ('https://docs.paramiko.org/en/2.1/', None)}
+                       'paramiko': ('https://docs.paramiko.org/en/stable/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
