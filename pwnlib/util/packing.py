@@ -1255,7 +1255,7 @@ def overlap_structure(*structs):
         >>> z = p32(0xbeef)
         >>> overlap_structure(x, y, z)
         Traceback (most recent call last):
-        ...
+            ...
         ValueError: Conflict values at index 0, 1
     """
     if len(structs) == 1:
@@ -1264,7 +1264,7 @@ def overlap_structure(*structs):
     # convert str to bytes first to calc accurate length
     itr = [_need_bytes(s) if isinstance(s, str) else s for s in structs]
     maxlen = max(len(e) for e in itr)
-    final = [0] * maxlen
+    final = bytearray(maxlen)
     errs = set()
 
     for s in itr:
