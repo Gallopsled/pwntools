@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import sys
-
 from pwnlib.commandline import asm
 from pwnlib.commandline import checksec
 from pwnlib.commandline import common
@@ -23,8 +21,7 @@ from pwnlib.commandline import template
 from pwnlib.commandline import unhex
 from pwnlib.commandline import update
 from pwnlib.commandline import version
-from pwnlib.commandline.common import parser
-from pwnlib.context import context
+from pwnlib.commandline.common import parser as parser
 
 commands = {
     'asm': asm.main,
@@ -50,12 +47,7 @@ commands = {
 }
 
 def main():
-    if len(sys.argv) < 2:
-        parser.print_usage()
-        sys.exit()
-    args = parser.parse_args()
-    with context.local(log_console = sys.stderr):
-        commands[args.command](args)
+    common.entrypoint(commands)
 
 if __name__ == '__main__':
     main()

@@ -320,14 +320,19 @@ def xor(*args, **kwargs):
        The string of the arguments xor'ed together.
 
     Example:
+
        >>> xor(b'lol', b'hello', 42)
        b'. ***'
+       >>> xor(cut = 'min', other = '')
+       Traceback (most recent call last):
+         ...
+       TypeError: xor() got an unexpected keyword argument 'other'
     """
 
     cut = kwargs.pop('cut', 'max')
 
     if kwargs != {}:
-        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.pop()[0])
+        raise TypeError("xor() got an unexpected keyword argument '%s'" % kwargs.popitem()[0])
 
     if len(args) == 0:
         raise ValueError("Must have something to xor")
@@ -1092,3 +1097,29 @@ def js_unescape(s, **kwargs):
             p += 1
 
     return b''.join(res)
+
+def tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))):
+    r"""tty_escape(s, lnext=b'\x16', dangerous=bytes(bytearray(range(0x20)))) -> bytes
+
+    Escape data for terminal output. This is useful when sending data to a
+    terminal that may interpret certain bytes as control characters.
+
+    Check ``stty --all`` for the current settings on your terminal.
+
+    Arguments:
+        s (bytes): The data to escape
+        lnext (bytes): The byte to prepend to escape the next character. Defaults to ^V.
+        dangerous (bytes): The bytes to escape
+
+    Returns:
+        The escaped data.
+
+    >>> tty_escape(b'abc\x04d\x18e\x16f')
+    b'abc\x16\x04d\x16\x18e\x16\x16f'
+    """
+    s = s.replace(lnext, lnext * 2)
+    for b in bytearray(dangerous):
+        b = bytes(bytearray([b]))
+        if b in lnext: continue
+        s = s.replace(b, lnext + b)
+    return s

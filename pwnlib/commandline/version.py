@@ -29,4 +29,4 @@ def main(a):
 	log.info("Pwntools v%s" % version)
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

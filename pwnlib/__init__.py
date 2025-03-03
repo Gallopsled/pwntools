@@ -36,6 +36,7 @@ __all__ = [
     'util',
     'update',
     'version',
+    'windbg',
 ]
 
 from . import args

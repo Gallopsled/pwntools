@@ -206,6 +206,9 @@ def which_binutils(util, check_version=False):
     if platform.system() == 'Darwin':
         utils = ['g'+util, util]
 
+    if platform.system() == 'Windows':
+        utils = [util + '.exe']
+
     for arch in arches:
         for gutil in utils:
             # e.g. objdump
@@ -220,7 +223,7 @@ def which_binutils(util, check_version=False):
                             '%s-%s' % (arch, gutil)]
 
             for pattern in patterns:
-                for dir in environ['PATH'].split(':'):
+                for dir in environ['PATH'].split(os.pathsep):
                     for res in sorted(glob(path.join(dir, pattern))):
                         if check_version:
                             ver = check_binutils_version(res)
@@ -457,15 +460,19 @@ def cpp(shellcode):
         >>> cpp("SYS_setresuid", os = "freebsd")
         '311\n'
     """
+    if platform.system() == 'Windows':
+        cpp = which_binutils('cpp')
+    else:
+        cpp = 'cpp'
+
     code = _include_header() + shellcode
     cmd  = [
-        'cpp',
+        cpp,
         '-C',
         '-nostdinc',
         '-undef',
         '-P',
         '-I' + _incdir,
-        '/dev/stdin'
     ]
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 
@@ -855,8 +862,8 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
            0:   b8 17 00 00 00          mov    eax, 0x17
         >>> print(disasm(unhex('48c7c017000000'), arch = 'amd64'))
            0:   48 c7 c0 17 00 00 00    mov    rax, 0x17
-        >>> print(disasm(unhex('04001fe552009000'), arch = 'arm'))
-           0:   e51f0004        ldr     r0, [pc, #-4]   ; 0x4
+        >>> print(disasm(unhex('04001fe552009000'), arch = 'arm'))  # doctest: +ELLIPSIS
+           0:   e51f0004        ldr     r0, [pc, #-4]   ...
            4:   00900052        addseq  r0, r0, r2, asr r0
         >>> print(disasm(unhex('4ff00500'), arch = 'thumb', bits=32))
            0:   f04f 0005       mov.w   r0, #5

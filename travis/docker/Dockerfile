@@ -18,17 +18,17 @@ ENV PATH="/home/pwntools/.local/bin:${PATH}"
 
 # Install Pwntools to the home directory, make it an editable install
 RUN git clone https://github.com/Gallopsled/pwntools \
- && python2.7 -m pip install --upgrade --editable pwntools \
- && python3 -m pip install --upgrade --editable pwntools \
+ && python2.7 -m pip install --no-cache-dir --upgrade --editable pwntools \
+ && python3 -m pip install --no-cache-dir --upgrade --editable pwntools \
  && PWNLIB_NOTERM=1 pwn version
 
 # Requirements for running the tests
-RUN python2.7 -m pip install --upgrade --requirement pwntools/docs/requirements.txt \
-    && python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
+RUN python2.7 -m pip install --no-cache-dir --upgrade --requirement pwntools/docs/requirements.txt \
+    && python3 -m pip install --no-cache-dir --upgrade --requirement pwntools/docs/requirements.txt
 
 # Python niceties for debugging
-RUN python2.7 -m pip install -U ipython ipdb \
-    && python3 -m pip install -U ipython ipdb
+RUN python2.7 -m pip install --no-cache-dir -U ipython ipdb \
+    && python3 -m pip install --no-cache-dir -U ipython ipdb
 
 # Dependencies from .travis.yml addons -> apt -> packages
 ARG DEBIAN_FRONTEND=noninteractive
@@ -86,8 +86,8 @@ ADD ipython_config.py  /home/pwntools/.ipython/profile_default
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
 
 # Some additional debugging tools that are useful
-RUN python2.7 -m pip install ipdb && \
-    python3 -m pip install ipdb
+RUN python2.7 -m pip install --no-cache-dir ipdb && \
+    python3 -m pip install --no-cache-dir ipdb
 
 # Install debugging utilities
 USER root

@@ -56,7 +56,7 @@ dependencies = [
     "colored_traceback<0.4; python_version < '3'",
     "colored_traceback; python_version >= '3'",
     "pathlib2; python_version < '3.4'",
-    "unix-ar; python_version >= '3'",
+    "unix-ar; python_version >= '3.6'",
     "zstandard",
 ]
 

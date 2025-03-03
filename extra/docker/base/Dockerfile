@@ -40,10 +40,10 @@ RUN apt-get update \
         patchelf \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
-    && PYTHONPATH=`echo /usr/share/python-wheels/pip-*.whl` python2.7 -m pip install --upgrade pip setuptools wheel \
-    && python2.7 -m pip install --upgrade pwntools \
-    && python3 -m pip install --upgrade pip \
-    && python3 -m pip install --upgrade pwntools \
+    && PYTHONPATH=`echo /usr/share/python-wheels/pip-*.whl` python2.7 -m pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && python2.7 -m pip install --no-cache-dir --upgrade pwntools \
+    && python3 -m pip install --no-cache-dir --upgrade pip \
+    && python3 -m pip install --no-cache-dir --upgrade pwntools \
     && PWNLIB_NOTERM=1 pwn update \
     && useradd -m pwntools \
     && passwd --delete --unlock pwntools \

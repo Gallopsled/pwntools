@@ -5,4 +5,4 @@ RUN apt-get -y dist-upgrade
 RUN apt-get -y install python3 python3-pip
 RUN apt-get -y install git wget unzip
 
-RUN pip3 install --upgrade git+https://github.com/Gallopsled/pwntools@dev
+RUN pip3 install --no-cache-dir --upgrade git+https://github.com/Gallopsled/pwntools@dev

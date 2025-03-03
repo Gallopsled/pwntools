@@ -139,7 +139,7 @@ def user_path():
 def ld_prefix(path=None, env=None):
     """Returns the linker prefix for the selected qemu-user binary
 
-    >>> pwnlib.qemu.ld_prefix(arch='arm')
+    >>> pwnlib.qemu.ld_prefix(arch='arm')  # doctest: +SKIP
     '/etc/qemu-binfmt/arm'
     """
     if context.os == 'baremetal':
