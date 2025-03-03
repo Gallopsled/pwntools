@@ -2074,7 +2074,7 @@ class ELF(ELFFile):
             "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("NX unknown"),
+                None:  yellow("NX enabled on new kernels"),
             }[self.nx],
             "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
