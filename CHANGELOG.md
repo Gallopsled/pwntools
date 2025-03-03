@@ -129,13 +129,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2435]: https://github.com/Gallopsled/pwntools/pull/2435
 [2437]: https://github.com/Gallopsled/pwntools/pull/2437
 
-## 4.13.2 (`stable`)
-
-- [#2493][2493] Fix NX message falsely reporting GNU_STACK missing
-
-[2493]: https://github.com/Gallopsled/pwntools/pull/2493
-
-## 4.13.1
+## 4.13.1 (`stable`)
 
 - [#2445][2445] Fix parsing the PLT on Windows
 - [#2466][2466] Fix PLT emulation with Unicorn 2.1.0
