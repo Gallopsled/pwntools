@@ -908,7 +908,7 @@ class ELF(ELFFile):
                 continue
 
             for symbol in _iter_symbols(section):
-                if not symbol.name:
+                if not symbol.name or symbol.entry.st_shndx == 'SHN_UNDEF':
                     continue
                 self.symbols[symbol.name] = symbol.entry.st_value
 
