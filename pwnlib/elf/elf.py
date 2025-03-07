@@ -1297,7 +1297,7 @@ class ELF(ELFFile):
                         for section in super().iter_sections():
                             if section.name.startswith(".rodata"):
                                 rodata_filesz += section['sh_size']
-                            elif section.name.startswith(".node"):
+                            elif section.name.startswith(".note"):
                                 note_filesz += section['sh_size']
                         addr = (text_filesz//PAGESIZE + 1 + (note_filez+rodata_filesz)//PAGESIZE + 1)*PAGESIZE
                     yield (addr + offset + load_address_fixup)
