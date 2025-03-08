@@ -178,40 +178,64 @@ def which_binutils(util, check_version=False):
     """
     arch = context.arch
     machine = platform.machine()
+    path_dirs = environ["PATH"].split(os.pathsep)
 
-    if arch == "amd64":
-        pattern = "*86*64*-*-{}".format(util)
+    utils = [util]
 
-        for dir in environ["PATH"].split(os.pathsep):
-            for res in sorted(glob(path.join(dir, pattern))):
-                if check_version:
-                    ver = check_binutils_version(res)
-                    return res, ver
-                return res
+    # hack for homebrew-installed binutils on mac
+    if platform.system() == 'Darwin':
+        utils = ['g' + util, util]
 
-        # if target is native, try native command (e.g. "as")
-        if machine in ("x86_64", "amd64"):
-            for dir in environ["PATH"].split(os.pathsep):
-                res = path.join(dir, util)
-                if os.path.exists(res) and os.access(res, os.X_OK):
+    if platform.system() == 'Windows':
+        utils = [util + '.exe']
+
+    def get_patterns(prefix, tool):
+        return [
+            "%s*linux*-%s" % (prefix, tool),
+            "%s*-elf-%s" % (prefix, tool),
+            "%s-none*-%s" % (prefix, tool),
+            "%s-%s" % (prefix, tool)
+        ]
+
+    def search_patterns(patterns):
+        for pattern in patterns:
+            for dir in path_dirs:
+                for res in sorted(glob(path.join(dir, pattern))):
                     if check_version:
                         ver = check_binutils_version(res)
                         return res, ver
                     return res
+        return None
 
-        pattern = "i*86*-*-{}".format(util)
-        for dir in environ["PATH"].split(os.pathsep):
-            for res in sorted(glob(path.join(dir, pattern))):
-                if check_version:
-                    ver = check_binutils_version(res)
-                    return res, ver
-                return res
+    for gutil in utils:
+        if arch == "amd64":
+            explicit_patterns = ["*86*64*-*-{}".format(gutil)]
+        else:
+            explicit_patterns = get_patterns(arch, gutil)
 
-        print_binutils_instructions(util, context)
+        found = search_patterns(explicit_patterns)
+        if found:
+            return found
+
+    # if host arch equals target, try native command
+    machine = 'i386' if machine == 'i686' else machine
+    try:
+        with context.local(arch=machine):
+            if context.arch == arch:
+                for gutil in utils:
+                    for dir in path_dirs:
+                        res = path.join(dir, gutil)
+                        if os.path.exists(res) and os.access(res, os.X_OK):
+                            if check_version:
+                                ver = check_binutils_version(res)
+                                return res, ver
+                            return res
+    except AttributeError:
+        log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
-    arches = [arch] + {
+    aliases = {
         'thumb':  ['arm',    'aarch64'],
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
@@ -222,47 +246,17 @@ def which_binutils(util, check_version=False):
         'riscv32': ['riscv32', 'riscv64', 'riscv'],
         'riscv64': ['riscv64', 'riscv32', 'riscv'],
         'loongarch64': ['loongarch64', 'loong64'],
-    }.get(arch, [])
+    }
 
-    # If one of the candidate architectures matches the native
-    # architecture, use that as a last resort.
-    machine = 'i386' if machine == 'i686' else machine
-    try:
-        with context.local(arch = machine):
-            if context.arch in arches:
-                arches.append(None)
-    except AttributeError:
-        log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
-
-    utils = [util]
-
-    # hack for homebrew-installed binutils on mac
-    if platform.system() == 'Darwin':
-        utils = ['g'+util, util]
-
-    if platform.system() == 'Windows':
-        utils = [util + '.exe']
-
-    for arch in arches:
+    for alias in aliases.get(arch, []):
         for gutil in utils:
-            # e.g. objdump
-            if arch is None:
-                patterns = [gutil]
-
-            # e.g. aarch64-linux-gnu-objdump, avr-objdump
+            if arch == "amd64" and alias == "i386":
+                alias_patterns = ["i*86*-*-{}".format(gutil)]
             else:
-                patterns = ['%s*linux*-%s' % (arch, gutil),
-                            '%s*-elf-%s' % (arch, gutil),
-                            '%s-none*-%s' % (arch, gutil),
-                            '%s-%s' % (arch, gutil)]
-
-            for pattern in patterns:
-                for dir in environ['PATH'].split(os.pathsep):
-                    for res in sorted(glob(path.join(dir, pattern))):
-                        if check_version:
-                            ver = check_binutils_version(res)
-                            return res, ver
-                        return res
+                alias_patterns = get_patterns(alias, gutil)
+            found = search_patterns(alias_patterns)
+            if found:
+                return found
 
     # No dice!
     print_binutils_instructions(util, context)
