@@ -22,9 +22,6 @@ from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
 
-
-
-@python_2_bytes_compatible
 class JumpTable(object):
     r"""
     Crafts a Jump Table, with all fields are set to 0.

@@ -30,12 +30,10 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.misc import python_2_bytes_compatible
 from pwnlib.util.packing import pack
+from pwnlib.structs import struct_attr, struct_attr_list
 
 log = getLogger(__name__)
 
-
-
-@python_2_bytes_compatible
 class WideData(object):
     r"""
     Crafts a WideData structure, with all fields are set to 0, except _wide_vtable set to specified "null".
@@ -78,75 +76,33 @@ class WideData(object):
          _wide_vtable: 0xdeadbeef}
     """
 
-    vars_=[]
-    length={}
-
-    __length=0
-    size='size'
-    name='name'
-
-    variables={
-        0:{name:'_IO_read_ptr',size:__length},
-        1:{name:'_IO_read_end',size:__length},
-        2:{name:'_IO_read_base',size:__length},
-        3:{name:'_IO_write_base',size:__length},
-        4:{name:'_IO_write_ptr',size:__length},
-        5:{name:'_IO_write_end',size:__length},
-        6:{name:'_IO_buf_base',size:__length},
-        7:{name:'_IO_buf_end',size:__length},
-        8:{name:'_IO_save_base',size:__length},
-        9:{name:'_IO_backup_base',size:__length},
-        10:{name:'_IO_save_end',size:__length},
-        11:{name:'_IO_state',size:8},
-        12:{name:'_IO_last_state',size:8},
-        13:{name:'_codecvt',size:0}, # 32b:0x48, 64b:0x70
-        14:{name:'_shortbuf',size:4},
-        15:{name:'_wide_vtable',size:__length}
-    }
-
-    del name, size, __length
-
-
-    def update_var(self, l):
-        r"""
-        Since different members of the WideData structure have different sizes, we need to keep track of the sizes. The following function is used by the WideData class to initialise the lengths of the various fields.
-
-        Arguments:
-            l(int)
-                l=8 for 'amd64' architecture and l=4 for 'i386' architecture
-
-        Return Value:
-            Returns a dictionary in which each field is mapped to its corresponding length according to the architecture set
-
-        Examples:
-
-            >>> wide = WideData()
-            >>> wide.update_var(8)
-            {'_IO_read_ptr': 8, '_IO_read_end': 8, '_IO_read_base': 8, '_IO_write_base': 8, '_IO_write_ptr': 8, '_IO_write_end': 8, '_IO_buf_base': 8, '_IO_buf_end': 8, '_IO_save_base': 8, '_IO_backup_base': 8, '_IO_save_end': 8, '_IO_state': 8, '_IO_last_state': 8, '_codecvt': 112, '_shortbuf': 4, '_wide_vtable': 8}
-        """
-        var={}
-        for i in self.variables:
-            var[self.variables[i]['name']]=self.variables[i]['size']
-        for i in var:
-            if var[i]<=0:
-                var[i]+=l
-        if l==4:
-            var['_codecvt'] = 0x48
-        else:
-            var['_codecvt'] = 0x70
-        return var
-
+    VARIABLES = (
+        struct_attr('_IO_read_ptr',     0, 8, 0, 4),
+        struct_attr('_IO_read_end',     8, 8, 4, 4),
+        struct_attr('_IO_read_base',    0x10, 8, 0x8, 4),
+        struct_attr('_IO_write_base',   0x18, 8, 0xc, 4),
+        struct_attr('_IO_write_ptr',    0x20, 8, 0x10, 4),
+        struct_attr('_IO_write_end',    0x28, 8, 0x14, 4),
+        struct_attr('_IO_buf_base',     0x30, 8, 0x18, 4),
+        struct_attr('_IO_buf_end',      0x38, 8, 0x1c, 4),
+        struct_attr('_IO_save_base',    0x40, 8, 0x20, 4),
+        struct_attr('_IO_backup_base',  0x48, 8, 0x24, 4),
+        struct_attr('_IO_save_end',     0x50, 8, 0x28, 4),
+        struct_attr('_IO_state',        0x58, 8, 0x2c, 8),
+        struct_attr('_IO_last_state',   0x60, 8, 0x34, 8),
+        struct_attr('_codecvt',         0x68, 0x70, 0x3c, 0x48),
+        struct_attr('_shortbuf',        0xd8, 4, 0x84, 4),
+        struct_attr('_wide_vtable',     0xe0, 8, 0x88, 4),
+    )
 
     def __init__(self, null=0):
-            self.vars_ = [self.variables[i]['name'] for i in sorted(self.variables.keys())]
-            self.setdefault(null)
-            self.length = self.update_var(context.bytes)
+        self.vars_ = struct_attr_list(self.VARIABLES, context.bits == 32, log)
+        self.setdefault(null)
 
-    def __setattr__(self,item,value):
-        if item in WideData.__dict__ or item in self.vars_:
-            object.__setattr__(self,item,value)
-        else:
-            log.error("Unknown variable %r" % item)
+    def __setattr__(self, item: str, value: any):
+        if not self.vars_.check_attr(item, value) and item not in WideData.__dict__:
+            log.error(f"Unknown variable {item}")
+        object.__setattr__(self, item, value)
 
     def __repr__(self):
         structure=[]

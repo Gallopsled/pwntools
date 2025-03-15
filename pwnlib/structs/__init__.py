@@ -274,3 +274,50 @@ def validate_wide_FSOP_payload(mode: WideFSOPType, payload: bytes, fileoff: int=
             errs.append(WideFSOPErrors.CDSTEP_FCT)
 
     return errs
+
+class struct_attr:
+    def __init__(self, name: str, off64: int, len64: int, off32: int, len32: int):
+        self.length = (len64, len32)
+        self.offset = (off64, off32)
+        self.maximum = (1 << len64, 1 << len32)
+        self.name = name
+
+    def __eq__(self, obj: str) -> bool:
+        return self.name == obj
+
+class struct_attr_list:
+    def __init__(self, attrs: tuple[struct_attr], i386: bool, logger):
+        self.attrs = attrs
+        self.is32bit = int(i386)
+        self.log = logger
+
+    def _find(self, attr_name: str) -> struct_attr:
+        if attr_name not in self.attrs:
+            return None
+        return self.attrs[self.attrs.index(attr_name)]
+
+    def get_attr(self, attr_name: str) -> tuple[int, int]:
+        attr = self._find(attr_name)
+        if attr is None:
+            return -1, -1
+        return attr.offset[self.is32bit], attr.length[self.is32bit]
+
+    def check_attr(self, attr_name: str, value: any) -> bool:
+        attr = self._find(attr_name)
+        if attr is None:
+            return False
+        size = attr.length[self.is32bit]
+        if isinstance(value, int):
+            maximum = attr.maximum[self.is32bit]
+            num = num if num >= 0 else num + maximum
+            if num < 0 or num >= (1 << maximum):
+                self.log.error(f"Out of bounds for {attr_name}: expect item size {size}, but get {value}")
+        elif isinstance(value, (str, bytes)):
+            value = _need_bytes(value)
+            if len(value) > maxsize:
+                self.log.error(f"Value too large for {attr_name}: expect item size {size}, but get {len(value)}")
+        elif hasattr(value, '__bytes__') is False:
+            self.log.error(f"Unable to cast {attr_name} to bytes")
+        # if value can cast to bytes, we don't check its size here
+        # as it may be mutable
+        return True
