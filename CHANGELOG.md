@@ -114,10 +114,12 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.14.1 (`stable`)
 
+- [#2451][2451] Show symbols defined to value 0 (start of file)
 - [#2533][2533] Fix installation on Python 3.5 and lower
 - [#2518][2518] fix: update apport coredump path handling for CorefileFinder
 - [#2559][2559] Fix parsing corefile with missing auxv
 
+[2451]: https://github.com/Gallopsled/pwntools/pull/2451
 [2533]: https://github.com/Gallopsled/pwntools/pull/2533
 [2518]: https://github.com/Gallopsled/pwntools/pull/2518
 [2559]: https://github.com/Gallopsled/pwntools/pull/2559
