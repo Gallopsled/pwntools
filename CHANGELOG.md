@@ -117,10 +117,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2533][2533] Fix installation on Python 3.5 and lower
 - [#2518][2518] fix: update apport coredump path handling for CorefileFinder
 - [#2559][2559] Fix parsing corefile with missing auxv
+- [#2565][2565] Exclude broken Unicorn
 
 [2533]: https://github.com/Gallopsled/pwntools/pull/2533
 [2518]: https://github.com/Gallopsled/pwntools/pull/2518
 [2559]: https://github.com/Gallopsled/pwntools/pull/2559
+[2565]: https://github.com/Gallopsled/pwntools/pull/2565
 
 ## 4.14.0
 
