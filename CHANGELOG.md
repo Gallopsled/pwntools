@@ -144,8 +144,10 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.14.2
 
 - [#2545][2545] SSH: fix download/upload with -1 exit status
+- [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
+[2567]: https://github.com/Gallopsled/pwntools/pull/2567
 
 ## 4.14.1 (`stable`)
 

@@ -841,6 +841,11 @@ class ELF(ELFFile):
             log.warn_once("Injected /proc/self/maps code did not execute correctly")
             return {}
 
+        # Sometimes the original binary already fail to run, for example, in case glibc mismatches.
+        if 'not found (required by' in data:
+            log.warn_once("Cannot execute `%s` to get /proc/self/maps", self.path)
+            return {}
+
         # Swap in the original ELF name
         data = data.replace(path, self.path)
 
