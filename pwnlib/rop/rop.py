@@ -838,7 +838,7 @@ class ROP(object):
         """
         if isinstance(object, enums):
             return str(object)
-        if isinstance(object, int):
+        if isinstance(object, int) and object:
             return self.unresolve(object)
         if isinstance(object, (bytes, str)):
             return repr(object)

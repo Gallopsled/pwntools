@@ -1,7 +1,3 @@
-
-# Some additional debugging tools that are useful
-RUN python3 -m pip install --no-cache-dir ipdb
-
 # Install debugging utilities
 USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch

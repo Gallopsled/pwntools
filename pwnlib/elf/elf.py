@@ -919,10 +919,9 @@ class ELF(ELFFile):
                 continue
 
             for symbol in _iter_symbols(section):
-                value = symbol.entry.st_value
-                if not value:
+                if not symbol.name or symbol.entry.st_shndx == 'SHN_UNDEF':
                     continue
-                self.symbols[symbol.name] = value
+                self.symbols[symbol.name] = symbol.entry.st_value
 
     def _populate_synthetic_symbols(self):
         """Adds symbols from the GOT and PLT to the symbols dictionary.
@@ -2085,7 +2084,7 @@ class ELF(ELFFile):
             "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("NX unknown - GNU_STACK missing"),
+                None:  yellow("NX enabled on new kernels"),
             }[self.nx],
             "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
