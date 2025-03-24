@@ -1,11 +1,11 @@
 from __future__ import division
 
+import json
 import base64
 import errno
 import os
 import re
 import signal
-import six
 import socket
 import stat
 import string
@@ -123,7 +123,7 @@ def read(path, count=-1, skip=0):
 
     Examples:
 
-        >>> read('/proc/self/exe')[:4]
+        >>> read('/proc/self/exe')[:4] # doctest: +LINUX +TODO
         b'\x7fELF'
     """
     path = os.path.expanduser(os.path.expandvars(path))
@@ -163,7 +163,7 @@ def which(name, all = False, path=None):
 
     Example:
 
-        >>> which('sh') # doctest: +ELLIPSIS
+        >>> which('sh') # doctest: +ELLIPSIS +POSIX +TODO
         '.../bin/sh'
     """
     # If name is a path, do not attempt to resolve it.
@@ -213,13 +213,13 @@ def normalize_argv_env(argv, env, log, level=2):
     # - Each string must not contain '\x00'
     #
     argv = argv or []
-    if isinstance(argv, (six.text_type, six.binary_type)):
+    if isinstance(argv, (str, bytes, bytearray)):
         argv = [argv]
 
     if not isinstance(argv, (list, tuple)):
         log.error('argv must be a list or tuple: %r' % argv)
 
-    if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
+    if not all(isinstance(arg, (str, bytes, bytearray)) for arg in argv):
         log.error("argv must be strings or bytes: %r" % argv)
 
     # Create a duplicate so we can modify it
@@ -246,13 +246,13 @@ def normalize_argv_env(argv, env, log, level=2):
         env_items = env
     if env:
         for k,v in env_items:
-            if not isinstance(k, (bytes, six.text_type)):
+            if not isinstance(k, (bytes, str)):
                 log.error('Environment keys must be strings: %r' % k)
             # Check if = is in the key, Required check since we sometimes call ctypes.execve directly
             # https://github.com/python/cpython/blob/025995feadaeebeef5d808f2564f0fd65b704ea5/Modules/posixmodule.c#L6476
             if b'=' in packing._encode(k):
                 log.error('Environment keys may not contain "=": %r' % (k))
-            if not isinstance(v, (bytes, six.text_type)):
+            if not isinstance(v, (bytes, str)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
             v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
@@ -326,6 +326,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
+        elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
+            terminal = 'kitten'
+            args = ['@', 'launch']
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
             qdbus = which('qdbus')
             window_id = os.environ['WINDOWID']
@@ -396,7 +399,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
 
     argv = [which(terminal)] + args
 
-    if isinstance(command, six.string_types):
+    if isinstance(command, str):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
@@ -450,12 +453,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal == 'kitty':
+    if terminal == 'tmux' or terminal in ('kitty', 'kitten'):
         stdout = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
-
-    kittyid = None
 
     if terminal == 'tmux':
         out, _ = p.communicate()
@@ -469,9 +470,8 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
-    elif terminal == 'kitty':
-        pid = p.pid
-        
+    elif terminal in ('kitty', 'kitten'):
+        pid = None
         out, _ = p.communicate()
         try:
             kittyid = int(out)
@@ -479,6 +479,15 @@ end tell
             kittyid = None
         if kittyid is None:
             log.error("Could not parse kitty window ID from output (%r)", out)
+        else:
+            lsout, _ = subprocess.Popen(["kitten", "@", "ls", "--match", "id:%d" % kittyid], stdin=stdin, stdout=stdout, stderr=stderr).communicate()
+            try:
+                lsj = json.loads(lsout)
+                pid = int(lsj[0]["tabs"][0]["windows"][0]["pid"])
+            except json.JSONDecodeError as e:
+                pid = None
+                log.error("Json decode failed while parsing 'kitten @ ls' output (%r) (error: %r)", lsout, e)
+            
     elif terminal == 'cmd.exe':
         # p.pid is cmd.exe's pid instead of the WSL process we want to start eventually.
         # I don't know how to trace the execution through Windows and back into the WSL2 VM.
@@ -486,7 +495,7 @@ end tell
         # Otherwise it's better to return nothing instead of a know wrong pid.
         from pwnlib.util.proc import pid_by_name
         pid = None
-        ran_program = command.split(' ')[0] if isinstance(command, six.string_types) else command[0]
+        ran_program = command.split(' ')[0] if isinstance(command, str) else command[0]
         t = Timeout()
         with t.countdown(timeout=5):
             while t.timeout:
@@ -503,8 +512,6 @@ end tell
             try:
                 if terminal == 'qdbus':
                     os.kill(pid, signal.SIGHUP)
-                elif terminal == 'kitty':
-                    subprocess.Popen(["kitten", "@", "close-window", "--match", "id:{}".format(kittyid)], stderr=stderr)
                 else:
                     os.kill(pid, signal.SIGTERM)
             except OSError:
@@ -691,16 +698,6 @@ def register_sizes(regs, in_sizes):
     return lists.concat(regs), sizes, bigger, smaller
 
 
-def python_2_bytes_compatible(klass):
-    """
-    A class decorator that defines __str__ methods under Python 2.
-    Under Python 3 it does nothing.
-    """
-    if six.PY2:
-        if '__str__' not in klass.__dict__:
-            klass.__str__ = klass.__bytes__
-    return klass
-
 def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
         shell=False, log=log):
@@ -766,7 +763,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     cwd        = cwd or '.'
 
     # Validate, since failures on the remote side will suck.
-    if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
+    if not isinstance(executable, (str, bytes, bytearray)):
         log.error("executable / argv[0] must be a string: %r" % executable)
     executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 

@@ -7,11 +7,9 @@ import binascii
 import random
 import re
 import os
-import six
 import string
 
-from six import BytesIO
-from six.moves import range
+from io import BytesIO
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
@@ -149,7 +147,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
                 out += byte
             else:
                 out += byte[::-1]
-    elif isinstance(s, six.integer_types):
+    elif isinstance(s, int):
         if s < 0:
             s = s & ((1<<context.bits)-1)
         if s == 0:
@@ -343,7 +341,7 @@ def xor(*args, **kwargs):
     if strs == []:
         return b''
 
-    if isinstance(cut, six.integer_types):
+    if isinstance(cut, int):
         cut = cut
     elif cut == 'left':
         cut = len(strs[0])
@@ -382,7 +380,7 @@ def xor_pair(data, avoid = b'\x00\n'):
         (b'\\x01\\x01\\x01\\x01', b'udru')
     """
 
-    if isinstance(data, six.integer_types):
+    if isinstance(data, int):
         data = packing.pack(data)
 
     if not isinstance(avoid, (bytes, bytearray)):
@@ -504,15 +502,15 @@ def rol(n, k, word_size = None):
 
     word_size = word_size or context.word_size
 
-    if not isinstance(word_size, six.integer_types) or word_size <= 0:
+    if not isinstance(word_size, int) or word_size <= 0:
         raise ValueError("rol(): 'word_size' must be a strictly positive integer")
 
-    if not isinstance(k, six.integer_types):
+    if not isinstance(k, int):
         raise ValueError("rol(): 'k' must be an integer")
 
-    if isinstance(n, (bytes, six.text_type, list, tuple)):
+    if isinstance(n, (bytes, str, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
-    elif isinstance(n, six.integer_types):
+    elif isinstance(n, int):
         k = k % word_size
         n = (n << k) | (n >> (word_size - k))
         n &= (1 << word_size) - 1
@@ -556,7 +554,7 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    if isinstance(c, six.text_type):
+    if isinstance(c, str):
         c = ord(c)
     t = bytearray(string.ascii_letters + string.digits + string.punctuation + ' ', 'ascii')
     return c in t

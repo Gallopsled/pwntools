@@ -3,7 +3,6 @@
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
-  import six
   log = getLogger('pwnlib.shellcraft.i386.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -143,7 +142,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, six.integer_types):
+% elif isinstance(src, int):
 ## Special case for zeroes
     % if src == 0:
         xor ${dest}, ${dest}

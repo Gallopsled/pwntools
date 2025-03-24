@@ -3,7 +3,6 @@
   from pwnlib.shellcraft import i386
   from pwnlib import constants
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
-  from six import text_type
   import re
 %>
 <%page args="value"/>
@@ -49,7 +48,7 @@ Example:
 value_orig = value
 is_reg = get_register(value)
 
-if not is_reg and isinstance(value, (str, text_type)):
+if not is_reg and isinstance(value, (str, str)):
     try:
         value = constants.eval(value)
     except (ValueError, AttributeError):

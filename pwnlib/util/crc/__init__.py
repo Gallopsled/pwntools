@@ -20,7 +20,6 @@ This doctest is to ensure that the known data are accurate:
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import sys
 import types
 
@@ -73,7 +72,7 @@ class BitPolynom(object):
 
 
     def __init__(self, n):
-        if isinstance(n, (bytes, six.text_type)):
+        if isinstance(n, (bytes, bytearray, str)):
             from pwnlib.util.packing import _need_text
             n = _need_text(n)
             self.n = 0
@@ -81,13 +80,13 @@ class BitPolynom(object):
             try:
                 for p in n.split('+'):
                     k = safeeval.values(p.strip(), {'x': x, 'X': x})
-                    assert isinstance(k, (BitPolynom,)+six.integer_types)
+                    assert isinstance(k, (BitPolynom, int))
                     k = int(k)
                     assert k >= 0
                     self.n ^= k
             except (ValueError, NameError, AssertionError):
                 raise ValueError("Not a valid polynomial: %s" % n)
-        elif isinstance(n, six.integer_types):
+        elif isinstance(n, int):
             if n >= 0:
                 self.n = n
             else:
@@ -297,7 +296,7 @@ class Module(types.ModuleType):
             # refin is not meaningful in this case
             inlen = len(data)
             p = BitPolynom(int(''.join('1' if v else '0' for v in data), 2))
-        elif isinstance(data, six.binary_type):
+        elif isinstance(data, bytes):
             inlen = len(data)*8
             if refin:
                 data = fiddling.bitswap(data)

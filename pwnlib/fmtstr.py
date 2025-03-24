@@ -33,6 +33,9 @@ Let's use this program as an example:
 
 We can automate the exploitation of the process like so:
 
+.. doctest::
+    :options: +POSIX +TODO
+
     >>> program = pwnlib.data.elf.fmtstr.get('i386')
     >>> def exec_fmt(payload):
     ...     p = process(program)
@@ -95,13 +98,13 @@ from __future__ import division
 import logging
 import re
 from operator import itemgetter
-from six.moves import range
 from sortedcontainers import SortedList
 
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.cyclic import *
 from pwnlib.util.fiddling import randoms
+from pwnlib.util.misc import align
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
@@ -929,10 +932,11 @@ class FmtStr(object):
 
     """
 
-    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset()):
+    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset(), no_dollars=False):
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen
+        self.no_dollars = no_dollars
         self.numbwritten = numbwritten
         self.badbytes = badbytes
 
@@ -944,23 +948,29 @@ class FmtStr(object):
         self.leaker = MemLeak(self._leaker)
 
     def leak_stack(self, offset, prefix=b""):
-        payload = b"START%%%d$pEND" % offset
+        if self.no_dollars:
+            payload = b'%c' * (offset - 1) + b'START%pEND'
+        else:
+            payload = b"START%%%d$pEND" % offset
+
         leak = self.execute_fmt(prefix + payload)
         try:
             leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
         except ValueError:
             leak = 0
+        except IndexError:
+            log.error("Cannot leak anything: exec_fmt not returning formatted data")
         return leak
 
     def find_offset(self):
-        marker = cyclic(20)
+        marker = cyclic(context.bytes + 3)
         for off in range(1,1000):
             leak = self.leak_stack(off, marker)
             leak = pack(leak)
 
             pad = cyclic_find(leak[:4])
-            if pad >= 0 and pad < 20:
+            if 0 <= pad < context.bytes:
                 return off, pad
         else:
             log.error("Could not find offset to format string on stack")
@@ -976,9 +986,25 @@ class FmtStr(object):
         if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == b"ELF":
             return b"\x7f"
 
+        max_len = self.padlen + 8 + context.bytes
+        for _ in range(33):
+            offset = self.offset + max_len // context.bytes
+            if self.no_dollars:
+                payload = b'%c' * (offset - 1) + b'START%sEND'
+            else:
+                payload = b"START%%%d$sEND" % offset
+            if len(payload) > max_len:
+                max_len += align(len(payload) - max_len, context.bytes)
+            else:
+                break
+        else:
+            raise RuntimeError("this is a bug ... format string building did not converge")
+
         fmtstr = fit({
-          self.padlen: b"START%%%d$sEND" % (self.offset + 16//context.bytes),
-          16 + self.padlen: addr
+          self.padlen: {
+              0: payload,
+              max_len: addr
+          }
         })
 
         leak = self.execute_fmt(fmtstr)
@@ -998,7 +1024,7 @@ class FmtStr(object):
 
         """
         fmtstr = randoms(self.padlen).encode()
-        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, write_size='byte')
+        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, no_dollars=self.no_dollars, write_size='byte')
         self.execute_fmt(fmtstr)
         self.writes = {}
 

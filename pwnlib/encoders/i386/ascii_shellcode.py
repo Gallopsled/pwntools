@@ -6,8 +6,6 @@ from __future__ import absolute_import
 
 from itertools import product
 
-import six
-
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
@@ -43,10 +41,7 @@ class AsciiShellcodeEncoder(Encoder):
                 there are, the bigger the packed shellcode will be.
                 Defaults to 4.
         """
-        if six.PY2:
-            super(AsciiShellcodeEncoder, self).__init__()
-        elif six.PY3:
-            super().__init__()
+        super().__init__()
         self.slop = slop
         self.max_subs = max_subs
 

@@ -54,7 +54,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import stat
 import tempfile
 import time
@@ -85,7 +84,7 @@ def adb(argv, *a, **kw):
         >>> adb.adb(['shell', 'uname']) # it is better to use adb.process
         b'Linux\n'
     """
-    if isinstance(argv, (bytes, six.text_type)):
+    if isinstance(argv, (bytes, str)):
         argv = [argv]
 
     log.debug("$ " + ' '.join(context.adb + argv))
@@ -838,7 +837,7 @@ def process(argv, *a, **kw):
         >>> print(adb.process(['cat','/proc/version']).recvall().decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
-    if isinstance(argv, (bytes, six.text_type)):
+    if isinstance(argv, (bytes, str)):
         argv = [argv]
 
     message = "Starting %s process %r" % ('Android', argv[0])
@@ -1263,7 +1262,7 @@ class Property(object):
             >>> adb.properties.ro.build.version.sdk == "24"
             True
         """
-        if isinstance(other, six.string_types):
+        if isinstance(other, str):
             return str(self) == other
         return super(Property, self).__eq__(other)
 

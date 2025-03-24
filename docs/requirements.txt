@@ -2,15 +2,13 @@ capstone
 coverage[toml]
 python-dateutil
 doc2dash
-docutils<0.18; python_version<'3'
-docutils>=0.18; python_version>='3'
+docutils>=0.18
 intervaltree
 isort
 mako>=1.0.0
 paramiko>=1.15.2
 pip>=6.0.8
-pyelftools>=0.29, <0.30; python_version<'3'
-pyelftools>=0.29; python_version>='3'
+pyelftools>=0.29
 pygments>=2.0
 pypandoc
 pyserial>=2.7
@@ -18,7 +16,6 @@ pysocks
 psutil
 requests>=2.5.1
 ropgadget>=5.3
-sphinx==1.8.6; python_version<'3'
-sphinx>=7.0.0; python_version>='3'
+sphinx>=8.1.3, <9
 sphinx_rtd_theme
 sphinxcontrib-autoprogram<=0.1.5

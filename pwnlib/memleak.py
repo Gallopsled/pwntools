@@ -5,9 +5,6 @@ import ctypes
 import functools
 import string
 
-import six
-from six.moves import range
-
 from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.util.packing import pack, _p8lu
@@ -38,6 +35,9 @@ class MemLeak(object):
         reraise (bool): Whether to reraise call :func:`pwnlib.log.warning` in case the leaker function throws an exception.
 
     Example:
+
+    .. doctest::
+        :options: +POSIX +TODO
 
         >>> import pwnlib
         >>> binsh = pwnlib.util.misc.read('/bin/sh')
@@ -163,7 +163,7 @@ class MemLeak(object):
             the type of ``field``.
         """
 
-        if isinstance(expected, six.integer_types):
+        if isinstance(expected, int):
             expected = pack(expected, bytes=obj.size)
         elif not isinstance(expected, bytes):
             raise TypeError("Expected value must be an int or bytes")

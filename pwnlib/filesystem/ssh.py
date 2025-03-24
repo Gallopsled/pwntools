@@ -5,7 +5,6 @@ Handles file abstraction for remote SSH files
 Emulates pathlib as much as possible, but does so through duck typing.
 """
 import os
-import six
 import sys
 import tempfile
 import time
@@ -14,10 +13,7 @@ from pwnlib.context import context
 from pwnlib.util.misc import read, write
 from pwnlib.util.packing import _encode, _decode
 
-if six.PY3:
-    from pathlib import *
-else:
-    from pathlib2 import *
+from pathlib import *
 
 class SSHPath(PosixPath):
     r"""Represents a file that exists on a remote filesystem.
@@ -81,13 +77,8 @@ class SSHPath(PosixPath):
         if isinstance(other, str):
             return other
 
-        # We don't want unicode
-        if isinstance(other, six.text_type):
-            return str(other)
-
-        # We also don't want binary
-        if isinstance(other, six.binary_type):
-            return str(_decode(other))
+        # We don't want binary
+        return _decode(other)
 
     def _new(self, path, *a, **kw):
         kw['ssh'] = self.ssh
@@ -399,14 +390,9 @@ class SSHPath(PosixPath):
         path = self.absolute().path
         path = os.path.normpath(path)
 
-        if six.PY2:
-            error_type = IOError
-        else:
-            error_type = FileNotFoundError
-
         try:
             return self._new(self.ssh.sftp.normalize(path))
-        except error_type as e:
+        except FileNotFoundError as e:
             raise ValueError("Could not normalize path: %r" % path)
 
     def stat(self):
