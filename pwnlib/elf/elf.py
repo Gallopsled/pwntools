@@ -53,7 +53,7 @@ from elftools.elf.constants import P_FLAGS
 from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.dynamic import DynamicSection
-from elftools.elf.elffile import ELFFile, PAGESIZE
+from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection, RelrRelocationSection
@@ -1266,6 +1266,14 @@ class ELF(ELFFile):
                 ko_check_segments = [".text"]
             else:
                 ko_check_segments = [".text",".note",".rodata",".data"]
+            pagesize = 4096
+            for section in super().iter_sections():
+                alignment = section['sh_addralign']
+                if alignment > pagesize:
+                    pagesize = alignment
+            if pagesize > 4096 and pagesize % 4096 > 0:
+                pagesize = (pagesize // 4096 + 1) * 4096
+                # I don't know how to test the pagesize; it might have issues
             for section in super().iter_sections():
                 if section.name not in ko_check_segments and \
                        not any(section.name.startswith(ko_check_segment) for ko_check_segment in ko_check_segments):
@@ -1285,23 +1293,25 @@ class ELF(ELFFile):
                         addr = 0
                     elif section.name.startswith(".note") :
                         text_filesz=self.get_section_by_name(".text")['sh_size']
-                        addr = (text_filesz//PAGESIZE + 1)*PAGESIZE + section['sh_offset'] - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
                     elif section.name.startswith(".rodata"):
                         text_filesz=self.get_section_by_name(".text")['sh_size']
                         text_offset=self.get_section_by_name(".text")['sh_offset']
-                        addr = (text_filesz//PAGESIZE + 1)*PAGESIZE + text_offset - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + text_offset - self.header['e_ehsize']
                     elif section.name == ".data" :
                         text_filesz=self.get_section_by_name(".text")['sh_size']
                         rodata_filesz=0
-                        note_filez=0
+                        note_filesz=0
                         for section in super().iter_sections():
                             if section.name.startswith(".rodata"):
                                 rodata_filesz += section['sh_size']
                             elif section.name.startswith(".note"):
                                 note_filesz += section['sh_size']
-                        addr = (text_filesz//PAGESIZE + 1 + (note_filez+rodata_filesz)//PAGESIZE + 1)*PAGESIZE
+                        addr = (text_filesz // pagesize + 1 + (note_filesz + rodata_filesz) // pagesize + 1) * pagesize
                     yield (addr + offset + load_address_fixup)
                     offset += 1
+
     def offset_to_vaddr(self, offset):
         """offset_to_vaddr(offset) -> int
 
