@@ -76,7 +76,11 @@ def __ensure_memory_to_run_unicorn():
 
 
 def prepare_unicorn_and_context(elf, got, address, data):
-    import unicorn as U
+    try:
+        import unicorn as U
+    except ImportError:
+        log.warn("Can't import Unicorn engine on this platform. Could not emulate PLT instructions for %r" % elf)
+        return {}
 
     __ensure_memory_to_run_unicorn()
 
@@ -151,7 +155,12 @@ def prepare_unicorn_and_context(elf, got, address, data):
 
 
 def emulate_plt_instructions_inner(uc, elf, got, pc, data):
-    import unicorn as U
+    try:
+        import unicorn as U
+    except ImportError:
+        log.warn("Can't import Unicorn engine on this platform. Could not emulate PLT instructions for %r" % elf)
+        return None
+
 
     # Hook invalid addresses and any accesses out of the specified address range
     stopped_addr = []
