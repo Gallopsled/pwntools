@@ -458,17 +458,20 @@ class ssh_connecter(sock):
                     self.exception(str(e))
                     raise e
                 
-                self.debug('Failed to open channel, trying to connect to remote port manually using netcat.')
-                if parent.which('nc'):
-                    ncat = 'nc'
-                elif parent.which('ncat'):
-                    ncat = 'ncat'
-                elif parent.which('netcat'):
-                    ncat = 'netcat'
+                self.debug('Failed to open channel, trying to connect to remote port manually using netcat or bash.')
+                ncats = ['nc', 'ncat', 'netcat']
+                cmd = []
+                for ncat in ncats:
+                    if parent.which(ncat):
+                        cmd = [ncat, host, str(port)]
+                        break
                 else:
-                    self.exception('Could not find ncat, nc or netcat on remote. Cannot connect to remote port.')
-                    raise
-                self.tunnel = parent.process([ncat, host, str(port)])
+                    if parent.which('bash'):
+                        cmd = ['bash', '-c', 'exec 3<>/dev/tcp/{}/{}; cat <&3 & cat >&3; kill $!'.format(host, port)]
+                    else:
+                        self.exception('Could not find nc, ncat, netcat, or bash on remote. Cannot connect to remote port.')
+                        raise
+                self.tunnel = parent.process(cmd)
                 self.sock = self.tunnel.sock
             except Exception as e:
                 self.exception(str(e))
