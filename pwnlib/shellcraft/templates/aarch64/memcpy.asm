@@ -16,4 +16,4 @@ ${memcpy_loop}:
     ldrb w3, [x1], #1
     strb w3, [x0], #1
     subs x2, x2, #1
-    bge ${memcpy_loop}
+    bgt ${memcpy_loop}

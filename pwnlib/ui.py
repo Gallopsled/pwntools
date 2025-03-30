@@ -3,7 +3,6 @@ from __future__ import division
 
 import os
 import signal
-import six
 import string
 import struct
 import subprocess
@@ -180,7 +179,7 @@ def options(prompt, opts, default = None):
              Choice 2
     """
 
-    if default is not None and not isinstance(default, six.integer_types):
+    if default is not None and not isinstance(default, int):
         raise ValueError('options(): default must be a number or None')
 
     if term.term_mode:
@@ -294,7 +293,7 @@ def pause(n=None):
         else:
             log.info('Paused (press enter to continue)')
             raw_input('')
-    elif isinstance(n, six.integer_types):
+    elif isinstance(n, int):
         with log.waitfor("Waiting") as l:
             for i in range(n, 0, -1):
                 l.status('%d... ' % i)

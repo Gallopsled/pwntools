@@ -38,8 +38,7 @@ RUN apt-get update \
         patchelf \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
-    && python3 -m pip install --no-cache-dir --upgrade pip \
-    && python3 -m pip install --no-cache-dir --upgrade pwntools \
+    && python3 -m pip install --no-cache-dir --break-system-packages --upgrade pwntools \
     && PWNLIB_NOTERM=1 pwn update \
     && useradd -m pwntools \
     && passwd --delete --unlock pwntools \

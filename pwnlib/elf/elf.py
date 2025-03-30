@@ -41,11 +41,10 @@ import gzip
 import mmap
 import os
 import re
-import six
 import subprocess
 import tempfile
 
-from six import BytesIO
+from io import BytesIO
 
 from collections import namedtuple, defaultdict
 
@@ -266,7 +265,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
+        if isinstance(self.arch, (bytes, str)):
             self.arch = self.arch.lower()
 
         self._sections = None
@@ -920,10 +919,9 @@ class ELF(ELFFile):
                 continue
 
             for symbol in _iter_symbols(section):
-                value = symbol.entry.st_value
-                if not value:
+                if not symbol.name or symbol.entry.st_shndx == 'SHN_UNDEF':
                     continue
-                self.symbols[symbol.name] = value
+                self.symbols[symbol.name] = symbol.entry.st_value
 
     def _populate_synthetic_symbols(self):
         """Adds symbols from the GOT and PLT to the symbols dictionary.
@@ -1260,6 +1258,58 @@ class ELF(ELFFile):
                     break
                 yield (addr + offset + load_address_fixup)
                 offset += 1
+        if not segments:
+            if writable:
+                ko_check_segments = [".data"]
+            elif executable:
+                ko_check_segments = [".text"]
+            else:
+                ko_check_segments = [".text",".note",".rodata",".data"]
+            pagesize = 4096
+            for section in super().iter_sections():
+                alignment = section['sh_addralign']
+                if alignment > pagesize:
+                    pagesize = alignment
+            if pagesize > 4096 and pagesize % 4096 > 0:
+                pagesize = (pagesize // 4096 + 1) * 4096
+                # I don't know how to test the pagesize; it might have issues
+            for section in super().iter_sections():
+                if section.name not in ko_check_segments and \
+                       not any(section.name.startswith(ko_check_segment) for ko_check_segment in ko_check_segments):
+                    continue
+                filesz = section['sh_size']
+                offset = section['sh_offset']
+                data = self.mmap[offset:offset + filesz]
+                data += b'\x00'
+                offset = 0
+                while True:
+                    offset = data.find(needle, offset)
+                    if offset == -1:
+                        break
+                    # ko_file: header->.note->.text->.rodata->.data
+                    # after insmod: text page(executable page), note and rodate page(read only page), data page(writable page)
+                    if section.name == ".text":
+                        addr = 0
+                    elif section.name.startswith(".note") :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                    elif section.name.startswith(".rodata"):
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        text_offset=self.get_section_by_name(".text")['sh_offset']
+                        addr = (text_filesz//pagesize + 1)*pagesize + text_offset - self.header['e_ehsize']
+                    elif section.name == ".data" :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        rodata_filesz=0
+                        note_filesz=0
+                        for section in super().iter_sections():
+                            if section.name.startswith(".rodata"):
+                                rodata_filesz += section['sh_size']
+                            elif section.name.startswith(".note"):
+                                note_filesz += section['sh_size']
+                        addr = (text_filesz // pagesize + 1 + (note_filesz + rodata_filesz) // pagesize + 1) * pagesize
+                    yield (addr + offset + load_address_fixup)
+                    offset += 1
 
     def offset_to_vaddr(self, offset):
         """offset_to_vaddr(offset) -> int
@@ -2086,7 +2136,7 @@ class ELF(ELFFile):
             "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("NX unknown - GNU_STACK missing"),
+                None:  yellow("NX enabled on new kernels"),
             }[self.nx],
             "PIE:".ljust(12) + {
                 True: green("PIE enabled"),

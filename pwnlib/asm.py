@@ -274,8 +274,8 @@ def _assembler():
         'ia64':    [gas, '-m%ce' % context.endianness[0]],
 
         # riscv64-unknown-elf-as supports riscv32 as well as riscv64
-        'riscv32': [gas, '-march=rv32gc', '-mabi=ilp32'],
-        'riscv64': [gas, '-march=rv64gc', '-mabi=lp64'],
+        'riscv32': [gas, '-march=rv32gcv_zba_zbb_zbs', '-mabi=ilp32'],
+        'riscv64': [gas, '-march=rv64gcv_zba_zbb_zbs', '-mabi=lp64'],
 
         # loongarch64 supports none of -64, -EB, -EL or -march
         'loongarch64'  : [gas],

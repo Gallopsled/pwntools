@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import string
 import sys
 import tarfile
@@ -68,7 +67,7 @@ class ssh_channel(sock):
         self.env  = env
         self.process = process
         self.cwd  = cwd or '.'
-        if isinstance(cwd, six.text_type):
+        if isinstance(cwd, str):
             cwd = packing._need_bytes(cwd, 2, 0x80)
 
         env = env or {}
@@ -76,7 +75,7 @@ class ssh_channel(sock):
 
         if isinstance(process, (list, tuple)):
             process = b' '.join(sh_string(packing._need_bytes(s, 2, 0x80)) for s in process)
-        if isinstance(process, six.text_type):
+        if isinstance(process, str):
             process = packing._need_bytes(process, 2, 0x80)
 
         if process and cwd:
@@ -596,7 +595,7 @@ class ssh(Timeout, Logger):
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
                  cache=True, ssh_agent=False, ignore_config=False, raw=False, 
-                 auth_none=False, *a, **kw):
+                 auth_none=False, disabled_algorithms=None, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -615,6 +614,9 @@ class ssh(Timeout, Logger):
             ignore_config(bool): If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
             raw(bool): If :const:`True`, assume a non-standard shell and don't probe the environment
             auth_none(bool): If :const:`True`, try to authenticate with no authentication methods
+            disabled_algorithms(dict):
+                Mapping of algorithm type and list of algorithm identifiers to disable.
+                See :class:`paramiko.transport.Transport` for more information.
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -704,7 +706,7 @@ class ssh(Timeout, Logger):
                 proxy_sock = None
 
             try:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config, disabled_algorithms=disabled_algorithms)
             except paramiko.BadHostKeyException as e:
                 self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
@@ -1836,12 +1838,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         status = 0
 
-        if symlink and not isinstance(symlink, (six.binary_type, six.text_type)):
+        if symlink and not isinstance(symlink, (bytes, str)):
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
             
-        if isinstance(wd, six.text_type):
+        if isinstance(wd, str):
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:

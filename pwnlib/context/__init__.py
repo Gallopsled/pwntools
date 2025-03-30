@@ -15,7 +15,6 @@ import os
 import os.path
 import platform
 import shutil
-import six
 import socket
 import string
 import sys
@@ -1043,7 +1042,7 @@ class ContextType(object):
             >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             # check if mode was specified as "[value],[mode]"
             from pwnlib.util.packing import _need_text
             value = _need_text(value)
@@ -1261,7 +1260,7 @@ class ContextType(object):
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             return [value]
         return value
 
@@ -1342,7 +1341,7 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
-        if isinstance(device, (bytes, six.text_type)):
+        if isinstance(device, (bytes, str)):
             device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
@@ -1758,7 +1757,7 @@ def update_context_defaults(section):
 
         default = ContextType.defaults[key]
 
-        if isinstance(default, six.string_types + six.integer_types + (tuple, list, dict)):
+        if isinstance(default, (str, int, tuple, list, dict)):
             value = safeeval.expr(value)
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))

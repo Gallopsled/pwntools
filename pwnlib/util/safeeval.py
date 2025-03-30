@@ -21,8 +21,6 @@ _expr_codes = _const_codes + [
 
 _values_codes = _expr_codes + ['LOAD_NAME']
 
-import six
-
 def _get_opcodes(codeobj):
     """_get_opcodes(codeobj) -> [opcodes]
 
@@ -33,19 +31,7 @@ def _get_opcodes(codeobj):
     [...100, 100, 103, 83]
     """
     import dis
-    if hasattr(dis, 'get_instructions'):
-        return [ins.opcode for ins in dis.get_instructions(codeobj)]
-    i = 0
-    opcodes = []
-    s = codeobj.co_code
-    while i < len(s):
-        code = six.indexbytes(s, i)
-        opcodes.append(code)
-        if code >= dis.HAVE_ARGUMENT:
-            i += 3
-        else:
-            i += 1
-    return opcodes
+    return [ins.opcode for ins in dis.get_instructions(codeobj)]
 
 def test_expr(expr, allowed_codes):
     """test_expr(expr, allowed_codes) -> codeobj

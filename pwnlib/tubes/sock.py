@@ -3,7 +3,6 @@ from __future__ import division
 
 import errno
 import select
-import six
 import socket
 
 from pwnlib.log import getLogger
@@ -212,7 +211,7 @@ class sock(tube):
 
     @classmethod
     def _get_family(cls, fam):
-        if isinstance(fam, six.integer_types):
+        if isinstance(fam, int):
             pass
         elif fam == 'any':
             fam = socket.AF_UNSPEC
@@ -229,7 +228,7 @@ class sock(tube):
 
     @classmethod
     def _get_type(cls, typ):
-        if isinstance(typ, six.integer_types):
+        if isinstance(typ, int):
             pass
         elif typ == "tcp":
             typ = socket.SOCK_STREAM

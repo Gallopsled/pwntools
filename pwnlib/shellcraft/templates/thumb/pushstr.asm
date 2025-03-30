@@ -1,7 +1,6 @@
 <%
   from pwnlib.shellcraft import thumb, pretty
   from pwnlib.util import lists, packing
-  import six
 %>
 <%page args="string, append_null = True, register = 'r7'"/>
 <%docstring>
@@ -36,7 +35,7 @@ on your version of binutils.
 
 </%docstring>
 <%
-    if isinstance(string, six.text_type):
+    if isinstance(string, str):
         string = string.encode('utf-8')
     if append_null:
         string += b'\x00'

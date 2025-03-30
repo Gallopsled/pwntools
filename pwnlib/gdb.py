@@ -146,8 +146,6 @@ import platform
 import psutil
 import random
 import re
-import six
-import six.moves
 import socket
 import tempfile
 from threading import Event
@@ -233,7 +231,7 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
     >>> io.recvline()
     b'Hello world!\n'
     """
-    if isinstance(data, six.text_type):
+    if isinstance(data, str):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
     tmp_elf = make_elf(data, extract=False, vma=vma)
     os.chmod(tmp_elf, 0o777)
@@ -627,10 +625,10 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         >>> ssh_io.close()
         >>> shell.close()
     """
-    if isinstance(args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)):
+    if isinstance(args, (int, tubes.process.process, tubes.ssh.ssh_channel)):
         log.error("Use gdb.attach() to debug a running process")
 
-    if isinstance(args, (bytes, six.text_type)):
+    if isinstance(args, (bytes, str)):
         args = [args]
 
     orig_args = args
@@ -963,7 +961,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             Can be any socket type, including :class:`.listen` or :class:`.remote`.
         :class:`.ssh_channel`
             Remote process spawned via :meth:`.ssh.process`.
-            This will use the GDB installed on the remote machine.
+            **This will use the GDB installed on the remote machine.**
             If a password is required to connect, the ``sshpass`` program must be installed.
 
     Examples:
@@ -1078,6 +1076,26 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         >>> io.recvline()
         b'This will be echoed back\n'
         >>> io.close()
+
+        To attach to remote gdbserver, assume you have a socat server delivering gdbserver
+        with ``socat TCP-LISTEN:1336,reuseaddr,fork 'EXEC:"gdbserver :1337 /bin/bash"'``,
+        then you can connect to gdbserver and attach to it by:
+        (When connection with gdbserver established, ``/bin/bash`` will pause at ``_start``,
+        waiting for our gdb to attach.)
+
+        A typical case is a sample can't run locally as some dependencies is missing,
+        so this sample is provided by remote server or docker.
+
+        >>> with context.local(log_level='warning'):
+        ...     server = process(['socat', 'TCP-LISTEN:1336,reuseaddr,fork', 'EXEC:"gdbserver :1337 /bin/bash"'])
+        ...     sleep(1) # wait for socat to bind
+        ...     io = remote('127.0.0.1', 1336)
+        ...     _ = gdb.attach(('127.0.0.1', 1337), 'c', '/bin/bash')
+        ...     io.sendline(b'echo Hello')
+        ...     io.recvline()
+        ...     io.close()
+        ...     server.close()
+        b'Hello\n'
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")
@@ -1113,7 +1131,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
 
     # let's see if we can find a pid to attach to
     pid = None
-    if   isinstance(target, six.integer_types):
+    if   isinstance(target, int):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -1286,10 +1304,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
     # connect to the GDB Python API bridge
     from rpyc import BgServingThread
     from rpyc.utils.factory import unix_connect
-    if six.PY2:
-        retriable = socket.error
-    else:
-        retriable = ConnectionRefusedError, FileNotFoundError
 
     t = Timeout()
     with t.countdown(10):
@@ -1297,7 +1311,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             try:
                 conn = unix_connect(socket_path)
                 break
-            except retriable:
+            except (ConnectionRefusedError, FileNotFoundError):
                 time.sleep(0.1)
         else:
             # Check to see if RPyC is installed at all in GDB
