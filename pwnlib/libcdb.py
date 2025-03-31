@@ -499,7 +499,7 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
 def _find_libc_package_lib_url(libc):
-        # Check https://libc.rip for the libc package
+    # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     maybe_deb_version = None
     if libc_match is not None:
