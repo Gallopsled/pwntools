@@ -114,7 +114,21 @@ jobs:
         ulimit -c unlimited
         cat /proc/sys/kernel/core_pattern
         cat /proc/sys/kernel/core_uses_pid
-        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core*) || true
+        # Create a temporary directory for the test
+        TEST_DIR=$(mktemp -d)
+        cd $TEST_DIR
+        
+        # Run a command that will generate a segfault
+        sh -c 'kill -11 $$' || true
+        
+        # Check for core files in various locations
+        echo "Looking for core files in various locations:"
+        if ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core* 2>/dev/null; then
+          echo "SUCCESS: Core file found"
+        else
+          echo "ERROR: No core file found"
+          exit 1
+        fi
 
     - name: Set up SSH
       run: |

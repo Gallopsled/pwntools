@@ -1351,6 +1351,7 @@ class CorefileFinder(object):
         """
         filename = "core.%s.%i.coredumpctl" % (self.basename, self.pid)
         try:
+            log.debug("Attempting to extract core dump with coredumpctl for PID %d" % self.pid)
             subprocess.check_call(
                 [
                     "coredumpctl",
@@ -1363,9 +1364,12 @@ class CorefileFinder(object):
                 stderr=subprocess.STDOUT,
                 shell=False,
             )
+            log.debug("Successfully extracted core dump to %s" % filename)
             return filename
         except subprocess.CalledProcessError as e:
             log.debug("coredumpctl failed with status: %d" % e.returncode)
+        except Exception as e:
+            log.debug("coredumpctl failed with exception: %s" % e)
 
     def native_corefile(self):
         """Find the corefile for a native crash.
