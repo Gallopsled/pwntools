@@ -499,14 +499,16 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
 def _find_libc_package_lib_url(libc):
-    # Check https://libc.rip for the libc package
+        # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
+    maybe_deb_version = None
     if libc_match is not None:
         for match in libc_match:
-            # Allow to override url with a caching proxy in CI
-            ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
-            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
-    
+            url = match['libs_url']
+            if "deb.debian.org/debian" in url:
+                maybe_deb_version = url
+            yield url
+
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
     import re
@@ -514,6 +516,11 @@ def _find_libc_package_lib_url(libc):
     if version is not None:
         libc_version = version.group(1).decode()
         yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
+
+    # check debian.sipwise.com if it's a debian libc
+    maybe_deb_version = maybe_deb_version.split('/')[-1]
+    if maybe_deb_version is not None:
+        yield 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/{}'.format(maybe_deb_version)
 
 def download_libraries(libc_path, unstrip=True):
     """download_libraries(str, bool) -> str
