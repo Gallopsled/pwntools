@@ -89,6 +89,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
 - [#2546][2546] ssh: Allow passing disabled_algorithms keyword argument from ssh to paramiko
 - [#2538][2538] Add `ssh -L` / `ssh.connect_remote()` workaround when `AllowTcpForwarding` is disabled
+- [#2572][2572] Add new debian database in libcd
 
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
