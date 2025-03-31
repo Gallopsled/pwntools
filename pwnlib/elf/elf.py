@@ -842,7 +842,9 @@ class ELF(ELFFile):
             return {}
 
         # Sometimes the original binary already fail to run, for example, in case glibc mismatches.
-        if 'not found (required by' in data:
+        try:
+            int(data.split('-', 1)[0], 16)
+        except ValueError:
             log.warn_once("Cannot execute `%s` to get /proc/self/maps", self.path)
             return {}
 
