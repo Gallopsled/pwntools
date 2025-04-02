@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2574][2574] Detect when Terminator is being used as terminal
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
@@ -90,6 +91,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2546][2546] ssh: Allow passing disabled_algorithms keyword argument from ssh to paramiko
 - [#2538][2538] Add `ssh -L` / `ssh.connect_remote()` workaround when `AllowTcpForwarding` is disabled
 
+[2574]: https://github.com/Gallopsled/pwntools/pull/2574
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
