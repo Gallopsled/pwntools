@@ -90,7 +90,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
 - [#2546][2546] ssh: Allow passing disabled_algorithms keyword argument from ssh to paramiko
 - [#2538][2538] Add `ssh -L` / `ssh.connect_remote()` workaround when `AllowTcpForwarding` is disabled
-- [#2574][2574] Detect when Terminator is being used as terminal
+- [#2574][2574] Allow creating an ELF from in-memory bytes
+- [#2575][2575] Detect when Terminator is being used as terminal
 
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
@@ -108,6 +109,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2546]: https://github.com/Gallopsled/pwntools/pull/2546
 [2538]: https://github.com/Gallopsled/pwntools/pull/2538
 [2574]: https://github.com/Gallopsled/pwntools/pull/2574
+[2575]: https://github.com/Gallopsled/pwntools/pull/2575
 
 ## 4.15.0 (`beta`)
 
