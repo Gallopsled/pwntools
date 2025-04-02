@@ -568,10 +568,10 @@ class Corefile(ELF):
         self._address  = 0
 
         if self.elftype != 'CORE':
-            log.error("%s is not a valid corefile" % self.file.name)
+            log.error("%s is not a valid corefile" % self.path)
 
         if self.arch not in prstatus_types:
-            log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.file.name)
+            log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.path)
 
         prstatus_type = prstatus_types.get(self.arch)
         siginfo_type = siginfo_types.get(self.bits)

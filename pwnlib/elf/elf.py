@@ -30,6 +30,17 @@ You can even patch and save the files.
     >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
+An ELF can also be created from in-memory bytes.
+
+    >>> bytes = open('/bin/cat', 'rb').read()
+    >>> e = ELF(bytes)
+    >>> e.read(e.address+1, 3)
+    b'ELF'
+    >>> e.asm(e.address, 'ret')
+    >>> e.save('/tmp/quiet-cat')
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
+    '   0:   c3                      ret'
+
 Module Members
 --------------
 """
@@ -211,16 +222,21 @@ class ELF(ELFFile):
     _fill_gaps = True
 
 
-    def __init__(self, path, checksec=True):
+    def __init__(self, path_or_bytes, checksec=True):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.
 
-        #: :class:`file`: Open handle to the ELF file on disk
-        self.file = open(path,'rb')
-
-        #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
-        self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+        if isinstance(path_or_bytes, (bytes, bytearray)) and path_or_bytes.startswith(b'\x7FELF'):
+            self.file = self.mmap = mmap.mmap(-1, len(path_or_bytes))
+            self.mmap.write(path_or_bytes)
+            path = "<bytes>"
+        else:
+            #: :class:`file`: Open handle to the ELF file on disk
+            self.file = open(path_or_bytes,'rb')
+            #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
+            self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+            path = path_or_bytes
 
         super(ELF,self).__init__(self.mmap)
 

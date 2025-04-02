@@ -1271,7 +1271,7 @@ class ROP(object):
             return None
         gadgets = eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
-        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.file.name)
+        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets
 
     def __cache_save(self, elf, data):
