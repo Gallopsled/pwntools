@@ -6,7 +6,7 @@
   from pwnlib.shellcraft import riscv64, registers, pretty, okay
   log = getLogger('pwnlib.shellcraft.riscv64.mov')
 %>
-<%page args="dst, src"/>
+<%page args="dst, src, c=False"/>
 <%docstring>
 Move src into dst without newlines and null bytes.
 
@@ -25,30 +25,26 @@ Args:
 Example:
 
     >>> print(shellcraft.riscv64.mov('t0', 0).rstrip())
-        c.li t0, 0
-    >>> print(shellcraft.riscv64.mov('t0', 0x2000).rstrip())
-        c.lui t0, 2 /* mv t0, 0x2000 */
+        xor t0, t6, t6
+    >>> print(shellcraft.riscv64.mov('t0', 0x2000, c=True).rstrip())
+        c.lui t0, 0xfffff & (0x2000 >> 12)
     >>> print(shellcraft.riscv64.mov('t5', 0x601).rstrip())
         xori t5, zero, 0x601
     >>> print(shellcraft.riscv64.mov('t5', 0x600).rstrip())
-        /* mv t5, 0x600 */
-        xori t5, zero, 0x1ff
+        xori t5, zero, 0x7ff ^ 0x600
         xori t5, t5, 0x7ff
     >>> print(shellcraft.riscv64.mov('t6', 0x181f).rstrip())
-        /* mv t6, 0x181f */
-        lui t6, 0xffffe
-        xori t6, t6, 0xfffffffffffff81f
+        lui t6, 0xfffff & (~0x181f >> 12)
+        xori t6, t6, ~0x7ff | 0x181f
     >>> print(shellcraft.riscv64.mov('t5', 0x40b561f).rstrip())
-        /* mv t5, 0x40b561f */
-        lui t5, 0x40b5
-        xori t5, t5, 0x61f
+        lui t5, 0xfffff & (0x40b561f >> 12)
+        xori t5, t5, 0x7ff & 0x40b561f
     >>> print(shellcraft.riscv64.mov('t0', 0xcafebabe).rstrip())
         li t0, 0xcafebabe
-    >>> print(shellcraft.riscv64.mov('a0', 't2').rstrip())
+    >>> print(shellcraft.riscv64.mov('a0', 't2', c=True).rstrip())
         c.mv a0, t2
-    >>> print(shellcraft.riscv64.mov('t1', 'sp').rstrip())
-        c.mv t6, sp
-        c.mv t1, t6 /* mv t1, sp */
+    >>> print(shellcraft.riscv64.mov('t1', 'sp', c=True).rstrip())
+        sra t1, sp, zero
 
 </%docstring>
 <%
@@ -65,7 +61,6 @@ if isinstance(src, str) and src not in registers.riscv:
 
 src_reg = registers.riscv.get(src, None)
 dst_reg = registers.riscv[dst]
-tmp = 't6' if dst_reg != registers.riscv['t6'] else 't4'
 
 # If source register is zero, treat it as immediate 0
 if src_reg == 0:
@@ -81,49 +76,68 @@ encodes_no_newline = lambda a, not_a: not (a & 0xf == 0 or (a & 0xff0) >> 8 in [
 % elif src_reg is not None:
 ## Source is a register
 ## Special case where c.mv would produce a newline
-% if src_reg == 2 and dst_reg % 2 == 0:
-    c.mv ${tmp}, ${src}
-    c.mv ${dst}, ${tmp} /* mv ${dst}, ${src} */
-% else:
+%  if c and not (src_reg == 2 and dst_reg % 2 == 0):
     c.mv ${dst}, ${src}
-% endif
+%  elif (src_reg >> 1) not in (0, 10):
+    sra ${dst}, ${src}, zero
+%  else:
+    not ${dst}, ${src}
+    not ${dst}, ${dst}
+%  endif
 % else:
 ## Source is an immediate, normalize to [0, 2**64)
 
-<% src = packing.unpack(packing.pack(src, word_size=64), word_size=64, sign=False) %>
+<% srcn = src & 0xffffffffffffffff %>
 ## Immediates are always sign-extended to 64-bit
 
 ## 6-bit immediate for c.li
-% if src < 0x20 or src >= 0xffffffffffffffe0:
+% if c and (srcn < 0x20 or srcn >= 0xffffffffffffffe0):
+
     c.li ${dst}, ${pretty(src)}
-
 ## 6-bit immediate for c.lui
-% elif dst_reg != 2 and src & 0xfff == 0 and ((src>>12) < 0x20 or (src>>12) >= 0xffffffffffffffe0):
-    c.lui ${dst}, ${pretty(src>>12)} /* mv ${dst}, ${pretty(src)} */
-
+% elif c and (dst_reg != 2 and srcn & 0xfff == 0 and ((srcn>>12) < 0x20 or (srcn>>12) >= 0xffffffffffffffe0)):
+    c.lui ${dst}, 0xfffff & (${pretty(src)} >> 12)
 ## 12-bit immediate
-% elif src < 0x800 or src >= 0xfffffffffffff800:
-    % if src & 0xf == 0 or (src & 0xfff) >> 8 in [0, 10]:
-    /* mv ${dst}, ${pretty(src)} */
-    xori ${dst}, zero, ${pretty(src ^ 0x7ff)}
-    xori ${dst}, ${dst}, ${pretty(0x7ff)}
+% elif srcn < 0x800 or srcn >= 0xfffffffffffff800:
+    % if srcn == 0:
+    xor ${dst}, t6, t6
+    % elif srcn == 1:
+    sltiu ${dst}, zero, 0x7ff | ${pretty(src)}
+    % elif src & 0xf == 0 or (src & 0xfff) >> 8 in [0, 10]:
+    xori ${dst}, zero, 0x7ff ^ ${pretty(src)}
+    xori ${dst}, ${dst}, 0x7ff
     % else:
     xori ${dst}, zero, ${pretty(src)}
     % endif
 
 ## 32-bit immediate with lui and xori
-% elif (src < 0x80000000 or src >= 0xffffffff80000000) and src & 0x800 == 0 and encodes_no_newline(src, src):
-    /* mv ${dst}, ${pretty(src)} */
-    lui ${dst}, ${pretty(src >> 12)}
-    xori ${dst}, ${dst}, ${pretty(src & 0xfff)}
-% elif (src < 0x80000000 or src >= 0xffffffff80000000) and src & 0x800 == 0x800 and encodes_no_newline(src, ~src):
-    /* mv ${dst}, ${pretty(src)} */
-    lui ${dst}, ${pretty((~src >> 12) & 0xfffff)}
-    xori ${dst}, ${dst}, ${pretty(src & 0xfff | 0xfffffffffffff000)}
+% elif (srcn < 0x80000000 or srcn >= 0xffffffff80000000) and srcn & 0x800 == 0 and encodes_no_newline(srcn, srcn):
+    lui ${dst}, 0xfffff & (${pretty(src)} >> 12)
+    xori ${dst}, ${dst}, 0x7ff & ${pretty(src)}
+% elif (srcn < 0x80000000 or srcn >= 0xffffffff80000000) and srcn & 0x800 == 0x800 and encodes_no_newline(srcn, srcn + 0x800):
+    lui ${dst}, 0xfffff & ((${pretty(src)} >> 12) + 1)
+    xori ${dst}, ${dst}, 0x7ff & ${pretty(src)}
+    addi ${dst}, ${dst}, -0x800
+% elif (srcn < 0x80000000 or srcn >= 0xffffffff80000000) and encodes_no_newline(srcn, ~srcn):
+    lui ${dst}, 0xfffff & (~${pretty(src)} >> 12)
+    xori ${dst}, ${dst}, ~0x7ff | ${pretty(src)}
+    % if not srcn & 0x800:
+    addi ${dst}, ${dst}, -0x800
+    % endif
 
 ## 64-bit immediate with lui, addi, and slli
-## FIXME: Make this null and newline free
+% elif srcn > 0xfffffffff and srcn < 0xffffffff00000000:
+    % if src & 0x80000000:
+    ${riscv64.mov(dst, ~src >> 32)}
+    ${riscv64.mov('t6', src | ~0x7fffffff)}
+    % else:
+    ${riscv64.mov(dst, src >> 32)}
+    ${riscv64.mov('t6', src & 0x7fffffff)}
+    % endif
+    slli ${dst}, ${dst}, 0x20
+    xor ${dst}, ${dst}, t6
 % else:
+## FIXME: Make this null and newline free
     li ${dst}, ${pretty(src)}
 
 % endif

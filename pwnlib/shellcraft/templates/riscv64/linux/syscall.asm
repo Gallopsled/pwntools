@@ -14,22 +14,23 @@ Example:
 
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('SYS_execve', 1, 'sp', 2, 0).rstrip())
             /* call execve(1, 'sp', 2, 0) */
-            c.li a0, 1
-            c.mv a1, sp
-            c.li a2, 2
-            c.li a3, 0
-            /* mv a7, 0xdd */
-            xori a7, zero, 0x722
+            sltiu a0, zero, 0x7ff | 1
+            sra a1, sp, zero
+            xori a2, zero, 0x7ff ^ 2
+            xori a2, a2, 0x7ff
+            xor a3, t6, t6
+            xori a7, zero, 0x7ff ^ SYS_execve /* 0xdd */
             xori a7, a7, 0x7ff
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('SYS_execve', 2, 1, 0, 20).rstrip())
             /* call execve(2, 1, 0, 0x14) */
-            c.li a0, 2
-            c.li a1, 1
-            c.li a2, 0
-            c.li a3, 0x14
-            /* mv a7, 0xdd */
-            xori a7, zero, 0x722
+            xori a0, zero, 0x7ff ^ 2
+            xori a0, a0, 0x7ff
+            sltiu a1, zero, 0x7ff | 1
+            xor a2, t6, t6
+            xori a3, zero, 0x7ff ^ 0x14
+            xori a3, a3, 0x7ff
+            xori a7, zero, 0x7ff ^ SYS_execve /* 0xdd */
             xori a7, a7, 0x7ff
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall().rstrip())
@@ -41,8 +42,8 @@ Example:
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall('a3', None, None, 1).rstrip())
             /* call syscall('a3', ?, ?, 1) */
-            c.li a2, 1
-            c.mv a7, a3
+            sltiu a2, zero, 0x7ff | 1
+            sra a7, a3, zero
             ecall
         >>> print(pwnlib.shellcraft.riscv64.linux.syscall(
         ...               'SYS_mmap', 0, 0x1000,
@@ -50,30 +51,44 @@ Example:
         ...               'MAP_PRIVATE',
         ...               -1, 0).rstrip())
             /* call mmap(0, 0x1000, 'PROT_READ | PROT_WRITE | PROT_EXEC', 'MAP_PRIVATE', -1, 0) */
-            c.li a0, 0
-            c.lui a1, 1 /* mv a1, 0x1000 */
-            c.li a2, 7
-            c.li a3, 2
-            c.li a4, 0xffffffffffffffff
-            c.li a5, 0
-            /* mv a7, 0xde */
-            xori a7, zero, 0x721
+            xor a0, t6, t6
+            li a1, 0x1000
+            xori a2, zero, 0x7ff ^ (PROT_READ | PROT_WRITE | PROT_EXEC) /* 7 */
+            xori a2, a2, 0x7ff
+            xori a3, zero, 0x7ff ^ MAP_PRIVATE /* 2 */
+            xori a3, a3, 0x7ff
+            xori a4, zero, -1
+            xor a5, t6, t6
+            xori a7, zero, 0x7ff ^ SYS_mmap /* 0xde */
             xori a7, a7, 0x7ff
             ecall
         >>> print(pwnlib.shellcraft.openat('AT_FDCWD', '/home/pwn/flag').rstrip())
             /* openat(fd='AT_FDCWD', file='/home/pwn/flag', oflag=0) */
             /* push b'/home/pwn/flag\x00' */
-            li t4, 0x77702f656d6f682f
+            lui t4, 0xfffff & ((0x77702f65 >> 12) + 1)
+            xori t4, t4, 0x7ff & 0x77702f65
+            addi t4, t4, -0x800
+            lui t6, 0xfffff & ((0x6d6f682f >> 12) + 1)
+            xori t6, t6, 0x7ff & 0x6d6f682f
+            addi t6, t6, -0x800
+            slli t4, t4, 0x20
+            xor t4, t4, t6
             sd t4, -16(sp)
-            li t4, 0x67616c662f6e
+            lui t4, 0xfffff & (~0x6761 >> 12)
+            xori t4, t4, ~0x7ff | 0x6761
+            addi t4, t4, -0x800
+            lui t6, 0xfffff & ((0x6c662f6e >> 12) + 1)
+            xori t6, t6, 0x7ff & 0x6c662f6e
+            addi t6, t6, -0x800
+            slli t4, t4, 0x20
+            xor t4, t4, t6
             sd t4, -8(sp)
             addi sp, sp, -16
-            c.mv a1, sp
-            xori a0, zero, 0xffffffffffffff9c
-            c.li a2, 0
+            sra a1, sp, zero
+            xori a0, zero, AT_FDCWD /* -0x64 */
+            xor a2, t6, t6
             /* call openat() */
-            /* mv a7, 0x38 */
-            xori a7, zero, 0x7c7
+            xori a7, zero, 0x7ff ^ SYS_openat /* 0x38 */
             xori a7, a7, 0x7ff
             ecall
 </%docstring>

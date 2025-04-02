@@ -75,7 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2574][2574] Detect when Terminator is being used as terminal
+- [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
@@ -90,8 +90,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
 - [#2546][2546] ssh: Allow passing disabled_algorithms keyword argument from ssh to paramiko
 - [#2538][2538] Add `ssh -L` / `ssh.connect_remote()` workaround when `AllowTcpForwarding` is disabled
+- [#2574][2574] Detect when Terminator is being used as terminal
 
-[2574]: https://github.com/Gallopsled/pwntools/pull/2574
+[2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
@@ -106,6 +107,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2504]: https://github.com/Gallopsled/pwntools/pull/2504
 [2546]: https://github.com/Gallopsled/pwntools/pull/2546
 [2538]: https://github.com/Gallopsled/pwntools/pull/2538
+[2574]: https://github.com/Gallopsled/pwntools/pull/2574
 
 ## 4.15.0 (`beta`)
 
