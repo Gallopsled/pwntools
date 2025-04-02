@@ -355,7 +355,7 @@ Let's try it out!
     >>> time.sleep(1)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    b'hello\n'
+    b'hello'
 """
 from __future__ import absolute_import
 from __future__ import division

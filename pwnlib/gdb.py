@@ -194,7 +194,7 @@ def debug_assembly(asm, gdbscript=None, vma=None, api=False):
     >>> assembly = shellcraft.echo("Hello world!\n")
     >>> io = gdb.debug_assembly(assembly)
     >>> io.recvline()
-    b'Hello world!\n'
+    b'Hello world!'
     """
     tmp_elf = make_elf_from_assembly(asm, vma=vma, extract=False)
     os.chmod(tmp_elf, 0o777)
@@ -229,7 +229,7 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
     >>> shellcode = asm(assembly)
     >>> io = gdb.debug_shellcode(shellcode)
     >>> io.recvline()
-    b'Hello world!\n'
+    b'Hello world!'
     """
     if isinstance(data, str):
         log.error("Shellcode is cannot be unicode.  Did you mean debug_assembly?")
@@ -489,7 +489,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io.sendline(b"echo hello")
         >>> io.recvline()
-        b'hello\n'
+        b'hello'
 
         Interact with the process
 
@@ -513,7 +513,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io.sendline(b"echo hello")
         >>> io.recvline()
-        b'hello\n'
+        b'hello'
 
         Interact with the process
 
@@ -525,7 +525,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh")
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
-        b'\xde\xad\xbe\xef\n'
+        b'\xde\xad\xbe\xef'
         >>> io.close()
 
         Demonstrate that LD_PRELOAD is respected
@@ -571,7 +571,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         >>> io = gdb.debug(args=[b'\xde\xad\xbe\xef'], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
-        b'$ \xde\xad\xbe\xef\n'
+        b'$ \xde\xad\xbe\xef'
         >>> io.close()
 
         Using an empty args[0] on a remote process
@@ -579,7 +579,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         >>> io = gdb.debug(args=[], gdbscript='continue', exe="/bin/sh", ssh=shell)
         >>> io.sendline(b"echo $0")
         >>> io.recvline()
-        b'$ \n'
+        b'$ '
         >>> io.close()
 
 
@@ -616,12 +616,12 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
 
         >>> io.gdb.continue_nowait()
         >>> io.recvline()
-        b'foo\n'
+        b'foo'
         >>> io.close()
 
         >>> ssh_io.gdb.continue_nowait()
         >>> ssh_io.recvline()
-        b'foo\n'
+        b'foo'
         >>> ssh_io.close()
         >>> shell.close()
     """
@@ -983,7 +983,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... quit
         ... ''')
         >>> io.recvline()
-        b'Hello from process debugger!\n'
+        b'Hello from process debugger!'
         >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
@@ -1007,7 +1007,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             Observe the forced line
 
             >>> io.recvline()
-            b'Hello from process debugger!\n'
+            b'Hello from process debugger!'
 
             Interact with the program in a regular way
 
@@ -1031,7 +1031,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... quit
         ... ''')
         >>> io.recvline()
-        b'Hello from remote debugger!\n'
+        b'Hello from remote debugger!'
         >>> io.sendline(b'echo Hello from bash && exit')
         >>> io.recvall()
         b'Hello from bash\n'
@@ -1052,12 +1052,12 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... end
         ... ''')
         >>> gdbserver.recvline(timeout=10)  # doctest: +ELLIPSIS
-        b'Remote debugging from host 127.0.0.1, ...\n'
+        b'Remote debugging from host 127.0.0.1, ...'
         >>> gdbserver.recvline(timeout=10)
-        b'Hello from gdbserver debugger!\n'
+        b'Hello from gdbserver debugger!'
         >>> gdbserver.sendline(b'echo Hello from bash && exit')
         >>> gdbserver.recvline(timeout=10)
-        b'Hello from bash\n'
+        b'Hello from bash'
         >>> gdbserver.close()
 
         Attach to processes running on a remote machine via an SSH :class:`.ssh` process
@@ -1071,10 +1071,10 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ... quit
         ... ''')
         >>> io.recvline(timeout=5)  # doctest: +SKIP
-        b'Hello from ssh debugger!\n'
+        b'Hello from ssh debugger!'
         >>> io.sendline(b'This will be echoed back')
         >>> io.recvline()
-        b'This will be echoed back\n'
+        b'This will be echoed back'
         >>> io.close()
 
         To attach to remote gdbserver, assume you have a socat server delivering gdbserver
@@ -1095,7 +1095,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         ...     io.recvline()
         ...     io.close()
         ...     server.close()
-        b'Hello\n'
+        b'Hello'
     """
     if context.noptrace:
         log.warn_once("Skipping debug attach since context.noptrace==True")

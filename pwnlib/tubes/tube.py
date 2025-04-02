@@ -89,7 +89,7 @@ class tube(Timeout, Logger):
             >>> t.newline = b'X'
             >>> t.unrecv(b'A\nB\nCX')
             >>> t.recvline()
-            b'A\nB\nCX'
+            b'A\nB\nC'
 
             >>> t = tube()
             >>> context.newline = b'\r\n'
@@ -504,7 +504,7 @@ class tube(Timeout, Logger):
         return [bytearray(x) for x in self.recvlines(numlines, keepends=keepends, drop=drop, timeout=timeout)]
 
     def recvline(self, keepends=None, drop=None, timeout=default):
-        r"""recvline(drop=False, timeout=default) -> bytes
+        r"""recvline(drop=True, timeout=default) -> bytes
 
         Receive a single line from the tube.
 
@@ -519,8 +519,12 @@ class tube(Timeout, Logger):
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty byte string (``b''``) is returned.
 
+        Note: The default value for ``drop`` was changed to :const:`True` in
+              version 5.0.0 to drop the trailing newline.
+
+
         Arguments:
-            drop(bool): Drop the line ending (:const:`False`).
+            drop(bool): Drop the line ending (:const:`True`).
             timeout(int): Timeout
 
         Raises:
@@ -540,11 +544,11 @@ class tube(Timeout, Logger):
             >>> t = tube()
             >>> t.recv_raw = lambda n: b'Foo\nBar\r\nBaz\n'
             >>> t.recvline()
-            b'Foo\n'
+            b'Foo'
             >>> t.recvline()
-            b'Bar\r\n'
-            >>> t.recvline(False)
-            b'Baz'
+            b'Bar\r'
+            >>> t.recvline(drop=False)
+            b'Baz\n'
             >>> t.newline = b'\r\n'
             >>> t.recvline(drop=True)
             b'Foo\nBar'
@@ -557,7 +561,7 @@ class tube(Timeout, Logger):
             >>> _recv_eof.throw = False
             >>> t.recv_raw = _recv_eof
             >>> t.recvline()
-            b'real line\n'
+            b'real line'
             >>> t.recvline()
             b'trailing data'
             >>> t.recvline()
@@ -565,7 +569,7 @@ class tube(Timeout, Logger):
                 ...
             EOFError
         """
-        drop = self._normalize_keepends_drop(keepends, drop, False)
+        drop = self._normalize_keepends_drop(keepends, drop, True)
         del keepends
 
         try:
@@ -1172,7 +1176,7 @@ class tube(Timeout, Logger):
             >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
             >>> r.sendline(b'cat ./payload')
             >>> r.recvline()
-            b'some\\xca\\xfedata\\n'
+            b'some\\xca\\xfedata'
 
             >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
             >>> r.sendline(b'sha256sum ./cyclic_pattern')
@@ -1183,7 +1187,7 @@ class tube(Timeout, Logger):
             >>> r.upload_manually(blob.data, prompt=b'')
             >>> r.sendline(b'./payload')
             >>> r.recvline()
-            b'Hello world!\\n'
+            b'Hello world!'
             >>> r.close()
             >>> l.close()
         """

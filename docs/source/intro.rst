@@ -43,7 +43,7 @@ For example, remote connections via :mod:`pwnlib.tubes.remote`.
     >>> conn.send(b'USER anonymous\r\n')
     >>> conn.recvuntil(b' ', drop=True)
     b'331'
-    >>> conn.recvline()
+    >>> conn.recvline(drop=False)
     b'Please specify the password.\r\n'
     >>> conn.close()
 
@@ -65,7 +65,7 @@ Interacting with processes is easy thanks to :mod:`pwnlib.tubes.process`.
     >>> sh.recvline(timeout=1)
     b''
     >>> sh.recvline(timeout=5)
-    b'hello world\n'
+    b'hello world'
     >>> sh.close()
 
 Not only can you interact with processes programmatically, but you can
@@ -91,7 +91,7 @@ a ``process`` tube.
     >>> sh.recvline(timeout=1)
     b''
     >>> sh.recvline(timeout=5)
-    b'hello world\n'
+    b'hello world'
     >>> shell.close()
 
 Packing Integers

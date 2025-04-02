@@ -6,7 +6,7 @@ Writes a string to a file descriptor
 Example:
 
     >>> run_assembly(shellcraft.echo('hello\n', 1)).recvline()
-    b'hello\n'
+    b'hello'
 
 </%docstring>
 

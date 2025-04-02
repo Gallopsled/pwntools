@@ -22,7 +22,7 @@ Example:
     >>> p.pack(len(sc))
     >>> p.send(sc)
     >>> p.recvline()
-    b'Hello\n'
+    b'Hello'
 
 </%docstring>
 <%

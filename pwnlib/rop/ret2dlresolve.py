@@ -35,7 +35,7 @@ We can automate the  process of exploitation with these some example binaries.
     >>> p = elf.process() # doctest: +LINUX
     >>> p.sendline(fit({64+context.bytes*3: raw_rop, 200: dlresolve.payload})) # doctest: +LINUX
     >>> p.recvline() # doctest: +LINUX
-    b'pwned\n'
+    b'pwned'
 
 You can also use ``Ret2dlresolve`` on AMD64:
 
@@ -61,7 +61,7 @@ You can also use ``Ret2dlresolve`` on AMD64:
     >>> if dlresolve.unreliable: # doctest: +LINUX
     ...     p.poll(True) == -signal.SIGSEGV
     ... else:
-    ...     p.recvline() == b'pwned\n'
+    ...     p.recvline() == b'pwned'
     True
 """
 

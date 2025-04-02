@@ -18,7 +18,7 @@ class amd64DeltaEncoder(i386DeltaEncoder):
     >>> p = run_shellcode(encoded)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    b'hello\n'
+    b'hello'
     """
     assembly = '''
 base:

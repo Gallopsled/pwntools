@@ -500,7 +500,7 @@ class SSHPath(PosixPath):
         >>> f = SSHPath('dirA/dirB/dirC', ssh=ssh_conn)
         >>> f.mkdir(parents=True)
         >>> ssh_conn.run(['ls', '-la', f.absolute().path], env={'LC_ALL': 'C.UTF-8'}).recvline()
-        b'total 8\n'
+        b'total 8'
         """
         if exist_ok and self.is_dir():
             return

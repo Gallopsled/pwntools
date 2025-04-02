@@ -322,7 +322,7 @@ class AdbDevice(Device):
                     r.recvuntil('OK')
                     r.recvline() # Rest of the line
                     r.sendline('avd name')
-                    self.avd = r.recvline().strip()
+                    self.avd = r.recvline()
             except:
                 pass
 

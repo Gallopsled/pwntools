@@ -361,7 +361,7 @@ class Corefile(ELF):
         >>> io = process(elf.path, env=env)
         >>> io.sendline(b'echo hello')
         >>> io.recvline()
-        b'hello\n'
+        b'hello'
 
         The process is still running, but accessing its :attr:`.process.corefile` property
         automatically invokes GDB to attach and dump a corefile.
