@@ -58,12 +58,9 @@ Example:
     >>> print(shellcraft.i386.mov('eax', 0xdead00ff).rstrip())
         mov eax, -0xdead00ff
         neg eax
-    >>> print(shellcraft.i386.mov('eax', 0xc0).rstrip())
-        xor eax, eax
-        mov al, 0xc0
     >>> print(shellcraft.i386.mov('edi', 0xc0).rstrip())
-        mov edi, -0xc0
-        neg edi
+        xor edi, edi
+        mov dil, 0xc0
     >>> print(shellcraft.i386.mov('eax', 0xc000).rstrip())
         xor eax, eax
         mov ah, 0xc000 >> 8

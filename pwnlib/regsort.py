@@ -15,7 +15,7 @@ from pwnlib.log import getLogger
 
 log = getLogger(__name__)
 
-def check_cycle(reg, assignments):
+def check_cycle(reg, assignments, mapping=None):
     """Walk down the assignment list of a register,
     return the path walked if it is encountered again.
 
@@ -37,31 +37,38 @@ def check_cycle(reg, assignments):
         >>> check_cycle('a', {'a': 'b', 'b': 'c', 'c': 'd', 'd': 'a'})
         ['a', 'b', 'c', 'd']
     """
-    return check_cycle_(reg, assignments, [])
+    if mapping is None:
+        mapping = {}
+    return check_cycle_(reg, assignments, [], mapping)
 
-def check_cycle_(reg, assignments, path):
-    target = assignments[reg]
+def check_cycle_(reg, assignments, path, mapping):
+    target = assignments.get(reg)
+    if target is None:
+        real_reg = mapping.get(reg, reg)
+        reg, target = next((k, v) for k,v in assignments.items() if mapping.get(k, k) == real_reg)
     path.append(reg)
 
+    real_target = mapping.get(target, target)
+
     # No cycle, some other value (e.g. 1)
-    if target not in assignments:
+    if all(real_target != mapping.get(k, k) for k in assignments):
         return []
 
     # Found a cycle
-    if target in path:
+    if any(real_target == mapping.get(k, k) for k in path):
         # Does the cycle *start* with target?
         # This determines whether the original register is
         # in the cycle, or just depends on registers in one.
-        if target == path[0]:
+        if real_target == mapping.get(path[0], path[0]):
             return path
 
         # Just depends on one.
         return []
 
     # Recurse
-    return check_cycle_(target, assignments, path)
+    return check_cycle_(target, assignments, path, mapping)
 
-def extract_dependencies(reg, assignments):
+def extract_dependencies(reg, assignments, mapping=None):
     """Return a list of all registers which directly
     depend on the specified register.
 
@@ -77,7 +84,9 @@ def extract_dependencies(reg, assignments):
         ['b', 'c']
     """
     # sorted() is only for determinism
-    return sorted([k for k,v in assignments.items() if v == reg])
+    if mapping is None:
+        mapping = {}
+    return sorted([k for k,v in assignments.items() if mapping.get(v, v) == mapping.get(reg, reg)])
 
 
 def resolve_order(reg, deps):
@@ -110,7 +119,7 @@ def depends_on_cycle(reg, assignments, in_cycles):
         reg = assignments.get(reg, None)
     return False
 
-def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
+def regsort(in_out, all_regs, mapping = None, tmp = None, xchg = True, randomize = None):
     """
     Sorts register dependencies.
 
@@ -233,6 +242,12 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     if randomize is None:
         randomize = context.randomize
 
+    if mapping is None:
+        if hasattr(all_regs, 'keys'):
+            mapping = all_regs
+        else:
+            mapping = {}
+
     sentinel = object()
 
     # Drop all registers which will be set to themselves.
@@ -242,7 +257,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
 
     # Collapse constant values
     #
-    # For eaxmple, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
+    # For example, {'eax': 0, 'ebx': 0} => {'eax': 0, 'ebx': 'eax'}
     v_k = defaultdict(list)
     for k,v in sorted(in_out.items()):
         if v not in all_regs and v != 0:
@@ -263,7 +278,9 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # which are also 'outputs'.
     #
     # For example, {'eax': 1, 'ebx': 2, 'ecx': 'edx'}
-    if not any(v in in_out for k,v in in_out.items()):
+    inps = {mapping.get(k, k) for k in in_out}
+    outs = {mapping.get(v, v) for v in in_out.values()}
+    if not inps & outs:
         result = [('mov', k,in_out[k]) for k in sorted(in_out)]
 
         if randomize:
@@ -280,7 +297,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     # Output:  {'A': [], 'B': ['A', 'C'], 'C': []}
     #
     # In this case, both A and C must be set before B.
-    deps  = {r: extract_dependencies(r, in_out) for r in in_out}
+    deps  = {r: extract_dependencies(r, in_out, mapping) for r in in_out}
 
     # Final result which will be returned
     result = []
@@ -299,7 +316,7 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
 
     while cycle_candidates:
         reg   = cycle_candidates[0]
-        cycle = check_cycle(reg, in_out)
+        cycle = check_cycle(reg, in_out, mapping)
 
         if cycle:
             if randomize:
@@ -395,6 +412,10 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
 
     if tmp:
         for cycle in cycles:
+            if len(cycle) == 1:
+                [reg] = cycle
+                result.append(('mov', reg, in_out[reg]))
+                continue
 
             first = cycle[0]
             last  = cycle[-1]
@@ -411,6 +432,9 @@ def regsort(in_out, all_regs, tmp = None, xchg = True, randomize = None):
     else:
         for cycle in cycles:
             size = len(cycle)
+            if size == 1:
+                [reg] = cycle
+                result.append(('mov', reg, in_out[reg]))
             for i in range(size-1):
                 result.append(('xchg', cycle[i], cycle[(i+1) % size]))
 

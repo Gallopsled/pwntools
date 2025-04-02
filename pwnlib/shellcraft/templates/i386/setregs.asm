@@ -54,7 +54,7 @@ sorted_regs = regsort(reg_context, registers.i386)
 % if not sorted_regs:
   /* setregs noop */
 % else:
-% for how, src, dst in regsort(reg_context, registers.i386):
+% for how, src, dst in regsort(reg_context, registers.i386, registers.native32):
 % if how == 'xchg':
     xchg ${src}, ${dst}
 % else:

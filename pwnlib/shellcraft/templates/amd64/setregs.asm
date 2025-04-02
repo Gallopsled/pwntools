@@ -55,7 +55,7 @@ if isinstance(eax, six.integer_types) and isinstance(edx, six.integer_types) and
     cdq = True
     reg_context.pop('rdx')
 
-sorted_regs = regsort(reg_context, registers.amd64)
+sorted_regs = regsort(reg_context, registers.amd64, registers.native64)
 %>
 % if not sorted_regs:
   /* setregs noop */
