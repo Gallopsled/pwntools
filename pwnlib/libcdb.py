@@ -504,6 +504,7 @@ def _find_libc_package_lib_url(libc):
     maybe_deb_version = None
     if libc_match is not None:
         for match in libc_match:
+            # Allow to override url with a caching proxy in CI
             url = match['libs_url']
             if "deb.debian.org/debian" in url:
                 maybe_deb_version = url
@@ -518,9 +519,10 @@ def _find_libc_package_lib_url(libc):
         yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
 
     # check debian.sipwise.com if it's a debian libc
-    maybe_deb_version = maybe_deb_version.split('/')[-1]
     if maybe_deb_version is not None:
-        yield 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/{}'.format(maybe_deb_version)
+        maybe_deb_version = maybe_deb_version.split('/')[-1]
+        if maybe_deb_version is not None:
+            yield 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/{}'.format(maybe_deb_version)
 
 def download_libraries(libc_path, unstrip=True):
     """download_libraries(str, bool) -> str
