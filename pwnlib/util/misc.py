@@ -336,7 +336,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             else:
                 terminal = 'terminator'
                 args = ['-e']
-        elif os.environ.get("XDG_CURRENT_DESKTOP") == "GNOME" and which("gnome-terminal"):
+        elif "GNOME_TERMINAL_SCREEN" in os.environ and "GNOME_TERMINAL_SERVICE" in os.environ and which("gnome-terminal"):
             terminal = 'gnome-terminal'
             args = ['-e']
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
