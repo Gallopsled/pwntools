@@ -146,10 +146,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2545][2545] SSH: fix download/upload with -1 exit status
 - [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
 - [#2576][2576] regsort: respect register aliases
+- [#2579][2579] Fix poll error in `process.libs()` and clean up maps parsing
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
 [2576]: https://github.com/Gallopsled/pwntools/pull/2576
+[2579]: https://github.com/Gallopsled/pwntools/pull/2579
 
 ## 4.14.1 (`stable`)
 
