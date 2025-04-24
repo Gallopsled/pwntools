@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2580][2580] Use capstone to implement `ELF.libc_start_main_return`
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
@@ -94,6 +95,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2575][2575] Detect when Terminator is being used as terminal
 - [#2578][2578] Add gnome-terminal, Alacritty, Ttilix for run_in_new_terminal
 
+[2580]: https://github.com/Gallopsled/pwntools/pull/2580
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519

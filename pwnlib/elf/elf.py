@@ -54,6 +54,7 @@ import os
 import re
 import subprocess
 import tempfile
+import capstone as cs
 
 from io import BytesIO
 
@@ -1143,6 +1144,12 @@ class ELF(ELFFile):
 
         self.config['version'] = self.version
 
+    def cs_disasm(self, md: cs.Cs, address, n_bytes):
+        if self.arch == 'arm' and address & 1:
+            address -= 1
+
+        return md.disasm(self.read(address, n_bytes), address)
+
     @property
     def libc_start_main_return(self):
         """:class:`int`: Address of the return address into __libc_start_main from main.
@@ -1163,56 +1170,66 @@ class ELF(ELFFile):
         if 'exit' not in self.symbols:
             return 0
 
+        eabi = None
         # If there's no delay slot, execution continues on the next instruction after a call.
         call_return_offset = 1
         if self.arch in ['arm', 'thumb']:
-            call_instructions = set(['blx', 'bl'])
+            if b'armhf' in self.linker:
+                eabi = 'hf'
+            call_instructions = set([cs.CS_GRP_CALL])
         elif self.arch == 'aarch64':
-            call_instructions = set(['blr', 'bl'])
+            call_instructions = set([cs.CS_GRP_CALL])
         elif self.arch in ['mips', 'mips64']:
-            call_instructions = set(['bal', 'jalr'])
+            # FIXME: `bal` was not included in CS_GRP_CALL. This is fixed on capstone v6.alpha
+            #call_instructions = set([cs.CS_GRP_CALL])
+            call_instructions = set([cs.CS_GRP_CALL, cs.CS_GRP_BRANCH_RELATIVE])
             # Account for the delay slot.
             call_return_offset = 2
         elif self.arch in ['i386', 'amd64', 'ia64']:
-            call_instructions = set(['call'])
+            call_instructions = set([cs.CS_GRP_CALL])
         else:
             log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
             return 0
 
-        lines = self.functions['__libc_start_main'].disasm().split('\n')
-        exit_addr = hex(self.symbols['exit'])
-        calls = [(index, line) for index, line in enumerate(lines) if set(line.split()) & call_instructions]
+        from pwnlib.asm import get_cs_disassembler
+        md = get_cs_disassembler(arch=self.arch, endian=self.endian, bits=self.bits, eabi=eabi)
+        func = self.functions['__libc_start_main']
+        dis = list(self.cs_disasm(md, func.address, func.size))
 
-        def find_ret_main_addr(lines, calls):
-            exit_calls = [index for index, line in enumerate(calls) if exit_addr in line[1]]
-            if len(exit_calls) != 1:
+        exit_addr = self.symbols['exit']
+        if self.arch == 'arm' and exit_addr & 1: exit_addr -= 1
+
+        calls = [(i, x) for i, x in enumerate(dis) if call_instructions & set(x.groups)]
+
+        def find_ret_main_addr(caller_dis, calls):
+            call_to_main = -1
+            for i, insn in calls:
+                if insn.operands[0].imm == exit_addr: break
+                call_to_main = i
+            else:
                 return 0
 
-            call_to_main = calls[exit_calls[0] - 1]
-            return_from_main = lines[call_to_main[0] + call_return_offset].lstrip()
-            return_from_main = int(return_from_main[ : return_from_main.index(':') ], 16)
-            return return_from_main
+            return_from_main = caller_dis[call_to_main + call_return_offset]
+            return return_from_main.address
 
         # Starting with glibc-2.34 calling `main` is split out into `__libc_start_call_main`
-        ret_addr = find_ret_main_addr(lines, calls)
+        ret_addr = find_ret_main_addr(dis, calls)
         # Pre glibc-2.34 case - `main` is called directly
         if ret_addr:
             return ret_addr
 
         # `__libc_start_main` -> `__libc_start_call_main` -> `main`
         # Find a direct call which calls `exit` once. That's probably `__libc_start_call_main`.
-        direct_call_pattern = re.compile(r'['+r'|'.join(call_instructions)+r']\s+(0x[0-9a-zA-Z]+)')
-        for line in calls:
-            match = direct_call_pattern.search(line[1])
-            if not match:
-                continue
+        for _, insn in calls:
+            op = insn.operands[0]
+            if op.type != cs.CS_OP_IMM: continue
 
-            target_addr = int(match.group(1), 0)
+            target_addr = op.imm
             # `__libc_start_call_main` is usually smaller than `__libc_start_main`, so
             # we might disassemble a bit too much, but it's a good dynamic estimate.
-            callee_lines = self.disasm(target_addr, self.functions['__libc_start_main'].size).split('\n')
-            callee_calls = [(index, line) for index, line in enumerate(callee_lines) if set(line.split()) & call_instructions]
-            ret_addr = find_ret_main_addr(callee_lines, callee_calls)
+            callee_dis = list(self.cs_disasm(md, target_addr, func.size))
+            callee_calls = [(i, x) for i, x in enumerate(callee_dis) if call_instructions & set(x.groups)]
+            ret_addr = find_ret_main_addr(callee_dis, callee_calls)
             if ret_addr:
                 return ret_addr
         return 0
