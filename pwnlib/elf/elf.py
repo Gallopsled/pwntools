@@ -1191,8 +1191,6 @@ class ELF(ELFFile):
         elif self.arch == 'aarch64':
             pass
         elif self.arch in ['mips', 'mips64']:
-            # FIXME: `bal` was not included in CS_GRP_CALL. This is fixed on capstone v6.alpha
-            call_instructions = call_instructions.add(cs.CS_GRP_BRANCH_RELATIVE)
             # Account for the delay slot.
             call_return_offset = 2
         elif self.arch in ['i386', 'amd64', 'ia64']:
@@ -1215,6 +1213,13 @@ class ELF(ELFFile):
         dis = list(self.cs_disasm(md, func.address, func.size))
 
         filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if call_instructions & set(x.groups))
+
+        if self.arch in ['ppc', 'powerpc', 'powerpc64']:
+            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bctrl', 'bl']))
+        # FIXME: `bal` was not included in CS_GRP_CALL. This is fixed on capstone v6.alpha
+        elif self.arch in ['mips', 'mips64']:
+            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bal', 'jalr']))
+
         calls = list(filter_calls(dis))
 
         def find_ret_main_addr(caller_dis, calls):
@@ -1234,9 +1239,6 @@ class ELF(ELFFile):
         # Pre glibc-2.34 case - `main` is called directly
         if ret_addr:
             return ret_addr
-
-        if self.arch in ['ppc', 'powerpc', 'powerpc64']:
-            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bctrl', 'bl']))
 
         # `__libc_start_main` -> `__libc_start_call_main` -> `main`
         # Find a direct call which calls `exit` once. That's probably `__libc_start_call_main`.

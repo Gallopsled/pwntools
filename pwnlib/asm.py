@@ -1023,12 +1023,22 @@ def get_cs_disassembler(eabi=None):
 
     B = {16: cs.CS_MODE_16, 32: cs.CS_MODE_32, 64: cs.CS_MODE_64}[context.bits]
 
+    try:
+        CS_ARCH_AARCH64 = cs.CS_ARCH_AARCH64
+    except Exception:
+        CS_ARCH_AARCH64 = cs.CS_ARCH_ARM64
+
+    try:
+        CS_ARCH_SYSTEMZ = cs.CS_ARCH_SYSTEMZ
+    except Exception:
+        CS_ARCH_SYSTEMZ = cs.CS_ARCH_SYSZ
+
     params = {
         'i386'   : (cs.CS_ARCH_X86, B),
         'amd64'  : (cs.CS_ARCH_X86, B),
         'thumb'  : (cs.CS_ARCH_ARM, cs.CS_MODE_THUMB + E),
         'arm'    : (cs.CS_ARCH_ARM, cs.CS_MODE_ARM + E),
-        'aarch64': (cs.CS_ARCH_AARCH64, cs.CS_MODE_ARM + E),
+        'aarch64': (CS_ARCH_AARCH64, cs.CS_MODE_ARM + E),
         'armhf'  : (cs.CS_ARCH_ARM, cs.CS_MODE_THUMB + E),
         'mips'   : (cs.CS_ARCH_MIPS, cs.CS_MODE_32 + E),
         'mips64' : (cs.CS_ARCH_MIPS, cs.CS_MODE_64 + E),
@@ -1037,7 +1047,7 @@ def get_cs_disassembler(eabi=None):
         'ppc'    : (cs.CS_ARCH_PPC, B + E),
         'powerpc':   (cs.CS_ARCH_PPC, E + cs.CS_MODE_32),
         'powerpc64': (cs.CS_ARCH_PPC, E + cs.CS_MODE_64),
-        'em_s390': (cs.CS_ARCH_SYSTEMZ, cs.CS_MODE_BIG_ENDIAN + cs.CS_MODE_64),
+        'em_s390': (CS_ARCH_SYSTEMZ, cs.CS_MODE_BIG_ENDIAN + cs.CS_MODE_64),
         #'ia64': None,
         #'m68k': cs.CS_ARCH_M68K,
         #'xcore': cs.CS_ARCH_XCORE,
