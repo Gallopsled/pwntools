@@ -427,7 +427,7 @@ class Logger(object):
         """Alias for :meth:`warning`."""
         return self.warning(*args, **kwargs)
 
-    def error(self, message, *args, **kwargs):
+    def error(self, message, *args, original_exc=None, **kwargs):
         """error(message, *args, **kwargs)
 
         To be called outside an exception handler.
@@ -435,7 +435,7 @@ class Logger(object):
         Logs an error message, then raises a ``PwnlibException``.
         """
         self._log(logging.ERROR, message, args, kwargs, 'error')
-        raise PwnlibException(message % args)
+        raise PwnlibException(message % args) from original_exc
 
     def exception(self, message, *args, **kwargs):
         """exception(message, *args, **kwargs)
