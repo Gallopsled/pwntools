@@ -1164,14 +1164,11 @@ class ELF(ELFFile):
         to list all calls inside __libc_start_main, find the call to exit
         after the call to main and select the previous call.
         """
-        if '__libc_start_main' not in self.functions:
+        func = self.functions.get('__libc_start_main')
+        exit_addr = self.symbols.get('exit')
+        if not (func and exit_addr):
             return 0
 
-        if 'exit' not in self.symbols:
-            return 0
-
-        func = self.functions['__libc_start_main']
-        exit_addr = self.symbols['exit']
         # `__libc_start_call_main` is usually smaller than `__libc_start_main`,
         # (except for powerpc which uses a bigger `generic_start_main`), so
         # we might disassemble a bit too much, but it's a good dynamic estimate.
@@ -1184,9 +1181,8 @@ class ELF(ELFFile):
         call_return_offset = 1
         call_instructions = set([cs.CS_GRP_CALL])
         if self.arch in ['arm', 'thumb']:
-            if b'armhf' in self.linker:
-                # FIXME: I have no idea why setting self.arch = 'armhf' does not work
-                eabi = 'hf'
+            # FIXME: I have no idea why setting self.arch = 'armhf' does not work
+            if b'armhf' in self.linker: eabi = 'hf'
             if exit_addr & 1: exit_addr -= 1
         elif self.arch == 'aarch64':
             pass
@@ -1197,9 +1193,8 @@ class ELF(ELFFile):
             pass
         elif self.arch in ['ppc', 'powerpc', 'powerpc64']:
             callee_size *= 2
-            if exit_addr & 1 == 0:
-                # powepc often jumps to the local entry point after TOC setup
-                exit_addr += 8
+            # powepc often jumps to the local entry point after TOC setup
+            if exit_addr & 1 == 0: exit_addr += 8
             pass
         elif self.arch in ['em_s390', 's390']:
             imm_index = 1
@@ -1215,10 +1210,10 @@ class ELF(ELFFile):
         filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if call_instructions & set(x.groups))
 
         if self.arch in ['ppc', 'powerpc', 'powerpc64']:
-            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bctrl', 'bl']))
+            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if x.mnemonic in ['bctrl', 'bl'])
         # FIXME: `bal` was not included in CS_GRP_CALL. This is fixed on capstone v6.alpha
         elif self.arch in ['mips', 'mips64']:
-            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bal', 'jalr']))
+            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if x.mnemonic in ['bal', 'jalr'])
 
         calls = list(filter_calls(dis))
 
