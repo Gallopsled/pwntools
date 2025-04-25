@@ -412,6 +412,7 @@ class ContextType(object):
         'avr':       little_8,
         'amd64':     little_64,
         'arm':       little_32,
+        'armhf':     little_32,
         'cris':      little_32,
         'i386':      little_32,
         'ia64':      big_64,

@@ -1172,19 +1172,20 @@ class ELF(ELFFile):
 
         func = self.functions['__libc_start_main']
         exit_addr = self.symbols['exit']
-        eabi = None
         # `__libc_start_call_main` is usually smaller than `__libc_start_main`,
         # (except for powerpc which uses a bigger `generic_start_main`), so
         # we might disassemble a bit too much, but it's a good dynamic estimate.
         callee_size = func.size
         # most arch's call instruction has the first operands as an intermidiate, except s390
         imm_index = 0
+        eabi = None
 
         # If there's no delay slot, execution continues on the next instruction after a call.
         call_return_offset = 1
         call_instructions = set([cs.CS_GRP_CALL])
         if self.arch in ['arm', 'thumb']:
             if b'armhf' in self.linker:
+                # FIXME: I have no idea why setting self.arch = 'armhf' does not work
                 eabi = 'hf'
             if exit_addr & 1: exit_addr -= 1
         elif self.arch == 'aarch64':
