@@ -1170,41 +1170,57 @@ class ELF(ELFFile):
         if 'exit' not in self.symbols:
             return 0
 
+        func = self.functions['__libc_start_main']
+        exit_addr = self.symbols['exit']
         eabi = None
+        # `__libc_start_call_main` is usually smaller than `__libc_start_main`,
+        # (except for powerpc which uses a bigger `generic_start_main`), so
+        # we might disassemble a bit too much, but it's a good dynamic estimate.
+        callee_size = func.size
+        # most arch's call instruction has the first operands as an intermidiate, except s390
+        imm_index = 0
+
         # If there's no delay slot, execution continues on the next instruction after a call.
         call_return_offset = 1
+        call_instructions = set([cs.CS_GRP_CALL])
         if self.arch in ['arm', 'thumb']:
             if b'armhf' in self.linker:
                 eabi = 'hf'
-            call_instructions = set([cs.CS_GRP_CALL])
+            if exit_addr & 1: exit_addr -= 1
         elif self.arch == 'aarch64':
-            call_instructions = set([cs.CS_GRP_CALL])
+            pass
         elif self.arch in ['mips', 'mips64']:
             # FIXME: `bal` was not included in CS_GRP_CALL. This is fixed on capstone v6.alpha
-            #call_instructions = set([cs.CS_GRP_CALL])
-            call_instructions = set([cs.CS_GRP_CALL, cs.CS_GRP_BRANCH_RELATIVE])
+            call_instructions = call_instructions.add(cs.CS_GRP_BRANCH_RELATIVE)
             # Account for the delay slot.
             call_return_offset = 2
         elif self.arch in ['i386', 'amd64', 'ia64']:
-            call_instructions = set([cs.CS_GRP_CALL])
+            pass
+        elif self.arch in ['ppc', 'powerpc', 'powerpc64']:
+            callee_size *= 2
+            if exit_addr & 1 == 0:
+                # powepc often jumps to the local entry point after TOC setup
+                exit_addr += 8
+            pass
+        elif self.arch in ['em_s390', 's390']:
+            imm_index = 1
+            pass
         else:
             log.error('Unsupported architecture %s in ELF.libc_start_main_return', self.arch)
             return 0
 
         from pwnlib.asm import get_cs_disassembler
         md = get_cs_disassembler(arch=self.arch, endian=self.endian, bits=self.bits, eabi=eabi)
-        func = self.functions['__libc_start_main']
         dis = list(self.cs_disasm(md, func.address, func.size))
 
-        exit_addr = self.symbols['exit']
-        if self.arch == 'arm' and exit_addr & 1: exit_addr -= 1
-
-        calls = [(i, x) for i, x in enumerate(dis) if call_instructions & set(x.groups)]
+        filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if call_instructions & set(x.groups))
+        calls = list(filter_calls(dis))
 
         def find_ret_main_addr(caller_dis, calls):
             call_to_main = -1
             for i, insn in calls:
-                if insn.operands[0].imm == exit_addr: break
+                if cs.CS_GRP_CALL in insn.groups and insn.operands[imm_index].imm == exit_addr:
+                    break
                 call_to_main = i
             else:
                 return 0
@@ -1218,17 +1234,19 @@ class ELF(ELFFile):
         if ret_addr:
             return ret_addr
 
+        if self.arch in ['ppc', 'powerpc', 'powerpc64']:
+            filter_calls = lambda dis: ((i, x) for i, x in enumerate(dis) if set([x.mnemonic]) & set(['bctrl', 'bl']))
+
         # `__libc_start_main` -> `__libc_start_call_main` -> `main`
         # Find a direct call which calls `exit` once. That's probably `__libc_start_call_main`.
         for _, insn in calls:
-            op = insn.operands[0]
+            op = insn.operands[imm_index]
             if op.type != cs.CS_OP_IMM: continue
 
             target_addr = op.imm
-            # `__libc_start_call_main` is usually smaller than `__libc_start_main`, so
-            # we might disassemble a bit too much, but it's a good dynamic estimate.
-            callee_dis = list(self.cs_disasm(md, target_addr, func.size))
-            callee_calls = [(i, x) for i, x in enumerate(callee_dis) if call_instructions & set(x.groups)]
+            callee_dis = list(self.cs_disasm(md, target_addr, callee_size))
+            callee_calls = filter_calls(callee_dis)
+
             ret_addr = find_ret_main_addr(callee_dis, callee_calls)
             if ret_addr:
                 return ret_addr

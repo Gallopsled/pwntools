@@ -427,6 +427,7 @@ class ContextType(object):
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
+        'em_s390':   big_64,
         'thumb':     little_32,
         'vax':       little_32,
         'none':      {},
