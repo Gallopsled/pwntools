@@ -1568,7 +1568,6 @@ class ROP(object):
         log.debug("PLT_INIT: %#x", plt_init)
 
         reloc_index = dlresolve.reloc_index
-        real_args = dlresolve.real_args
         call = Call("[plt_init] " + dlresolve.symbol.decode(),
                     plt_init,
                     dlresolve.real_args,
