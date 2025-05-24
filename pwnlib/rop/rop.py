@@ -385,6 +385,7 @@ from pwnlib.rop.call import Call
 from pwnlib.rop.call import CurrentStackPointer
 from pwnlib.rop.call import NextGadgetAddress
 from pwnlib.rop.call import StackAdjustment
+from pwnlib.rop.call import StackRelative
 from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
@@ -1028,6 +1029,11 @@ class ROP(object):
             elif isinstance(slot, Gadget):
                 stack[i] = slot.address
                 stack.describe(self.describe(slot), slot_address)
+
+            elif isinstance(slot, StackRelative):
+                address = slot.resolve(slot_address)
+                stack[i] = address
+                stack.describe(self.describe(address), slot_address)
 
             # Everything else we can just leave in place.
             # Maybe the user put in something on purpose?

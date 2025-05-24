@@ -55,6 +55,35 @@ class StackAdjustment(Unresolved):
     """
     pass
 
+class StackRelative(Unresolved):
+    """
+    During the parsing process, it will be replaced with the relative offset
+    of the stack position where the current slot is located.
+
+    Examples
+        >>> context.clear()
+        >>> context.arch = 'amd64'
+        >>> u = StackRelative(+8)
+        >>> u.resolve(1000)
+        1008
+        >>> u = StackRelative(-8)
+        >>> u.resolve(1000)
+        992    
+    """
+    def __init__(self, offset):
+        self.offset = offset
+    
+    def resolve(self, base):
+        """
+        Resolve the stack-relative address based on the given base address.
+
+        Arguments:
+            base(int): The base address to resolve against.
+        
+        Returns:
+            int: The resolved address.
+        """
+        return base + self.offset
 
 class AppendedArgument(Unresolved):
     r"""
