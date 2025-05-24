@@ -93,7 +93,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2574][2574] Allow creating an ELF from in-memory bytes
 - [#2575][2575] Detect when Terminator is being used as terminal
 - [#2578][2578] Add gnome-terminal, Alacritty, Ttilix for run_in_new_terminal
+- [#2583][2583] Add new `ROP` feature: relative stack offset
 
+[2583]: https://github.com/Gallopsled/pwntools/pull/2583
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
