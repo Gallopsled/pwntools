@@ -356,6 +356,32 @@ Let's try it out!
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
     b'hello\n'
+
+ROP + StackRelative
+-----------------------
+
+In certain situations, you might prefer to use a stack-relative address. 
+For this purpose, you can use :class:`StackRelative` as a placeholder for a stack-relative address.
+
+    >>> context.clear(arch='amd64')
+    >>> assembly = 'pop rdi; ret; pop rsi; ret; pop rdx; ret; pop rbp; ret'
+    >>> binary = ELF.from_assembly(assembly)
+    >>> binary.symbols['funcname'] = binary.entry + 0x1000
+    >>> rop = ROP(binary)
+    >>> rop.base = 0xdead0000
+    >>> from pwnlib.rop.call import StackRelative
+    >>> rop.call("funcname", [b"hello", b"StackRelative"])
+    >>> rop.rbp = StackRelative(-0x8)
+    >>> print(rop.dump())
+    0xdead0000:       0x10000002 pop rsi; ret
+    0xdead0008:       0xdead0038 [arg1] rsi = AppendedArgument([b'StackRelative'], 0x0) (+0x30)
+    0xdead0010:       0x10000000 pop rdi; ret
+    0xdead0018:       0xdead0048 [arg0] rdi = AppendedArgument([b'hello'], 0x0) (+0x30)
+    0xdead0020:       0x10001000 funcname
+    0xdead0028:       0x10000006 pop rbp; ret
+    0xdead0030:       0xdead0028 (-0x8)
+    0xdead0038: b'StackRelative\x00$$'
+    0xdead0048:   b'hello\x00$$'
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -465,7 +491,7 @@ class DescriptiveStack(list):
             if desc:
                 line += ' %s' % desc
             if off is not None:
-                line += ' (+%#x)' % off
+                line += (' (+%#x)' % off) if off >= 0 else ' (-%#x)' % -off
             rv.append(line)
             addr += _slot_len(data)
 

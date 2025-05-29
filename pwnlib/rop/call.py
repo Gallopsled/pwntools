@@ -61,6 +61,7 @@ class StackRelative(Unresolved):
     of the stack position where the current slot is located.
 
     Examples
+
         >>> context.clear()
         >>> context.arch = 'amd64'
         >>> u = StackRelative(+8)
@@ -68,7 +69,7 @@ class StackRelative(Unresolved):
         1008
         >>> u = StackRelative(-8)
         >>> u.resolve(1000)
-        992    
+        992
     """
     def __init__(self, offset):
         self.offset = offset
@@ -79,7 +80,7 @@ class StackRelative(Unresolved):
 
         Arguments:
             base(int): The base address to resolve against.
-        
+
         Returns:
             int: The resolved address.
         """
