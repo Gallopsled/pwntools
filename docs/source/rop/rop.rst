@@ -8,7 +8,7 @@
    from pwnlib.context import context
    from pwnlib.elf import ELF
    from pwnlib.rop import ROP
-   from pwnlib.rop.call import Call, AppendedArgument
+   from pwnlib.rop.call import Call, AppendedArgument, StackRelative
    from pwnlib.elf.maps import CAT_PROC_MAPS_EXIT
    from pwnlib.util.packing import *
    from pwnlib.util.fiddling import *

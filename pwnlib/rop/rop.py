@@ -361,27 +361,88 @@ ROP + StackRelative
 -----------------------
 
 In certain situations, you might prefer to use a stack-relative address. 
-For this purpose, you can use :class:`StackRelative` as a placeholder for a stack-relative address.
+
+This is an example. Sometimes, we need to use `pop rdx; leave; ret;` to control rdx.
 
     >>> context.clear(arch='amd64')
-    >>> assembly = 'pop rdi; ret; pop rsi; ret; pop rdx; ret; pop rbp; ret'
+    >>> assembly = 'special_gadget: pop rdx; leave; ret; pop rdi; ret; pop rsi; ret; pop rbp; ret'
     >>> binary = ELF.from_assembly(assembly)
     >>> binary.symbols['funcname'] = binary.entry + 0x1000
-    >>> rop = ROP(binary)
-    >>> rop.base = 0xdead0000
-    >>> from pwnlib.rop.call import StackRelative
-    >>> rop.call("funcname", [b"hello", b"StackRelative"])
-    >>> rop.rbp = StackRelative(-0x8)
+    >>> rop = ROP(binary, base=0xdead0000)
+    >>> rop.rbp = 0xdead0000 + len(rop.chain()) + 0x10 # set rbp next to the special_gadget
+    >>> rop.raw(binary.symbols['special_gadget'])
+    >>> rop.raw(0xdeadbeef)     # control rdx
+    >>> rop.call("funcname", [b"hello", b"world"])
     >>> print(rop.dump())
-    0xdead0000:       0x10000002 pop rsi; ret
-    0xdead0008:       0xdead0038 [arg1] rsi = AppendedArgument([b'StackRelative'], 0x0) (+0x30)
-    0xdead0010:       0x10000000 pop rdi; ret
-    0xdead0018:       0xdead0048 [arg0] rdi = AppendedArgument([b'hello'], 0x0) (+0x30)
+    0xdead0000:       0x10000007 pop rbp; ret
+    0xdead0008:       0xdead0010 (+0x8)
+    0xdead0010:       0x10000000 special_gadget
+    0xdead0018:       0xdeadbeef
+    0xdead0020:       0x10000005 pop rsi; ret
+    0xdead0028:       0xdead0048 [arg1] rsi = AppendedArgument([b'world'], 0x0) (+0x20)
+    0xdead0030:       0x10000003 pop rdi; ret
+    0xdead0038:       0xdead0050 [arg0] rdi = AppendedArgument([b'hello'], 0x0) (+0x18)
+    0xdead0040:       0x10001000 funcname
+    0xdead0048:   b'world\x00$$'
+    0xdead0050:   b'hello\x00$$'
+
+This might be right.
+But the following situation is not right.
+
+    >>> rop = ROP(binary, base=0xdead0000)
+    >>> rop.call("funcname", [b"arg0", b"arg1"])
+    >>> rop.rbp = 0xdead0000 + len(rop.chain()) + 0x10 # this offset is wrong
+    >>> rop.raw(binary.symbols['special_gadget'])
+    >>> rop.raw(0xdeadbeef)     # control rdx
+    >>> rop.call("funcname", [b"hello", b"world"])
+    >>> print(rop.dump())
+    0xdead0000:       0x10000005 pop rsi; ret
+    0xdead0008:       0xdead0070 [arg1] rsi = AppendedArgument([b'arg1'], 0x0) (+0x68)
+    0xdead0010:       0x10000003 pop rdi; ret
+    0xdead0018:       0xdead0078 [arg0] rdi = AppendedArgument([b'arg0'], 0x0) (+0x60)
     0xdead0020:       0x10001000 funcname
-    0xdead0028:       0x10000006 pop rbp; ret
-    0xdead0030:       0xdead0028 (-0x8)
-    0xdead0038: b'StackRelative\x00$$'
-    0xdead0048:   b'hello\x00$$'
+    0xdead0028:       0x10000007 pop rbp; ret
+    0xdead0030:       0xdead0048 (+0x18)
+    0xdead0038:       0x10000000 special_gadget
+    0xdead0040:       0xdeadbeef
+    0xdead0048:       0x10000005 pop rsi; ret
+    0xdead0050:       0xdead0080 [arg1] rsi = AppendedArgument([b'world'], 0x0) (+0x30)
+    0xdead0058:       0x10000003 pop rdi; ret
+    0xdead0060:       0xdead0088 [arg0] rdi = AppendedArgument([b'hello'], 0x0) (+0x28)
+    0xdead0068:       0x10001000 funcname
+    0xdead0070:   b'arg1\x00$$$'
+    0xdead0078:   b'arg0\x00$$$'
+    0xdead0080:   b'world\x00$$'
+    0xdead0088:   b'hello\x00$$'
+    
+For this purpose, you can use :class:`StackRelative` as a placeholder for a stack-relative address.
+
+    >>> rop = ROP(binary, base=0xdead0000)
+    >>> rop.call("funcname", [b"arg0", b"arg1"])
+    >>> rop.rbp = StackRelative(+0x8) # this offset is wrong
+    >>> rop.raw(binary.symbols['special_gadget'])
+    >>> rop.raw(0xdeadbeef)     # control rdx
+    >>> rop.call("funcname", [b"hello", b"world"])
+    >>> print(rop.dump())
+    0xdead0000:       0x10000005 pop rsi; ret
+    0xdead0008:       0xdead0070 [arg1] rsi = AppendedArgument([b'arg1'], 0x0) (+0x68)
+    0xdead0010:       0x10000003 pop rdi; ret
+    0xdead0018:       0xdead0078 [arg0] rdi = AppendedArgument([b'arg0'], 0x0) (+0x60)
+    0xdead0020:       0x10001000 funcname
+    0xdead0028:       0x10000007 pop rbp; ret
+    0xdead0030:       0xdead0038 (+0x8)
+    0xdead0038:       0x10000000 special_gadget
+    0xdead0040:       0xdeadbeef
+    0xdead0048:       0x10000005 pop rsi; ret
+    0xdead0050:       0xdead0080 [arg1] rsi = AppendedArgument([b'world'], 0x0) (+0x30)
+    0xdead0058:       0x10000003 pop rdi; ret
+    0xdead0060:       0xdead0088 [arg0] rdi = AppendedArgument([b'hello'], 0x0) (+0x28)
+    0xdead0068:       0x10001000 funcname
+    0xdead0070:   b'arg1\x00$$$'
+    0xdead0078:   b'arg0\x00$$$'
+    0xdead0080:   b'world\x00$$'
+    0xdead0088:   b'hello\x00$$'
+
 """
 from __future__ import absolute_import
 from __future__ import division
