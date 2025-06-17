@@ -11,7 +11,7 @@ Args:
     dll(str): The name of the DLL to find the function in.
     dest (str): The register to load the function address into.
 </%docstring>
-<%page args="function_name,dll='kernel32.dll',dest='rax'"/>
+<%page args="function_name,dll=b'kernel32.dll',dest='rax'"/>
 <%
 function_name = _need_bytes(function_name)
 dll = _need_bytes(dll)
@@ -25,4 +25,4 @@ assert dll == b'kernel32.dll'
     sub rsp, 0x30
     call rdi
     add rsp, ${pretty(0x30+align(8, len(function_name)))}
-    mov ${dest}, rax
+    ${amd64.mov(dest, 'rax')}
