@@ -93,6 +93,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2574][2574] Allow creating an ELF from in-memory bytes
 - [#2575][2575] Detect when Terminator is being used as terminal
 - [#2578][2578] Add gnome-terminal, Alacritty, Ttilix for run_in_new_terminal
+- [#2590][2590] Add support for finding corefiles under WSL2
 
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
@@ -112,6 +113,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2574]: https://github.com/Gallopsled/pwntools/pull/2574
 [2575]: https://github.com/Gallopsled/pwntools/pull/2575
 [2578]: https://github.com/Gallopsled/pwntools/pull/2578
+[2590]: https://github.com/Gallopsled/pwntools/pull/2590
 
 ## 4.15.0 (`beta`)
 
