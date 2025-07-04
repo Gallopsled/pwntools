@@ -126,25 +126,6 @@ def detect_missing_binaries(args):
         
     Returns:
         tuple: A pair of (executable_path, libc_path) where either may be None if not found.
-    
-    Example:
-        >>> import argparse
-        >>> # Mock args
-        >>> args = argparse.Namespace()
-        >>> args.exe = 'static_binary'
-        >>> args.libc = None
-        >>> # Mock ELF class
-        >>> from pwnlib.elf.elf import ELF
-        >>> orig_init = ELF.__init__
-        >>> def mock_init(self, *args, **kwargs):
-        ...     self.statically_linked = True
-        ...     self.path = args[0]
-        >>> ELF.__init__ = mock_init
-        >>> # For testing purposes, just verify the function exists
-        >>> 'detect_missing_binaries' in globals()
-        True
-        >>> # Restore original ELF.__init__
-        >>> ELF.__init__ = orig_init
     """
     log.info("Automatically detecting challenge binaries...")
     # look for challenge binary, libc, and ld in current directory
