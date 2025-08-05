@@ -9,7 +9,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.tubes.sock import sock
 from pwnlib.tubes.remote import remote
-from six.moves.queue import Queue
+from queue import Queue
 
 log = getLogger(__name__)
 

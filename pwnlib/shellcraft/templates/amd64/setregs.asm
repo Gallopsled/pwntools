@@ -1,5 +1,4 @@
 <%
-  import six
   from pwnlib.regsort import regsort
   from pwnlib.shellcraft import registers, eval
   from pwnlib.shellcraft.amd64 import mov
@@ -51,11 +50,11 @@ if isinstance(edx, str):
     except NameError:
         pass
 
-if isinstance(eax, six.integer_types) and isinstance(edx, six.integer_types) and eax >> 63 == edx:
+if isinstance(eax, int) and isinstance(edx, int) and eax >> 63 == edx:
     cdq = True
     reg_context.pop('rdx')
 
-sorted_regs = regsort(reg_context, registers.amd64)
+sorted_regs = regsort(reg_context, registers.amd64, registers.native64)
 %>
 % if not sorted_regs:
   /* setregs noop */

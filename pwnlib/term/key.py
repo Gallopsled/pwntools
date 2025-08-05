@@ -4,7 +4,6 @@ from __future__ import division
 import errno
 import os
 import select
-import six
 import string
 import sys
 
@@ -149,7 +148,7 @@ class Key:
         return self.__str__()
 
     def __eq__(self, other):
-        if   isinstance(other, (six.text_type, six.binary_type)):
+        if   isinstance(other, (bytes, str)):
             return Matcher(other)(self)
         elif isinstance(other, Matcher):
             return other(self)
@@ -284,7 +283,7 @@ def _csi_ss3(cmd, args):
     return k
 
 def _csi_u(cmd, args):
-    k = Key(kc.TYPE_UNICODE, six.unichr(args[0]))
+    k = Key(kc.TYPE_UNICODE, chr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
@@ -457,17 +456,17 @@ def _peek_simple():
                 if   c0 == 0:
                     k.code = u' '
                 elif chr(c0 + 0x40) in string.ascii_uppercase:
-                    k.code = six.unichr(c0 + 0x60)
+                    k.code = chr(c0 + 0x60)
                 else:
-                    k.code = six.unichr(c0 + 0x40)
+                    k.code = chr(c0 + 0x40)
                 k.mods |= kc.MOD_CTRL
         elif c0 == 0x7f:
             # print('del\r')
             k = Key(kc.TYPE_KEYSYM, kc.KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
-            k = Key(kc.TYPE_UNICODE, six.unichr(c0))
+            k = Key(kc.TYPE_UNICODE, chr(c0))
         else:
-            k = Key(kc.TYPE_UNICODE, six.unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
+            k = Key(kc.TYPE_UNICODE, chr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
     else: # utf8
         n = 0
         if   c0 & 0b11100000 == 0b11000000:

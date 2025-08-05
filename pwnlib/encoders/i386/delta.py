@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 
-import six
 import collections
 from random import choice
 from random import randint
@@ -59,7 +58,7 @@ class i386DeltaEncoder(Encoder):
         table = collections.defaultdict(lambda: [])
         endchar = bytearray()
 
-        not_bad = lambda x: six.int2byte(x) not in avoid
+        not_bad = lambda x: x not in avoid
         not_bad_or_term = lambda x: not_bad(x) and x != self.terminator
 
         for i in filter(not_bad_or_term, range(0, 256)):

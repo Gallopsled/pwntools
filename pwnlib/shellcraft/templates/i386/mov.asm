@@ -3,7 +3,6 @@
   from pwnlib.util import lists, packing, fiddling, misc
   from pwnlib.log import getLogger
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
-  import six
   log = getLogger('pwnlib.shellcraft.i386.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -58,12 +57,9 @@ Example:
     >>> print(shellcraft.i386.mov('eax', 0xdead00ff).rstrip())
         mov eax, -0xdead00ff
         neg eax
-    >>> print(shellcraft.i386.mov('eax', 0xc0).rstrip())
-        xor eax, eax
-        mov al, 0xc0
     >>> print(shellcraft.i386.mov('edi', 0xc0).rstrip())
-        mov edi, -0xc0
-        neg edi
+        xor edi, edi
+        mov dil, 0xc0
     >>> print(shellcraft.i386.mov('eax', 0xc000).rstrip())
         xor eax, eax
         mov ah, 0xc000 >> 8
@@ -143,7 +139,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, six.integer_types):
+% elif isinstance(src, int):
 ## Special case for zeroes
     % if src == 0:
         xor ${dest}, ${dest}

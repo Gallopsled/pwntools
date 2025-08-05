@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import six
 
 class Gadget(object):
     """
@@ -55,12 +54,12 @@ class Gadget(object):
 
     def __getitem__(self, key):
         # Backward compatibility
-        if isinstance(key, six.integer_types):
+        if isinstance(key, int):
             key = self.__indices[key]
         return getattr(self, key)
 
     def __setitem__(self, key, value):
         # Backward compatibility
-        if isinstance(key, six.integer_types):
+        if isinstance(key, int):
             key = self.__indices[key]
         return setattr(self, key, value)

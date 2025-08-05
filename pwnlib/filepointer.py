@@ -29,7 +29,6 @@ import ctypes
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.util.misc import python_2_bytes_compatible
 from pwnlib.util.packing import pack, unpack
 
 log = getLogger(__name__)
@@ -202,7 +201,6 @@ class _IOFileFlags2(_FlagsUnionBase):
     ]
 
 
-@python_2_bytes_compatible
 class FileStructure(object):
     r"""
     Crafts a FILE structure, with default values for some fields, like _lock which should point to null ideally, set.

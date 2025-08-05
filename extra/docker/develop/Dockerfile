@@ -5,7 +5,7 @@ ENV HISTFILE=/home/pwntools/.history
 
 # Uninstall existing versions of pwntools
 USER root
-RUN python3 -m pip uninstall -q -y pwntools
+RUN python3 -m pip uninstall --break-system-packages -q -y pwntools
 
 # Switch back to the pwntools user from here forward
 USER pwntools
@@ -17,14 +17,14 @@ ENV PATH="/home/pwntools/.local/bin:${PATH}"
 
 # Install Pwntools to the home directory, make it an editable install
 RUN git clone https://github.com/Gallopsled/pwntools \
- && python3 -m pip install --upgrade --editable pwntools \
+ && python3 -m pip install --break-system-packages --upgrade --editable pwntools \
  && PWNLIB_NOTERM=1 pwn version
 
 # Requirements for running the tests
-RUN python3 -m pip install --upgrade --requirement pwntools/docs/requirements.txt
+RUN python3 -m pip install --break-system-packages --upgrade --requirement pwntools/docs/requirements.txt
 
 # Python niceties for debugging
-RUN python3 -m pip install -U ipython ipdb
+RUN python3 -m pip install --break-system-packages -U ipython ipdb
 
 # Dependencies from .travis.yml addons -> apt -> packages
 ARG DEBIAN_FRONTEND=noninteractive

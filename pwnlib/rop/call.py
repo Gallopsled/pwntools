@@ -7,9 +7,7 @@ from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing
 
-import six
-
-from pwnlib.util.misc import python_2_bytes_compatible, align
+from pwnlib.util.misc import align
 
 
 class Unresolved(object):
@@ -58,7 +56,6 @@ class StackAdjustment(Unresolved):
     pass
 
 
-@python_2_bytes_compatible
 class AppendedArgument(Unresolved):
     r"""
     Encapsulates information about a pointer argument, and the data
@@ -115,7 +112,7 @@ class AppendedArgument(Unresolved):
             if isinstance(v, (list, tuple)):
                 self.size += context.bytes
             else:
-                if isinstance(v, six.text_type):
+                if isinstance(v, str):
                     v = packing._need_bytes(v)
                 try:
                     self.size += align(context.bytes, len(v))
@@ -173,9 +170,9 @@ class AppendedArgument(Unresolved):
             self.address = addr
             rv = [None] * len(self.values)
             for i, value in enumerate(self.values):
-                if isinstance(value, six.integer_types):
+                if isinstance(value, int):
                     rv[i] = value
-                elif isinstance(value, six.text_type):
+                elif isinstance(value, str):
                     value = packing._need_bytes(value)
                 if isinstance(value, (bytes, bytearray)):
                     value += b'\x00'
@@ -197,7 +194,7 @@ class AppendedArgument(Unresolved):
         return packing.flat(self.resolve())
 
     def __repr__(self):
-        if isinstance(self.address, six.integer_types):
+        if isinstance(self.address, int):
             return '%s(%r, %#x)' % (self.__class__.__name__, self.values, self.address)
         else:
             return '%s(%r, %r)' % (self.__class__.__name__, self.values, self.address)
@@ -227,27 +224,26 @@ class Call(object):
     args = []
 
     def __init__(self, name, target, args, abi=None, before=()):
-        assert isinstance(name, (bytes, six.text_type))
-        # assert isinstance(target, six.integer_types)
+        assert isinstance(name, (bytes, str))
         assert isinstance(args, (list, tuple))
         self.abi  = abi or ABI.default()
         self.name = name
         self.target = target
         self.args = list(args)
         for i, arg in enumerate(args):
-            if not isinstance(arg, six.integer_types+(Unresolved,)):
+            if not isinstance(arg, (int, Unresolved)):
                 self.args[i] = AppendedArgument(arg)
         self.stack_arguments_before = before
 
     def __repr__(self):
-        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
+        fmt = "%#x" if isinstance(self.target, int) else "%r"
         return '%s(%r, %s, %r)' % (self.__class__.__name__,
                                     self.name,
                                     fmt % self.target,
                                     self.args)
 
     def is_flat(self):
-        if isinstance(self, six.integer_types + (Unresolved,)):
+        if isinstance(self, (int, Unresolved)):
             return True
         if not isinstance(self, Call):
             return False
@@ -271,7 +267,7 @@ class Call(object):
             return x
 
     def __str__(self):
-        fmt = "%#x" if isinstance(self.target, six.integer_types) else "%r"
+        fmt = "%#x" if isinstance(self.target, int) else "%r"
         args = []
         for arg in self.args:
             args.append(self._special_repr(arg))
@@ -279,7 +275,7 @@ class Call(object):
         name = self.name or (fmt % self.target)
         arg_str = []
         for arg in args:
-            if isinstance(arg, six.integer_types) and arg > 0x100:
+            if isinstance(arg, int) and arg > 0x100:
                 arg_str.append(hex(arg))
             else:
                 arg_str.append(str(arg))

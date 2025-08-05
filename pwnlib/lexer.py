@@ -95,7 +95,7 @@ class PwntoolsLexer(RegexLexer):
         'whitespace': [
             (r'\n', Text),
             (r'\s+', Text),
-            (r'/\*.*?\*/', Comment),
+            (r'(?ms)/\*.*?\*/', Comment),
             (r';.*$', Comment)
         ],
         'punctuation': [

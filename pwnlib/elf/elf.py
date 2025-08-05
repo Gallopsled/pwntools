@@ -30,6 +30,17 @@ You can even patch and save the files.
     >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
+An ELF can also be created from in-memory bytes.
+
+    >>> bytes = open('/bin/cat', 'rb').read()
+    >>> e = ELF(bytes)
+    >>> e.read(e.address+1, 3)
+    b'ELF'
+    >>> e.asm(e.address, 'ret')
+    >>> e.save('/tmp/quiet-cat')
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
+    '   0:   c3                      ret'
+
 Module Members
 --------------
 """
@@ -41,11 +52,10 @@ import gzip
 import mmap
 import os
 import re
-import six
 import subprocess
 import tempfile
 
-from six import BytesIO
+from io import BytesIO
 
 from collections import namedtuple, defaultdict
 
@@ -212,16 +222,21 @@ class ELF(ELFFile):
     _fill_gaps = True
 
 
-    def __init__(self, path, checksec=True):
+    def __init__(self, path_or_bytes, checksec=True):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.
 
-        #: :class:`file`: Open handle to the ELF file on disk
-        self.file = open(path,'rb')
-
-        #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
-        self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+        if isinstance(path_or_bytes, (bytes, bytearray)) and path_or_bytes.startswith(b'\x7FELF'):
+            self.file = self.mmap = mmap.mmap(-1, len(path_or_bytes))
+            self.mmap.write(path_or_bytes)
+            path = "<bytes>"
+        else:
+            #: :class:`file`: Open handle to the ELF file on disk
+            self.file = open(path_or_bytes,'rb')
+            #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
+            self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+            path = path_or_bytes
 
         super(ELF,self).__init__(self.mmap)
 
@@ -266,7 +281,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
+        if isinstance(self.arch, (bytes, str)):
             self.arch = self.arch.lower()
 
         self._sections = None
@@ -853,6 +868,13 @@ class ELF(ELFFile):
             log.warn_once("Injected /proc/self/maps code did not execute correctly")
             return {}
 
+        # Sometimes the original binary already fail to run, for example, in case glibc mismatches.
+        try:
+            int(data.split('-', 1)[0], 16)
+        except ValueError:
+            log.warn_once("Cannot execute `%s` to get /proc/self/maps", self.path)
+            return {}
+
         # Swap in the original ELF name
         data = data.replace(path, self.path)
 
@@ -920,10 +942,9 @@ class ELF(ELFFile):
                 continue
 
             for symbol in _iter_symbols(section):
-                value = symbol.entry.st_value
-                if not value:
+                if not symbol.name or symbol.entry.st_shndx == 'SHN_UNDEF':
                     continue
-                self.symbols[symbol.name] = value
+                self.symbols[symbol.name] = symbol.entry.st_value
 
     def _populate_synthetic_symbols(self):
         """Adds symbols from the GOT and PLT to the symbols dictionary.
@@ -1260,6 +1281,58 @@ class ELF(ELFFile):
                     break
                 yield (addr + offset + load_address_fixup)
                 offset += 1
+        if not segments:
+            if writable:
+                ko_check_segments = [".data"]
+            elif executable:
+                ko_check_segments = [".text"]
+            else:
+                ko_check_segments = [".text",".note",".rodata",".data"]
+            pagesize = 4096
+            for section in super().iter_sections():
+                alignment = section['sh_addralign']
+                if alignment > pagesize:
+                    pagesize = alignment
+            if pagesize > 4096 and pagesize % 4096 > 0:
+                pagesize = (pagesize // 4096 + 1) * 4096
+                # I don't know how to test the pagesize; it might have issues
+            for section in super().iter_sections():
+                if section.name not in ko_check_segments and \
+                       not any(section.name.startswith(ko_check_segment) for ko_check_segment in ko_check_segments):
+                    continue
+                filesz = section['sh_size']
+                offset = section['sh_offset']
+                data = self.mmap[offset:offset + filesz]
+                data += b'\x00'
+                offset = 0
+                while True:
+                    offset = data.find(needle, offset)
+                    if offset == -1:
+                        break
+                    # ko_file: header->.note->.text->.rodata->.data
+                    # after insmod: text page(executable page), note and rodate page(read only page), data page(writable page)
+                    if section.name == ".text":
+                        addr = 0
+                    elif section.name.startswith(".note") :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                    elif section.name.startswith(".rodata"):
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        text_offset=self.get_section_by_name(".text")['sh_offset']
+                        addr = (text_filesz//pagesize + 1)*pagesize + text_offset - self.header['e_ehsize']
+                    elif section.name == ".data" :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        rodata_filesz=0
+                        note_filesz=0
+                        for section in super().iter_sections():
+                            if section.name.startswith(".rodata"):
+                                rodata_filesz += section['sh_size']
+                            elif section.name.startswith(".note"):
+                                note_filesz += section['sh_size']
+                        addr = (text_filesz // pagesize + 1 + (note_filesz + rodata_filesz) // pagesize + 1) * pagesize
+                    yield (addr + offset + load_address_fixup)
+                    offset += 1
 
     def offset_to_vaddr(self, offset):
         """offset_to_vaddr(offset) -> int
@@ -2086,7 +2159,7 @@ class ELF(ELFFile):
             "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("NX unknown - GNU_STACK missing"),
+                None:  yellow("NX enabled on new kernels"),
             }[self.nx],
             "PIE:".ljust(12) + {
                 True: green("PIE enabled"),

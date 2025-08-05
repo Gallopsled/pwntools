@@ -1,5 +1,4 @@
 <%
-import six
 from pwnlib.shellcraft import amd64, pretty, common
 from pwnlib.util.packing import pack, unpack
 from pwnlib.util.lists import group
@@ -25,7 +24,7 @@ done           = common.label('egghunter_done')
 next_page      = common.label('egghunter_nextpage')
 
 egg_str = egg
-if isinstance(egg, six.integer_types):
+if isinstance(egg, int):
     egg_str = pack(egg, bytes=4)
 
 if len(egg_str) % 4:

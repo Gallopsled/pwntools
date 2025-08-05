@@ -4,7 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import io
-import six
 import sys
 import os
 
@@ -379,7 +378,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
     # XXX circular imports
     from pwnlib.term import term_mode
     if not term_mode:
-        six.print_(prompt, end='', flush=True)
+        print(prompt, end='', flush=True)
         return getattr(sys.stdin, 'buffer', sys.stdin).readline(_size).rstrip(b'\n')
     show_suggestions = False
     eof = False
@@ -482,7 +481,7 @@ def init():
     global safeeval
     # defer imports until initialization
     import sys
-    from six.moves import builtins
+    import builtins
     from pwnlib.util import safeeval
 
     class Wrapper:
@@ -497,8 +496,4 @@ def init():
             return getattr(self._fd, k)
     sys.stdin = Wrapper(sys.stdin)
 
-    if six.PY2:
-        builtins.raw_input = raw_input
-        builtins.input = eval_input
-    else:
-        builtins.input = str_input
+    builtins.input = str_input

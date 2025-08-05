@@ -11,7 +11,8 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
 | [4.15.0](#4150-beta)  | `beta`   |
-| [4.14.0](#4140-stable)  | `stable` | Jan 15, 2025
+| [4.14.0](#4141-stable)  | `stable` | Mar 24, 2025
+| [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
 | [4.13.0](#4130)  |          | Aug 12, 2024
 | [4.12.0](#4120)  |          | Feb 22, 2024
@@ -74,6 +75,8 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
+- [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
 - [#2522][2522] Support starting a kitty debugging window with the 'kitten' command
@@ -83,8 +86,18 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2527][2527] Allow setting debugger path via `context.gdb_binary`
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2529][2529] Add LoongArch64 support
+- [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
+- [#2504][2504] doc: add example case for `tuple` (host, port pair) in `gdb.attach`
+- [#2546][2546] ssh: Allow passing disabled_algorithms keyword argument from ssh to paramiko
+- [#2538][2538] Add `ssh -L` / `ssh.connect_remote()` workaround when `AllowTcpForwarding` is disabled
+- [#2574][2574] Allow creating an ELF from in-memory bytes
+- [#2575][2575] Detect when Terminator is being used as terminal
+- [#2578][2578] Add gnome-terminal, Alacritty, Ttilix for run_in_new_terminal
+- [#2590][2590] Add support for finding corefiles under WSL2
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 
+[2419]: https://github.com/Gallopsled/pwntools/pull/2419
+[2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
 [2522]: https://github.com/Gallopsled/pwntools/pull/2522
@@ -94,6 +107,14 @@ The table below shows which release corresponds to each branch, and what date th
 [2527]: https://github.com/Gallopsled/pwntools/pull/2527
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2529]: https://github.com/Gallopsled/pwntools/pull/2529
+[2506]: https://github.com/Gallopsled/pwntools/pull/2506
+[2504]: https://github.com/Gallopsled/pwntools/pull/2504
+[2546]: https://github.com/Gallopsled/pwntools/pull/2546
+[2538]: https://github.com/Gallopsled/pwntools/pull/2538
+[2574]: https://github.com/Gallopsled/pwntools/pull/2574
+[2575]: https://github.com/Gallopsled/pwntools/pull/2575
+[2578]: https://github.com/Gallopsled/pwntools/pull/2578
+[2590]: https://github.com/Gallopsled/pwntools/pull/2590
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 
 ## 4.15.0 (`beta`)
@@ -115,6 +136,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2502][2502] Fix loading ELF files without valid .dynamic section
 - [#2476][2476] Deprecate 'keepends' argument in favor of 'drop' in `tube.recvline*`
 - [#2364][2364] Deprecate direct commandline scripts invocation and exclude nonsense ones
+- [#2496][2496] Add linux ko file search support
 
 [2508]: https://github.com/Gallopsled/pwntools/pull/2508
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
@@ -133,16 +155,37 @@ The table below shows which release corresponds to each branch, and what date th
 [2502]: https://github.com/Gallopsled/pwntools/pull/2502
 [2476]: https://github.com/Gallopsled/pwntools/pull/2476
 [2364]: https://github.com/Gallopsled/pwntools/pull/2364
+[2496]: https://github.com/Gallopsled/pwntools/pull/2496
 
-## 4.14.1
+## 4.14.2
 
+- [#2545][2545] SSH: fix download/upload with -1 exit status
+- [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
+- [#2576][2576] regsort: respect register aliases
+
+[2545]: https://github.com/Gallopsled/pwntools/pull/2545
+[2567]: https://github.com/Gallopsled/pwntools/pull/2567
+[2576]: https://github.com/Gallopsled/pwntools/pull/2576
+
+## 4.14.1 (`stable`)
+
+- [#2451][2451] Show symbols defined to value 0 (start of file)
 - [#2533][2533] Fix installation on Python 3.5 and lower
 - [#2518][2518] fix: update apport coredump path handling for CorefileFinder
+- [#2552][2552] Fix memcpy shellcraft template off-by-one
+- [#2559][2559] Fix parsing corefile with missing auxv
+- [#2562][2562] Fix syntax highlighting of multiline comments in ASM
+- [#2565][2565] Exclude broken Unicorn
 
+[2451]: https://github.com/Gallopsled/pwntools/pull/2451
 [2533]: https://github.com/Gallopsled/pwntools/pull/2533
 [2518]: https://github.com/Gallopsled/pwntools/pull/2518
+[2552]: https://github.com/Gallopsled/pwntools/pull/2552
+[2559]: https://github.com/Gallopsled/pwntools/pull/2559
+[2562]: https://github.com/Gallopsled/pwntools/pull/2562
+[2565]: https://github.com/Gallopsled/pwntools/pull/2565
 
-## 4.14.0 (`stable`)
+## 4.14.0
 
 - [#2356][2356] Add local libc database provider for libcdb
 - [#2360][2360] Add offline parameter for `search_by_hash` series function

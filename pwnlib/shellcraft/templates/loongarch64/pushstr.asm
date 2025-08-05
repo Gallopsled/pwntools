@@ -1,7 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import loongarch64, pretty
-    import six
 %>\
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -57,7 +56,7 @@ Args:
   append_null (bool): Whether to append a single NULL-byte before pushing.
 </%docstring>
 <%
-    if isinstance(string, six.text_type):
+    if isinstance(string, str):
         string = string.encode('utf-8')
     if append_null:
         string += b'\x00'

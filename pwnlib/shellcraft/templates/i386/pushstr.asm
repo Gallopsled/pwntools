@@ -1,7 +1,6 @@
 <%
     from pwnlib.util import lists, packing, fiddling
     from pwnlib.shellcraft import pretty, okay
-    import six
 %>
 <%page args="string, append_null = True"/>
 <%docstring>
@@ -63,22 +62,22 @@ Args:
 </%docstring>
 <%
 original = string
-if isinstance(string, six.text_type):
+if isinstance(string, str):
     string = packing._need_bytes(string, 2, 0x80)
 else:
     string = packing.flat(string)
 
 if append_null:
     string += b'\x00'
-    if isinstance(original, six.binary_type):
+    if isinstance(original, bytes):
         original += b'\x00'
-    elif isinstance(original, six.text_type):
+    elif isinstance(original, str):
         original += '\x00'
 
 if not string:
     return
 
-if six.indexbytes(string, -1) >= 128:
+if string[-1] >= 128:
     extend = b'\xff'
 else:
     extend = b'\x00'
