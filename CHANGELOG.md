@@ -146,10 +146,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2545][2545] SSH: fix download/upload with -1 exit status
 - [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
 - [#2576][2576] regsort: respect register aliases
+- [#2595][2595] libcdb: Add Ubuntu and Debian debuginfod servers to default list
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
 [2576]: https://github.com/Gallopsled/pwntools/pull/2576
+[2595]: https://github.com/Gallopsled/pwntools/pull/2595
 
 ## 4.14.1 (`stable`)
 
