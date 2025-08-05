@@ -11,7 +11,7 @@ The table below shows which release corresponds to each branch, and what date th
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
 | [4.15.0](#4150-beta)  | `beta`   |
-| [4.14.0](#4141-stable)  | `stable` | Mar 24, 2025
+| [4.14.1](#4141-stable)  | `stable` | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
 | [4.13.0](#4130)  |          | Aug 12, 2024
@@ -149,6 +149,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2595][2595] libcdb: Add Ubuntu and Debian debuginfod servers to default list
 - [#2593][2593] Use unicorn on macOS w/ SIP enabled
 - [#2587][2587] Support longer function names in Windows `getexport` shellcode
+- [#2596][2596] Ignore `colored_traceback` error when TERM envvar is unset
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
@@ -156,6 +157,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2595]: https://github.com/Gallopsled/pwntools/pull/2595
 [2593]: https://github.com/Gallopsled/pwntools/pull/2593
 [2587]: https://github.com/Gallopsled/pwntools/pull/2587
+[2596]: https://github.com/Gallopsled/pwntools/pull/2596
 
 ## 4.14.1 (`stable`)
 
