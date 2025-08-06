@@ -115,6 +115,18 @@ def get_docker_image_libraries():
     return libc_basename, ld_basename
 
 def detect_missing_binaries(args):
+    """Automatically detects challenge binaries and libraries in the current directory.
+    
+    This function scans the current directory for executable files, libc, and ld libraries.
+    If a Dockerfile is present and no libraries are found, it attempts to extract them from
+    the Docker image, but only if the binary is not statically linked.
+    
+    Args:
+        args: Argument namespace containing exe and libc attributes.
+        
+    Returns:
+        tuple: A pair of (executable_path, libc_path) where either may be None if not found.
+    """
     log.info("Automatically detecting challenge binaries...")
     # look for challenge binary, libc, and ld in current directory
     exe, libc, ld = args.exe, args.libc, None
@@ -138,7 +150,19 @@ def detect_missing_binaries(args):
         elif len(other_files) > 1:
             log.warning("Failed to find challenge binary. There are multiple binaries in the current directory: %s", other_files)
     
-    if has_dockerfile and exe and not (libc or ld): 
+    # Check if the binary is statically linked before trying to extract libraries from Docker
+    is_statically_linked = False
+    if exe:
+        try:
+            binary = ELF(exe, checksec=False)
+            is_statically_linked = binary.statically_linked
+            if is_statically_linked:
+                log.info("Binary is statically linked, no need for external libraries")
+        except Exception as e:
+            log.warning("Could not check if binary is statically linked: %s", e)
+    
+    # Only extract libraries from Docker if the binary is not statically linked
+    if has_dockerfile and exe and not (libc or ld) and not is_statically_linked: 
         libc, ld = get_docker_image_libraries()
 
     if exe != args.exe:
