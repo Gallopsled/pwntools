@@ -64,6 +64,8 @@ MAP_TYPES = {
 }
 
 DEBUGINFOD_SERVERS = [
+    'https://debuginfod.ubuntu.com/',
+    'https://debuginfod.debian.net/',
     'https://debuginfod.elfutils.org/',
 ]
 
@@ -292,49 +294,6 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
 
     return cache
 
-def _search_debuginfo_by_hash(base_url, hex_encoded_id):
-    """
-    Given a hex-encoded build_id, attempt to download a matching debuginfo from the debuginfod server.
-
-    >>> debuginfo_file = _search_debuginfo_by_hash(DEBUGINFOD_SERVERS[0], 'd1704d25fbbb72fa95d517b883131828c0883fe9')
-    >>> debuginfo_file is not None
-    True
-    >>> 'main_arena' in ELF(debuginfo_file).symbols
-    True
-    """
-    # Deferred import because it's slow
-    import requests
-    import urllib.parse
-
-    # Check if we tried this buildid before.
-    cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
-    if cache_valid:
-        return cache
-    
-    # We searched for this buildid before, but didn't find anything.
-    if cache is None:
-        return None
-
-    # Try to find separate debuginfo.
-    url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
-    url  = urllib.parse.urljoin(base_url, url)
-    data = b""
-    log.debug("Downloading data from debuginfod: %s", url)
-    try:
-        data = wget(url, timeout=20)
-    except requests.RequestException as e:
-        log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, base_url, e)
-    
-    # Save whatever we got to the cache
-    write(cache, data or b'')
-
-    # Return ``None`` if we did not get a valid ELF file
-    if not data or not data.startswith(b'\x7FELF'):
-        log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, base_url)
-        return None
-
-    return cache
-
 def _check_elf_cache(cache_type, search_target, search_type):
     """
     Check if there already is an ELF file for this hash in the cache.
@@ -419,16 +378,45 @@ def unstrip_libc(filename):
 
     log.debug('Trying debuginfod servers: %r', DEBUGINFOD_SERVERS)
 
-    for server_url in DEBUGINFOD_SERVERS:
-        libc_dbg = _search_debuginfo_by_hash(server_url, enhex(libc.buildid))
-        if libc_dbg:
-            break
-    else:
-        log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
-        return False
+    # Deferred import because it's slow
+    import requests
+    from six.moves import urllib
+
+    hex_encoded_id = enhex(libc.buildid)
+
+    # Check if we tried this buildid before.
+    cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
+    if not cache_valid:
+        # Cached negative result so we don't look for missing debug info everytime.
+        if cache is None:
+            return False
+        else:
+            for server_url in DEBUGINFOD_SERVERS:
+                # Try to find separate debuginfo.
+                url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
+                url  = urllib.parse.urljoin(server_url, url)
+                data = b""
+                log.debug("Downloading data from debuginfod: %s", url)
+                try:
+                    data = wget(url, timeout=20)
+
+                    # Try next server if we didn't get a valid ELF file
+                    if not data or not data.startswith(b'\x7FELF'):
+                        log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, server_url)
+                        continue
+                    break
+                except requests.RequestException as e:
+                    log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, server_url, e)
+            else:
+                write(cache, data or b'')
+                log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
+                return False
+            
+            # Save whatever we got to the cache
+            write(cache, data or b'')
 
     # Add debug info to given libc binary inplace.
-    p = process(['eu-unstrip', '-o', filename, filename, libc_dbg])
+    p = process(['eu-unstrip', '-o', filename, filename, cache])
     output = p.recvall()
     p.close()
 
