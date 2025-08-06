@@ -93,7 +93,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2590][2590] Add support for finding corefiles under WSL2
 - [#2496][2496] Add linux ko file search support
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
-- [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
@@ -117,7 +116,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2590]: https://github.com/Gallopsled/pwntools/pull/2590
 [2496]: https://github.com/Gallopsled/pwntools/pull/2496
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
-[2592]: https://github.com/Gallopsled/pwntools/pull/2592
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
@@ -135,6 +133,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
+- [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -146,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2524]: https://github.com/Gallopsled/pwntools/pull/2524
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
+[2592]: https://github.com/Gallopsled/pwntools/pull/2592
 
 ## 4.15.0 (`stable`)
 
