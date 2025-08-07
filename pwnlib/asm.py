@@ -388,10 +388,10 @@ def _bfdname():
         'sparc64' : 'elf64-sparc',
     }
 
-    if arch in bfdnames:
-        return bfdnames[arch]
-    else:
+    name = bfdnames.get(arch)
+    if not name:
         raise Exception("Cannot find bfd name for architecture %r" % arch)
+    return name
 
 
 def _bfdarch():
@@ -409,10 +409,7 @@ def _bfdarch():
         'loongarch64': 'loongarch64'
     }
 
-    if arch in convert:
-        return convert[arch]
-
-    return arch
+    return convert.get(arch, arch)
 
 def _run(cmd, stdin = None):
     log.debug('%s', subprocess.list2cmdline(cmd))
@@ -1015,3 +1012,62 @@ def disasm(data, vma = 0, byte = True, offset = True, instructions = True):
         lines.append(line)
 
     return re.sub(',([^ ])', r', \1', '\n'.join(lines))
+
+@LocalContext
+def get_cs_disassembler(eabi=None):
+    import capstone as cs
+    E = {
+        'big':    cs.CS_MODE_BIG_ENDIAN,
+        'little': cs.CS_MODE_LITTLE_ENDIAN,
+    }[context.endianness]
+
+    B = {16: cs.CS_MODE_16, 32: cs.CS_MODE_32, 64: cs.CS_MODE_64}[context.bits]
+
+    try:
+        CS_ARCH_AARCH64 = cs.CS_ARCH_AARCH64
+    except Exception:
+        CS_ARCH_AARCH64 = cs.CS_ARCH_ARM64
+
+    try:
+        CS_ARCH_SYSTEMZ = cs.CS_ARCH_SYSTEMZ
+    except Exception:
+        CS_ARCH_SYSTEMZ = cs.CS_ARCH_SYSZ
+
+    params = {
+        'i386'   : (cs.CS_ARCH_X86, B),
+        'amd64'  : (cs.CS_ARCH_X86, B),
+        'thumb'  : (cs.CS_ARCH_ARM, cs.CS_MODE_THUMB + E),
+        'arm'    : (cs.CS_ARCH_ARM, cs.CS_MODE_ARM + E),
+        'aarch64': (CS_ARCH_AARCH64, cs.CS_MODE_ARM + E),
+        'armhf'  : (cs.CS_ARCH_ARM, cs.CS_MODE_THUMB + E),
+        'mips'   : (cs.CS_ARCH_MIPS, cs.CS_MODE_32 + E),
+        'mips64' : (cs.CS_ARCH_MIPS, cs.CS_MODE_64 + E),
+        'sparc'  : (cs.CS_ARCH_SPARC, cs.CS_MODE_32 + E),
+        'sparc64': (cs.CS_ARCH_SPARC, cs.CS_MODE_64 + E),
+        'ppc'    : (cs.CS_ARCH_PPC, B + E),
+        'powerpc':   (cs.CS_ARCH_PPC, E + cs.CS_MODE_32),
+        'powerpc64': (cs.CS_ARCH_PPC, E + cs.CS_MODE_64),
+        'em_s390': (CS_ARCH_SYSTEMZ, cs.CS_MODE_BIG_ENDIAN + cs.CS_MODE_64),
+        #'ia64': None,
+        #'m68k': cs.CS_ARCH_M68K,
+        #'xcore': cs.CS_ARCH_XCORE,
+        #'tms320c64x': cs.CS_ARCH_TMS320C64X,
+        #'m680x': cs.CS_ARCH_M680X,
+        #'evm': cs.CS_ARCH_EVM,
+        #'mos65xx': cs.CS_ARCH_MOS65XX,
+        #'bpf': cs.CS_ARCH_BPF,
+        #'riscv': cs.CS_ARCH_RISCV,
+        #'tricore': cs.CS_ARCH_TRICORE,
+        #'wasm': cs.CS_ARCH_WASM,
+        #'sh': cs.CS_ARCH_SH,
+    }
+
+    arch = context.arch
+    if arch == 'arm' and eabi == 'hf': arch = 'armhf'
+    param = params.get(arch)
+    if not param:
+        raise Exception(f"unsupported {context.arch} for capstone")
+    arch, mode = param
+    md = cs.Cs(arch, mode)
+    md.detail = True
+    return md
