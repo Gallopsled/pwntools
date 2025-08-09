@@ -31,6 +31,8 @@ HASHES = {
     'md5': md5filehex,
 }
 DEBUGINFOD_SERVERS = [
+    'https://debuginfod.ubuntu.com/',
+    'https://debuginfod.debian.net/',
     'https://debuginfod.elfutils.org/',
 ]
 
