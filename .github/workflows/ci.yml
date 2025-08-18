@@ -26,7 +26,7 @@ jobs:
       PWN_UBUNTU_ARCHIVE_URL: http://localhost:3002/
       PWN_GITLAB_LIBCDB_URL:  http://localhost:3003/
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
 
@@ -247,7 +247,7 @@ jobs:
     timeout-minutes: 30
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -317,7 +317,7 @@ jobs:
     timeout-minutes: 30
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -351,7 +351,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
 
@@ -375,7 +375,7 @@ jobs:
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
     needs: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
     - name: Push changes to protected branch
