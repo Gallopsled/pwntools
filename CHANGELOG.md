@@ -75,7 +75,6 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
@@ -98,7 +97,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
 
-[2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
@@ -134,6 +132,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
+- [#2598][2598] aarch64: Fix ABI definition
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -146,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
+[2598]: https://github.com/Gallopsled/pwntools/pull/2598
 
 ## 4.15.0 (`stable`)
 
