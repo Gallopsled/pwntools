@@ -32,8 +32,10 @@ RUN apt-get update \
         binutils-aarch64-linux-gnu \
         binutils-mips-linux-gnu \
         binutils-mipsel-linux-gnu \
+        binutils-msp430 \
         binutils-powerpc-linux-gnu \
         binutils-powerpc64-linux-gnu \
+        binutils-s390x-linux-gnu \
         binutils-sparc64-linux-gnu \
         binutils-riscv64-linux-gnu \
         tmux \
