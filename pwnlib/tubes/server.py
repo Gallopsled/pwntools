@@ -35,13 +35,13 @@ class server(sock):
         >>> server_conn.recvline()
         b'Hello'
         >>> def cb(r):
-        ...     client_input = r.readline()
-        ...     r.send(client_input[::-1])
+        ...     client_input = r.recvline()
+        ...     r.sendline(client_input[::-1])
         ...
         >>> t = server(8889, callback=cb)
         >>> client_conn = remote('localhost', t.lport)
         >>> client_conn.sendline(b'callback')
-        >>> client_conn.recv()
+        >>> client_conn.recvline()
         b'kcabllac'
     """
 
