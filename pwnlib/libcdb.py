@@ -380,7 +380,7 @@ def unstrip_libc(filename):
 
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     hex_encoded_id = enhex(libc.buildid)
 

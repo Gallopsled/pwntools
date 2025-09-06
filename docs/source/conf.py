@@ -14,7 +14,6 @@
 import os
 import doctest
 import signal
-import six
 import subprocess
 import sys
 
@@ -71,7 +70,6 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
@@ -362,7 +360,7 @@ def linkcode_resolve(domain, info):
         if isinstance(val, property):
             val = val.fget
 
-        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType, type)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-L%d' % (first, first + len(lines) - 1)
