@@ -98,6 +98,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
+- [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
@@ -122,6 +123,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
+[2611]: https://github.com/Gallopsled/pwntools/pull/2611
 
 ## 4.15.0 (`beta`)
 
