@@ -267,7 +267,9 @@ def main(args):
                 continue
 
             if args.unstrip:
-                libcdb.unstrip_libc(file)
+                if not libcdb.unstrip_libc(file):
+                    log.failure('Failed to unstrip libc binary %s', file)
+                    continue
 
             print_libc_elf(ELF(file, checksec=False))
 

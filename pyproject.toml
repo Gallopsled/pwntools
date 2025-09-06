@@ -35,7 +35,7 @@ requires-python = ">=3.6"
 dependencies = [
     "paramiko>=1.15.2",
     "mako>=1.0.0",
-    "pyelftools>=0.29",
+    "pyelftools>=0.32",
     "capstone>=4.0.0",
     "ropgadget>=5.3",
     "pyserial>=2.7",

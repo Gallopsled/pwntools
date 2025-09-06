@@ -19,13 +19,14 @@ jobs:
           - 3001:3001  # https://libc.rip/ proxy cache
           - 3002:3002  # http://archive.ubuntu.com/ proxy cache
           - 3003:3003  # https://gitlab.com/ proxy cache
+          - 3004:3004  # https://debuginfod.ubuntu.com/ proxy cache
     env:
-      DEBUGINFOD_URLS: http://localhost:3000/
+      DEBUGINFOD_URLS: "http://localhost:3000/ http://localhost:3004/"
       PWN_LIBCRIP_URL: http://localhost:3001/
       PWN_UBUNTU_ARCHIVE_URL: http://localhost:3002/
       PWN_GITLAB_LIBCDB_URL:  http://localhost:3003/
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
 
@@ -108,13 +109,14 @@ jobs:
           elfutils \
           patchelf
 
+    # Print diagnostics to help when Corefile doctests fail.
     - name: Testing Corefiles
       run: |
         ulimit -a
         ulimit -c unlimited
         cat /proc/sys/kernel/core_pattern
         cat /proc/sys/kernel/core_uses_pid
-        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core*) || true
+        ( cd $(mktemp -d); sh -c 'kill -11 $$' || true; ls -la ./*core* /var/crash/*.crash /var/lib/apport/coredump/core* || coredumpctl list sh) || true
 
     - name: Set up SSH
       run: |
@@ -245,7 +247,7 @@ jobs:
     timeout-minutes: 30
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -315,7 +317,7 @@ jobs:
     timeout-minutes: 30
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
@@ -349,11 +351,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         pattern: coverage-*
         merge-multiple: true
@@ -373,7 +375,7 @@ jobs:
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
     needs: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 20
     - name: Push changes to protected branch
@@ -395,7 +397,7 @@ jobs:
     needs: test
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: packages
         path: dist

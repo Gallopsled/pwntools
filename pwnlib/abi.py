@@ -145,7 +145,7 @@ class SigreturnABI(SyscallABI):
 linux_i386   = ABI('esp', [], 4, 0)
 linux_amd64  = ABI('rsp', ['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
 linux_arm    = ABI('sp', ['r0', 'r1', 'r2', 'r3'], 8, 0)
-linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
+linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'], 16, 0)
 linux_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
 linux_ppc = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
 linux_ppc64 = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)

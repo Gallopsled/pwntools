@@ -1263,6 +1263,9 @@ class process(tube):
 
             >>> from pwn import *
             >>> p = process(['cat'])
+            >>> p.send(b'meow')
+            >>> p.recvuntil(b'meow')
+            b'meow'
             >>> libc_size = p.lib_size(p.libc.path)
             >>> hex(libc_size) # doctest: +SKIP
             '0x1d5000'
@@ -1329,8 +1332,7 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        from pwnlib.util.proc import memory_maps
-        maps_raw = self.poll() is not None and memory_maps(self.pid)
+        maps_raw = self.poll() is None and self.maps()
 
         if not maps_raw:
             import pwnlib.elf.elf
@@ -1339,23 +1341,15 @@ class process(tube):
                 return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
-        maps = {}
+        libs = {}
         for mapping in maps_raw:
             path = mapping.path
             if os.sep not in path: continue
             path = os.path.realpath(path)
-            if path not in maps:
-                maps[path]=0
+            if path not in libs:
+                libs[path] = mapping.addr
 
-        for lib in maps:
-            path = os.path.realpath(lib)
-            for mapping in maps_raw:
-                if mapping.path == path:
-                    address = mapping.addr.split('-')[0]
-                    maps[lib] = int(address, 16)
-                    break
-
-        return maps
+        return libs
 
     @property
     def libc(self):
@@ -1368,7 +1362,12 @@ class process(tube):
         Example:
 
         >>> p = process("/bin/cat")
+        >>> p.send(b"meow")
+        >>> p.recvuntil(b"meow")
+        b'meow'
         >>> libc = p.libc
+        >>> libc is not None
+        True
         >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
         >>> p.close()
