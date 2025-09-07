@@ -276,10 +276,6 @@ class process(tube):
         else:
             executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
-        # Avoid the need to have to deal with the STDOUT magic value.
-        if stderr is STDOUT:
-            stderr = stdout
-
         if IS_WINDOWS:
             self.pty = None
             self.raw = False
@@ -289,6 +285,10 @@ class process(tube):
             self.sgid = self.gid = None
             internal_preexec_fn = None
         else:
+            # Avoid the need to have to deal with the STDOUT magic value.
+            if stderr is STDOUT:
+                stderr = stdout
+
             # Determine which descriptors will be attached to a new PTY
             handles = (stdin, stdout, stderr)
 
@@ -370,6 +370,8 @@ class process(tube):
                                                  creationflags = creationflags)
                     break
                 except OSError as exception:
+                    if sys.platform == 'win32':
+                        raise
                     if exception.errno != errno.ENOEXEC:
                         raise
                     prefixes.append(self.__on_enoexec(exception))
