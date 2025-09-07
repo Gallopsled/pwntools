@@ -94,7 +94,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
-- [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
 
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
@@ -116,7 +115,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
-[2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
 
 ## 4.15.1
@@ -133,6 +131,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
 - [#2598][2598] aarch64: Fix ABI definition
+- [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -146,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
+[2610]: https://github.com/Gallopsled/pwntools/pull/2610
 
 ## 4.15.0 (`stable`)
 
