@@ -2,27 +2,15 @@ from __future__ import division
 
 import re
 
-from pygments.lexer import DelegatingLexer
 from pygments.lexer import RegexLexer
 from pygments.lexer import bygroups
 from pygments.lexer import include
-from pygments.lexer import using
-from pygments.lexers.c_cpp import CLexer
-from pygments.lexers.c_cpp import CppLexer
-from pygments.lexers.d import DLexer
 from pygments.token import Comment
-from pygments.token import Keyword
 from pygments.token import Name
 from pygments.token import Number
-from pygments.token import Operator
-from pygments.token import Other
 from pygments.token import Punctuation
 from pygments.token import String
 from pygments.token import Text
-
-__all__ = ['GasLexer', 'ObjdumpLexer', 'DObjdumpLexer', 'CppObjdumpLexer',
-           'CObjdumpLexer', 'LlvmLexer', 'NasmLexer', 'NasmObjdumpLexer',
-           'Ca65Lexer']
 
 
 class PwntoolsLexer(RegexLexer):
@@ -108,3 +96,14 @@ class PwntoolsLexer(RegexLexer):
             return True
         elif re.match(r'^\.\w+', text, re.M):
             return 0.1
+
+# Aliases for convenience
+GasLexer = PwntoolsLexer
+ObjdumpLexer = PwntoolsLexer
+DObjdumpLexer = PwntoolsLexer
+CppObjdumpLexer = PwntoolsLexer
+CObjdumpLexer = PwntoolsLexer
+LlvmLexer = PwntoolsLexer
+NasmLexer = PwntoolsLexer
+NasmObjdumpLexer = PwntoolsLexer
+Ca65Lexer = PwntoolsLexer
