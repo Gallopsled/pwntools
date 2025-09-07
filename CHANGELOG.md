@@ -100,6 +100,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
+- [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
 
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
@@ -126,6 +127,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
+[2615]: https://github.com/Gallopsled/pwntools/pull/2615
 
 ## 4.15.0 (`beta`)
 
