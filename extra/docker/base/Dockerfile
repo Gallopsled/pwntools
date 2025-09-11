@@ -4,11 +4,11 @@
 ############################################################
 
 FROM ubuntu:noble
-MAINTAINER Maintainer Gallopsled et al.
+LABEL maintainer="Maintainer Gallopsled et al."
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
@@ -40,6 +40,7 @@ RUN apt-get update \
     && update-locale LANG=en_US.UTF-8 \
     && python3 -m pip install --no-cache-dir --break-system-packages --upgrade pwntools \
     && PWNLIB_NOTERM=1 pwn update \
+    && userdel -r ubuntu \
     && useradd -m pwntools \
     && passwd --delete --unlock pwntools \
     && echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/pwntools
