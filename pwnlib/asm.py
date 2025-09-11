@@ -190,12 +190,14 @@ def which_binutils(util, check_version=False):
         'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
-        'mips64': ['mips'],
-        'mips64el': ['mipsel'],
+        'mips': ['mipsel'],
+        'mipsel': ['mips'],
+        'mips64': ['mips', 'mipsel'],
+        'mips64el': ['mipsel', 'mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
-        'riscv32': ['riscv32', 'riscv64', 'riscv'],
-        'riscv64': ['riscv64', 'riscv32', 'riscv'],
+        'riscv32': ['riscv64', 'riscv'],
+        'riscv64': ['riscv32', 'riscv'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native
