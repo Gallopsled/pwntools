@@ -152,6 +152,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2602][2602] Allow setting debugger path via context.gdb_binary
 - [#2609][2609] Fix log level of child remotes of `server` tube
 - [#2612][2612] Fix lookup of binutils for `mipsel` architecture
+- [#2624][2624] Fix regression: gdbserver can't handle command-line argument containing whitespace
 
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
@@ -164,6 +165,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2602]: https://github.com/Gallopsled/pwntools/pull/2602
 [2609]: https://github.com/Gallopsled/pwntools/pull/2609
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
+[2624]: https://github.com/Gallopsled/pwntools/pull/2624
 
 ## 4.14.1 (`stable`)
 
