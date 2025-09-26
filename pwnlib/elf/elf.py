@@ -705,25 +705,52 @@ class ELF(ELFFile):
 
     @property
     def libs(self):
-        """Dictionary of {path: address} for every library loaded for this ELF."""
+        """Dictionary of ``{path: address}`` for every library loaded for this ELF.
+
+        .. warning::
+
+            Getting this attribute actually runs the executable.
+            Make sure that you trust the binary you are exploiting.
+            If it adds itself as ``DT_NEEDED``, has overlapping segments,
+            ambiguous headers, or employs text relocations, it can run arbitrary
+            code even though you are just inspecting it.
+            Running is the only reliable way to ensure all the libraries are
+            loaded from the correct paths, because some of them may change
+            loading logic.
+
+            Exploitability first noticed at CWTE CTF 2025.
+        """
         if self._libs is None:
             self._populate_libraries()
         return self._libs
 
     @property
     def maps(self):
-        """Dictionary of {name: address} for every mapping in this ELF's address space."""
+        """Dictionary of ``{name: address}`` for every mapping in this ELF's address space.
+
+        .. warning::
+
+            Getting this attribute actually runs the executable.
+            Make sure that you trust the binary you are exploiting
+            (see :attr:`.ELF.libs`).
+        """
         if self._maps is None:
             self._populate_libraries()
         return self._maps
 
     @property
     def libc(self):
-        """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``'libc[.-]``,
+        """:class:`.ELF`: If this :class:`.ELF` imports any libraries which contain ``/libc[.-]``,
         and we can determine the appropriate path to it on the local
         system, returns a new :class:`.ELF` object pertaining to that library.
 
         If not found, the value will be :const:`None`.
+
+        .. warning::
+
+            Getting this attribute actually runs the executable.
+            Make sure that you trust the binary you are exploiting
+            (see :attr:`.ELF.libs`).
         """
         for lib in self.libs:
             if '/libc.' in lib or '/libc-' in lib:
