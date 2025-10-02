@@ -667,6 +667,40 @@ class process(tube):
         """
         self.close()
 
+    def terminate(self):
+        """terminate()
+
+        Terminates the process by sending SIGTERM.
+        
+        This is a more graceful way to stop a process compared to kill(),
+        which sends SIGKILL. The process has a chance to clean up and
+        exit gracefully when receiving SIGTERM.
+        
+        Examples:
+        
+            >>> p = process(['sleep', '10'])
+            >>> p.terminate()
+            >>> p.poll() is not None
+            True
+        """
+        if self.proc is None:
+            return
+            
+        # Check if process is still running
+        if self.poll() is not None:
+            return
+            
+        try:
+            if IS_WINDOWS:
+                # On Windows, terminate() is equivalent to kill()
+                self.proc.terminate()
+            else:
+                # On Unix-like systems, send SIGTERM
+                os.kill(self.pid, signal.SIGTERM)
+        except OSError:
+            # Process might have already exited
+            pass
+
     def poll(self, block = False):
         """poll(block = False) -> int
 
