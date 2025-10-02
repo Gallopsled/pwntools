@@ -101,6 +101,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
+- [#2630][2630] support `preexec_fn` in `debug()`
 
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
@@ -128,6 +129,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
+[2630]: https://github.com/Gallopsled/pwntools/pull/2630
 
 ## 4.15.0 (`beta`)
 
