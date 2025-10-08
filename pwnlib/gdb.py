@@ -1223,9 +1223,6 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
             exe_fn = adb.proc_exe
         exe = exe_fn(pid)
 
-    if not pid and not exe and not ssh:
-        log.error('could not find target process')
-
     gdb_binary = binary()
     cmd = [gdb_binary]
 
