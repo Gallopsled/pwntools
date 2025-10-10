@@ -146,6 +146,9 @@ jobs:
       run: |
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
+    - name: Detect running architecture
+      run: uname -m
+      
     - name: Skip doctests on ARM64 runners (requires x86-specific content)
       if: runner.arch == 'ARM64'
       run: |
