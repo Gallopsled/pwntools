@@ -311,6 +311,37 @@ class FileStructure(object):
                     structure += pack(int(getattr(self, val)), self.length[val]*8)
         return structure
 
+    @classmethod
+    def from_bytes(cls, fileStr):
+        r"""
+        Creates a new instance of the class from a byte string representing a file structure.
+
+        Arguments:
+            fileStr (bytes): The byte string representing the file structure. It should have the exact length as the class instance.
+
+        Returns:
+            FileStructure: A new instance of the class, populated with values from the byte string.
+
+        Example:
+            Example of creating a `FileStructure` from a byte string
+
+            >>> context.clear(arch='amd64')
+            >>> byte_data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xbe\xba\xfe\xca\x00\x00\x00\x00'
+            >>> fileStr = FileStructure.from_bytes(byte_data)
+            >>> hex(fileStr.vtable)
+            '0xcafebabe'
+        """
+        if not isinstance(fileStr, bytes):
+            log.error('fileStr should be of type bytes')
+        fp = cls()
+        expected_len = len(bytes(fp))
+        if len(fileStr) != expected_len:
+            log.error('fileStr should be of length %d' % expected_len)
+        for member, pos in fp.offsets().items():
+            length = fp.length[member]
+            setattr(fp, member, unpack(fileStr[pos:pos+length], length * 8))
+        return fp
+
     def struntil(self,v):
         r"""
         Payload for stuff till 'v' where 'v' is a structure member. This payload includes 'v' as well.
@@ -462,3 +493,130 @@ class FileStructure(object):
         self._IO_write_ptr = 1
         self.vtable = vtable
         return self.__bytes__()
+
+    def offsets(self):
+        r"""
+        Exports the offsets of all the members of the file pointer struct.
+
+        Arguments:
+            None
+
+        Returns:
+            dict: A dictionary where keys are the member names and values are their offsets (in bytes) within the struct.
+
+        Example:
+
+            Example offset of vtable on amd64 arch
+
+            >>> context.clear(arch='amd64')
+            >>> offsets = FileStructure().offsets()
+            >>> offsets['vtable']
+            216
+        """
+        res = {}
+        curr_offset = 0
+        for member, size in self.length.items():
+            res[member] = curr_offset
+            curr_offset += size
+        return res
+
+    def overlap(self, fake_fp, offset=0):
+        r"""
+        Constructs a new file pointer by overlapping the original file pointer (`self`) with a fake file pointer (`fake_fp`), using the given offset.
+
+        The fields of `fake_fp` are shifted by the specified `offset` relative to the fields in the original structure. If a non-zero field in the original struct overlaps with a corresponding field in `fake_fp`, priority is given to the value from the original struct, meaning the original value will overwrite the fake one.
+
+        Arguments:
+            fake_fp (FileStructure): The fake file pointer to overlap with the original.
+            offset (int, optional): The byte offset to apply when shifting the fake file pointer's members. Default is 0.
+
+        Returns:
+            FileStructure: A new `FileStructure` instance created by overlapping the original and fake file pointers.
+
+        Example:
+
+            Example of overlapped struct by offsetting the fake_fp by -8
+
+            >>> context.clear(arch='amd64')
+            >>> fileStr = FileStructure(0xdeadbeef)
+            >>> fileStr.chain = 0xcafebabe
+            >>> fake = FileStructure(0xdeadbeef)
+            >>> fake._IO_write_base = 1
+            >>> fake._IO_write_ptr = 2
+            >>> fake._wide_data = 0xd00df00d
+            >>> fake.vtable = 0xfacef00d
+            >>> overlap = fileStr.overlap(fake, offset=-8)
+            >>> overlap
+            { flags: 0x0 ()
+             _IO_read_ptr: 0x0
+             _IO_read_end: 0x0
+             _IO_read_base: 0x1
+             _IO_write_base: 0x2
+             _IO_write_ptr: 0x0
+             _IO_write_end: 0x0
+             _IO_buf_base: 0x0
+             _IO_buf_end: 0x0
+             _IO_save_base: 0x0
+             _IO_backup_base: 0x0
+             _IO_save_end: 0x0
+             markers: 0x0
+             chain: 0xcafebabe
+             fileno: 0xffffffff
+             _flags2: 0xffffffff (_IO_FLAGS2_MMAP | _IO_FLAGS2_NOTCANCEL | _IO_FLAGS2_USER_WBUF | _IO_FLAGS2_NOCLOSE | _IO_FLAGS2_CLOEXEC | _IO_FLAGS2_NEED_LOCK)
+             _old_offset: 0xffffffffffffffff
+             _cur_column: 0xbeef
+             _vtable_offset: 0xad
+             _shortbuf: 0xde
+             unknown1: 0x0
+             _lock: 0xdeadbeef
+             _offset: 0xffffffffffffffff
+             _codecvt: 0xd00df00d
+             _wide_data: 0xdeadbeef
+             _freeres_list: 0x0
+             _freeres_buf: 0x0
+             _pad5: 0x0
+             _mode: 0x0
+             _unused2: 0xfacef00d000000000000000000000000
+             vtable: 0x0}
+        """
+        if not isinstance(fake_fp, FileStructure):
+            log.error('fake_fp must be of type FileStructure')
+        if len(bytes(self)) != len(bytes(fake_fp)):
+            log.error('both file structures should be of same length')
+        
+        new_fp_bytes = bytearray(len(bytes(self)))
+        total_len = len(new_fp_bytes)
+        
+        # For fake file struct
+        for member, pos in fake_fp.offsets().items():
+            effective_pos = pos + offset
+            if effective_pos < 0 or total_len <= effective_pos:
+                continue
+            new_bytes = b''
+            if isinstance(getattr(fake_fp, member), bytes):
+                new_bytes = getattr(fake_fp, member).ljust(context.bytes, b'\x00')
+            else:
+                if fake_fp.length[member] > 0:
+                    new_bytes = pack(int(getattr(fake_fp, member)), fake_fp.length[member]*8)
+            new_fp_bytes[effective_pos:effective_pos+len(new_bytes)] = new_bytes
+        
+        # For original file struct
+        for member, pos in self.offsets().items():
+            effective_pos = pos + 0
+            if effective_pos < 0 or total_len <= effective_pos:
+                continue
+            new_bytes = b''
+            if isinstance(getattr(self, member), bytes):
+                new_bytes = getattr(self, member).ljust(context.bytes, b'\x00')
+            else:
+                if self.length[member] > 0:
+                    new_bytes = pack(int(getattr(self, member)), self.length[member]*8)
+            if unpack(new_bytes, len(new_bytes) * 8) != 0:
+                # If this field is not `0` meaning that is is initialised in
+                # the original struct then give priority to it by replacing its
+                # byte in the `new_fp_bytes` array
+                new_fp_bytes[effective_pos:effective_pos+len(new_bytes)] = new_bytes
+
+        new_fp_bytes = new_fp_bytes[:total_len] # Remove any added new bytes
+        new_fp = FileStructure.from_bytes(bytes(new_fp_bytes))
+        return new_fp
