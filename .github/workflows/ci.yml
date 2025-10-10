@@ -110,7 +110,8 @@ jobs:
           patchelf
         if [ "($uname -m)" = "x86_64" ]; then
           echo "Installing gcc-multilib for 32-bit build."
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 gcc-multilib
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 /
+            gcc-multilib
         else
           echo "Skipping gcc-multilib for 64-bit build."
         fi
@@ -145,7 +146,13 @@ jobs:
       run: |
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
+    - name: Skip doctests on ARM64 runners (requires x86-specific content)
+      if: runner.arch = 'X64'
+      run: |
+        echo "Skipping doctests as they contain x86-specific test content not valid on ARM64"
+
     - name: Coverage doctests
+      if: runner.arch = 'X64'
       run: |
         # Python version installed using setup-python interferes with gdb's python
         # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
