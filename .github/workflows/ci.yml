@@ -147,12 +147,12 @@ jobs:
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
     - name: Skip doctests on ARM64 runners (requires x86-specific content)
-      if: runner.arch = 'X64'
+      if: runner.arch == 'ARM64'
       run: |
         echo "Skipping doctests as they contain x86-specific test content not valid on ARM64"
 
     - name: Coverage doctests
-      if: runner.arch = 'X64'
+      if: runner.arch == 'X64'
       run: |
         # Python version installed using setup-python interferes with gdb's python
         # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
