@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         python_version: ['3.10', '3.12', '3.13']
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     services:
@@ -105,16 +105,17 @@ jobs:
           binutils-sparc64-linux-gnu \
           binutils-riscv64-linux-gnu \
           binutils-loongarch64-linux-gnu \
+          gcc-multilib \
           libc6-dbg \
           elfutils \
           patchelf
-        if [ "($uname -m)" = "x86_64" ]; then
-          echo "Installing gcc-multilib for 32-bit build."
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 /
-            gcc-multilib
-        else
-          echo "Skipping gcc-multilib for 64-bit build."
-        fi
+        # if [ "($uname -m)" = "x86_64" ]; then
+        #   echo "Installing gcc-multilib for 32-bit build."
+        #   sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 /
+        #     gcc-multilib
+        # else
+        #   echo "Skipping gcc-multilib for 64-bit build."
+        # fi
 
     # Print diagnostics to help when Corefile doctests fail.
     - name: Testing Corefiles
@@ -146,16 +147,16 @@ jobs:
       run: |
         echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope # required by some gdb doctests
 
-    - name: Detect running architecture
-      run: uname -m
+    # - name: Detect running architecture
+    #   run: uname -m
       
-    - name: Skip doctests on ARM64 runners (requires x86-specific content)
-      if: runner.arch == 'ARM64'
-      run: |
-        echo "Skipping doctests as they contain x86-specific test content not valid on ARM64"
+    # - name: Skip doctests on ARM64 runners (requires x86-specific content)
+    #   if: runner.arch == 'ARM64'
+    #   run: |
+    #     echo "Skipping doctests as they contain x86-specific test content not valid on ARM64"
 
     - name: Coverage doctests
-      if: runner.arch == 'X64'
+      # if: runner.arch == 'X64'
       run: |
         # Python version installed using setup-python interferes with gdb's python
         # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
@@ -259,7 +260,7 @@ jobs:
         sudo chown -R runner:runner /home/runner/libcdb-cache
 
   android-test:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, ubuntu-24.04-arm]
     timeout-minutes: 30
     continue-on-error: true
     steps:
@@ -364,7 +365,7 @@ jobs:
         include-hidden-files: true
 
   upload-coverage:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, ubuntu-24.04-arm]
     needs: test
     steps:
     - uses: actions/checkout@v5
@@ -387,7 +388,7 @@ jobs:
 
 
   staging-merge:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, ubuntu-24.04-arm]
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
     needs: test
     steps:
@@ -406,7 +407,7 @@ jobs:
 
 
   pypi:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest, ubuntu-24.04-arm]
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     permissions:
       id-token: write
