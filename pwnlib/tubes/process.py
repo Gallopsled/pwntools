@@ -436,9 +436,12 @@ class process(tube):
             except Exception:
                 self.exception("Could not disable ASLR")
 
-        # Assume that the user would prefer to have core dumps.
+        # Check that the user would prefer to have core dumps or not.
         try:
-            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+            if context.disable_corefiles:
+                resource.setrlimit(resource.RLIMIT_CORE, (0, -1))
+            else:
+                resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
         except Exception:
             pass
 
