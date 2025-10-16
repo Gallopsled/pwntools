@@ -1245,8 +1245,7 @@ class ROP(object):
             return None
 
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
-        if not os.path.exists(cachedir):
-            os.mkdir(cachedir)
+        os.makedirs(cachedir, exist_ok=True)
 
         if isinstance(files, ELF):
             files = [files]
