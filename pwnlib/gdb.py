@@ -417,7 +417,7 @@ def _get_runner(ssh=None):
     else:                          return tubes.process.process
 
 @LocalContext
-def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, port=0, gdbserver_args=None, sysroot=None, api=False, **kwargs):
+def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, port=0, gdbserver_args=None, sysroot=None, api=False, gdbserver_only=False, **kwargs):
     r"""
     Launch a GDB server with the specified command line,
     and launches GDB to attach to it.
@@ -436,6 +436,8 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
             gdb to load a local version of binaries/libraries instead of downloading
             them from the gdbserver, which is faster
         api(bool): Enable access to GDB Python API.
+        gdbserver_only(bool): Only start gdbserver without attaching GDB client.
+            Useful for external debugger integration.
 
     Returns:
         :class:`.process` or :class:`.ssh_channel`: A tube connected to the target process.
@@ -700,6 +702,12 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
     host = '127.0.0.1'
     if not ssh and context.os == 'android':
         host = context.adb_host
+
+    # GDB Server Only Mode: Return without starting GDB client
+    if gdbserver_only:
+        log.info("GDB server started on %s:%d (pid=%d)", host, port, gdbserver.pid)
+        log.info("You can now attach with: gdb %s -ex 'target remote %s:%d'", exe, host, port)
+        return gdbserver
 
     tmp = attach((host, port), exe=exe, gdbscript=gdbscript, gdb_args=gdb_args, ssh=ssh, sysroot=sysroot, api=api)
     if api:
