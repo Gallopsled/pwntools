@@ -484,6 +484,22 @@ class Corefile(ELF):
         >>> core.sp in core.stack
         False
 
+        context.disable_corefiles disables the automatic corefile generation
+        for crashed processes. For running processes, io.corefile still invoke
+        GDB to generate a coredump.
+
+        >>> context.clear(arch='amd64')
+        >>> context.disable_corefiles = True
+        >>> elf = ELF.from_assembly(shellcraft.crash())
+        >>> io = elf.process()
+        >>> io.wait(1)
+        >>> io.corefile is None
+        True
+        >>> io = process('bash')
+        >>> core = io.corefile
+        >>> core is not None
+        True
+
         Corefile gracefully handles the stack being filled with garbage, including
         argc / argv / envp being overwritten.
 
