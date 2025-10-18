@@ -1245,8 +1245,7 @@ class ROP(object):
             return None
 
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
-        if not os.path.exists(cachedir):
-            os.mkdir(cachedir)
+        os.makedirs(cachedir, exist_ok=True)
 
         if isinstance(files, ELF):
             files = [files]
@@ -1317,25 +1316,6 @@ class ROP(object):
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
-        #
-        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.  We also
-        # monkey-patch sys.stdout to suppress output from ropgadget.
-        #
-        argv = sys.argv
-        stdout = sys.stdout
-
-        class Wrapper:
-
-            def __init__(self, fd):
-                self._fd = fd
-
-            def write(self, s):
-                pass
-
-            def __getattr__(self, k):
-                return getattr(self._fd, k)
-
         gadgets = {}
         for elf in self.elfs:
             cache = self.__cache_load(elf)
@@ -1343,17 +1323,12 @@ class ROP(object):
                 gadgets.update(cache)
                 continue
             log.info_once('Loading gadgets for %r' % elf.path)
-            try:
-                sys.stdout = Wrapper(sys.stdout)
-                import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
-                args = ropgadget.args.Args().getArgs()
-                core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
-                core.do_load(0)
-            finally:
-                sys.argv = argv
-                sys.stdout = stdout
+            import ropgadget
+            arguments = ['--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
+            args = ropgadget.args.Args(arguments).getArgs()
+            core = ropgadget.core.Core(args)
+            core.do_binary(elf.path, silent=True)
+            core.do_load(0, silent=True)
 
             elf_gadgets = {}
             for gadget in core._Core__gadgets:
