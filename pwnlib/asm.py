@@ -170,6 +170,8 @@ def which_binutils(util, check_version=False):
         '.../bin/arm-...-as'
         >>> which_binutils('as', arch='powerpc') #doctest: +ELLIPSIS
         '.../bin/powerpc...-as'
+        >>> which_binutils('as', arch='mips', endianness='little') #doctest: +ELLIPSIS
+        '.../bin/mipsel...-as'
         >>> which_binutils('as', arch='msp430') #doctest: +SKIP
         ...
         Traceback (most recent call last):
@@ -177,6 +179,12 @@ def which_binutils(util, check_version=False):
         Exception: Could not find 'as' installed for ContextType(arch = 'msp430')
     """
     arch = context.arch
+
+    # Handle endianness-specific naming for mips/mips64
+    arch = {
+        ('mips', 'little'): 'mipsel',
+        ('mips64', 'little'): 'mips64el',
+    }.get((arch, context.endianness), arch)
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
@@ -186,12 +194,15 @@ def which_binutils(util, check_version=False):
         'i686':   ['x86_64', 'amd64'],
         'amd64':  ['x86_64', 'i386'],
         'arm':  ['aarch64'],
-        'mips64': ['mips'],
+        'mips': ['mipsel'],
+        'mipsel': ['mips'],
+        'mips64': ['mips', 'mipsel'],
+        'mips64el': ['mipsel', 'mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
-        'riscv32': ['riscv32', 'riscv64', 'riscv'],
-        'riscv64': ['riscv64', 'riscv32', 'riscv'],
-        'loongarch64': ['loongarch64', 'loong64'],
+        'riscv32': ['riscv64', 'riscv'],
+        'riscv64': ['riscv32', 'riscv'],
+        'loongarch64': ['loong64'],
     }.get(arch, [])
 
     # If one of the candidate architectures matches the native

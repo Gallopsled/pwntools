@@ -545,7 +545,8 @@ class Handler(logging.StreamHandler):
 
         # if the record originates from a `Progress` object and term handling
         # is enabled we can have animated spinners! so check that
-        if progress is None or not term.term_mode:
+        # Don't show spinners if the output is being redirected
+        if progress is None or not term.term_mode or not os.path.sameopenfile(context.log_console.fileno(), term.term.fd.fileno()):
             super(Handler, self).emit(record)
             return
 

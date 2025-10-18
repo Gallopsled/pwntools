@@ -44,7 +44,7 @@ USER pwntools
 WORKDIR /home/pwntools
 
 # Copy in the Doctest script
-COPY doctest3 tmux.sh /home/pwntools
+COPY doctest3 tmux.sh /home/pwntools/
 
 # Do everything in UTF-8 mode!
 ENV LANG=C.UTF-8
