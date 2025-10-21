@@ -86,6 +86,8 @@ class process(tube):
             By default, :const:`True` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
+        preexec_args(iterable):
+            Arguments passed to ``preexec_fn``.
         raw(bool):
             Set the created pty to raw mode (i.e. disable echo and control
             characters).  :const:`True` by default.  If no pty is created, this
@@ -216,6 +218,12 @@ class process(tube):
         >>> p = process(binary.path, cwd=binary_dir)
         >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
         >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
+
+        >>> def write(s):
+        ...    import os
+        ...    os.write(1, s)
+        >>> print(process('false', preexec_fn=write, preexec_args=(b"Hello World!", )).recvline().strip().decode())
+        Hello World!
     """
 
     STDOUT = STDOUT
@@ -238,6 +246,7 @@ class process(tube):
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
+                 preexec_args = (),
                  raw = True,
                  aslr = None,
                  setuid = None,
@@ -330,6 +339,7 @@ class process(tube):
         self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
+        self.preexec_args = preexec_args
         self.display    = display or self.program
         self._qemu      = False
         self._corefile  = None
@@ -471,7 +481,7 @@ class process(tube):
         if self.alarm is not None:
             signal.alarm(self.alarm)
 
-        self.preexec_fn()
+        self.preexec_fn(*self.preexec_args)
 
     def __on_enoexec(self, exception):
         """We received an 'exec format' error (ENOEXEC)
