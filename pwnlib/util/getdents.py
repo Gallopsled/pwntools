@@ -1,6 +1,6 @@
 from pwnlib.context import context
 from pwnlib.util.packing import unpack
-from enum import StrEnum
+
 
 class linux_dirent:
     """
@@ -24,21 +24,25 @@ class linux_dirent:
         DT_SOCK = 12,
         DT_WHT = 14
     };
-
     """
-    def __init__ (self, buf: bytes, is_dirent64: bool):
-        size_t = 8 if is_dirent64 else int(context.bits/8)
+
+    def __init__(self, buf: bytes, is_dirent64: bool):
+        size_t = 8 if is_dirent64 else int(context.bits / 8)
 
         self.d_ino = unpack(buf[0:size_t])
-        self.d_off = unpack(buf[size_t:2*size_t])
-        self.d_reclen = unpack(buf[2*size_t:2*size_t + 2], 16)
+        self.d_off = unpack(buf[size_t : 2 * size_t])
+        self.d_reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
 
         if is_dirent64:
-            self.d_type = unpack(buf[2*size_t + 2:2*size_t + 3], 8)
-            self.d_name = buf[2*size_t + 3:self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
+            self.d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
+            self.d_name = (
+                buf[2 * size_t + 3 : self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
+            )
         else:
-            self.d_name = buf[2*size_t + 2:self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
-            self.d_type = unpack(buf[self.d_reclen - 1:self.d_reclen], 8)
+            self.d_name = (
+                buf[2 * size_t + 2 : self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
+            )
+            self.d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
 
         if self.d_type == 0:
             self.d_type = 'unknown'
@@ -61,9 +65,10 @@ class linux_dirent:
         return self.d_name
 
     def __repr__(self):
-        return f"{self.d_type:<20} {self.d_name}"
+        return f'{self.d_type:<20} {self.d_name}'
 
-def dirents(buf: bytes, is_dirent64: bool=False) -> list[linux_dirent]:
+
+def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
     """dirents(buf: bytes, is_dirent64: bool=False) -> list[linux_dirent]:
 
     Extracts data from a buffer emitted by getdents or getdents64
@@ -79,7 +84,7 @@ def dirents(buf: bytes, is_dirent64: bool=False) -> list[linux_dirent]:
         >>> with context.local(bits = 64):
         ...     buf = b'":,\x00\x00\x00\x00\x00\x8d4\x8d\x82\x8c0\xd5\x14 \x00wp.pdf\x00\x00\x00\x00\x00\x00\x00\x08\x16\x0b.\x00\x00\x00\x00\x00xjc\x1c\xc1 \xfc\x1a \x00a.out\x00\x00\x00\x00\x00\x00\x00\x00\x08\r\x00,\x00\x00\x00\x00\x00H\x02\xeeE\x1f4~0\x18\x00.\x00\x00\x00\x00\x04\x02\x00,\x00\x00\x00\x00\x00Qy\xc3\xfb\x97\xa3r=\x18\x00..\x00\x00\x00\x04\xae\x82,\x00\x00\x00\x00\x00\xc4\xdc\xa2\xa3\xf7\xbe<Z\x18\x00test\x00\x08\xb2,4\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\x7f \x00flag-market\x00\x00\x04'
         ...     dirents(buf, False)
-        ...     
+        ...
         [regular              wp.pdf, regular              a.out, directory            ., directory            .., regular              test, directory            flag-market]
 
     """
