@@ -1,7 +1,17 @@
 from pwnlib.context import context
 from pwnlib.util.packing import unpack
 from pwnlib.util.fiddling import unhex
+from enum import IntEnum
 
+class Dtype(IntEnum):
+    DT_UNKNOWN = 0
+    DT_FIFO = 1
+    DT_CHR = 2
+    DT_DIR = 4
+    DT_BLK = 6
+    DT_REG = 8
+    DT_LNK = 10
+    DT_SOCK = 12
 
 class linux_dirent:
     """
@@ -44,36 +54,13 @@ class linux_dirent:
 
         if is_dirent64:
             self.d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
-            try:
-                self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
-            except UnicodeDecodeError:
-                print("Decode Error: ", buf[2 * size_t + 3: self.d_reclen - 1])
-                exit(1)
+            self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
 
         else:
             self.d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
-            try:
-                self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
-            except UnicodeDecodeError:
-                print("Decode Error: ", buf[2 * size_t + 2: self.d_reclen - 1])
-                exit(1)
+            self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
 
-        if self.d_type == 0:
-            self.d_type = 'unknown'
-        elif self.d_type == 1:
-            self.d_type = 'name pipe'
-        elif self.d_type == 2:
-            self.d_type = 'char dev'
-        elif self.d_type == 4:
-            self.d_type = 'directory'
-        elif self.d_type == 6:
-            self.d_type = 'block dev'
-        elif self.d_type == 8:
-            self.d_type = 'regular'
-        elif self.d_type == 10:
-            self.d_type = 'symlink'
-        elif self.d_type == 12:
-            self.d_type = 'socket'
+        self.d_type = Dtype(self.d_type).name
 
     def __str__(self):
         return self.d_name
@@ -98,10 +85,10 @@ def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
         >>> context.bits = 64
         >>> buf = unhex('223a2c0000000000786a631cc120fc1a2000746573742e6300e57464040000080d002c00000000004802ee451f347e3018002e000000000402002c0000000000ffffffffffffff7f18002e2e00000004')
         >>> dirents(buf, False)
-        [regular              test.c, directory            ., directory            ..]
+        [DT_REG               test.c, DT_DIR               ., DT_DIR               ..]
         >>> buf = unhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
         >>> dirents(buf, True)
-        [regular              test.c, directory            ., directory            ..]
+        [DT_REG               test.c, DT_DIR               ., DT_DIR               ..]
     """
 
     bpos = 0
