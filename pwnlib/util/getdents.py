@@ -1,10 +1,13 @@
 from pwnlib.context import context
 from pwnlib.util.packing import unpack
 from pwnlib.util.fiddling import unhex
+from pwnlib.log import getLogger
 from enum import IntEnum
 
+log = getLogger(__name__)
+
 class Dtype(IntEnum):
-    DT_UNKNOWN = 0
+    DT_UNK = 0
     DT_FIFO = 1
     DT_CHR = 2
     DT_DIR = 4
@@ -53,20 +56,19 @@ class linux_dirent:
         self.d_reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
 
         if is_dirent64:
-            self.d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
+            d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
             self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
 
         else:
-            self.d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
+            d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
             self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
-
-        self.d_type = Dtype(self.d_type).name
+        self.d_type = Dtype(d_type)
 
     def __str__(self):
         return self.d_name
 
     def __repr__(self):
-        return f'{self.d_type:<20} {self.d_name}'
+        return f'{self.d_type.name:<8}{self.d_name}'
 
 
 def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
@@ -96,7 +98,11 @@ def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
     entries = []
 
     while bpos < buf_len:
-        dirent = linux_dirent(buf[bpos:], is_dirent64)
-        bpos += dirent.d_reclen
-        entries.append(dirent)
+        try:
+            dirent = linux_dirent(buf[bpos:], is_dirent64)
+            bpos += dirent.d_reclen
+            entries.append(dirent)
+        except (ValueError, UnicodeDecodeError):
+            log.warning("Failed to parse struct linux_dirent at position %d", bpos)
+            break
     return entries
