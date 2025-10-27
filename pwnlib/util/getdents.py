@@ -1,5 +1,7 @@
+from os.path import split
 from pwnlib.context import context
 from pwnlib.util.packing import unpack
+from pwnlib.util.fiddling import unhex
 
 
 class linux_dirent:
@@ -10,6 +12,14 @@ class linux_dirent:
       unsigned long d_off;
       unsigned short d_reclen;
       char d_name[];
+    };
+
+    struct linux_dirent64 {
+        u64		d_ino;
+        s64		d_off;
+        unsigned short	d_reclen;
+        unsigned char	d_type;
+        char		d_name[];
     };
 
     enum
@@ -35,14 +45,19 @@ class linux_dirent:
 
         if is_dirent64:
             self.d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
-            self.d_name = (
-                buf[2 * size_t + 3 : self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
-            )
+            try:
+                self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
+            except UnicodeDecodeError:
+                print("Decode Error: ", buf[2 * size_t + 3: self.d_reclen - 1])
+                exit(1)
+
         else:
-            self.d_name = (
-                buf[2 * size_t + 2 : self.d_reclen - 1].rstrip(b'\x00').decode('utf-8')
-            )
             self.d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
+            try:
+                self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
+            except UnicodeDecodeError:
+                print("Decode Error: ", buf[2 * size_t + 2: self.d_reclen - 1])
+                exit(1)
 
         if self.d_type == 0:
             self.d_type = 'unknown'
@@ -82,11 +97,13 @@ def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
 
     Example:
         >>> with context.local(bits = 64):
-        ...     buf = b'":,\x00\x00\x00\x00\x00\x8d4\x8d\x82\x8c0\xd5\x14 \x00wp.pdf\x00\x00\x00\x00\x00\x00\x00\x08\x16\x0b.\x00\x00\x00\x00\x00xjc\x1c\xc1 \xfc\x1a \x00a.out\x00\x00\x00\x00\x00\x00\x00\x00\x08\r\x00,\x00\x00\x00\x00\x00H\x02\xeeE\x1f4~0\x18\x00.\x00\x00\x00\x00\x04\x02\x00,\x00\x00\x00\x00\x00Qy\xc3\xfb\x97\xa3r=\x18\x00..\x00\x00\x00\x04\xae\x82,\x00\x00\x00\x00\x00\xc4\xdc\xa2\xa3\xf7\xbe<Z\x18\x00test\x00\x08\xb2,4\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\x7f \x00flag-market\x00\x00\x04'
-        ...     dirents(buf, False)
-        ...
-        [regular              wp.pdf, regular              a.out, directory            ., directory            .., regular              test, directory            flag-market]
+        >>> buf = unhex('223a2c0000000000786a631cc120fc1a2000746573742e6300e57464040000080d002c00000000004802ee451f347e3018002e000000000402002c0000000000ffffffffffffff7f18002e2e00000004')
+        >>> dirents(buf, False)
+        [regular              test.c, directory            ., directory            ..]
 
+        >>> buf = unhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
+        >>> dirents(buf, True)
+        [regular              test.c, directory            ., directory            ..]
     """
 
     bpos = 0
