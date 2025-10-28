@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 - [#2638][2638] feat: add disable_corefiles context option
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
@@ -105,6 +106,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
 - [#2630][2630] support `preexec_fn` in `debug()`
 
+[2638]: https://github.com/Gallopsled/pwntools/pull/2643
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
