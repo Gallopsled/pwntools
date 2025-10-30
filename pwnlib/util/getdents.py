@@ -92,12 +92,13 @@ def dirents(buf: bytes, is_dirent64: bool = False) -> list[linux_dirent]:
         A list of file names
 
     Example:
-        >>> context.bits = 64
-        >>> buf = unhex('223a2c0000000000786a631cc120fc1a2000746573742e6300e57464040000080d002c00000000004802ee451f347e3018002e000000000402002c0000000000ffffffffffffff7f18002e2e00000004')
-        >>> dirents(buf, False)
+        >>> with context.local(bits = 64):
+        ...     buf = unhex('223a2c0000000000786a631cc120fc1a2000746573742e6300e57464040000080d002c00000000004802ee451f347e3018002e000000000402002c0000000000ffffffffffffff7f18002e2e00000004')
+        ...     print(dirents(buf, False))
+        ...     buf = unhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
+        ...     print(dirents(buf, True))
+        ...     
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
-        >>> buf = unhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
-        >>> dirents(buf, True)
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
     """
 
