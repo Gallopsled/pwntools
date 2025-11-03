@@ -1,4 +1,3 @@
- # -*- coding: utf-8 -*-
 r"""
 Module for packing and unpacking integers.
 
