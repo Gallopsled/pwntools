@@ -1219,5 +1219,72 @@ def _decode(b):
             return b
     return b.decode(context.encoding)
 
+def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
+    r"""overlap(*structs: bytes | tuple[bytes, int]) -> bytes
+
+    Merge multiple byte sequences with possible positional offsets into a
+    single overlapped bytes object. From lowest byte index, scan through
+    every bytes object, if only one byte is non-zero, then the output will
+    append that byte. If multiple non-zero bytes are found at the same index,
+    an error will be thrown as these bytes objects can not be overlapped.
+
+    If holes present as the bytes object has an ``offset`` or its length is
+    not enough to align to the output bytes object length, these holes are
+    set to ``\x00`` implicitly.
+
+    Arguments:
+        *structs(bytes | tuple[bytes, int]): ``bytes`` objects like ``b'123'``
+            or adding an optional offset like ``(b'123', 3)``. The ``offset``
+            can be positive or negative or 0. ``bytes`` objects has an
+            implicit offset 0.
+
+    Returns:
+        A bytes object merged from input bytes objects.
+
+    Examples:
+
+        >>> overlap(b'\x00123', b'a\x00\x00\x00b')
+        b'a123b'
+        >>> overlap(b'11\x00\x0022', (b'33\x00\x0044', 2))
+        b'11332244'
+        >>> overlap((b'123', -8), (b'456', -4))
+        b'123\x00456'
+        >>> overlap((b'xx', 2), (b'yy', 0))
+        b'yyxx'
+    """
+    if len(structs) == 0:
+        return b''
+    if len(structs) == 1:
+        if isinstance(structs[0], tuple):
+            return _need_bytes(structs[0][0])
+        return _need_bytes(structs[0])  # structs[0] is bytes
+
+    segments: list[tuple[bytes, int]] = [
+        # ensure types
+        (_need_bytes(elem[0]), int(elem[1]))
+        if isinstance(elem, tuple) else
+        (_need_bytes(elem), 0)
+        for elem in structs
+    ]
+
+    # find lowest offset and subtract it to align offsets
+    compensation = min(elem[1] for elem in segments)
+    segments = [(elem[0], elem[1] - compensation) for elem in segments]
+
+    length = max(len(elem[0]) + elem[1] for elem in segments)
+    output = bytearray(length) # bytearray initialize all bytes as 0
+
+    # overlap segments and fail if multiple non-zero value at the same index
+    for segment, offset in segments:
+        for i, b in enumerate(segment):
+            if b != 0:
+                if output[offset + i] == 0:
+                    output[offset + i] = b
+                else:
+                    log.error('Conflicting value %#x and %#x at index %d when overlapping',
+                              output[offset + i], b, compensation + offset + i)
+
+    return bytes(output)
+
 del op, size, end, sign
 del name, routine, mod
