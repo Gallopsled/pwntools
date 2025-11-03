@@ -1232,6 +1232,8 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
     not enough to align to the output bytes object length, these holes are
     set to ``\x00`` implicitly.
 
+    See the examples below for how this function works.
+
     Arguments:
         *structs(bytes | tuple[bytes, int]): ``bytes`` objects like ``b'123'``
             or adding an optional offset like ``(b'123', 3)``. The ``offset``
@@ -1240,6 +1242,9 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
 
     Returns:
         A bytes object merged from input bytes objects.
+
+    Raises:
+        BufferError: If multiple non-zero values appears at the same index
 
     Examples:
 
@@ -1251,6 +1256,10 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
         b'123\x00456'
         >>> overlap((b'xx', 2), (b'yy', 0))
         b'yyxx'
+        >>> overlap((b'123', 1), b'456')
+        Traceback (most recent call last):
+            ...
+        BufferError: Conflicting value 0x31 and 0x35 at index 1 when overlapping
     """
     if len(structs) == 0:
         return b''
@@ -1281,8 +1290,11 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
                 if output[offset + i] == 0:
                     output[offset + i] = b
                 else:
-                    log.error('Conflicting value %#x and %#x at index %d when overlapping',
-                              output[offset + i], b, compensation + offset + i)
+                    raise BufferError(
+                        f'Conflicting value {output[offset + i]:#x} '
+                        f'and {b:#x} at index {compensation + offset + i} '
+                        f'when overlapping'
+                    )
 
     return bytes(output)
 
