@@ -70,6 +70,7 @@ jobs:
       with:
         python-version: ${{ matrix.python_version }}
         enable-cache: true
+        activate-environment: true
         cache-dependency-glob: |
           **/pyproject.toml
           **/requirements*.txt
@@ -251,6 +252,7 @@ jobs:
       with:
         python-version: '3.12'
         enable-cache: true
+        activate-environment: true
         cache-dependency-glob: |
           **/pyproject.toml
           **/requirements*.txt
@@ -318,6 +320,7 @@ jobs:
       with:
         python-version: '3.12'
         enable-cache: true
+        activate-environment: true
         cache-dependency-glob: |
           **/pyproject.toml
           **/requirements*.txt
@@ -359,7 +362,7 @@ jobs:
 
     - name: Install coveralls
       run: |
-        pip install --break-system-packages tomli coveralls || pip install tomli coveralls
+        uv pip install tomli coveralls || pip install tomli coveralls
 
     - name: Upload coverage to coveralls.io
       run: |
