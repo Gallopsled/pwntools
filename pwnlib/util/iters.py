@@ -28,7 +28,6 @@ __all__ = [
     'group'                                  ,
     'iter_except'                            ,
     'lexicographic'                          ,
-    'lookahead'                              ,
     'nth'                                    ,
     'pad'                                    ,
     'pairwise'                               ,
@@ -681,37 +680,6 @@ def random_combination_with_replacement(iterable, r):
     indices = sorted(random.randrange(n) for i in range(r))
     return tuple(pool[i] for i in indices)
 
-def lookahead(n, iterable):
-    """lookahead(n, iterable) -> object
-
-    Inspects the upcoming element at index `n` without advancing the iterator.
-    Raises ``IndexError`` if `iterable` has too few elements.
-
-    Arguments:
-      n(int):  Index of the element to return.
-      iterable:  An iterable.
-
-    Returns:
-      The element in `iterable` at index `n`.
-
-    Examples:
-
-      >>> i = count()
-      >>> lookahead(4, i)
-      4
-      >>> next(i)
-      0
-      >>> i = count()
-      >>> nth(4, i)
-      4
-      >>> next(i)
-      5
-      >>> lookahead(4, i)
-      10
-    """
-    for value in islice(copy.copy(iterable), n, None):
-        return value
-    raise IndexError(n)
 
 def lexicographic(alphabet):
     """lexicographic(alphabet) -> iterator

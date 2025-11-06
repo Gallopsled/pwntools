@@ -76,6 +76,7 @@ The table below shows which release corresponds to each branch, and what date th
 ## 5.0.0 (`dev`)
 
 - [#2638][2638] feat: add disable_corefiles context option
+- [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
@@ -106,6 +107,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2630][2630] support `preexec_fn` in `debug()`
 
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
+[2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
