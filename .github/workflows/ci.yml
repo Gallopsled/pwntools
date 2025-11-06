@@ -4,8 +4,9 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        python_version: ['3.10', '3.12', '3.13', '3.14']
+        python_version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.14t']
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
