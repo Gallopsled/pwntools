@@ -221,6 +221,12 @@ jobs:
         pwn libcdb lookup puts 5f0 __libc_start_main_ret d0a
         pwn libcdb hash b229d1da1e161f95e839cf90cded5f719e5de308
 
+    - name: Test free-threaded Python code with pytest-run-parallel
+      # https://py-free-threading.github.io/testing
+      run: |
+        python -m pip install pytest pytest-run-parallel
+        pytest --doctest-modules --iterations=8 --parallel-threads=auto
+
     - name: Build source and wheel distributions
       run: |
         python -m build
