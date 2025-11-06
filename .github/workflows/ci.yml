@@ -224,6 +224,7 @@ jobs:
 
     - name: Test free-threaded Python code with pytest-run-parallel
       # https://py-free-threading.github.io/testing
+      timeout-minutes: 5
       run: |
         python -m pip install pytest pytest-run-parallel
         echo "pytest -vvv --doctest-modules ..."
