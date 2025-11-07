@@ -149,6 +149,9 @@ jobs:
         # like _socket. This is a workaround.
         unset LD_LIBRARY_PATH
         PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
+        pip install pytest-sphinx
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest --sphinx-doctest docs/source
+
 
     - name: Coverage running examples
       run: |
