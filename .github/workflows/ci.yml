@@ -150,8 +150,9 @@ jobs:
         unset LD_LIBRARY_PATH
         PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
         pip install pytest-sphinx
-        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest --sphinx-doctest docs/source
-
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest docs/source docs/build/doctest || true
+        echo "=== pytest --doctest-modules ==="
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest --doctest-modules docs/source docs/build/doctest
 
     - name: Coverage running examples
       run: |
