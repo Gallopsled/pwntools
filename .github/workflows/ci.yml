@@ -136,7 +136,7 @@ jobs:
       run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
-      run: pip install -r docs/requirements.txt pytest pytest-run-parallel
+      run: pip install -r docs/requirements.txt
 
     - name: Disable yama ptrace_scope
       run: |
@@ -224,14 +224,19 @@ jobs:
 
     - name: Test free-threaded Python code with pytest-run-parallel
       # https://py-free-threading.github.io/testing
+      env:
+        TERM: linux
       timeout-minutes: 15
       run: |
-        python -m pip install pytest pytest-run-parallel
+        python -m pip install pytest pytest-timeout  # pytest-run-parallel
         echo "pytest -vvv --doctest-modules ..."
-        pytest -vvv || true
-        pytest -vvv --doctest-modules || true
-        pytest -vvv --doctest-modules --iterations=8 || true
-        pytest -vvv --doctest-modules --parallel-threads=auto || true
+        pytest -vvv || true  # collecting ... collected 0 items
+        pytest -vvv --doctest-modules --timeout=60 pwnlib/adb/adb.py || true
+        pytest -vvv --doctest-modules --timeout=60 pwnlib/adb || true
+        pytest -vvv --doctest-modules --timeout=60 || true
+        python -m pip install pytest-run-parallel
+        pytest -vvv --doctest-modules --iterations=8 --timeout=60 || true
+        pytest -vvv --doctest-modules --parallel-threads=auto --timeout=60  || true
         pytest -vvv --doctest-modules --iterations=8 --parallel-threads=auto
 
     - name: Build source and wheel distributions
