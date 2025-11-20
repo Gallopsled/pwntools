@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2652][2652] Make setting the context.terminal to kitty more user friendly
 - [#2638][2638] feat: add disable_corefiles context option
 - [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
 - [#2598][2598] aarch64: Fix ABI definition
@@ -106,6 +107,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
 - [#2630][2630] support `preexec_fn` in `debug()`
 
+[2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
 [2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
