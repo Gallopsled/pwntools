@@ -133,6 +133,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2627][2627] Remove `pwnlib.util.iters.lookahead` (broken anyway, fails on Python 3.14+)
+- [#2653][2653] Add aarch64_be qemu mapping
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -148,6 +149,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2627]: https://github.com/Gallopsled/pwntools/pull/2627
+[2653]: https://github.com/Gallopsled/pwntools/pull/2653
 
 ## 4.15.0 (`stable`)
 

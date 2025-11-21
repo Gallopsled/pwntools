@@ -105,6 +105,7 @@ def archname():
         ('powerpc64', 'little'): 'ppc64le',
         ('thumb', 'little'):     'arm',
         ('thumb', 'big'):        'armeb',
+        ('aarch64', 'big'):      'aarch64_be',
     }.get((context.arch, context.endian), context.arch)
 
 @LocalContext
