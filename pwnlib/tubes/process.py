@@ -684,10 +684,12 @@ class process(tube):
         
         Examples:
         
-            >>> p = process(['sleep', '10'])
+            >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");input()'])
+            >>> _ = p.recvline_contains(b'ready')
             >>> p.terminate()
-            >>> p.poll() is not None
+            >>> p.recvuntil(b'sigterm') == b'sigterm'
             True
+            >>> p.close()
         """
         if self.proc is None:
             return
