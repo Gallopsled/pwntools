@@ -7,7 +7,6 @@ intervaltree
 isort
 mako>=1.0.0
 paramiko>=1.15.2
-pip>=6.0.8
 pyelftools>=0.32
 pygments>=2.0
 pypandoc

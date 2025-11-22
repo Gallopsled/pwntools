@@ -1153,20 +1153,17 @@ class ELF(ELFFile):
 
         banner = self.string(self.symbols.linux_banner)
 
-        # convert banner into a utf-8 string since re.search does not accept bytes anymore
-        banner = banner.decode('utf-8', 'surrogateescape')
-
         # 'Linux version 3.18.31-gd0846ecc
-        regex = r'Linux version (\S+)'
+        regex = br'Linux version (\S+)'
         match = re.search(regex, banner)
 
         if match:
-            version = match.group(1)
+            version = match.group(1).decode('utf-8', 'surrogateescape')
 
             if '-' in version:
                 version, self.build = version.split('-', 1)
 
-            self.version = list(map(int, version.rstrip('+').split('.')))
+            self.version = tuple(map(int, version.rstrip('+').split('.')))
 
         self.config['version'] = self.version
 

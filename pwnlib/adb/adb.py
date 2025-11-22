@@ -365,7 +365,7 @@ class AdbDevice(Device):
         return AdbDevice(serial, type, **kwargs)
 
     def __wrapped(self, function):
-        """Wrapps a callable in a scope which selects the current device."""
+        """Wraps a callable in a scope which selects the current device."""
         @functools.wraps(function)
         def wrapper(*a, **kw):
             with context.local(device=self):
@@ -373,7 +373,7 @@ class AdbDevice(Device):
         return wrapper
 
     def __getattr__(self, name):
-        """Provides scoped access to ``adb`` module propertise, in the context
+        """Provides scoped access to ``adb`` module properties, in the context
         of this device.
 
         .. doctest::
@@ -1554,7 +1554,7 @@ def install(apk, *arguments):
     This is a wrapper around 'pm install', which backs 'adb install'.
 
     Arguments:
-        apk(str): Path to the APK to intall (e.g. ``'foo.apk'``)
+        apk(str): Path to the APK to install (e.g. ``'foo.apk'``)
         arguments: Supplementary arguments to 'pm install',
             e.g. ``'-l', '-g'``.
     """

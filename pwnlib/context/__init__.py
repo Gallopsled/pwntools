@@ -48,7 +48,7 @@ class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
 
-    This is neccesary because the ``default_factory`` method of
+    This is necessary because the ``default_factory`` method of
     :class:`collections.defaultdict` does not provide the key.
 
     Examples:
@@ -1430,7 +1430,7 @@ class ContextType(object):
         """
         try:
             # If the TLS already has a cache directory path, we return it
-            # without any futher checks since it must have been valid when it
+            # without any further checks since it must have been valid when it
             # was set and if that has changed, hiding the TOCTOU here would be
             # potentially confusing
             return self._tls["cache_dir"]
