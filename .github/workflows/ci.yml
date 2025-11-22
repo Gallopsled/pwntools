@@ -148,11 +148,11 @@ jobs:
         # by setting LD_LIBRARY_PATH and gdb's python becoming unable to load built-in modules
         # like _socket. This is a workaround.
         unset LD_LIBRARY_PATH
-        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest --ignore=docs/source/conf.py
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
         pip install pytest-sphinx
         PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest docs/source docs/build/doctest || true
         echo "=== pytest --doctest-modules ==="
-        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest --doctest-modules docs/source docs/build/doctest
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m pytest --doctest-modules docs/source docs/build/doctest --ignore=docs/source/conf.py
 
     - name: Coverage running examples
       run: |
