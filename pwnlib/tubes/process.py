@@ -436,9 +436,12 @@ class process(tube):
             except Exception:
                 self.exception("Could not disable ASLR")
 
-        # Assume that the user would prefer to have core dumps.
+        # Check that the user would prefer to have core dumps or not.
         try:
-            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+            if context.disable_corefiles:
+                resource.setrlimit(resource.RLIMIT_CORE, (0, -1))
+            else:
+                resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
         except Exception:
             pass
 
@@ -1431,8 +1434,8 @@ class process(tube):
 
         If the process is alive, attempts to create a coredump with GDB.
 
-        If the process is dead, attempts to locate the coredump created
-        by the kernel.
+        If the process is dead: returns None if context.disable_corefiles is enabled,
+        otherwise attempts to locate the coredump created by the kernel.
         """
         # If the process is still alive, try using GDB
         import pwnlib.elf.corefile
@@ -1445,6 +1448,9 @@ class process(tube):
                     self.error("Could not create corefile with GDB for %s", self.executable)
                 return corefile
 
+            if context.disable_corefiles :
+                self._corefile = None
+                return self._corefile
             # Handle race condition against the kernel or QEMU to write the corefile
             # by waiting up to 5 seconds for it to be written.
             t = Timeout()

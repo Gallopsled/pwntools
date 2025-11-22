@@ -10,8 +10,8 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-beta)  | `beta`   |
-| [4.14.1](#4141-stable)  | `stable` | Mar 24, 2025
+| [4.15.0](#4150-stable)  | `stable` | Oct 12, 2025
+| [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
 | [4.13.0](#4130)  |          | Aug 12, 2024
@@ -75,6 +75,8 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2638][2638] feat: add disable_corefiles context option
+- [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
@@ -101,8 +103,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
+- [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
+- [#2630][2630] support `preexec_fn` in `debug()`
+- [#2646][2646] fix(libcdb-cli): return early if no matched libc found
 - [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
 
+[2638]: https://github.com/Gallopsled/pwntools/pull/2638
+[2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
@@ -129,9 +136,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
+[2639]: https://github.com/Gallopsled/pwntools/pull/2639
+[2630]: https://github.com/Gallopsled/pwntools/pull/2630
+[2646]: https://github.com/Gallopsled/pwntools/pull/2646
 [2629]: https://github.com/Gallopsled/pwntools/pull/2629
 
-## 4.15.0 (`beta`)
+## 4.15.0 (`stable`)
 
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
@@ -151,6 +161,18 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2476][2476] Deprecate 'keepends' argument in favor of 'drop' in `tube.recvline*`
 - [#2364][2364] Deprecate direct commandline scripts invocation and exclude nonsense ones
 - [#2570][2570] Fix `pwn template` to skip Docker library extraction for statically linked binaries
+- [#2545][2545] SSH: fix download/upload with -1 exit status
+- [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
+- [#2576][2576] regsort: respect register aliases
+- [#2595][2595] libcdb: Add Ubuntu and Debian debuginfod servers to default list
+- [#2593][2593] Use unicorn on macOS w/ SIP enabled
+- [#2587][2587] Support longer function names in Windows `getexport` shellcode
+- [#2596][2596] Ignore `colored_traceback` error when TERM envvar is unset
+- [#2579][2579] Fix poll error in `process.libs()` and clean up maps parsing
+- [#2602][2602] Allow setting debugger path via context.gdb_binary
+- [#2609][2609] Fix log level of child remotes of `server` tube
+- [#2612][2612] Fix lookup of binutils for `mipsel` architecture
+- [#2624][2624] Fix regression: gdbserver can't handle command-line argument containing whitespace
 
 [2508]: https://github.com/Gallopsled/pwntools/pull/2508
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
@@ -170,22 +192,6 @@ The table below shows which release corresponds to each branch, and what date th
 [2476]: https://github.com/Gallopsled/pwntools/pull/2476
 [2364]: https://github.com/Gallopsled/pwntools/pull/2364
 [2570]: https://github.com/Gallopsled/pwntools/pull/2570
-
-## 4.14.2
-
-- [#2545][2545] SSH: fix download/upload with -1 exit status
-- [#2567][2567] Fix mistakenly parsing of ld-linux error messages.
-- [#2576][2576] regsort: respect register aliases
-- [#2595][2595] libcdb: Add Ubuntu and Debian debuginfod servers to default list
-- [#2593][2593] Use unicorn on macOS w/ SIP enabled
-- [#2587][2587] Support longer function names in Windows `getexport` shellcode
-- [#2596][2596] Ignore `colored_traceback` error when TERM envvar is unset
-- [#2579][2579] Fix poll error in `process.libs()` and clean up maps parsing
-- [#2602][2602] Allow setting debugger path via context.gdb_binary
-- [#2609][2609] Fix log level of child remotes of `server` tube
-- [#2612][2612] Fix lookup of binutils for `mipsel` architecture
-- [#2624][2624] Fix regression: gdbserver can't handle command-line argument containing whitespace
-
 [2545]: https://github.com/Gallopsled/pwntools/pull/2545
 [2567]: https://github.com/Gallopsled/pwntools/pull/2567
 [2576]: https://github.com/Gallopsled/pwntools/pull/2576

@@ -24,7 +24,7 @@ jobs:
     - name: PyLint
       run: |
         set -x
-        pip install pylint
+        pip install 'pylint<4'
         pip install --upgrade -e .
         run_pylint() { pylint --exit-zero --errors-only pwnlib -f parseable | cut -d ' ' -f2- | sed 's/line [0-9]\+/line XXXX/g'; }
         run_pylint > current.txt
