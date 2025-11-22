@@ -135,6 +135,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2627][2627] Remove `pwnlib.util.iters.lookahead` (broken anyway, fails on Python 3.14+)
 - [#2653][2653] Add aarch64_be qemu mapping
 - [#2642][2642] Remove `pip` as explicit dependency
+- [#2646][2646] fix(libcdb-cli): return early if no matched libc found
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -152,6 +153,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2653]: https://github.com/Gallopsled/pwntools/pull/2653
 [2642]: https://github.com/Gallopsled/pwntools/pull/2642
+[2646]: https://github.com/Gallopsled/pwntools/pull/2646
 
 ## 4.15.0 (`stable`)
 
