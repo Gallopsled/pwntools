@@ -672,9 +672,12 @@ class process(tube):
 
         Terminates the process by sending SIGTERM.
         
-        This is a more graceful way to stop a process compared to kill(),
+        This is a more graceful way to stop a process compared to :meth:`kill`,
         which sends SIGKILL. The process has a chance to clean up and
         exit gracefully when receiving SIGTERM.
+
+        The process can choose to ignore this signal, so proper cleanup
+        is only done in :meth:`kill`/:meth:`close`.
         
         Examples:
         
@@ -686,20 +689,14 @@ class process(tube):
         if self.proc is None:
             return
             
-        # Check if process is still running
-        if self.poll() is not None:
-            return
-            
         try:
-            if IS_WINDOWS:
-                # On Windows, terminate() is equivalent to kill()
-                self.proc.terminate()
-            else:
-                # On Unix-like systems, send SIGTERM
-                os.kill(self.pid, signal.SIGTERM)
+            self.proc.terminate()
         except OSError:
             # Process might have already exited
             pass
+
+        # Check if process is still running.
+        self.poll()
 
     def poll(self, block = False):
         """poll(block = False) -> int
