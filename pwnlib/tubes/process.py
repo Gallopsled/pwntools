@@ -680,6 +680,39 @@ class process(tube):
         """
         self.close()
 
+    def terminate(self):
+        """terminate()
+
+        Terminates the process by sending SIGTERM.
+        
+        This is a more graceful way to stop a process compared to :meth:`kill`,
+        which sends SIGKILL. The process has a chance to clean up and
+        exit gracefully when receiving SIGTERM.
+
+        The process can choose to ignore this signal, so proper cleanup
+        is only done in :meth:`kill`/:meth:`close`.
+        
+        Examples:
+        
+            >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");input()'])
+            >>> _ = p.recvline_contains(b'ready')
+            >>> p.terminate()
+            >>> p.recvuntil(b'sigterm') == b'sigterm'
+            True
+            >>> p.close()
+        """
+        if self.proc is None:
+            return
+            
+        try:
+            self.proc.terminate()
+        except OSError:
+            # Process might have already exited
+            pass
+
+        # Check if process is still running.
+        self.poll()
+
     def poll(self, block = False):
         """poll(block = False) -> int
 

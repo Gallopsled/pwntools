@@ -86,7 +86,7 @@ CALL = r"""
         elif name in can_pushstr_array and isinstance(arg, dict):
             array_arguments[name] = ['%s=%s' % (k,v) for (k,v) in arg.items()]
 
-        # The arguent is not a register.  It is a list, and we are expecting
+        # The argument is not a register.  It is a list, and we are expecting
         # a list of arguments.
         elif name in can_pushstr_array and isinstance(arg, (list, tuple)):
             array_arguments[name] = arg
@@ -213,7 +213,7 @@ def generate_one(target):
             function = Function('long', 0, name, args)
 
         # Some syscalls have different names on different architectures,
-        # or are superceded.  We try to do the "best" thing at runtime.
+        # or are superseded.  We try to do the "best" thing at runtime.
         syscalls = fix_syscall_names(syscall)
 
         # Set up the argument string for Mako
