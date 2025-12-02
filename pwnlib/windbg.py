@@ -75,14 +75,14 @@ log = getLogger(__name__)
 CREATE_SUSPENDED = 0x00000004
 
 @LocalContext
-def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs):
-    """debug(args, windbgscript=None, exe=None, env=None, creationflags=0) -> tube
+def debug(args, dbgscript=None, exe=None, env=None, creationflags=0, **kwargs):
+    """debug(args, dbgscript=None, exe=None, env=None, creationflags=0) -> tube
 
     Launch a process in suspended state, attach debugger and resume process.
 
     Arguments:
         args(list): Arguments to the process, similar to :class:`.process`.
-        windbgscript(str): windbg script to run.
+        dbgscript(str): windbg script to run.
         exe(str): Path to the executable on disk.
         env(dict): Environment to start the binary in.
         creationflags(int): Flags to pass to :func:`.process.process`.
@@ -97,10 +97,10 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
             # Create a new process, and stop it at 'main'
             io = windbg.debug('calc', '''
             bp $exentry
-            go
+            g
             ''')
 
-        When WinDbg opens via :func:`.debug`, it will initially be stopped on the very first
+        When the debugger opens via :func:`.debug`, it will initially be stopped on the very first
         instruction of the entry point.
     """
     if isinstance(
@@ -112,14 +112,14 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
         log.warn_once("Skipping debugger since context.noptrace==True")
         return tubes.process.process(args, executable=exe, env=env, creationflags=creationflags)
     
-    windbgscript = windbgscript or ''
-    if isinstance(windbgscript, str):
-        windbgscript = windbgscript.split('\n')
+    dbgscript = dbgscript or ''
+    if isinstance(dbgscript, str):
+        dbgscript = dbgscript.split('\n')
     # resume main thread
-    windbgscript = ['~0m'] + windbgscript
+    dbgscript = ['~0m'] + dbgscript
     creationflags |= CREATE_SUSPENDED
     io = tubes.process.process(args, executable=exe, env=env, creationflags=creationflags)
-    attach(target=io, windbgscript=windbgscript, **kwargs)
+    attach(target=io, dbgscript=dbgscript, **kwargs)
 
     return io
 
@@ -137,18 +137,18 @@ def binary():
     return windbg
 
 @LocalContext
-def attach(target, windbgscript=None, windbg_args=[]):
-    """attach(target, windbgscript=None, windbg_args=[]) -> int
+def attach(target, dbgscript=None, dbg_args=[]):
+    """attach(target, dbgscript=None, dbg_args=[]) -> int
 
     Attach to a running process with WinDbg.
 
     Arguments:
         target(int, str, process): Process to attach to.
-        windbgscript(str, list): WinDbg script to run after attaching.
-        windbg_args(list): Additional arguments to pass to WinDbg.
+        dbgscript(str, list): Debugger script to run after attaching.
+        dbg_args(list): Additional arguments to pass to the debugger.
 
     Returns:
-        int: PID of the WinDbg process.
+        int: PID of the debugger process.
 
     Notes:
 
@@ -174,7 +174,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
         Attach a debugger to a :class:`.process` tube and automate interaction
 
         >>> io = process('cmd') # doctest: +SKIP
-        >>> pid = windbg.attach(io, windbgscript='''
+        >>> pid = windbg.attach(io, dbgscript='''
         ... bp kernelbase!WriteFile
         ... g
         ... ''') # doctest: +SKIP
@@ -205,33 +205,33 @@ def attach(target, windbgscript=None, windbg_args=[]):
         log.error('could not find target process')
     
     cmd = [binary()]
-    if windbg_args:
-        cmd.extend(windbg_args)
+    if dbg_args:
+        cmd.extend(dbg_args)
     
     cmd.extend(['-p', str(pid)])
 
-    windbgscript = windbgscript or ''
-    if isinstance(windbgscript, str):
-        windbgscript = windbgscript.split('\n')
-    if isinstance(windbgscript, list):
-        windbgscript = ';'.join(script.strip() for script in windbgscript if script.strip())
-    if windbgscript:
-        cmd.extend(['-c', windbgscript])
+    dbgscript = dbgscript or ''
+    if isinstance(dbgscript, str):
+        dbgscript = dbgscript.split('\n')
+    if isinstance(dbgscript, list):
+        dbgscript = ';'.join(script.strip() for script in dbgscript if script.strip())
+    if dbgscript:
+        cmd.extend(['-c', dbgscript])
     
     log.info("Launching a new process: %r" % cmd)
 
     io = subprocess.Popen(cmd)
-    windbg_pid = io.pid
+    debugger_pid = io.pid
 
     def kill():
         try:
-            os.kill(windbg_pid, signal.SIGTERM)
+            os.kill(debugger_pid, signal.SIGTERM)
         except OSError:
             pass
 
     atexit.register(kill)
 
     if context.native:
-        proc.wait_for_debugger(pid, windbg_pid)
+        proc.wait_for_debugger(pid, debugger_pid)
 
-    return windbg_pid
+    return debugger_pid
