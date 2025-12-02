@@ -62,6 +62,7 @@ import os
 import signal
 
 import subprocess
+import tempfile
 
 from pwnlib import tubes
 from pwnlib.context import LocalContext
@@ -213,10 +214,13 @@ def attach(target, dbgscript=None, dbg_args=[]):
     dbgscript = dbgscript or ''
     if isinstance(dbgscript, str):
         dbgscript = dbgscript.split('\n')
-    if isinstance(dbgscript, list):
-        dbgscript = ';'.join(script.strip() for script in dbgscript if script.strip())
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.dbg') as tmp:
+        tmp.write('\n'.join(script.strip() for script in dbgscript if script.strip()))
+        tmp.flush()
+        dbgscript_file = tmp.name
+    
     if dbgscript:
-        cmd.extend(['-c', dbgscript])
+        cmd.extend(['-c', '$<{}'.format(dbgscript_file)])
     
     log.info("Launching a new process: %r" % cmd)
 
@@ -225,6 +229,7 @@ def attach(target, dbgscript=None, dbg_args=[]):
 
     def kill():
         try:
+            os.unlink(dbgscript_file)
             os.kill(debugger_pid, signal.SIGTERM)
         except OSError:
             pass
