@@ -356,7 +356,7 @@ jobs:
       with:
         fetch-depth: 20
 
-    - uses: actions/download-artifact@v6
+    - uses: actions/download-artifact@v7
       with:
         pattern: coverage-*
         merge-multiple: true
@@ -398,7 +398,7 @@ jobs:
     needs: test
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: packages
         path: dist
