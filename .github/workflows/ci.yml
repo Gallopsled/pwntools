@@ -42,7 +42,7 @@ jobs:
         echo "date=$(/bin/date -u "+%Y%m%d%H%M%S")" >> $GITHUB_OUTPUT
 
     - name: Cache for libcdb requests
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/libcdb-cache
         key: libcdb-python${{ matrix.python_version }}-${{ steps.fix-perms.outputs.date }}
@@ -270,7 +270,7 @@ jobs:
           libc6-dbg
 
     - name: Cache for avd
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       id: cache-avd
       with:
         path: |
