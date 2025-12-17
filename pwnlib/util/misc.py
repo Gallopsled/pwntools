@@ -345,6 +345,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif "TILIX_ID" in os.environ and which("tilix"):
             terminal = "tilix"
             args     = ['-a', 'session-add-right', '-e']
+        elif "KITTY" in in os.environ and which("kitty"):
+            terminal = "kitty"
+            args     = ["@launch", "--copy-env", "--cwd", "current"]
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
             qdbus = which('qdbus')
             window_id = os.environ['WINDOWID']
