@@ -27,6 +27,7 @@ class linux_dirent:
       unsigned short d_reclen;
       char d_name[];
     };
+    // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
 
     struct linux_dirent64 {
         u64		d_ino;
@@ -35,6 +36,7 @@ class linux_dirent:
         unsigned char	d_type;
         char		d_name[];
     };
+    // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/dirent.h#L5
 
     enum
     {
@@ -48,6 +50,7 @@ class linux_dirent:
         DT_SOCK = 12,
         DT_WHT = 14
     };
+    // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/fs_types.h#L42
     """
 
     d_ino: int
