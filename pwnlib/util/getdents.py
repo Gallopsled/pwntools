@@ -76,6 +76,9 @@ class linux_dirent:
         self.d_name = self.d_name.split(b'\x00', 1)[0].decode('utf-8')
         self.d_type = Dtype(d_type)
 
+    def __len__(self):
+        return self.d_reclen
+
     def __str__(self):
         return self.d_name
 
