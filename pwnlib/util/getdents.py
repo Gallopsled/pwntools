@@ -57,7 +57,7 @@ class linux_dirent:
     d_name: str
 
     def __init__(self, buf: bytes, is_dirent64: bool):
-        size_t = 8 if is_dirent64 else int(context.bits / 8)
+        size_t = 8 if is_dirent64 else context.bytes
 
         self.d_ino = unpack(buf[0:size_t], size_t * 8)
         self.d_off = unpack(buf[size_t : 2 * size_t], size_t * 8)
