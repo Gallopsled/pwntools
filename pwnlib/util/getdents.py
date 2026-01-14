@@ -1,6 +1,5 @@
 from pwnlib.context import context
 from pwnlib.util.packing import unpack
-from pwnlib.util.fiddling import unhex
 from pwnlib.log import getLogger
 from enum import IntEnum
 
@@ -28,6 +27,7 @@ class linux_dirent:
       char d_name[];
     };
     // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
+    // the 32version of linux_dirent stores d_type after d_name
 
     struct linux_dirent64 {
         u64		d_ino;
@@ -68,11 +68,12 @@ class linux_dirent:
 
         if is_dirent64:
             d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
-            self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
-
+            self.d_name = buf[2 * size_t + 3 : self.d_reclen - 1]
         else:
             d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
-            self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1].split(b'\x00', 1)[0].decode('utf-8')
+            self.d_name = buf[2 * size_t + 2 : self.d_reclen - 1]
+
+        self.d_name = self.d_name.split(b'\x00', 1)[0].decode('utf-8')
         self.d_type = Dtype(d_type)
 
     def __str__(self):
