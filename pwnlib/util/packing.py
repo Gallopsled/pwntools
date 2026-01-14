@@ -1241,7 +1241,8 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
             implicit offset 0.
 
     Returns:
-        A bytes object merged from input bytes objects.
+        A **minimal** bytes object merged from input bytes objects.
+        That means, offsets are aligned to 0 first to keep output minimal.
 
     Raises:
         BufferError: If multiple non-zero values appears at the same index
@@ -1252,14 +1253,14 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
         b'a123b'
         >>> overlap(b'11\x00\x0022', (b'33\x00\x0044', 2))
         b'11332244'
-        >>> overlap((b'123', -8), (b'456', -4))
-        b'123\x00456'
+        >>> overlap((b'123', -10), (b'45\x00', -6)) # not b'123\x0045\x00\x00\x00\x00'
+        b'123\x0045\x00'
         >>> overlap((b'xx', 2), (b'yy', 0))
         b'yyxx'
         >>> overlap((b'123', 1), b'456')
         Traceback (most recent call last):
             ...
-        BufferError: Conflicting value 0x31 and 0x35 at index 1 when overlapping
+        BufferError: Conflicting value structs[0][0] = 0x31 and structs[1][1] = 0x35 when overlapping
     """
     if len(structs) == 0:
         return b''
@@ -1284,15 +1285,26 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
     output = bytearray(length) # bytearray initialize all bytes as 0
 
     # overlap segments and fail if multiple non-zero value at the same index
-    for segment, offset in segments:
+    for seg_i, e in enumerate(segments):
+        segment, offset = e
         for i, b in enumerate(segment):
             if b != 0:
-                if output[offset + i] == 0:
-                    output[offset + i] = b
+                abs_idx = offset + i
+                if output[abs_idx] == 0:
+                    output[abs_idx] = b
                 else:
+                    old = output[abs_idx]
+                    for seg_j, e in enumerate(segments[:seg_i]):
+                        prev_seg, prev_off = e
+                        if abs_idx < prev_off or abs_idx >= prev_off + len(prev_seg):
+                            continue
+                        j = abs_idx - prev_off
+                        if old == prev_seg[abs_idx - prev_off]:
+                            break
                     raise BufferError(
-                        f'Conflicting value {output[offset + i]:#x} '
-                        f'and {b:#x} at index {compensation + offset + i} '
+                        f'Conflicting value '
+                        f'structs[{seg_j}][{j}] = {old:#x} '
+                        f'and structs[{seg_i}][{i}] = {b:#x} '
                         f'when overlapping'
                     )
 
