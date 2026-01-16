@@ -14,6 +14,8 @@ class Dtype(IntEnum):
     DT_REG = 8
     DT_LNK = 10
     DT_SOCK = 12
+    DT_WHT = 14
+    DT_SUBVOL = 16
 
 class linux_dirent:
     """
@@ -48,9 +50,11 @@ class linux_dirent:
         DT_REG = 8,
         DT_LNK = 10,
         DT_SOCK = 12,
-        DT_WHT = 14
+        DT_WHT = 14,
+        DT_SUBVOL = 16
     };
     // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/fs_types.h#L42
+    // https://elixir.bootlin.com/linux/v6.14.4/source/fs/bcachefs/dirent_format.h#L37
     """
 
     d_ino: int
