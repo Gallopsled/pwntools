@@ -75,8 +75,9 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
+- [#2652][2652] Make setting the context.terminal to kitty more user friendly
 - [#2638][2638] feat: add disable_corefiles context option
+- [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
@@ -105,9 +106,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
 - [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
 - [#2630][2630] support `preexec_fn` in `debug()`
+- [#2641][2641] support preexec_args in process
+- [#2646][2646] fix(libcdb-cli): return early if no matched libc found
+- [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
+- [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 
-[2638]: https://github.com/Gallopsled/pwntools/pull/2643
+[2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
+[2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
@@ -136,6 +142,10 @@ The table below shows which release corresponds to each branch, and what date th
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
 [2639]: https://github.com/Gallopsled/pwntools/pull/2639
 [2630]: https://github.com/Gallopsled/pwntools/pull/2630
+[2641]: https://github.com/Gallopsled/pwntools/pull/2641
+[2646]: https://github.com/Gallopsled/pwntools/pull/2646
+[2629]: https://github.com/Gallopsled/pwntools/pull/2629
+[2638]: https://github.com/Gallopsled/pwntools/pull/2643
 
 ## 4.15.0 (`stable`)
 

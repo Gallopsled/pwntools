@@ -84,7 +84,7 @@ p.add_argument(
 
 p.add_argument(
     '--delim',
-    help='Set the delimiter between multilple shellcodes',
+    help='Set the delimiter between multiple shellcodes',
     default='+'
 )
 
@@ -290,7 +290,7 @@ def main(args):
                 log.critical('%s takes exactly %d arguments' % (name, reqargs))
                 sys.exit(1)
 
-        # Captain uglyness saves the day!
+        # Captain ugliness saves the day!
         for i, val in enumerate(func_args):
             try:
                 func_args[i] = util.safeeval.expr(val)
