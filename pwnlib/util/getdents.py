@@ -21,40 +21,42 @@ class linux_dirent:
     """
     Represent struct linux_dirent
 
-    struct linux_dirent
-    {
-      unsigned long d_ino;
-      unsigned long d_off;
-      unsigned short d_reclen;
-      char d_name[];
-    };
-    // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
-    // the 32version of linux_dirent stores d_type after d_name
+    .. code-block:: c
 
-    struct linux_dirent64 {
-        u64		d_ino;
-        s64		d_off;
-        unsigned short	d_reclen;
-        unsigned char	d_type;
-        char		d_name[];
-    };
-    // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/dirent.h#L5
+        struct linux_dirent
+        {
+            unsigned long d_ino;
+            unsigned long d_off;
+            unsigned short d_reclen;
+            char d_name[];
+        };
+        // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
+        // the 32version of linux_dirent stores d_type after d_name
 
-    enum
-    {
-        DT_UNKNOWN = 0,
-        DT_FIFO = 1,
-        DT_CHR = 2,
-        DT_DIR = 4,
-        DT_BLK = 6,
-        DT_REG = 8,
-        DT_LNK = 10,
-        DT_SOCK = 12,
-        DT_WHT = 14,
-        DT_SUBVOL = 16
-    };
-    // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/fs_types.h#L42
-    // https://elixir.bootlin.com/linux/v6.14.4/source/fs/bcachefs/dirent_format.h#L37
+        struct linux_dirent64 {
+            u64		d_ino;
+            s64		d_off;
+            unsigned short	d_reclen;
+            unsigned char	d_type;
+            char		d_name[];
+        };
+        // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/dirent.h#L5
+
+        enum
+        {
+            DT_UNKNOWN = 0,
+            DT_FIFO = 1,
+            DT_CHR = 2,
+            DT_DIR = 4,
+            DT_BLK = 6,
+            DT_REG = 8,
+            DT_LNK = 10,
+            DT_SOCK = 12,
+            DT_WHT = 14,
+            DT_SUBVOL = 16
+        };
+        // https://elixir.bootlin.com/linux/v6.14.4/source/include/linux/fs_types.h#L42
+        // https://elixir.bootlin.com/linux/v6.14.4/source/fs/bcachefs/dirent_format.h#L37
     """
 
     d_ino: int
