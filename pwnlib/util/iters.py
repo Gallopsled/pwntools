@@ -6,10 +6,12 @@ from __future__ import division
 
 import collections
 import copy
+import marshal
 import multiprocessing
 import operator
 import random
 import time
+import types
 from itertools import *
 
 from pwnlib.context import context
@@ -26,7 +28,6 @@ __all__ = [
     'group'                                  ,
     'iter_except'                            ,
     'lexicographic'                          ,
-    'lookahead'                              ,
     'nth'                                    ,
     'pad'                                    ,
     'pairwise'                               ,
@@ -679,37 +680,6 @@ def random_combination_with_replacement(iterable, r):
     indices = sorted(random.randrange(n) for i in range(r))
     return tuple(pool[i] for i in indices)
 
-def lookahead(n, iterable):
-    """lookahead(n, iterable) -> object
-
-    Inspects the upcoming element at index `n` without advancing the iterator.
-    Raises ``IndexError`` if `iterable` has too few elements.
-
-    Arguments:
-      n(int):  Index of the element to return.
-      iterable:  An iterable.
-
-    Returns:
-      The element in `iterable` at index `n`.
-
-    Examples:
-
-      >>> i = count()
-      >>> lookahead(4, i)
-      4
-      >>> next(i)
-      0
-      >>> i = count()
-      >>> nth(4, i)
-      4
-      >>> next(i)
-      5
-      >>> lookahead(4, i)
-      10
-    """
-    for value in islice(copy.copy(iterable), n, None):
-        return value
-    raise IndexError(n)
 
 def lexicographic(alphabet):
     """lexicographic(alphabet) -> iterator
@@ -873,6 +843,54 @@ def _mbruteforcewrap(func, alphabet, length, method, start, databag):
     databag["result"] = res
 
 
+class CustomPickler:
+    def __init__(self, *reduction):
+        self.reduction = reduction
+
+    def __reduce__(self):
+        return self.reduction
+
+    def __repr__(self):
+        return self.__class__.__name__ + repr(self.reduction)
+
+
+def construct_func(*args):
+    return types.FunctionType(*args)
+
+
+class PicklableFunc:
+    def __init__(self, f):
+        self.f = f
+
+    def __call__(self, *a, **kw):
+        return self.f(*a, **kw)
+
+    def __getattr__(self, a):
+        return getattr(self.f, a)
+
+    def __reduce__(self):
+        # Constructor types.FunctionType tries to be __main__.function;
+        # globs could likewise be <module>.__dict__.  Neither
+        #   type('FunctionType', (), {'__module__':'types'})
+        # nor
+        #   def __reduce__(self): return "FunctionType"
+        # works because of checks for identity :(
+        globs = CustomPickler(vars, (CustomPickler(__import__, (self.f.__module__ or '__main__',)),))
+        return type(self), (CustomPickler(
+            construct_func,  # ideally self.f.__class__
+                             # but types.FunctionType tries to be __main__.function
+            (
+                CustomPickler(marshal.loads, (marshal.dumps(self.f.__code__),)),
+                globs,
+                self.f.__name__,
+                self.f.__defaults__,
+                self.f.__closure__,
+                self.f.__kwdefaults__,
+            ),
+            self.f.__dict__,
+        ),)
+
+
 def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None):
     """mbruteforce(func, alphabet, length, method = 'upto', start = None, threads = None)
 
@@ -912,6 +930,9 @@ def mbruteforce(func, alphabet, length, method = 'upto', start = None, threads =
 
     (i2, N2) = start
     totalchunks = threads * N2
+
+    if isinstance(func, types.FunctionType):
+        func = PicklableFunc(func)
 
     for i in range(threads):
         shareddata[i] = multiprocessing.Manager().dict()

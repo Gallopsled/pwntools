@@ -25,7 +25,7 @@ class sock(tube):
         """
 
         if getattr(self, 'type', None) == socket.SOCK_DGRAM:
-            self.error("UDP sockets does not supports recvall")
+            self.error("UDP sockets do not support recvall")
         else:
             return super(sock, self).recvall(timeout)
 

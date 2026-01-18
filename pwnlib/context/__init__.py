@@ -48,7 +48,7 @@ class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
 
-    This is neccesary because the ``default_factory`` method of
+    This is necessary because the ``default_factory`` method of
     :class:`collections.defaultdict` does not provide the key.
 
     Examples:
@@ -358,6 +358,7 @@ class ContextType(object):
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
+        'disable_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'encoding': 'auto',
         'endian': 'little',
@@ -1429,7 +1430,7 @@ class ContextType(object):
         """
         try:
             # If the TLS already has a cache directory path, we return it
-            # without any futher checks since it must have been valid when it
+            # without any further checks since it must have been valid when it
             # was set and if that has changed, hiding the TOCTOU here would be
             # potentially confusing
             return self._tls["cache_dir"]
@@ -1481,6 +1482,18 @@ class ContextType(object):
         """Whether pwntools automatically deletes corefiles after exiting.
         This only affects corefiles accessed via :attr:`.process.corefile`.
 
+        Default value is ``False``.
+        """
+        return bool(v)
+
+    @_validator
+    def disable_corefiles(self, v):
+        """Whether pwntools automatically disable corefiles generation.
+
+        When enabled, sets RLIMIT_CORE to (0,-1) to prevent core dump creation
+        entirely, which is useful for brute-force scenarios and repeated segfault
+        crashes where core files consume excessive disk space 
+        
         Default value is ``False``.
         """
         return bool(v)
