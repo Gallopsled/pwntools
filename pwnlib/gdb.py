@@ -558,7 +558,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
         ...             preexec_fn=dup2, preexec_args=(0,2))
         >>> p.sendline(b'hello')
         >>> p.recvline()
-        b'hello\n'
+        b'hello'
 
 
     Using SSH:
