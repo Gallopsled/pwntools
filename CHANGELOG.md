@@ -110,6 +110,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2646][2646] fix(libcdb-cli): return early if no matched libc found
 - [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
 - [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
+- [#2669][2669] asm: try native binutils before fallback architectures
 
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -145,7 +146,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2641]: https://github.com/Gallopsled/pwntools/pull/2641
 [2646]: https://github.com/Gallopsled/pwntools/pull/2646
 [2629]: https://github.com/Gallopsled/pwntools/pull/2629
-[2638]: https://github.com/Gallopsled/pwntools/pull/2643
+[2643]: https://github.com/Gallopsled/pwntools/pull/2643
+[2669]: https://github.com/Gallopsled/pwntools/pull/2669
 
 ## 4.15.0 (`stable`)
 
