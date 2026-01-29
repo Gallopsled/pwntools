@@ -31,3 +31,8 @@ jobs:
         flake8 pwnlib setup.py docs travis --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         flake8 examples --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F403,F405'
         flake8 pwn --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F401,F403,F405'
+
+    - name: Minimum Python version check
+      run: |
+        pip install vermin
+        vermin -vvv --no-tips -t=3.10- --violations  ./pwnlib ./pwn

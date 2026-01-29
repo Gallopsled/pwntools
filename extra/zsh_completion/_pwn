@@ -12,6 +12,7 @@ typeset -A opt_args
 _pwn() {
   # Define the subcommands
   local -a commands
+  
   commands=(
     'asm:Assemble shellcode into bytes'
     'checksec:Check binary security settings'
@@ -65,9 +66,10 @@ _pwn() {
             '(-r --run)'{-r,--run}'[Run output]' \
             ;;
         checksec)
-          _arguments \
-            '(-h --help)'{-h,--help}'[show this help message and exit]' \
-            '--file=[File to check (for compatibility with checksec.sh)]:' \
+            _arguments \
+              '(-h --help)'{-h,--help}'[show this help message and exit]' \
+              '--file=[File to check (for compatibility with checksec.sh)]:ELF file:_path_files -g "*(-.)"' \
+              '*:ELF file:_path_files -g "*(-.)"' \
             ;;
         constgrep)
           _arguments \
