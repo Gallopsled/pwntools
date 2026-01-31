@@ -683,6 +683,29 @@ class ssh(Timeout, Logger):
         except Exception as e:
             self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
+        # Create Paramiko.PKey if key is provided as str or bytes
+        if isinstance(key, (bytes,str)):
+            if isinstance(key,bytes):
+                key = key.decode('utf-8')
+            import io
+            file_object = io.StringIO(key)
+            converted_key = None
+
+            for key_class in [paramiko.RSAKey, paramiko.ECDSAKey, paramiko.Ed25519Key]:
+                try:
+                    file_object.seek(0)
+                    converted_key = key_class.from_private_key(file_object)
+                    self.debug('Key string converted to paramiko.PKey')
+                    break
+                except paramiko.SSHException: 
+                    continue
+            
+            if converted_key:
+                key = converted_key
+            else:
+                self.info('Could not convert key str to paramiko.PKey')
+            
+            
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         msg = 'Connecting to %s on port %d' % (host, port)
