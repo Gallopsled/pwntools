@@ -287,7 +287,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
         - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
-          variable), a new srceen will be opened.`)
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
