@@ -328,7 +328,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = ['-e']
         elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
             terminal = 'kitten'
-            args = ['@', 'launch']
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
             if which('remotinator'):
                 terminal = 'remotinator'
