@@ -423,7 +423,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             # Likely the average user just wanted to tell pwntools to use kitty, rather than
             # thinking about how the terminal will actually be invoked.
             terminal = "kitten"
-            args = ["@", "launch"]
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         else:
             # Allowing this would make our life much harder (because we don't get the window id from
             # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
