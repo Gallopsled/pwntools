@@ -286,6 +286,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+        - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
@@ -313,6 +315,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'ZELLIJ' in os.environ and which('zellij'):
+            terminal = 'zellij'
+            args = ['action', 'new-pane'] + ['-c'] * kill_at_exit + ['--']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -481,7 +486,7 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal == 'kitten':
+    if terminal == 'tmux' or terminal == 'zellij' or terminal == 'kitten':
         stdout = subprocess.PIPE
     if terminal == 'kitten':
         stderr = subprocess.PIPE

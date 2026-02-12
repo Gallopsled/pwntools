@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
 - [#2638][2638] feat: add disable_corefiles context option
 - [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
@@ -111,6 +112,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
 - [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 
+[2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
 [2627]: https://github.com/Gallopsled/pwntools/pull/2627
