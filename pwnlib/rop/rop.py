@@ -362,6 +362,7 @@ from __future__ import division
 
 import collections
 import copy
+import ast
 import hashlib
 import itertools
 import os
@@ -1268,7 +1269,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = ast.literal_eval(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
         log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets
