@@ -1,7 +1,9 @@
 import ctypes
 import ctypes.util
 import socket
+from typing import Callable
 
+from pwnlib import log, tubes
 from pwnlib.util.packing import p16
 from pwnlib.util.packing import p32
 from pwnlib.util.packing import pack
@@ -58,7 +60,7 @@ struct_ifaddrs._fields_ = [
 
 AddressFamily = getattr(socket, 'AddressFamily', int)
 
-def sockaddr_fixup(saptr):
+def sockaddr_fixup(saptr: ctypes.POINTER) -> tuple[int, dict]:
     family = AddressFamily(saptr.contents.sa_family)
     addr = {}
     if   family == socket.AF_INET:
@@ -73,7 +75,7 @@ def sockaddr_fixup(saptr):
         addr['scope_id'] = sa.sin6_scope_id
     return family, addr
 
-def getifaddrs():
+def getifaddrs() -> list[dict]:
     """getifaddrs() -> dict list
 
     A wrapper for libc's ``getifaddrs``.
@@ -122,7 +124,7 @@ def getifaddrs():
     finally:
         freeifaddrs(ifaptr)
 
-def interfaces(all = False):
+def interfaces(all: bool = False) -> dict:
     """interfaces(all = False) -> dict
 
     Arguments:
@@ -148,7 +150,7 @@ def interfaces(all = False):
         out = {k: v for k, v in out.items() if v}
     return out
 
-def interfaces4(all = False):
+def interfaces4(all: bool = False) -> dict:
     """interfaces4(all = False) -> dict
 
     As :func:`interfaces` but only includes IPv4 addresses and the lists in the
@@ -174,7 +176,7 @@ def interfaces4(all = False):
             out[name] = addrs
     return out
 
-def interfaces6(all = False):
+def interfaces6(all: bool = False) -> dict:
     """interfaces6(all = False) -> dict
 
     As :func:`interfaces` but only includes IPv6 addresses and the lists in the
@@ -200,7 +202,7 @@ def interfaces6(all = False):
             out[name] = addrs
     return out
 
-def sockaddr(host, port, network = 'ipv4'):
+def sockaddr(host: str, port: int, network: str = 'ipv4') -> tuple[bytes, int, int]:
     """sockaddr(host, port, network = 'ipv4') -> (data, length, family)
 
     Creates a sockaddr_in or sockaddr_in6 memory buffer for use in shellcode.
@@ -237,13 +239,13 @@ def sockaddr(host, port, network = 'ipv4'):
         length    = len(sockaddr) + 4 # Save five bytes 'push 0'
     return (sockaddr, length, getattr(address_family, "name", address_family))
 
-def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
+def sock_match(local: tuple | tubes.sock.sock, remote: str, fam: int =socket.AF_UNSPEC, typ: int = 0) -> Callable[[], bool]:
     """
     Given two addresses, returns a function comparing address pairs from
     psutil library against these two.  Useful for filtering done in
     :func:`pwnlib.util.proc.pidof`.
     """
-    def sockinfos(addr, f, t):
+    def sockinfos(addr: dict, f: int, t: int) -> set:
         if not addr:
             return set()
         if f not in (socket.AF_UNSPEC, socket.AF_INET, socket.AF_INET6):
@@ -260,7 +262,7 @@ def sock_match(local, remote, fam=socket.AF_UNSPEC, typ=0):
     if remote is not None:
         remote = sockinfos(remote, fam, typ)
 
-    def match(c):
+    def match(c) -> bool:  # noqa: ANN001
         laddrs = sockinfos(c.laddr, c.family, c.type)
         raddrs = sockinfos(c.raddr, c.family, c.type)
         if not (laddrs & local):

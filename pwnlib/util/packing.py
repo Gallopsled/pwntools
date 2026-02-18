@@ -29,9 +29,10 @@ Examples:
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     b'\xff\x01'
 """
-import collections
+from io import FileIO
 import struct
 import sys
+from typing import Any, Callable, Iterable
 import warnings
 
 from pwnlib.context import LocalNoarchContext
@@ -43,7 +44,7 @@ from pwnlib.util import iters
 mod = sys.modules[__name__]
 log = getLogger(__name__)
 
-def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
+def pack(number: int, word_size: str | int = None, endianness: str = None, sign: bool = None, **kwargs: dict[str, Any]) -> bytes:
     r"""pack(number, word_size = None, endianness = None, sign = None, **kwargs) -> str
 
     Packs arbitrary-sized integer.
@@ -159,7 +160,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
             return b''.join(reversed(out))
 
 @LocalNoarchContext
-def unpack(data, word_size = None):
+def unpack(data: bytes, word_size: str | int = None) -> str:
     r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
 
     Unpacks arbitrary-sized integer.
@@ -233,7 +234,7 @@ def unpack(data, word_size = None):
     return int(number - 2*signbit)
 
 @LocalNoarchContext
-def unpack_many(data, word_size = None):
+def unpack_many(data: bytes, word_size: int | str = None) -> str:
     """unpack_many(data, word_size = None, endianness = None, sign = None) -> int list
 
     Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
@@ -265,8 +266,6 @@ def unpack_many(data, word_size = None):
     """
     # Lookup in context if None
     word_size  = word_size  or context.word_size
-    endianness = context.endianness
-    sign       = context.sign
 
     if word_size == 'all':
         return [unpack(data, word_size)]
@@ -295,7 +294,7 @@ signs = ['s','u']
 op_verbs         = {'p': 'pack', 'u': 'unpack'}
 
 
-def make_single(op,size,end,sign):
+def make_single(op: str, size: str, end: str, sign: str) -> tuple[str, Callable]:
     name = '_%s%s%s%s' % (op, size, end, sign)
     fmt  = sizes[size]
 
@@ -303,11 +302,11 @@ def make_single(op,size,end,sign):
     if fmt == '':
         endianess = 'big' if end == 'b' else 'little'
         if op == 'u':
-            def routine(data, stacklevel=1):
+            def routine(data: bytes | bytearray | str, stacklevel: int = 1) -> str:
                 data = _need_bytes(data, stacklevel)
                 return unpack(data, size, endianness=endianess, sign=sign == 's')
         else:
-            def routine(data, stacklevel=None):
+            def routine(data: int, stacklevel: int = None) -> bytes:
                 return pack(data, size, endianness=endianess, sign=sign == 's')
         routine.__name__ = routine.__qualname__ = name
         return name, routine            
@@ -320,11 +319,11 @@ def make_single(op,size,end,sign):
 
     struct_op = getattr(struct.Struct(fmt), op_verbs[op])
     if op == 'u':
-        def routine(data, stacklevel=1):
+        def routine(data: bytes | bytearray | str, stacklevel: int = 1) -> Any:
             data = _need_bytes(data, stacklevel)
             return struct_op(data)[0]
     else:
-        def routine(data, stacklevel=None):
+        def routine(data: bytes | bytearray | str, stacklevel: int = None) -> Any:
             return struct_op(data)
     routine.__name__ = routine.__qualname__ = name
 
@@ -339,7 +338,7 @@ for op,size,end,sign in iters.product(ops, sizes, ends, signs):
 #
 # Make normal user-oriented packers, e.g. p8
 #
-def _do_packing(op, size, number, endianness=None):
+def _do_packing(op: str, size: int, number: int, endianness: str = None) -> bytes:
 
     name = "%s%s" % (op,size)
     mod = sys.modules[__name__]
@@ -357,7 +356,7 @@ def _do_packing(op, size, number, endianness=None):
             ("big",    False):  bu}[endian, signed](number, 3)
 
 @LocalNoarchContext
-def p8(number, endianness = None, **kwargs):
+def p8(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p8(number, endianness, sign, ...) -> bytes
 
     Packs an 8-bit integer
@@ -375,7 +374,7 @@ def p8(number, endianness = None, **kwargs):
     return _do_packing('p', 8, number, endianness)
 
 @LocalNoarchContext
-def p16(number, endianness = None, **kwargs):
+def p16(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p16(number, endianness, sign, ...) -> bytes
 
     Packs an 16-bit integer
@@ -400,7 +399,7 @@ def p16(number, endianness = None, **kwargs):
     return _do_packing('p', 16, number, endianness)
 
 @LocalNoarchContext
-def p32(number, endianness = None, **kwargs):
+def p32(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p32(number, endianness, sign, ...) -> bytes
 
     Packs an 32-bit integer
@@ -425,7 +424,7 @@ def p32(number, endianness = None, **kwargs):
     return _do_packing('p', 32, number, endianness)
 
 @LocalNoarchContext
-def p40(number, endianness = None, **kwargs):
+def p40(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p40(number, endianness, sign, ...) -> bytes
 
     Packs an 40-bit integer
@@ -450,7 +449,7 @@ def p40(number, endianness = None, **kwargs):
     return _do_packing('p', 40, number, endianness)
 
 @LocalNoarchContext
-def p48(number, endianness = None, **kwargs):
+def p48(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p48(number, endianness, sign, ...) -> bytes
 
     Packs an 48-bit integer
@@ -475,7 +474,7 @@ def p48(number, endianness = None, **kwargs):
     return _do_packing('p', 48, number, endianness)
 
 @LocalNoarchContext
-def p56(number, endianness = None, **kwargs):
+def p56(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p56(number, endianness, sign, ...) -> bytes
 
     Packs an 56-bit integer
@@ -500,7 +499,7 @@ def p56(number, endianness = None, **kwargs):
     return _do_packing('p', 56, number, endianness)
 
 @LocalNoarchContext
-def p64(number, endianness = None, **kwargs):
+def p64(number: int, endianness: str = None, **kwargs: dict[str, Any]) -> bytes:
     """p64(number, endianness, sign, ...) -> bytes
 
     Packs an 64-bit integer
@@ -525,7 +524,7 @@ def p64(number, endianness = None, **kwargs):
     return _do_packing('p', 64, number, endianness)
 
 @LocalNoarchContext
-def u8(data, endianness = None, **kwargs):
+def u8(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u8(data, endianness, sign, ...) -> int
 
     Unpacks an 8-bit integer
@@ -543,7 +542,7 @@ def u8(data, endianness = None, **kwargs):
     return _do_packing('u', 8, data, endianness)
 
 @LocalNoarchContext
-def u16(data, endianness = None, **kwargs):
+def u16(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u16(data, endianness, sign, ...) -> int
 
     Unpacks an 16-bit integer
@@ -561,7 +560,7 @@ def u16(data, endianness = None, **kwargs):
     return _do_packing('u', 16, data, endianness)
 
 @LocalNoarchContext
-def u32(data, endianness = None, **kwargs):
+def u32(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u32(data, endianness, sign, ...) -> int
 
     Unpacks an 32-bit integer
@@ -579,7 +578,7 @@ def u32(data, endianness = None, **kwargs):
     return _do_packing('u', 32, data, endianness)
 
 @LocalNoarchContext
-def u40(data, endianness = None, **kwargs):
+def u40(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u40(data, endianness, sign, ...) -> int
 
     Unpacks an 40-bit integer
@@ -597,7 +596,7 @@ def u40(data, endianness = None, **kwargs):
     return _do_packing('u', 40, data, endianness)
 
 @LocalNoarchContext
-def u48(data, endianness = None, **kwargs):
+def u48(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u48(data, endianness, sign, ...) -> int
 
     Unpacks an 48-bit integer
@@ -615,7 +614,7 @@ def u48(data, endianness = None, **kwargs):
     return _do_packing('u', 48, data, endianness)
 
 @LocalNoarchContext
-def u56(data, endianness = None, **kwargs):
+def u56(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u56(data, endianness, sign, ...) -> int
 
     Unpacks an 56-bit integer
@@ -633,7 +632,7 @@ def u56(data, endianness = None, **kwargs):
     return _do_packing('u', 56, data, endianness)
 
 @LocalNoarchContext
-def u64(data, endianness = None, **kwargs):
+def u64(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     """u64(data, endianness, sign, ...) -> int
 
     Unpacks an 64-bit integer
@@ -650,7 +649,7 @@ def u64(data, endianness = None, **kwargs):
     """
     return _do_packing('u', 64, data, endianness)
 
-def make_packer(word_size = None, sign = None, **kwargs):
+def make_packer(word_size: int = None, sign: str = None, **kwargs: dict[str, Any]) -> Callable[[int], str]:
     """make_packer(word_size = None, endianness = None, sign = None) -> number → str
 
     Creates a packer by "freezing" the given arguments.
@@ -714,7 +713,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
         return lambda number: pack(number, word_size, endianness, sign)
 
 @LocalNoarchContext
-def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
+def make_unpacker(word_size: int = None, endianness: str = None, sign: str = None, **kwargs: dict[str, Any]) -> Callable[[str], int]:
     """make_unpacker(word_size = None, endianness = None, sign = None,  **kwargs) -> str → number
 
     Creates an unpacker by "freezing" the given arguments.
@@ -775,12 +774,12 @@ def make_unpacker(word_size = None, endianness = None, sign = None, **kwargs):
     else:
         return lambda number: unpack(number, word_size, endianness, sign)
 
-def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
+def _fit(pieces: dict, preprocessor: Callable, packer: Callable, filler: Iterable, stacklevel: int = 1) -> tuple[iters.chain[int], bytes]:
 
     # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
     # Returns the index of `key` in `pad`.
     pad = bytearray()
-    def fill(key):
+    def fill(key: bytes | bytearray) -> int:
         key = bytearray(key)
         offset = pad.find(key)
         while offset == -1:
@@ -850,7 +849,7 @@ def _fit(pieces, preprocessor, packer, filler, stacklevel=1):
 
     return filler, out_negative + out
 
-def _flat(args, preprocessor, packer, filler, stacklevel=1):
+def _flat(args: list[list | tuple | dict | bytes | str | int], preprocessor: Callable, packer: Callable, filler: Iterable, stacklevel: int = 1) -> bytes:
     out = []
     for arg in args:
 
@@ -886,7 +885,7 @@ def _flat(args, preprocessor, packer, filler, stacklevel=1):
     return b''.join(out)
 
 @LocalNoarchContext
-def flat(*args, **kwargs):
+def flat(*args: tuple, **kwargs: dict[str, Any]) -> str:
     r"""flat(\*args, preprocessor = None, length = None, filler = de_bruijn(),
      word_size = None, endianness = None, sign = None) -> str
 
@@ -1058,7 +1057,7 @@ def flat(*args, **kwargs):
 
     return out
 
-def fit(*args, **kwargs):
+def fit(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
     """Legacy alias for :func:`flat`"""
     kwargs['stacklevel'] = kwargs.get('stacklevel', 0) + 1
     return flat(*args, **kwargs)
@@ -1100,13 +1099,13 @@ def fit(*args, **kwargs):
 
     """
 
-def signed(integer):
+def signed(integer: int) -> str:
     return unpack(pack(integer), signed=True)
 
-def unsigned(integer):
+def unsigned(integer: int) -> str:
     return unpack(pack(integer))
 
-def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
+def dd(dst: FileIO | list | tuple | str | bytearray, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> FileIO | list | tuple | str | bytearray:
     """dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
@@ -1291,7 +1290,7 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
     return dst
 
-def _need_bytes(s, level=1, min_wrong=0):
+def _need_bytes(s: bytes | bytearray | str, level: int = 1, min_wrong: int = 0) -> bytes:
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 
@@ -1313,7 +1312,7 @@ def _need_bytes(s, level=1, min_wrong=0):
                       .format(encoding), BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
-def _need_text(s, level=1):
+def _need_text(s: str | bytes | bytearray, level: int = 1) -> str:
     if isinstance(s, str):
         return s   # already text
 
@@ -1335,7 +1334,7 @@ def _need_text(s, level=1):
                   .format(encoding), BytesWarning, level + 2)
     return s.decode(encoding, errors)
 
-def _encode(s):
+def _encode(s: bytes | bytearray | str) -> bytes:
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 
@@ -1346,7 +1345,7 @@ def _encode(s):
             return s.encode('utf-8', 'surrogateescape')
     return s.encode(context.encoding)
 
-def _decode(b):
+def _decode(b: str | bytes) -> str:
     if isinstance(b, str):
         return b   # already text
 

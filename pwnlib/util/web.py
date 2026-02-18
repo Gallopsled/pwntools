@@ -1,5 +1,6 @@
 import os
 import tempfile
+from typing import Any
 
 from pwnlib.log import getLogger
 from pwnlib.tubes.buffer import Buffer
@@ -7,7 +8,7 @@ from pwnlib.util.misc import size
 
 log = getLogger(__name__)
 
-def wget(url, save=None, timeout=5, **kwargs):
+def wget(url: str, save: str | bool=None, timeout: int=5, **kwargs: dict[str, Any]) -> None | bytes:
     r"""wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.

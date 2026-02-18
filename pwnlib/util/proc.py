@@ -2,6 +2,7 @@ import errno
 import socket
 import sys
 import time
+from typing import Any
 
 import psutil
 
@@ -14,7 +15,7 @@ log = getLogger(__name__)
 
 all_pids = psutil.pids
 
-def pidof(target):
+def pidof(target: tubes.ssh.ssh_channel | tubes.sock.sock | tuple | tubes.process.process) -> list[int]:
     """pidof(target) -> int list
 
     Get PID(s) of `target`.  The returned PID(s) depends on the type of `target`:
@@ -62,7 +63,7 @@ def pidof(target):
     else:
         return pid_by_name(target)
 
-def pid_by_name(name):
+def pid_by_name(name: str) -> list[int]:
     """pid_by_name(name) -> int list
 
     Arguments:
@@ -76,7 +77,7 @@ def pid_by_name(name):
         >>> os.getpid() in pid_by_name(name(os.getpid()))
         True
     """
-    def match(p):
+    def match(p: psutil.Process) -> bool:
         if p.status() == 'zombie':
             return False
         if p.name() == name:
@@ -96,7 +97,7 @@ def pid_by_name(name):
 
     return [p.pid for p in processes]
 
-def name(pid):
+def name(pid: int) -> str:
     """name(pid) -> str
 
     Arguments:
@@ -113,7 +114,7 @@ def name(pid):
     """
     return psutil.Process(pid).name()
 
-def parent(pid):
+def parent(pid: int) -> int:
     """parent(pid) -> int
 
     Arguments:
@@ -128,7 +129,7 @@ def parent(pid):
     except Exception:
          return 0
 
-def children(ppid):
+def children(ppid: int) -> list[int]:
     """children(ppid) -> int list
 
     Arguments:
@@ -139,7 +140,7 @@ def children(ppid):
     """
     return [p.pid for p in psutil.Process(ppid).children()]
 
-def ancestors(pid):
+def ancestors(pid: int) -> list[int]:
     """ancestors(pid) -> int list
 
     Arguments:
@@ -159,7 +160,7 @@ def ancestors(pid):
          pid = parent(pid)
     return pids
 
-def descendants(pid):
+def descendants(pid: int) -> dict[int, dict[int, int]]: #TODO: verify
     """descendants(pid) -> dict
 
     Arguments:
@@ -177,17 +178,17 @@ def descendants(pid):
     this_pid = pid
     allpids = all_pids()
     ppids = {}
-    def _parent(pid):
+    def _parent(pid: int) -> dict[int, int]:
          if pid not in ppids:
              ppids[pid] = parent(pid)
          return ppids[pid]
-    def _children(ppid):
+    def _children(ppid: int) -> list[int]:
          return [pid for pid in allpids if _parent(pid) == ppid]
-    def _loop(ppid):
+    def _loop(ppid: int) -> dict[int, dict[int, int]]:
          return {pid: _loop(pid) for pid in _children(ppid)}
     return _loop(pid)
 
-def exe(pid):
+def exe(pid: int) -> str:
     """exe(pid) -> str
 
     Arguments:
@@ -203,7 +204,7 @@ def exe(pid):
     """
     return psutil.Process(pid).exe()
 
-def cwd(pid):
+def cwd(pid: int) -> str:
     """cwd(pid) -> str
 
     Arguments:
@@ -220,7 +221,7 @@ def cwd(pid):
     """
     return psutil.Process(pid).cwd()
 
-def cmdline(pid):
+def cmdline(pid: int) -> list[str]:
     """cmdline(pid) -> str list
 
     Arguments:
@@ -236,7 +237,7 @@ def cmdline(pid):
     """
     return psutil.Process(pid).cmdline()
 
-def memory_maps(pid):
+def memory_maps(pid: int) -> list[tuple[str, str]]:
     """memory_maps(pid) -> list
     
     Arguments:
@@ -254,7 +255,7 @@ def memory_maps(pid):
     """
     return psutil.Process(pid).memory_maps(grouped=False)
 
-def stat(pid):
+def stat(pid: int) -> list[str]:
     """stat(pid) -> str list
 
     Arguments:
@@ -276,7 +277,7 @@ def stat(pid):
     name = s[i+1:j]
     return s[:i].split() + [name] + s[j+1:].split()
 
-def starttime(pid):
+def starttime(pid: int) -> float:
     """starttime(pid) -> float
 
     Arguments:
@@ -292,7 +293,7 @@ def starttime(pid):
     """
     return psutil.Process(pid).create_time() - psutil.boot_time()
 
-def status(pid):
+def status(pid: int) -> dict[str, str]:
     """status(pid) -> dict
 
     Get the status of a process.
@@ -320,11 +321,11 @@ def status(pid):
             raise
     return out
 
-def _tracer_windows(pid):
+def _tracer_windows(pid: int) -> int:
     import ctypes
     from ctypes import wintypes
 
-    def _check_bool(result, func, args):
+    def _check_bool(result: Any, func: callable, args: list) -> list:
         if not result:
             raise ctypes.WinError(ctypes.get_last_error())
         return args
@@ -356,7 +357,7 @@ def _tracer_windows(pid):
 
     return ret
 
-def tracer(pid):
+def tracer(pid: int) -> int | None:
     """tracer(pid) -> int
 
     Arguments:
@@ -376,7 +377,7 @@ def tracer(pid):
         tpid = int(status(pid)['TracerPid'])
     return tpid if tpid > 0 else None
 
-def state(pid):
+def state(pid: int) -> str:
     """state(pid) -> str
 
     Arguments:
@@ -392,7 +393,7 @@ def state(pid):
     """
     return status(pid)['State']
 
-def wait_for_debugger(pid, debugger_pid=None):
+def wait_for_debugger(pid: int, debugger_pid: int | None = None) -> int | None:
     """wait_for_debugger(pid, debugger_pid=None) -> None
 
     Sleeps until the process with PID `pid` is being traced.

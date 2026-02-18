@@ -1,7 +1,8 @@
 import collections
+from typing import Any, Generator, Literal
 
 
-def partition(lst, f, save_keys = False):
+def partition(lst: list, f: function, save_keys: bool = False) -> list:
     """partition(lst, f, save_keys = False) -> list
 
     Partitions an iterable into sublists using a function to specify which
@@ -34,7 +35,7 @@ def partition(lst, f, save_keys = False):
     else:
         return list(d.values())
 
-def group(n, lst, underfull_action = 'ignore', fill_value = None):
+def group(n: int, lst: list | tuple | str, underfull_action: str = 'ignore', fill_value: list | tuple | bytes | str = None) -> list:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be
@@ -92,7 +93,7 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
 
     return out
 
-def concat(l):
+def concat(l: list) -> list:
     """concat(l) -> list
 
     Concats a list of lists into a list.
@@ -110,7 +111,7 @@ def concat(l):
 
     return res
 
-def concat_all(*args):
+def concat_all(*args: tuple) -> list:
     """concat_all(*args) -> list
 
     Concats all the arguments together.
@@ -121,7 +122,7 @@ def concat_all(*args):
        [0, 1, 2, 3, 4, 5, 6]
     """
 
-    def go(arg, output):
+    def go(arg: tuple | list | Any, output: list) -> list:
         if isinstance(arg, (tuple, list)):
             for e in arg:
                 go(e, output)
@@ -131,7 +132,7 @@ def concat_all(*args):
 
     return go(args, [])
 
-def ordlist(s):
+def ordlist(s: str) -> list[int]:
     """ordlist(s) -> list
 
     Turns a string into a list of the corresponding ascii values.
@@ -143,7 +144,7 @@ def ordlist(s):
     """
     return list(map(ord, s))
 
-def unordlist(cs):
+def unordlist(cs: list[int]) -> str:
     """unordlist(cs) -> str
 
     Takes a list of ascii values and returns the corresponding string.
@@ -155,7 +156,7 @@ def unordlist(cs):
     """
     return ''.join(chr(c) for c in cs)
 
-def findall(haystack, needle):
+def findall(haystack: list, needle: Any) -> list | Any:
     """findall(l, e) -> l
 
     Generate all indices of needle in haystack, using the
@@ -175,7 +176,7 @@ def findall(haystack, needle):
       >>> list(findall("aaabaaabc", "aab"))
       [1, 5]
     """
-    def __kmp_table(W):
+    def __kmp_table(W: Any) -> list:
         pos = 1
         cnd = 0
         T = []
@@ -193,7 +194,7 @@ def findall(haystack, needle):
                 T.append(0)
         return T
 
-    def __kmp_search(S, W):
+    def __kmp_search(S: list, W: Any) -> Generator[Any | Literal[0], Any, None]:
         m = 0
         i = 0
         T = __kmp_table(W)
@@ -208,7 +209,7 @@ def findall(haystack, needle):
                 m += i - T[i]
                 i = max(T[i], 0)
 
-    def __single_search(S, w):
+    def __single_search(S: list, w: Any) -> Generator[int, Any, None]:
         for i, v in enumerate(S):
             if v == w:
                 yield i

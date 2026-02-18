@@ -1,8 +1,9 @@
 import os
 import re
+from typing import Any
 
 
-def generate():
+def generate() -> dict[str, dict]:
     """Generates a dictionary of all the known CRC formats from:
     https://reveng.sourceforge.io/crc-catalogue/all.htm
 
@@ -15,7 +16,7 @@ def generate():
         data = fd.read()
     out = {}
 
-    def fixup(s):
+    def fixup(s: str) -> Any | int | bool:
         if s == 'true':
             return True
         elif s == 'false':
