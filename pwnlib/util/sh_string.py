@@ -239,6 +239,7 @@ and should therefore be compatible with ``dash``.
 """
 import string
 import subprocess
+from typing import Callable
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -488,7 +489,7 @@ def sh_prepare(variables: dict, export: bool = False) -> bytes:
 
     return b';'.join(out)
 
-def sh_command_with(f: function, *args: tuple) -> str:
+def sh_command_with(f: Callable, *args: tuple) -> str:
     r"""sh_command_with(f, arg0, ..., argN) -> command
 
     Returns a command create by evaluating `f(new_arg0, ..., new_argN)`

@@ -521,7 +521,7 @@ def ror(n: list | tuple | str | int, k: int, word_size: int = None) -> str:
 
     return rol(n, -k, word_size)
 
-def naf(n: int) -> Generator[int]:
+def naf(n: int) -> Generator[int, None, None]:
     """naf(int) -> int generator
 
     Returns a generator for the non-adjacent form (NAF[1]) of a number, `n`.  If
@@ -604,7 +604,7 @@ def update_cyclic_pregenerated(size: int) -> None:
         cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
 def hexdump_iter(fd: FileIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict = None,
-                 highlight: Iterable = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str]:
+                 highlight: Iterable = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str, None, None]:
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                     highlight = None, cyclic = False, groupsize=4, total = True) -> str generator
 
