@@ -1,8 +1,8 @@
 import collections
-from typing import Any, Generator, Literal
+from typing import Any, Callable, Generator, Literal
 
 
-def partition(lst: list, f: function, save_keys: bool = False) -> list:
+def partition(lst: list, f: Callable, save_keys: bool = False) -> list:
     """partition(lst, f, save_keys = False) -> list
 
     Partitions an iterable into sublists using a function to specify which
