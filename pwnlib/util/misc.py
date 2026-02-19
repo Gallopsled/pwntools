@@ -286,6 +286,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+        - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
@@ -313,6 +315,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'ZELLIJ' in os.environ and which('zellij'):
+            terminal = 'zellij'
+            args = ['action', 'new-pane'] + ['-c'] * kill_at_exit + ['--']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -328,7 +333,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = ['-e']
         elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
             terminal = 'kitten'
-            args = ['@', 'launch']
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
             if which('remotinator'):
                 terminal = 'remotinator'
@@ -413,6 +418,18 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if terminal == 'tmux':
         args += ['-F' '#{pane_pid}', '-P']
 
+    if terminal == "kitty":
+        if not args:
+            # Likely the average user just wanted to tell pwntools to use kitty, rather than
+            # thinking about how the terminal will actually be invoked.
+            terminal = "kitten"
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
+        else:
+            # Allowing this would make our life much harder (because we don't get the window id from
+            # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
+            log.error(
+                f"Invalid kitty invocation {context.terminal}, please use `kitten @ launch`.")
+            
     argv = [which(terminal)] + args
 
     if isinstance(command, str):
@@ -469,8 +486,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal in ('kitty', 'kitten'):
+    if terminal == 'tmux' or terminal == 'zellij' or terminal == 'kitten':
         stdout = subprocess.PIPE
+    if terminal == 'kitten':
+        stderr = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
 
@@ -486,15 +505,20 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
-    elif terminal in ('kitty', 'kitten'):
+    elif terminal == "kitten":
         pid = None
-        out, _ = p.communicate()
+        out, err = p.communicate()
+
+        # Catch the most common user error
+        if b"Remote control is disabled" in err:
+            log.error("Kitty remote control is disabled. Add `allow_remote_control yes` to your ~/.config/kitty/kitty.conf .")
+
         try:
             kittyid = int(out)
         except ValueError:
             kittyid = None
         if kittyid is None:
-            log.error("Could not parse kitty window ID from output (%r)", out)
+            log.error("Could not parse kitty window ID from output (%r) (stderr: %r)", out, err)
         else:
             lsout, _ = subprocess.Popen(["kitten", "@", "ls", "--match", "id:%d" % kittyid], stdin=stdin, stdout=stdout, stderr=stderr).communicate()
             try:

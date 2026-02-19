@@ -124,7 +124,7 @@ class Mapping(object):
         #: :class:`int`: First mapped byte in the mapping
         self.start = start
 
-        #: :class:`int`: First byte after the end of hte mapping
+        #: :class:`int`: First byte after the end of the mapping
         self.stop = stop
 
         #: :class:`int`: Size of the mapping, in bytes
@@ -326,7 +326,7 @@ class Corefile(ELF):
         >>> hex(core.exe.address)
         '0x41410000'
 
-        The core file also has registers which can be accessed direclty.
+        The core file also has registers which can be accessed directly.
         Pseudo-registers :attr:`pc` and :attr:`sp` are available on all architectures,
         to make writing architecture-agnostic code more simple.
         If this were an amd64 corefile, we could access e.g. ``core.rax``.
@@ -750,7 +750,7 @@ class Corefile(ELF):
         for m in self.mappings:
             first_segment_for_name.setdefault(m.name, m)
 
-        # Find which segment conains the entry point
+        # Find which segment contains the entry point
         for m in self.mappings:
             if m.start <= self.at_entry < m.stop:
 

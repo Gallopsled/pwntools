@@ -40,7 +40,6 @@ dependencies = [
     "ropgadget>=5.3",
     "pyserial>=2.7",
     "requests>=2.0",
-    "pip>=6.0.8",
     "pygments>=2.0",
     "pysocks",
     "python-dateutil",

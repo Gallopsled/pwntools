@@ -86,6 +86,8 @@ class process(tube):
             By default, :const:`True` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
+        preexec_args(iterable):
+            Arguments passed to ``preexec_fn``.
         raw(bool):
             Set the created pty to raw mode (i.e. disable echo and control
             characters).  :const:`True` by default.  If no pty is created, this
@@ -216,6 +218,12 @@ class process(tube):
         >>> p = process(binary.path, cwd=binary_dir)
         >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
         >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
+
+        >>> def write(s):
+        ...    import os
+        ...    os.write(1, s)
+        >>> print(process('false', preexec_fn=write, preexec_args=(b"Hello World!", )).recvline().strip().decode())
+        Hello World!
     """
 
     STDOUT = STDOUT
@@ -238,6 +246,7 @@ class process(tube):
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
+                 preexec_args = (),
                  raw = True,
                  aslr = None,
                  setuid = None,
@@ -330,6 +339,7 @@ class process(tube):
         self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
+        self.preexec_args = preexec_args
         self.display    = display or self.program
         self._qemu      = False
         self._corefile  = None
@@ -471,7 +481,7 @@ class process(tube):
         if self.alarm is not None:
             signal.alarm(self.alarm)
 
-        self.preexec_fn()
+        self.preexec_fn(*self.preexec_args)
 
     def __on_enoexec(self, exception):
         """We received an 'exec format' error (ENOEXEC)
@@ -669,6 +679,40 @@ class process(tube):
         Kills the process.
         """
         self.close()
+
+    def terminate(self):
+        """terminate()
+
+        Terminates the process by sending SIGTERM.
+        
+        This is a more graceful way to stop a process compared to :meth:`kill`,
+        which sends SIGKILL. The process has a chance to clean up and
+        exit gracefully when receiving SIGTERM.
+
+        The process can choose to ignore this signal, so proper cleanup
+        is only done in :meth:`kill`/:meth:`close`.
+        
+        Examples:
+        
+            >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");import time;time.sleep(10)'])
+            >>> p.recvline_contains(b'ready')
+            b'ready'
+            >>> p.terminate()
+            >>> p.recvuntil(b'sigterm')
+            b'sigterm'
+            >>> p.close()
+        """
+        if self.proc is None:
+            return
+            
+        try:
+            self.proc.terminate()
+        except OSError:
+            # Process might have already exited
+            pass
+
+        # Check if process is still running.
+        self.poll()
 
     def poll(self, block = False):
         """poll(block = False) -> int
