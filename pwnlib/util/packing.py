@@ -1,4 +1,3 @@
- # -*- coding: utf-8 -*-
 r"""
 Module for packing and unpacking integers.
 
@@ -1219,6 +1218,97 @@ def _decode(b):
         except AttributeError:
             return b
     return b.decode(context.encoding)
+
+def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
+    r"""overlap(*structs: bytes | tuple[bytes, int]) -> bytes
+
+    Merge multiple byte sequences with possible positional offsets into a
+    single overlapped bytes object. From lowest byte index, scan through
+    every bytes object, if only one byte is non-zero, then the output will
+    append that byte. If multiple non-zero bytes are found at the same index,
+    an error will be thrown as these bytes objects can not be overlapped.
+
+    If holes present as the bytes object has an ``offset`` or its length is
+    not enough to align to the output bytes object length, these holes are
+    set to ``\x00`` implicitly.
+
+    See the examples below for how this function works.
+
+    Arguments:
+        *structs(bytes | tuple[bytes, int]): ``bytes`` objects like ``b'123'``
+            or adding an optional offset like ``(b'123', 3)``. The ``offset``
+            can be positive or negative or 0. ``bytes`` objects has an
+            implicit offset 0.
+
+    Returns:
+        A **minimal** bytes object merged from input bytes objects.
+        That means, offsets are aligned to 0 first to keep output minimal.
+
+    Raises:
+        BufferError: If multiple non-zero values appears at the same index
+
+    Examples:
+
+        >>> overlap(b'\x00123', b'a\x00\x00\x00b')
+        b'a123b'
+        >>> overlap(b'11\x00\x0022', (b'33\x00\x0044', 2))
+        b'11332244'
+        >>> overlap((b'123', -10), (b'45\x00', -6)) # not b'123\x0045\x00\x00\x00\x00'
+        b'123\x0045\x00'
+        >>> overlap((b'xx', 2), (b'yy', 0))
+        b'yyxx'
+        >>> overlap((b'123', 1), b'456')
+        Traceback (most recent call last):
+            ...
+        BufferError: Conflicting value structs[0][0] = 0x31 and structs[1][1] = 0x35 when overlapping
+    """
+    if len(structs) == 0:
+        return b''
+    if len(structs) == 1:
+        if isinstance(structs[0], tuple):
+            return _need_bytes(structs[0][0])
+        return _need_bytes(structs[0])  # structs[0] is bytes
+
+    segments: list[tuple[bytes, int]] = [
+        # ensure types
+        (_need_bytes(elem[0]), int(elem[1]))
+        if isinstance(elem, tuple) else
+        (_need_bytes(elem), 0)
+        for elem in structs
+    ]
+
+    # find lowest offset and subtract it to align offsets
+    compensation = min(elem[1] for elem in segments)
+    segments = [(elem[0], elem[1] - compensation) for elem in segments]
+
+    length = max(len(elem[0]) + elem[1] for elem in segments)
+    output = bytearray(length) # bytearray initialize all bytes as 0
+
+    # overlap segments and fail if multiple non-zero value at the same index
+    for seg_i, e in enumerate(segments):
+        segment, offset = e
+        for i, b in enumerate(segment):
+            if b != 0:
+                abs_idx = offset + i
+                if output[abs_idx] == 0:
+                    output[abs_idx] = b
+                else:
+                    old = output[abs_idx]
+                    for seg_j, e in enumerate(segments[:seg_i]):
+                        prev_seg, prev_off = e
+                        if abs_idx < prev_off or abs_idx >= prev_off + len(prev_seg):
+                            continue
+                        j = abs_idx - prev_off
+                        if old == prev_seg[abs_idx - prev_off]:
+                            break
+                    raise BufferError(
+                        f'Conflicting value '
+                        f'structs[{seg_j}][{j}] = {old:#x} '
+                        f'and structs[{seg_i}][{i}] = {b:#x} '
+                        f'when overlapping'
+                    )
+
+    return bytes(output)
 
 del op, size, end, sign
 del name, routine, mod
