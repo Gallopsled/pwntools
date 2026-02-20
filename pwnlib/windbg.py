@@ -175,7 +175,7 @@ def binary():
             if not arch_str:
                 log.error('Unsupported architecture for windbg: {}'.format(context.arch))
             windbg = os.path.join(os.environ.get('ProgramFiles(x86)'), 'Windows Kits', '10', 'Debuggers', arch_str, 'windbg.exe')
-        if not windbg:
+        if not windbg or not os.path.exists(windbg):
             log.error('windbg is not installed or in system PATH. You can set context.windbg_binary to specify the path manually.')
         return windbg
 
@@ -189,7 +189,7 @@ def binary():
         windbg = misc.which('windbgx.exe')
         if not windbg and os.environ.get('LocalAppData'):
             windbg = os.path.join(os.environ.get('LocalAppData'), 'Microsoft', 'WindowsApps', 'WinDbgX.exe')
-        if not windbg:
+        if not windbg or not os.path.exists(windbg):
             log.error('windbgx is not installed or in system PATH. You can set context.windbgx_binary to specify the path manually.')
         return windbg
 
