@@ -113,6 +113,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
+- [#2680][2680] Cleanup Python 2 legacy
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -152,6 +153,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2643]: https://github.com/Gallopsled/pwntools/pull/2643
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
+[2680]: https://github.com/Gallopsled/pwntools/pull/2680
 
 ## 4.15.0 (`stable`)
 
