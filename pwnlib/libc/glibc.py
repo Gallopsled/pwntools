@@ -5,7 +5,7 @@ from pwnlib.context import context
 from pwnlib.util.fiddling import ror, rol
 
 def ptr_mangle(guard: int, value: int) -> int:
-    """ptr_mangle(guard: int, value: int) -> int
+    """
     Perform ``PTR_MANGLE`` in glibc to protect pointers.
 
     Arguments:
@@ -16,7 +16,7 @@ def ptr_mangle(guard: int, value: int) -> int:
         Mangled value.
 
     Examples:
-        >>> with context.local(bytes=8):
+        >>> with context.local(arch='amd64'):
         ...     val = glibc.ptr_mangle(0x1f1f1f1f1f1f1f1f, 0x7f0000000000)
         ...     print(hex(val))
         0xc03e3e3e3e3e3e3e
@@ -30,7 +30,7 @@ def ptr_mangle(guard: int, value: int) -> int:
     return value ^ guard
 
 def ptr_demangle(guard: int, mangled: int) -> int:
-    """ptr_demangle(guard: int, mangled: int) -> int
+    """
     Perform ``PTR_DEMANGLE`` in glibc to demangle protected pointer.
 
     Arguments:
@@ -41,7 +41,7 @@ def ptr_demangle(guard: int, mangled: int) -> int:
         Demangled value.
 
     Examples:
-        >>> with context.local(bytes=8):
+        >>> with context.local(arch='amd64'):
         ...     val = glibc.ptr_demangle(0x1f1f1f1f1f1f1f1f, 0xc03e3e3e3e3e3e3e)
         ...     print(hex(val))
         0x7f0000000000
@@ -55,7 +55,7 @@ def ptr_demangle(guard: int, mangled: int) -> int:
     return mangled ^ guard
 
 def protect_ptr(word_addr: int, value: int) -> int:
-    """protect_ptr(word_addr: int, value: int) -> int
+    """
     Perform ``PROTECT_PTR`` in glibc heap macros to protect pointers.
     ``REVEAL_PTR`` is basically ``PROTECT_PTR``, and since we don't know
     the address of the word, so use ``protect_ptr`` instead.
