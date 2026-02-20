@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Handles file abstraction for local vs. remote (via ssh)
 """

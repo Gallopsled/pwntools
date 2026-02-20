@@ -17,9 +17,6 @@ This doctest is to ensure that the known data are accurate:
     >>> known.all_crcs == known.generate()
     True
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import sys
 import types
 

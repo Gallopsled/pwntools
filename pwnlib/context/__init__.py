@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import atexit
 import collections
 import errno
@@ -282,7 +278,7 @@ class ContextType(object):
 
     The context is usually specified at the top of the Python file for clarity. ::
 
-        #!/usr/bin/env python
+        #!/usr/bin/env python3
         context.update(arch='i386', os='linux')
 
     Currently supported properties and their defaults are listed below.

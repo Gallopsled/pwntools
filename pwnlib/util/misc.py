@@ -1,5 +1,3 @@
-from __future__ import division
-
 import json
 import base64
 import errno
@@ -333,7 +331,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = ['-e']
         elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
             terminal = 'kitten'
-            args = ['@', 'launch']
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
             if which('remotinator'):
                 terminal = 'remotinator'
@@ -423,7 +421,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             # Likely the average user just wanted to tell pwntools to use kitty, rather than
             # thinking about how the terminal will actually be invoked.
             terminal = "kitten"
-            args = ["@", "launch"]
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         else:
             # Allowing this would make our life much harder (because we don't get the window id from
             # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
@@ -830,7 +828,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
 
 
     script = r"""
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:

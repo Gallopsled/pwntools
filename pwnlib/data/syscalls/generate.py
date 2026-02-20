@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import division
 import argparse
 import keyword
 import os

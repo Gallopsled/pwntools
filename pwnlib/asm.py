@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Utilities for assembling and disassembling code.
 
@@ -39,9 +38,6 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax, 0xb'
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import os
 import platform
@@ -188,31 +184,37 @@ def which_binutils(util, check_version=False):
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
-    arches = [arch] + {
+    aliases = {
         'thumb':  ['arm',    'aarch64'],
-        'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
-        'amd64':  ['x86_64', 'i386'],
+        'amd64':  ['x86_64'],
+        'loongarch64': ['loong64'],
+    }.get(arch, [])
+
+    # Some binutils can support multiple architectures. Try them as fallbacks.
+    fallback_arches = {
+        'i386':   ['x86_64', 'amd64'],
+        'amd64':  ['i386'],
         'arm':  ['aarch64'],
         'mips': ['mipsel'],
         'mipsel': ['mips'],
-        'mips64': ['mips', 'mipsel'],
-        'mips64el': ['mipsel', 'mips'],
+        'mips64': ['mips64el', 'mips', 'mipsel'],
+        'mips64el': ['mips64', 'mipsel', 'mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
         'riscv32': ['riscv64', 'riscv'],
         'riscv64': ['riscv32', 'riscv'],
-        'loongarch64': ['loong64'],
     }.get(arch, [])
+    arches = [arch] + aliases + fallback_arches
 
     # If one of the candidate architectures matches the native
-    # architecture, use that as a last resort.
+    # architecture, use that as a last resort before trying fallbacks.
     machine = platform.machine()
     machine = 'i386' if machine == 'i686' else machine
     try:
         with context.local(arch = machine):
             if context.arch in arches:
-                arches.append(None)
+                arches = [arch] + aliases + [None] + fallback_arches
     except AttributeError:
         log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
@@ -225,6 +227,8 @@ def which_binutils(util, check_version=False):
     if platform.system() == 'Windows':
         utils = [util + '.exe']
 
+    # Try the explicit tools for the target architecture first,
+    # then the native one optionally, then fallbacks.
     for arch in arches:
         for gutil in utils:
             # e.g. objdump

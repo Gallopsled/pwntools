@@ -72,9 +72,6 @@ the appropriate path. ::
 
 Now QEMU should be able to run the libraries.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 
 from pwnlib.context import LocalContext
@@ -171,4 +168,3 @@ def ld_prefix(path=None, env=None):
         libpath = libpath.decode('utf-8')
 
     return libpath
-

@@ -44,9 +44,6 @@ An ELF can also be created from in-memory bytes.
 Module Members
 --------------
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import gzip
 import mmap

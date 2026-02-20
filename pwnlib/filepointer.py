@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 r"""
 File Structure Exploitation
 
@@ -21,9 +19,6 @@ Now payload contains the FILE structure with its vtable pointer pointing to 0xca
 
 Currently only 'amd64' and 'i386' architectures are supported
 """
-
-from __future__ import absolute_import
-from __future__ import division
 
 import ctypes
 
