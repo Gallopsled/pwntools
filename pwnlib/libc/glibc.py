@@ -14,6 +14,12 @@ def ptr_mangle(guard: int, value: int) -> int:
 
     Returns:
         Mangled value.
+
+    Examples:
+        >>> with context.local(bytes=8):
+        ...     val = glibc.ptr_mangle(0x1f1f1f1f1f1f1f1f, 0x7f0000000000)
+        ... hex(val)
+        '0xc03e3e3e3e3e3e3e'
     """
     return rol(value ^ guard, context.bytes * 2 + 1)
 
@@ -27,6 +33,12 @@ def ptr_demangle(guard: int, mangled: int) -> int:
 
     Returns:
         Demangled value.
+
+    Examples:
+        >>> with context.local(bytes=8):
+        ...     val = glibc.ptr_demangle(0x1f1f1f1f1f1f1f1f, 0xc03e3e3e3e3e3e3e)
+        ... hex(val)
+        '0x7f0000000000'
     """
     return ror(mangled, context.bytes * 2 + 1) ^ guard
 
@@ -42,5 +54,9 @@ def protect_ptr(word_addr: int, value: int) -> int:
 
     Returns:
         Protected/Revealed value
+
+    Examples:
+        >>> hex(glibc.protect_ptr(0x5e5555556700, 0))
+        '0x5e5555556'
     """
     return (word_addr >> 12) ^ value
