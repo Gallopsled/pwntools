@@ -114,6 +114,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2682][2682] Fix `server.close()` not closing the listen socket
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -154,6 +155,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2682]: https://github.com/Gallopsled/pwntools/pull/2682
 
 ## 4.15.0 (`stable`)
 
