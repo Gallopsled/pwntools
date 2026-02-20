@@ -139,7 +139,7 @@ class ExitFunc:
         dso(int):           Optional. ``cxa_exit`` require it. (dso_handle)
 
     Examples:
-        >>> context.arch = 'amd64'
+        >>> context.clear(arch='amd64')
         >>> glibc.ExitFunc(glibc.ExitFlavor.FREE, 0, 0)
         ExitFunc(FREE)
         >>> glibc.ExitFunc(glibc.ExitFlavor.CXA, 0x401f0, 0x13371337deadbeef, 0x238900000680, 0x44008)
@@ -217,7 +217,7 @@ class ExitFunc:
             guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
 
         Examples:
-            >>> context.arch = 'amd64'
+            >>> context.clear(arch='amd64')
             >>> guard = 0x2f21c4a298024bcd
             >>> blob = bytes.fromhex('0300000000000000435ea835ae9aef23')
             >>> glibc.ExitFunc.from_bytes(blob, guard)
@@ -266,14 +266,15 @@ class ExitFuncList:
     Members:
         idx(int): Total size of registered exit funcs.
                   (This field is automatically obtained via ``len(funcs)``)
+
     Examples:
-        >>> context.arch = 'i386'
+        >>> context.clear(arch='i386')
         >>> fa = glibc.ExitFunc(glibc.ExitFlavor.FREE, 0, 0)
         >>> fb = glibc.ExitFunc(glibc.ExitFlavor.AT, 0x401f0, 0x13371337)
         >>> flist = glibc.ExitFuncList(0, [fa, fb])
         >>> flist
         ExitFuncList(next=0x0, idx=2, fns=[ExitFunc(FREE), ExitFunc(AT, fn=0x401f0 ^ 0x13371337)])
-        >>> bytes(exit_func).hex()
+        >>> bytes(flist).hex()
         '00000000020000000000000000000000000000000000000003000000268e25660000000000000000'
     """
     nextp: int
@@ -310,7 +311,7 @@ class ExitFuncList:
             guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
 
         Examples:
-            >>> context.arch = 'amd64'
+            >>> context.clear(arch='amd64')
             >>> guard = 0x2d42599562d398bb
             >>> blob = bytes.fromhex('000000000000000001000000000000000400000000000000845ab66f5e2ad54c00000000000000000000000000000000')
             >>> glibc.ExitFuncList.from_bytes(blob, guard)
