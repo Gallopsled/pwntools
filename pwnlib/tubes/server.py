@@ -144,7 +144,7 @@ class server(sock):
                         return
 
                 self.rhost, self.rport = rhost[:2]
-                r = remote(self.rhost, self.rport, sock = sock, level = self.level)
+                r = remote(self.rhost, self.rport, sock = sock, timeout = self.timeout, level = self.level)
                 h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
                 if callback:
                     if not blocking:
