@@ -67,10 +67,10 @@ def protect_ptr(word_addr: int, value: int) -> int:
 
     Arguments:
         word_addr(int): The address of where ``value`` is stored.
-        value(int): The value to protect/reveal
+        value(int): The value to protect/reveal.
 
     Returns:
-        Protected/Revealed value
+        Protected/Revealed value.
 
     Examples:
         >>> hex(glibc.protect_ptr(0x5e5555556700, 0))
@@ -114,6 +114,11 @@ def reveal_ptr_same_page(ptr_value: int) -> int:
 
 
 class ExitFlavor(IntEnum):
+    """Enum adapted from glibc ``exit.h``.
+
+    Original enums are: ``ef_free``, ``ef_us``, ``ef_on``, ``ef_at``
+    and ``ef_cxa``.
+    """
     FREE = 0
     USED = 1
     ON   = 2
@@ -121,6 +126,30 @@ class ExitFlavor(IntEnum):
     CXA  = 4
 
 class ExitFunc:
+    """
+    Craft a ``struct exit_function`` object. If user has arbitrary write
+    to libc area and knows pointer guard used in ``PTR_MANGLE``, then
+    the user is able to hijack control flow when process exits.
+
+    Arguments:
+        flavor(ExitFlavor): Which flavor of exit func is registered.
+        func(int):          A pointer to function to execute.
+        guard(int):         Process ``POINTER_GUARD``.
+        arg(int):           Optional. ``onexit`` and ``cxa_exit`` require it.
+        dso(int):           Optional. ``cxa_exit`` require it. (dso_handle)
+
+    Examples:
+        >>> context.arch = 'amd64'
+        >>> glibc.ExitFunc(glibc.ExitFlavor.FREE, 0, 0)
+        ExitFunc(FREE)
+        >>> glibc.ExitFunc(glibc.ExitFlavor.CXA, 0x401f0, 0x13371337deadbeef, 0x238900000680, 0x44008)
+        ExitFunc(CXA, fn=0x401f0 ^ 0x13371337deadbeef, arg=0x238900000680, dso_handle=0x44008)
+        >>> exit_func = glibc.ExitFunc(glibc.ExitFlavor.AT, 0x401f0, 0x13371337deadbeef)
+        >>> exit_func
+        ExitFunc(AT, fn=0x401f0 ^ 0x13371337deadbeef)
+        >>> bytes(exit_func).hex()
+        '03000000000000006e263e7e53bd6f26'
+    """
     flavor: ExitFlavor
     fn: int
     guard: int
@@ -178,7 +207,15 @@ class ExitFunc:
 
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFunc:
-        """
+        """ExitFunc.from_bytes(data: bytes, guard: int) -> ExitFunc
+
+        Construct an ExitFunc from bytes object.
+
+        Arguments:
+            data(bytes): The bytes object to convert to ExitFunc. Must be aligned
+                         to ``context.arch`` word boundry.
+            guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
+
         Examples:
             >>> context.arch = 'amd64'
             >>> guard = 0x2f21c4a298024bcd
@@ -217,27 +254,61 @@ class ExitFunc:
 
 
 class ExitFuncList:
-    next: int
+    """
+    Craft a ``struct exit_function_list`` object. glibc has a static variable
+    ``initial`` to store most atexit objects and a pointer ``__exit_funcs``
+    pointing to ``initial``.
+
+    Arguments:
+        nextp(int):          Next ``struct exit_function_list`` pointer on chain.
+        fns(list[ExitFunc]): Registered exit functions
+
+    Members:
+        idx(int): Total size of registered exit funcs.
+                  (This field is automatically obtained via ``len(funcs)``)
+    Examples:
+        >>> context.arch = 'i386'
+        >>> fa = glibc.ExitFunc(glibc.ExitFlavor.FREE, 0, 0)
+        >>> fb = glibc.ExitFunc(glibc.ExitFlavor.AT, 0x401f0, 0x13371337)
+        >>> flist = glibc.ExitFuncList(0, [fa, fb])
+        >>> flist
+        ExitFuncList(next=0x0, idx=2, fns=[ExitFunc(FREE), ExitFunc(AT, fn=0x401f0 ^ 0x13371337)])
+        >>> bytes(exit_func).hex()
+        '00000000020000000000000000000000000000000000000003000000268e25660000000000000000'
+    """
+    nextp: int
     idx: int
     fns: list[ExitFunc]
 
-    def __init__(self, nextp: int, funcs: list[ExitFunc]):
+    def __init__(self, nextp: int, fns: list[ExitFunc]):
         self.nextp = nextp
-        self.fns = funcs
-        self.idx = len(funcs)
+        self.fns = fns
+        self.idx = len(fns)
 
     def __repr__(self) -> str:
         return f'ExitFuncList(next={self.nextp:#x}, idx={self.idx}, fns={self.fns})'
 
     def __bytes__(self) -> bytes:
-        return flat(self.nextp, self.idx, self.fns)
+        func_sz = 4 * context.bytes
+        return flat(
+            self.nextp, self.idx,
+            [bytes(fn).ljust(func_sz, b'\x00') for fn in self.fns],
+        )
 
     def __flat__(self) -> bytes:
         return bytes(self)
 
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFuncList:
-        """
+        """ExitFuncList.from_bytes(data: bytes, guard: int) -> ExitFuncList
+
+        Construct an ExitFuncList from bytes object.
+
+        Arguments:
+            data(bytes): The bytes object to convert to ExitFuncList. Should be
+                         large enough to resolve all entries specified by ``idx``.
+            guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
+
         Examples:
             >>> context.arch = 'amd64'
             >>> guard = 0x2d42599562d398bb
