@@ -132,7 +132,8 @@ class server(sock):
                     except socket.error as e:
                         # EBADF means the server socket was closed,
                         # so we should stop trying to accept connections and just exit the thread.
-                        if e.errno == errno.EBADF:
+                        # ENOTSOCK is raised on Windows when accepting on a closed socket.
+                        if e.errno in (errno.EBADF, errno.ENOTSOCK):
                             h.failure("Server socket was closed")
                             return
                         if e.errno == errno.EINTR:
