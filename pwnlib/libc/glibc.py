@@ -9,7 +9,7 @@ def ptr_mangle(guard: int, value: int) -> int:
     Perform ``PTR_MANGLE`` in glibc to protect pointers.
 
     Arguments:
-        guard(int): The value of ``%fs:POINTER_GUARD``.
+        guard(int): The value of ``POINTER_GUARD``.
         value(int): The value to protect.
 
     Returns:
@@ -20,15 +20,21 @@ def ptr_mangle(guard: int, value: int) -> int:
         ...     val = glibc.ptr_mangle(0x1f1f1f1f1f1f1f1f, 0x7f0000000000)
         ...     print(hex(val))
         0xc03e3e3e3e3e3e3e
+        >>> with context.local(arch='arm'):
+        ...     val = glibc.ptr_mangle(0x1f1f, 0x2e2e0000)
+        ...     print(hex(val))
+        0x2e2e1f1f
     """
-    return rol(value ^ guard, context.bytes * 2 + 1)
+    if context.arch == 'amd64' or context.arch == 'i386':
+        return rol(value ^ guard, context.bytes * 2 + 1)
+    return value ^ guard
 
 def ptr_demangle(guard: int, mangled: int) -> int:
     """ptr_demangle(guard: int, mangled: int) -> int
     Perform ``PTR_DEMANGLE`` in glibc to demangle protected pointer.
 
     Arguments:
-        guard(int): The value of ``%fs:POINTER_GUARD``.
+        guard(int): The value of ``POINTER_GUARD``.
         mangled(int): The value to demangle.
 
     Returns:
@@ -39,8 +45,14 @@ def ptr_demangle(guard: int, mangled: int) -> int:
         ...     val = glibc.ptr_demangle(0x1f1f1f1f1f1f1f1f, 0xc03e3e3e3e3e3e3e)
         ...     print(hex(val))
         0x7f0000000000
+        >>> with context.local(arch='aarch64'):
+        ...     val = glibc.ptr_demangle(0x1f1f1f1f, 0x2e2e2e2e00000000)
+        ...     print(hex(val))
+        0x2e2e2e2e1f1f1f1f
     """
-    return ror(mangled, context.bytes * 2 + 1) ^ guard
+    if context.arch == 'amd64' or context.arch == 'i386':
+        return ror(mangled, context.bytes * 2 + 1) ^ guard
+    return mangled ^ guard
 
 def protect_ptr(word_addr: int, value: int) -> int:
     """protect_ptr(word_addr: int, value: int) -> int
