@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Utilities for assembling and disassembling code.
 
@@ -39,9 +38,6 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax, 0xb'
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import os
 import platform

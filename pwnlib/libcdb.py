@@ -1,9 +1,6 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import time
 import tempfile

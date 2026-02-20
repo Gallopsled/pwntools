@@ -1,5 +1,3 @@
-from __future__ import division
-
 import json
 import base64
 import errno
@@ -830,7 +828,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
 
 
     script = r"""
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # pwntools documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #

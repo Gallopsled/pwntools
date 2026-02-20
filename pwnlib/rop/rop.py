@@ -357,9 +357,6 @@ Let's try it out!
     >>> p.recvline()
     b'hello\n'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import copy
 import hashlib

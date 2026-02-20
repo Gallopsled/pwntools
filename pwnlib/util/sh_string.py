@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Routines here are for getting any NULL-terminated sequence of bytes evaluated
 intact by any shell.  This includes all variants of quotes, whitespace, and
@@ -238,9 +237,6 @@ and should therefore be compatible with ``dash``.
 .. _OpenBSD Man Pages: https://man.openbsd.org/sh#SHELL_GRAMMAR
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import string
 import subprocess
 

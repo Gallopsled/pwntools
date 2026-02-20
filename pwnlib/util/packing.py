@@ -29,9 +29,6 @@ Examples:
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     b'\xff\x01'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import struct
 import sys

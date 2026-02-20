@@ -56,7 +56,6 @@ You can cause these lines to be a no-op by running your script with the
 Member Documentation
 ===============================
 """
-from __future__ import absolute_import
 import atexit
 import os
 import signal
