@@ -45,8 +45,6 @@ the :mod:`pwnlib.adb` module.
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
-from __future__ import absolute_import
-from __future__ import division
 
 import functools
 import glob
@@ -1603,4 +1601,3 @@ def version():
     """Returns rthe platform version as a tuple."""
     prop = getprop('ro.build.version.release')
     return [int(v) for v in prop.split('.')]
-

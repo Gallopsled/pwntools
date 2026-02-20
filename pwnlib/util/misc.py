@@ -1,5 +1,3 @@
-from __future__ import division
-
 import json
 import base64
 import errno
@@ -286,6 +284,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+        - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
@@ -313,6 +313,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'ZELLIJ' in os.environ and which('zellij'):
+            terminal = 'zellij'
+            args = ['action', 'new-pane'] + ['-c'] * kill_at_exit + ['--']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -328,7 +331,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = ['-e']
         elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
             terminal = 'kitten'
-            args = ['@', 'launch']
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
             if which('remotinator'):
                 terminal = 'remotinator'
@@ -418,7 +421,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             # Likely the average user just wanted to tell pwntools to use kitty, rather than
             # thinking about how the terminal will actually be invoked.
             terminal = "kitten"
-            args = ["@", "launch"]
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         else:
             # Allowing this would make our life much harder (because we don't get the window id from
             # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
@@ -481,7 +484,7 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal == 'kitten':
+    if terminal == 'tmux' or terminal == 'zellij' or terminal == 'kitten':
         stdout = subprocess.PIPE
     if terminal == 'kitten':
         stderr = subprocess.PIPE
@@ -825,7 +828,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
 
 
     script = r"""
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:

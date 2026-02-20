@@ -2,8 +2,6 @@
 characters """
 # https://github.com/Gallopsled/pwntools/pull/1667
 
-from __future__ import absolute_import
-
 from itertools import product
 
 from pwnlib.context import LocalContext

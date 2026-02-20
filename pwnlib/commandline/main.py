@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from pwnlib.commandline import asm
 from pwnlib.commandline import checksec
 from pwnlib.commandline import common

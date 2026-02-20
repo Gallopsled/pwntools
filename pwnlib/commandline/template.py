@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from pwn import *
 from pwnlib.commandline import common
 from pwnlib.util.misc import which, parse_ldd_output, write

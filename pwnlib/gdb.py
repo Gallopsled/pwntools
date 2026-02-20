@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 During exploit development, it is frequently useful to debug the
 target binary under GDB.
@@ -138,9 +137,6 @@ requires ``root`` access.
 Member Documentation
 ===============================
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import platform
 import psutil

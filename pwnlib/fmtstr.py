@@ -93,8 +93,6 @@ Example - Automated exploitation
 	format_string.execute_writes()
 
 """
-from __future__ import division
-
 import logging
 import re
 from operator import itemgetter

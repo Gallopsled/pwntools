@@ -1,9 +1,6 @@
-# -*- coding:utf-8 -*-
 """
 Encode shellcode to avoid input filtering and impress your friends!
 """
-from __future__ import absolute_import
-
 from pwnlib.encoders import amd64
 from pwnlib.encoders import arm
 from pwnlib.encoders import i386

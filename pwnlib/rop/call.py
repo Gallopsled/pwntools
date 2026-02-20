@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 """Abstracting ROP calls
 """
-from __future__ import division
-
 from pwnlib.abi import ABI
 from pwnlib.context import context
 from pwnlib.util import packing

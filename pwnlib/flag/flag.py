@@ -1,8 +1,5 @@
 """Describes a way to submit a key to a key server.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 
 from pwnlib.args import args

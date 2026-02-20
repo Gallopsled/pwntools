@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import select
 import socket
@@ -25,7 +22,7 @@ class sock(tube):
         """
 
         if getattr(self, 'type', None) == socket.SOCK_DGRAM:
-            self.error("UDP sockets does not supports recvall")
+            self.error("UDP sockets do not support recvall")
         else:
             return super(sock, self).recvall(timeout)
 
