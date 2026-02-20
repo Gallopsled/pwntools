@@ -651,8 +651,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_o
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
         >>> len(matched_libcs) > 1
         True
-        >>> for buildid in matched_libcs: # doctest +SKIP
-        ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
+        >>> for buildid in matched_libcs: # doctest: +SKIP
+        ...     libc = ELF(search_by_build_id(buildid)) # doctest: +SKIP
     """
     assert search_type in TYPES, search_type
 
