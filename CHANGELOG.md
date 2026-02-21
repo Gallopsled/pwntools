@@ -115,6 +115,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2673][2673] Add libc module for libc-related functions
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -156,6 +157,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2686]: https://github.com/Gallopsled/pwntools/pull/2686
 
 ## 4.15.0 (`stable`)
 
