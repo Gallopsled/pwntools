@@ -7,7 +7,7 @@ import string
 
 from io import BytesIO
 from typing import Any, Generator, Iterable, Optional, BinaryIO
-from collections.abc import Buffer
+from collections.abc import Sequence
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
@@ -22,7 +22,7 @@ from pwnlib.util.cyclic import cyclic_find
 
 log = getLogger(__name__)
 
-def unhex(s: Buffer) -> bytes:
+def unhex(s: Sequence) -> bytes:
     r"""unhex(s) -> str
 
     Hex-decodes a string.
@@ -44,7 +44,7 @@ def unhex(s: Buffer) -> bytes:
             s = '0' + s
     return binascii.unhexlify(s)
 
-def enhex(x: Buffer) -> str:
+def enhex(x: Sequence) -> str:
     """enhex(x) -> str
 
     Hex-encodes a string.
@@ -162,7 +162,7 @@ def bits(s: int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> li
 
     return out
 
-def bits_str(s: Buffer, endian: str = 'big', zero: str = '0', one: str = '1') -> str:
+def bits_str(s: Sequence, endian: str = 'big', zero: str = '0', one: str = '1') -> str:
     """bits_str(s, endian = 'big', zero = '0', one = '1') -> str
 
     A wrapper around :func:`bits`, which converts the output into a string.
@@ -359,7 +359,7 @@ def xor(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
 
     return b''.join(map(get, range(cut)))
 
-def xor_pair(data: int | Buffer, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
+def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
     """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
@@ -474,7 +474,7 @@ def randoms(count: int, alphabet: str = string.ascii_lowercase) -> str:
     return ''.join(random.choice(alphabet) for _ in range(count))
 
 
-def rol(n: Buffer | int, k: int, word_size: int = None) -> str:
+def rol(n: Sequence | int, k: int, word_size: int = None) -> str:
     """Returns a rotation by `k` of `n`.
 
     When `n` is a number, then means ``((n << k) | (n >> (word_size - k)))`` truncated to `word_size` bits.
@@ -517,7 +517,7 @@ def rol(n: Buffer | int, k: int, word_size: int = None) -> str:
     else:
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
-def ror(n: Buffer | int, k: int, word_size: int = None) -> str:
+def ror(n: Sequence | int, k: int, word_size: int = None) -> str:
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
     return rol(n, -k, word_size)

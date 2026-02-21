@@ -32,7 +32,7 @@ Examples:
 import struct
 import sys
 from typing import Any, Callable, Iterable, BinaryIO
-from collections.abc import Buffer, Sequence
+from collections.abc import Sequence
 import warnings
 
 from pwnlib.context import LocalNoarchContext
@@ -1105,7 +1105,7 @@ def signed(integer: int) -> str:
 def unsigned(integer: int) -> str:
     return unpack(pack(integer))
 
-def dd(dst: BinaryIO | Buffer, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> FileIO | Buffer:
+def dd(dst: BinaryIO | Sequence, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> BinaryIO | Sequence:
     """dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
