@@ -29,10 +29,10 @@ Examples:
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     b'\xff\x01'
 """
-from io import FileIO
 import struct
 import sys
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, BinaryIO
+from collections.abc import Buffer, Sequence
 import warnings
 
 from pwnlib.context import LocalNoarchContext
@@ -319,11 +319,11 @@ def make_single(op: str, size: str, end: str, sign: str) -> tuple[str, Callable]
 
     struct_op = getattr(struct.Struct(fmt), op_verbs[op])
     if op == 'u':
-        def routine(data: bytes | bytearray | str, stacklevel: int = 1) -> Any:
+        def routine(data: Sequence, stacklevel: int = 1) -> Any:
             data = _need_bytes(data, stacklevel)
             return struct_op(data)[0]
     else:
-        def routine(data: bytes | bytearray | str, stacklevel: int = None) -> Any:
+        def routine(data: Sequence, stacklevel: int = None) -> Any:
             return struct_op(data)
     routine.__name__ = routine.__qualname__ = name
 
@@ -1105,7 +1105,7 @@ def signed(integer: int) -> str:
 def unsigned(integer: int) -> str:
     return unpack(pack(integer))
 
-def dd(dst: FileIO | list | tuple | str | bytearray, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> FileIO | list | tuple | str | bytearray:
+def dd(dst: BinaryIO | Buffer, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> FileIO | Buffer:
     """dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
@@ -1290,7 +1290,7 @@ def dd(dst: FileIO | list | tuple | str | bytearray, src: Iterable, count: int =
 
     return dst
 
-def _need_bytes(s: bytes | bytearray | str, level: int = 1, min_wrong: int = 0) -> bytes:
+def _need_bytes(s: Sequence, level: int = 1, min_wrong: int = 0) -> bytes:
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 
@@ -1334,7 +1334,7 @@ def _need_text(s: str | bytes | bytearray, level: int = 1) -> str:
                   .format(encoding), BytesWarning, level + 2)
     return s.decode(encoding, errors)
 
-def _encode(s: bytes | bytearray | str) -> bytes:
+def _encode(s: Sequence) -> bytes:
     if isinstance(s, (bytes, bytearray)):
         return s   # already bytes
 

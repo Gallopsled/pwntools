@@ -1,4 +1,5 @@
 import collections
+from collections.abc import Buffer
 from typing import Any, Callable, Generator, Literal
 
 
@@ -35,7 +36,7 @@ def partition(lst: list, f: Callable, save_keys: bool = False) -> list:
     else:
         return list(d.values())
 
-def group(n: int, lst: list | tuple | str, underfull_action: str = 'ignore', fill_value: list | tuple | bytes | str = None) -> list:
+def group(n: int, lst: Buffer, underfull_action: str = 'ignore', fill_value: list | tuple | bytes | str = None) -> list:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be

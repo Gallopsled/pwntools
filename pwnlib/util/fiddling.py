@@ -5,8 +5,9 @@ import re
 import os
 import string
 
-from io import BytesIO, FileIO
-from typing import Any, Generator, Iterable, Optional
+from io import BytesIO
+from typing import Any, Generator, Iterable, Optional, BinaryIO
+from collections.abc import Buffer
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
@@ -21,7 +22,7 @@ from pwnlib.util.cyclic import cyclic_find
 
 log = getLogger(__name__)
 
-def unhex(s: bytearray | str) -> bytes:
+def unhex(s: Buffer) -> bytes:
     r"""unhex(s) -> str
 
     Hex-decodes a string.
@@ -43,7 +44,7 @@ def unhex(s: bytearray | str) -> bytes:
             s = '0' + s
     return binascii.unhexlify(s)
 
-def enhex(x: bytes | str) -> str:
+def enhex(x: Buffer) -> str:
     """enhex(x) -> str
 
     Hex-encodes a string.
@@ -104,13 +105,13 @@ def urldecode(s: str, ignore_invalid: bool = False) -> str:
                 raise ValueError("Invalid input to urldecode")
     return res
 
-def bits(s: str | int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> list[int | str]:
+def bits(s: int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> list[int | str]:
     """bits(s, endian = 'big', zero = 0, one = 1) -> list
 
     Converts the argument into a list of bits.
 
     Arguments:
-        s: A string or number to be converted into bits.
+        s: A bytestring or number to be converted into bits.
         endian (str): The binary endian, default 'big'.
         zero: The representing a 0-bit.
         one: The representing a 1-bit.
@@ -161,7 +162,7 @@ def bits(s: str | int | bytes, endian: str = 'big', zero: str = 0, one: str = 1)
 
     return out
 
-def bits_str(s: int | str | bytes, endian: str = 'big', zero: str = '0', one: str = '1') -> str:
+def bits_str(s: Buffer, endian: str = 'big', zero: str = '0', one: str = '1') -> str:
     """bits_str(s, endian = 'big', zero = '0', one = '1') -> str
 
     A wrapper around :func:`bits`, which converts the output into a string.
@@ -358,7 +359,7 @@ def xor(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
 
     return b''.join(map(get, range(cut)))
 
-def xor_pair(data: str | bytes, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
+def xor_pair(data: int | Buffer, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
     """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
@@ -473,7 +474,7 @@ def randoms(count: int, alphabet: str = string.ascii_lowercase) -> str:
     return ''.join(random.choice(alphabet) for _ in range(count))
 
 
-def rol(n: list | tuple | str | int, k: int, word_size: int = None) -> str:
+def rol(n: Buffer | int, k: int, word_size: int = None) -> str:
     """Returns a rotation by `k` of `n`.
 
     When `n` is a number, then means ``((n << k) | (n >> (word_size - k)))`` truncated to `word_size` bits.
@@ -516,7 +517,7 @@ def rol(n: list | tuple | str | int, k: int, word_size: int = None) -> str:
     else:
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
-def ror(n: list | tuple | str | int, k: int, word_size: int = None) -> str:
+def ror(n: Buffer | int, k: int, word_size: int = None) -> str:
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
     return rol(n, -k, word_size)
@@ -603,7 +604,7 @@ def update_cyclic_pregenerated(size: int) -> None:
     while size > len(cyclic_pregen):
         cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
-def hexdump_iter(fd: FileIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict = None,
+def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict = None,
                  highlight: Iterable = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str, None, None]:
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                     highlight = None, cyclic = False, groupsize=4, total = True) -> str generator
