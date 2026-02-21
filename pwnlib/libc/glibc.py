@@ -56,7 +56,8 @@ def ptr_demangle(guard: int, mangled: int) -> int:
 
 def protect_ptr(word_addr: int, value: int) -> int:
     """
-    Perform ``PROTECT_PTR`` in glibc heap macros to protect pointers.
+    Perform ` ``PROTECT_PTR`` <https://elixir.bootlin.com/glibc/glibc-2.42/source/malloc/malloc.c#L331>`__ 
+    in glibc heap macros to protect pointers.
     ``REVEAL_PTR`` is basically ``PROTECT_PTR``, and since we don't know
     the address of the word, so use ``protect_ptr`` instead.
 
@@ -70,5 +71,39 @@ def protect_ptr(word_addr: int, value: int) -> int:
     Examples:
         >>> hex(glibc.protect_ptr(0x5e5555556700, 0))
         '0x5e5555556'
+        >>> ptr_addr = 0x555555559200
+        >>> ptr_value = 0x7ffff7f96058
+        >>> glibc.protect_ptr(ptr_addr, glibc.protect_ptr(ptr_addr, ptr_value)) == ptr_value
+        True
     """
     return (word_addr >> 12) ^ value
+
+def reveal_ptr_same_page(ptr_value: int) -> int:
+    """
+    Reveal a pointer that was mangled by protect_ptr without knowing where the pointer is stored.
+    Only works if the leaked pointer itself is stored on the same page as its value.
+
+    Arguments:
+        ptr_value(int): The mangled pointer.
+
+    Returns:
+        int: The original pointer.
+    
+    Example:
+
+        >>> context.clear(arch='amd64')
+        >>> ptr_addr = 0x555555559200
+        >>> ptr_value = 0x555555559380
+        >>> glibc.reveal_ptr_same_page(glibc.protect_ptr(ptr_addr, ptr_value)) == ptr_value
+        True
+        >>> ptr_addr = 0x555555559200
+        >>> ptr_value = 0x55555556a380
+        >>> glibc.reveal_ptr_same_page(glibc.protect_ptr(ptr_addr, ptr_value)) == ptr_value
+        False
+    """
+    mask = 0xfff << (context.bits - 12)
+    while mask:
+        key = ptr_value & mask
+        ptr_value ^= key >> 12
+        mask >>= 12
+    return ptr_value
