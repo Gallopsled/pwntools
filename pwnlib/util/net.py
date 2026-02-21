@@ -3,10 +3,13 @@ import ctypes.util
 import socket
 from typing import Callable
 
-from pwnlib import log, tubes
+from pwnlib import tubes
+from pwnlib.log import getLogger
 from pwnlib.util.packing import p16
 from pwnlib.util.packing import p32
 from pwnlib.util.packing import pack
+
+log = getLogger(__name__)
 
 __all__ = ['getifaddrs', 'interfaces', 'interfaces4', 'interfaces6', 'sockaddr']
 
