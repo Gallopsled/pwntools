@@ -207,8 +207,7 @@ class ExitFunc:
 
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFunc:
-        """ExitFunc.from_bytes(data: bytes, guard: int) -> ExitFunc
-
+        """
         Construct an ExitFunc from bytes object.
 
         Arguments:
@@ -301,8 +300,7 @@ class ExitFuncList:
 
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFuncList:
-        """ExitFuncList.from_bytes(data: bytes, guard: int) -> ExitFuncList
-
+        """
         Construct an ExitFuncList from bytes object.
 
         Arguments:
