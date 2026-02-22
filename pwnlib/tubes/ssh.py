@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 
-from pwnlib import term
+from pwnlib import atexit, term
 from pwnlib.context import context, LocalContext
 from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
@@ -716,11 +716,13 @@ class ssh(Timeout, Logger):
                 if user and auth_none and str(e) == "No authentication methods available":
                     self.client.get_transport().auth_none(user)
                 else:
+                    self.close()
                     raise
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
+            atexit.register(self.close)
             h.success()
 
         if self.raw:
