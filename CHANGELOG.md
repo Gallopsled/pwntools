@@ -125,9 +125,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
 - [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 - [#2655][2655] Add `context.debugger` to select which debugger to use
+- [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
 - [#2713][2713] Remove python-dateutil dependency
 
-[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -177,6 +177,8 @@ The table below shows which release corresponds to each branch, and what date th
 [2686]: https://github.com/Gallopsled/pwntools/pull/2686
 [2704]: https://github.com/Gallopsled/pwntools/pull/2704
 [2655]: https://github.com/Gallopsled/pwntools/pull/2655
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
+[2689]: https://github.com/Gallopsled/pwntools/pull/2689
 [2713]: https://github.com/Gallopsled/pwntools/pull/2713
 
 ## 4.15.1
