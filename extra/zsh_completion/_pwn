@@ -51,7 +51,7 @@ _pwn() {
           _arguments \
             '(-h --help)'{-h,--help}'[show help message and exit]' \
             '(-f --format)'{-f,--format}'[Output format]:FORMAT:(raw hex string elf)' \
-            '(-o --output)'{-o,--output}'[Output file (defaults to stdout)]:_files' \
+            '(-o --output)'{-o,--output}'[Output file (defaults to stdout)]:OUTPUT:_files' \
             '(-c --context)'{-c,--context}'[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386)]:CONTEXT:(16 32 64 baremetal freebsd windows android darwin linux cgc loongarch64 powerpc64 aarch64 powerpc riscv32 riscv64 sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
             '(-v --avoid)'{-v,--avoid}'[Encode the shellcode to avoid the listed bytes (provided as hex)]:HEXBYTES: ' \
             '(-n --newline)'{-n,--newline}'[Encode the shellcode to avoid newlines]' \
@@ -60,13 +60,12 @@ _pwn() {
             '(-i --infile)'{-i,--infile}'[Specify input file]:INPUT:_files' \
             '(-r --run)'{-r,--run}'[Run output]' \
             '*:LINE: '
-            return 0
             ;;
         checksec)
             _arguments \
               '(-h --help)'{-h,--help}'[show help message and exit]' \
-              '--file[File to check]:ELF file:_files' \
-              '*:ELF file:_files'
+              '--file[File to check]:ELF:_files' \
+              '*:ELF:_files'
             ;;
         constgrep)
           _arguments \
