@@ -2329,6 +2329,21 @@ class ELF(ELFFile):
         self._update_args(kw)
         return self.write(address, packing.p64(data, *a, **kw))
 
+    def p56(self,  address, data, *a, **kw):
+        """Writes a 56-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p56(data, *a, **kw))
+
+    def p48(self,  address, data, *a, **kw):
+        """Writes a 48-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p48(data, *a, **kw))
+
+    def p40(self,  address, data, *a, **kw):
+        """Writes a 40-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p40(data, *a, **kw))
+
     def p32(self,  address, data, *a, **kw):
         """Writes a 32-bit integer ``data`` to the specified ``address``"""
         self._update_args(kw)
@@ -2353,6 +2368,21 @@ class ELF(ELFFile):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
         return packing.u64(self.read(address, 8), *a, **kw)
+
+    def u56(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u56(self.read(address, 7), *a, **kw)
+
+    def u48(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u48(self.read(address, 6), *a, **kw)
+
+    def u40(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u40(self.read(address, 5), *a, **kw)
 
     def u32(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""

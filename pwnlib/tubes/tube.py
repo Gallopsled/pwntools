@@ -1650,12 +1650,18 @@ class tube(Timeout, Logger):
 
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
+    def p56(self, *a, **kw):        return self.send(packing.p56(*a, **kw))
+    def p48(self, *a, **kw):        return self.send(packing.p48(*a, **kw))
+    def p40(self, *a, **kw):        return self.send(packing.p40(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
     def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
     def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))
     def pack(self, *a, **kw):       return self.send(packing.pack(*a, **kw))
 
     def u64(self, *a, **kw):        return packing.u64(self.recvn(8), *a, **kw)
+    def u56(self, *a, **kw):        return packing.u56(self.recvn(7), *a, **kw)
+    def u48(self, *a, **kw):        return packing.u48(self.recvn(6), *a, **kw)
+    def u40(self, *a, **kw):        return packing.u40(self.recvn(5), *a, **kw)
     def u32(self, *a, **kw):        return packing.u32(self.recvn(4), *a, **kw)
     def u16(self, *a, **kw):        return packing.u16(self.recvn(2), *a, **kw)
     def u8(self, *a, **kw):         return packing.u8(self.recvn(1), *a, **kw)

@@ -288,7 +288,7 @@ def unpack_many(data, word_size = None):
 # Make individual packers, e.g. _p8lu
 #
 ops   = ['p','u']
-sizes = {8:'b', 16:'h', 32:'i', 64:'q'}
+sizes = {8:'b', 16:'h', 32:'i', 40: '', 48: '', 56: '', 64:'q'}
 ends  = ['b','l']
 signs = ['s','u']
 
@@ -298,6 +298,20 @@ op_verbs         = {'p': 'pack', 'u': 'unpack'}
 def make_single(op,size,end,sign):
     name = '_%s%s%s%s' % (op, size, end, sign)
     fmt  = sizes[size]
+
+    # Handle non-standard sizes without the struct module.
+    if fmt == '':
+        endianess = 'big' if end == 'b' else 'little'
+        if op == 'u':
+            def routine(data, stacklevel=1):
+                data = _need_bytes(data, stacklevel)
+                return unpack(data, size, endianness=endianess, sign=sign == 's')
+        else:
+            def routine(data, stacklevel=None):
+                return pack(data, size, endianness=endianess, sign=sign == 's')
+        routine.__name__ = routine.__qualname__ = name
+        return name, routine            
+
     end = '>' if end == 'b' else '<'
 
     if sign == 'u':
@@ -411,6 +425,81 @@ def p32(number, endianness = None, **kwargs):
     return _do_packing('p', 32, number, endianness)
 
 @LocalNoarchContext
+def p40(number, endianness = None, **kwargs):
+    """p40(number, endianness, sign, ...) -> bytes
+
+    Packs an 40-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p40(0x4142434445, 'big')
+        b'ABCDE'
+        >>> p40(0x4142434445, endianness='big')
+        b'ABCDE'
+    """
+    return _do_packing('p', 40, number, endianness)
+
+@LocalNoarchContext
+def p48(number, endianness = None, **kwargs):
+    """p48(number, endianness, sign, ...) -> bytes
+
+    Packs an 48-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p48(0x414243444546, 'big')
+        b'ABCDEF'
+        >>> p48(0x414243444546, endianness='big')
+        b'ABCDEF'
+    """
+    return _do_packing('p', 48, number, endianness)
+
+@LocalNoarchContext
+def p56(number, endianness = None, **kwargs):
+    """p56(number, endianness, sign, ...) -> bytes
+
+    Packs an 56-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p56(0x41424344454647, 'big')
+        b'ABCDEFG'
+        >>> p56(0x41424344454647, endianness='big')
+        b'ABCDEFG'
+    """
+    return _do_packing('p', 56, number, endianness)
+
+@LocalNoarchContext
 def p64(number, endianness = None, **kwargs):
     """p64(number, endianness, sign, ...) -> bytes
 
@@ -488,6 +577,60 @@ def u32(data, endianness = None, **kwargs):
         The unpacked number
     """
     return _do_packing('u', 32, data, endianness)
+
+@LocalNoarchContext
+def u40(data, endianness = None, **kwargs):
+    """u40(data, endianness, sign, ...) -> int
+
+    Unpacks an 40-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 40, data, endianness)
+
+@LocalNoarchContext
+def u48(data, endianness = None, **kwargs):
+    """u48(data, endianness, sign, ...) -> int
+
+    Unpacks an 48-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 48, data, endianness)
+
+@LocalNoarchContext
+def u56(data, endianness = None, **kwargs):
+    """u56(data, endianness, sign, ...) -> int
+
+    Unpacks an 56-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 56, data, endianness)
 
 @LocalNoarchContext
 def u64(data, endianness = None, **kwargs):
