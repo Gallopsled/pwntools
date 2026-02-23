@@ -31,7 +31,7 @@ classifiers = [
 ]
 keywords = ["pwntools", "exploit", "ctf", "capture", "the", "flag", "binary", "wargame", "overflow", "stack", "heap", "defcon"]
 
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies = [
     "paramiko>=1.15.2",
     "mako>=1.0.0",
