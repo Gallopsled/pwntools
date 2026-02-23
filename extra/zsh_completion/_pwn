@@ -269,7 +269,7 @@ _pwn() {
             '(-o --out)'{-o,--out}'[Output file (default: stdout)]:OUTPUT:_files' \
             '(-f --format)'{-f,--format}'[Output format (default: hex)]:FORMAT:(e r s c h i a p d)' \
             '(-d --debug)'{-d,--debug}'[Debug the shellcode with GDB]' \
-            '--delim[Set the delimiter between multilple shellcodes]:DELIM: ' \
+            '--delim[Set the delimiter between multiple shellcodes]:DELIM: ' \
             '(-b --before)'{-b,--before}'[Insert a debug trap before the code]' \
             '(-a --after)'{-a,--after}'[Insert a debug trap after the code]' \
             '(-v --avoid)'{-v,--avoid}'[Encode the shellcode to avoid the listed bytes]:AVOID: ' \
