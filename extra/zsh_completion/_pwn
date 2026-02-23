@@ -11,6 +11,8 @@
 typeset -A opt_args
 
 _pwn() {
+  setopt localoptions
+  setopt extendedglob
   # Define the subcommands
   local -a commands
   
@@ -214,7 +216,7 @@ _pwn() {
           _arguments \
             '(-h --help)'{-h,--help}'[show help message and exit]' \
             '(-w --width)'{-w,--width}'[Number of bytes per line]:WIDTH INT: ' \
-            '(-l --highlight)'{-l,--highlight}'[Byte to highlight]:HIGHLIGHTS INT: ' \
+            '(-l --highlight)'{-l,--highlight}'[Byte to highlight]:*^<->:HIGHLIGHTS INT: ' \
             '(-s --skip)'{-s,--skip}'[Skip this many initial bytes]:SKIP INT: ' \
             '(-c --count)'{-c,--count}'[Only show this many bytes]:COUNT INT: ' \
             '(-o --offset)'{-o,--offset}'[Addresses in left hand column starts at this address]:OFFSET INT: ' \
