@@ -826,9 +826,13 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     func_src  = inspect.getsource(func).strip()
     setuid = True if setuid is None else bool(setuid)
 
-
+    # gdbserver wrappers are freezing on first execve syscall (for debugging the wanted program).
+    # It is not related to fork&exec.
+    # `/usr/bin/env python3` overrides first execve (because env is executing python3).
+    # Resolving python3 before shebang does, for not clashing with wrapper's first execve syscall.
+    python_path = which('python3')
     script = r"""
-#!/usr/bin/env python3
+#!%(python_path)s
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:
