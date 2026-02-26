@@ -1594,6 +1594,6 @@ def _read_in_thread(recv_queue, proc_stdout):
                 recv_queue.put(b)
             else:
                 break
-    except:
+    except Exception:
         # Ignore any errors during Python shutdown
         pass

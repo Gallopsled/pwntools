@@ -304,7 +304,7 @@ def current():
 #         'mips': mips,
 #         'mips64': mips
 #         }[context.arch]
-#     except:
+#     except Exception:
 #         return False
 
 def register_size(reg):

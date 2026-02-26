@@ -34,7 +34,7 @@ def init():
     if 'PWNLIB_NOTERM' not in os.environ:
         try:
             enable_vt_mode()
-        except:
+        except Exception:
             # If the terminal doesn't support ANSI escape codes, don't use them.
             return
 
