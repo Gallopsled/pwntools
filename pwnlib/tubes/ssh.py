@@ -956,7 +956,7 @@ class ssh(Timeout, Logger):
         """
         cwd = cwd or self.cwd
         script = misc._create_execve_script(argv=argv, executable=executable,
-                cwd=cwd, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
+                cwd=cwd, env=env, which=self.which, stdin=stdin, stdout=stdout, stderr=stderr,
                 ignore_environ=ignore_environ, preexec_fn=preexec_fn, preexec_args=preexec_args,
                 aslr=aslr, setuid=setuid, shell=shell, log=self)
 
