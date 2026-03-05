@@ -137,6 +137,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2642][2642] Remove `pip` as explicit dependency
 - [#2646][2646] fix(libcdb-cli): return early if no matched libc found
 - [#2669][2669] asm: try native binutils before fallback architectures
+- [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -156,6 +157,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2642]: https://github.com/Gallopsled/pwntools/pull/2642
 [2646]: https://github.com/Gallopsled/pwntools/pull/2646
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 
 ## 4.15.0 (`stable`)
 
