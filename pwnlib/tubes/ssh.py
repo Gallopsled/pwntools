@@ -937,6 +937,13 @@ class ssh(Timeout, Logger):
             >>> io.recvline()
             b''
 
+            >>> io = s.process(['tty'], tty=True)
+            >>> io.recvline() # doctest: +ELLIPSIS
+            b'/dev/pts/...\n'
+            >>> io = s.process(['tty'], tty=False)
+            >>> io.recvline()
+            b'not a tty\n'
+
             >>> # Testing that empty argv works
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
