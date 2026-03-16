@@ -117,6 +117,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2673][2673] Add libc module for libc-related functions
 - [#2680][2680] Cleanup Python 2 legacy
 - [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
+- [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
 
 [2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -160,6 +161,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
 [2687]: https://github.com/Gallopsled/pwntools/pull/2687
+[2699]: https://github.com/Gallopsled/pwntools/pull/2699
 
 ## 4.15.0 (`stable`)
 
