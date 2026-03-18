@@ -937,6 +937,13 @@ class ssh(Timeout, Logger):
             >>> io.recvline()
             b''
 
+            >>> io = s.process(['tty'], tty=True)
+            >>> io.recvline() # doctest: +ELLIPSIS
+            b'/dev/pts/...\n'
+            >>> io = s.process(['tty'], tty=False)
+            >>> io.recvline()
+            b'not a tty\n'
+
             >>> # Testing that empty argv works
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
@@ -995,7 +1002,7 @@ class ssh(Timeout, Logger):
 
             script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=tty, cwd=cwd, raw=raw, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
