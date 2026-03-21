@@ -59,6 +59,16 @@ def enhex(x):
 
 
 def hexstr(s, force=False):
+    r"""
+    hexstr(x, force=False) -> str
+
+    Escapes byte string into a C representation.
+
+    Example:
+
+	>>> print(hexstr(b"hello\n\0world\xad"))
+	"hello\x0a\x00world\xad"
+    """
     out = bytearray(b'"')
     ban = False
     for co in s:
