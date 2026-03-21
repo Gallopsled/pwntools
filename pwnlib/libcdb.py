@@ -426,15 +426,19 @@ def unstrip_libc(filename):
 def _extract_tarfile(cache_dir, data_filename, tarball):
     from io import BytesIO
     import tarfile
-    # Handle zstandard compression, since tarfile only supports gz, bz2, and xz.
+    # Handle zstandard compression on py<3.14, since tarfile only supports gz, bz2, and xz.
     if data_filename.endswith('.zst') or data_filename.endswith('.zstd'):
-        import zstandard
-        dctx = zstandard.ZstdDecompressor()
-        decompressed_tar = BytesIO()
-        dctx.copy_stream(tarball, decompressed_tar)
-        decompressed_tar.seek(0)
-        tarball.close()
-        tarball = decompressed_tar
+        try:
+                import zstandard
+        except ImportError:
+                pass
+        else:
+                dctx = zstandard.ZstdDecompressor()
+                decompressed_tar = BytesIO()
+                dctx.copy_stream(tarball, decompressed_tar)
+                decompressed_tar.seek(0)
+                tarball.close()
+                tarball = decompressed_tar
 
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
