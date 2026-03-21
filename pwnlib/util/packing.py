@@ -160,7 +160,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 
 @LocalNoarchContext
 def unpack(data, word_size = None):
-    r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
+    r"""unpack(data, word_size = None, *, endianness = None, sign = None, **kwargs) -> int
 
     Unpacks arbitrary-sized integer.
 
