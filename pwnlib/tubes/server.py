@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import socket
 import threading
@@ -9,7 +6,7 @@ from pwnlib.context import context
 from pwnlib.log import getLogger
 from pwnlib.tubes.sock import sock
 from pwnlib.tubes.remote import remote
-from six.moves.queue import Queue
+from queue import Queue
 
 log = getLogger(__name__)
 
@@ -127,7 +124,7 @@ class server(sock):
                         return
 
                 self.rhost, self.rport = rhost[:2]
-                r = remote(self.rhost, self.rport, sock = sock)
+                r = remote(self.rhost, self.rport, sock = sock, level = self.level)
                 h.success('Got connection from %s on port %d' % (self.rhost, self.rport))
                 if callback:
                     if not blocking:

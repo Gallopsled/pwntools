@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import
-from __future__ import division
-
+#!/usr/bin/env python3
 import subprocess
 
 import pwnlib.args
@@ -30,4 +27,4 @@ def main(a):
         subprocess.check_call(result, shell=False)
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

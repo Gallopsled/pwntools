@@ -3,7 +3,6 @@
     from pwnlib.shellcraft import pretty
     from pwnlib.util.iters import group
     from pwnlib.util.packing import _need_bytes
-    from six import text_type, binary_type
 %>
 <%docstring>
 Pushes an array/envp-style array of pointers onto the stack.
@@ -24,7 +23,7 @@ Example:
 </%docstring>
 <%page args="reg, array, register1='x14', register2='x15'"/>
 <%
-if isinstance(array, (binary_type, text_type)):
+if isinstance(array, (bytes, str)):
     array = [array]
 
 # Convert all items to strings

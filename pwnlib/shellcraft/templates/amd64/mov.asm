@@ -4,7 +4,6 @@
   from pwnlib.log import getLogger
   from pwnlib.shellcraft import eval, pretty, okay
   from pwnlib.shellcraft.registers import get_register, is_register, bits_required
-  import six
   log = getLogger('pwnlib.shellcraft.amd64.mov')
 %>
 <%page args="dest, src, stack_allowed = True"/>
@@ -51,8 +50,8 @@ Example:
         xor eax, eax
         mov ax, 0xc0c0
     >>> print(shellcraft.amd64.mov('rdi', 0xff).rstrip())
-        mov edi, 0x1010101 /* 255 == 0xff */
-        xor edi, 0x10101fe
+        xor edi, edi
+        mov dil, 0xff
     >>> print(shellcraft.amd64.mov('rax', 0xdead00ff).rstrip())
         mov eax, 0x1010101 /* 3735879935 == 0xdead00ff */
         xor eax, 0xdfac01fe
@@ -149,7 +148,7 @@ else:
     % else:
     mov ${dest}, ${src}
     % endif
-% elif isinstance(src, six.integer_types):
+% elif isinstance(src, int):
 ## Special case for zeroes
 ## XORing the 32-bit register clears the high 32 bits as well
     % if src == 0:

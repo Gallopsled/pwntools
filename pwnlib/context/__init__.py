@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import atexit
 import collections
 import errno
@@ -15,7 +11,6 @@ import os
 import os.path
 import platform
 import shutil
-import six
 import socket
 import string
 import sys
@@ -47,7 +42,7 @@ class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
 
-    This is neccesary because the ``default_factory`` method of
+    This is necessary because the ``default_factory`` method of
     :class:`collections.defaultdict` does not provide the key.
 
     Examples:
@@ -281,7 +276,7 @@ class ContextType(object):
 
     The context is usually specified at the top of the Python file for clarity. ::
 
-        #!/usr/bin/env python
+        #!/usr/bin/env python3
         context.update(arch='i386', os='linux')
 
     Currently supported properties and their defaults are listed below.
@@ -306,6 +301,10 @@ class ContextType(object):
         'little'
         >>> context.bits
         32
+
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> def nop():
         ...   print(enhex(pwnlib.asm.asm('nop')))
         >>> nop()
@@ -353,10 +352,12 @@ class ContextType(object):
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
+        'disable_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
+        'gdb_binary': "",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
@@ -417,6 +418,7 @@ class ContextType(object):
         'powerpc64': big_64,
         'riscv32':   little_32,
         'riscv64':   little_64,
+        'loongarch64':   little_64,
         's390':      big_32,
         'sparc':     big_32,
         'sparc64':   big_64,
@@ -592,9 +594,9 @@ class ContextType(object):
             ...         log.debug("DEBUG")
             ...         log.info("INFO")
             ...         log.warn("WARN")
-            [DEBUG] DEBUG
-            [*] INFO
-            [!] WARN
+            [...] DEBUG
+            [...] INFO
+            [...] WARN
         """
         level = 'error'
         if context.log_level <= logging.DEBUG:
@@ -662,7 +664,7 @@ class ContextType(object):
             information is printed.
 
             >>> with context.verbose: func()
-            [DEBUG] Hello
+            [...] Hello
 
         """
         return self.local(log_level='debug')
@@ -789,7 +791,9 @@ class ContextType(object):
                      ('armeabi', 'arm'),
                      ('arm64', 'aarch64'),
                      ('rv32', 'riscv32'),
-                     ('rv64', 'riscv64')]
+                     ('rv64', 'riscv64'),
+                     ('loong64', 'loongarch64'),
+                     ('la64', 'loongarch64')]
         for k, v in transform:
             if arch.startswith(k):
                 arch = v
@@ -867,6 +871,9 @@ class ContextType(object):
         Data type is a :class:`pwnlib.elf.ELF` object.
 
         Examples:
+
+        .. doctest::
+            :options: +POSIX +TODO
 
             >>> context.clear()
             >>> context.arch, context.bits
@@ -1030,7 +1037,7 @@ class ContextType(object):
             >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             # check if mode was specified as "[value],[mode]"
             from pwnlib.util.packing import _need_text
             value = _need_text(value)
@@ -1076,7 +1083,7 @@ class ContextType(object):
             >>> context.log_level = 'warn'
             >>> log.warn("Hello")
             [!] Hello
-            >>> context.log_console=open('/dev/null', 'w')
+            >>> context.log_console=open(os.devnull, 'w')
             >>> log.warn("Hello")
             >>> context.clear()
         """
@@ -1086,7 +1093,7 @@ class ContextType(object):
 
     @_validator
     def local_libcdb(self, path):
-        """ 
+        """
         Sets path to local libc-database, get more information for libc-database:
         https://github.com/niklasb/libc-database
 
@@ -1248,7 +1255,7 @@ class ContextType(object):
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             return [value]
         return value
 
@@ -1331,7 +1338,7 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
-        if isinstance(device, (bytes, six.text_type)):
+        if isinstance(device, (bytes, str)):
             device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
@@ -1377,9 +1384,9 @@ class ContextType(object):
     def cache_dir_base(self, new_base):
         """Base directory to use for caching content.
 
-        Changing this to a different value will clear the `cache_dir` path
+        Changing this to a different value will clear the :attr:`cache_dir` path
         stored in TLS since a new path will need to be generated to respect the
-        new `cache_dir_base` value.
+        new :attr:`cache_dir_base` value.
         """
 
         if new_base != self.cache_dir_base:
@@ -1394,6 +1401,9 @@ class ContextType(object):
 
         Note:
             May be either a path string, or :const:`None`.
+            Set to :const:`None` to disable caching.
+            Set to :const:`True` to generate the default cache directory path
+            based on :attr:`cache_dir_base` again.
 
         Example:
 
@@ -1401,16 +1411,22 @@ class ContextType(object):
             >>> cache_dir is not None
             True
             >>> os.chmod(cache_dir, 0o000)
-            >>> del context._tls['cache_dir']
-            >>> context.cache_dir is None
+            >>> context.cache_dir = True
+            >>> context.cache_dir is None # doctest: +POSIX +TODO
             True
             >>> os.chmod(cache_dir, 0o755)
             >>> cache_dir == context.cache_dir
             True
+            >>> context.cache_dir = None
+            >>> context.cache_dir is None
+            True
+            >>> context.cache_dir = True
+            >>> context.cache_dir is not None
+            True
         """
         try:
             # If the TLS already has a cache directory path, we return it
-            # without any futher checks since it must have been valid when it
+            # without any further checks since it must have been valid when it
             # was set and if that has changed, hiding the TOCTOU here would be
             # potentially confusing
             return self._tls["cache_dir"]
@@ -1451,7 +1467,9 @@ class ContextType(object):
 
     @cache_dir.setter
     def cache_dir(self, v):
-        if os.access(v, os.W_OK):
+        if v is True:
+            del self._tls["cache_dir"]
+        elif v is None or os.access(v, os.W_OK):
             # Stash this in TLS for later reuse
             self._tls["cache_dir"] = v
 
@@ -1460,6 +1478,18 @@ class ContextType(object):
         """Whether pwntools automatically deletes corefiles after exiting.
         This only affects corefiles accessed via :attr:`.process.corefile`.
 
+        Default value is ``False``.
+        """
+        return bool(v)
+
+    @_validator
+    def disable_corefiles(self, v):
+        """Whether pwntools automatically disable corefiles generation.
+
+        When enabled, sets RLIMIT_CORE to (0,-1) to prevent core dump creation
+        entirely, which is useful for brute-force scenarios and repeated segfault
+        crashes where core files consume excessive disk space 
+        
         Default value is ``False``.
         """
         return bool(v)
@@ -1491,7 +1521,7 @@ class ContextType(object):
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
-    
+
     @_validator
     def throw_eof_on_incomplete_line(self, v):
         """Whether to raise an :class:`EOFError` if an EOF is received before a newline in ``tube.recvline``.
@@ -1523,6 +1553,20 @@ class ContextType(object):
         the necessary requirements for the gdbinit.
 
         If set to an empty string, GDB will use the default `~/.gdbinit`.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def gdb_binary(self, value):
+        """Path to the binary that is used when running GDB locally.
+
+        This is useful when you have multiple versions of gdb installed or the gdb binary is
+        called something different.
+
+        If set to an empty string, pwntools will try to search for a reasonable gdb binary from 
+        the path.
 
         Default value is ``""``.
         """
@@ -1722,7 +1766,7 @@ def update_context_defaults(section):
 
         default = ContextType.defaults[key]
 
-        if isinstance(default, six.string_types + six.integer_types + (tuple, list, dict)):
+        if isinstance(default, (str, int, float, tuple, list, dict)):
             value = safeeval.expr(value)
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))

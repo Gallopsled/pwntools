@@ -52,27 +52,27 @@ Each of the ``pwntools`` modules is documented here.
    context
    dynelf
    encoders
-   elf/*
+   elf
    exception
    filepointer
    filesystem
    flag
    fmtstr
    gdb
+   libc
    libcdb
    log
    memleak
    protocols
    qemu
+   regsort
    replacements
-   rop/*
+   rop
    runner
    shellcraft
-   shellcraft/*
    term
    timeout
    tubes
-   tubes/*
    ui
    update
    useragents

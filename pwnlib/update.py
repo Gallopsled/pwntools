@@ -19,9 +19,6 @@ Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
     interval=never
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import datetime
 import json
 import os
@@ -74,12 +71,15 @@ def available_on_pypi(prerelease=current_version.is_prerelease):
     False
     """
     # Deferred import to save startup time
-    from six.moves.xmlrpc_client import ServerProxy
+    import requests
 
     versions = getattr(available_on_pypi, 'cached', None)
     if versions is None:
-        client = ServerProxy('https://pypi.python.org/pypi')
-        versions = client.package_releases('pwntools', True)
+        response = requests.get("https://pypi.org/simple/pwntools/",
+                                headers={"Accept": "application/vnd.pypi.simple.v1+json"},
+                                timeout=5)
+        response.raise_for_status()
+        versions = response.json()["versions"]
         available_on_pypi.cached = versions
 
     versions = map(packaging.version.Version, versions)

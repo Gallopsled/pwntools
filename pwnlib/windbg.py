@@ -56,14 +56,11 @@ You can cause these lines to be a no-op by running your script with the
 Member Documentation
 ===============================
 """
-from __future__ import absolute_import
 import atexit
 import os
 import signal
 
 import subprocess
-
-import six
 
 from pwnlib import tubes
 from pwnlib.context import LocalContext
@@ -106,7 +103,7 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
         instruction of the entry point.
     """
     if isinstance(
-        args, six.integer_types + (tubes.process.process, tubes.ssh.ssh_channel)
+        args, (int, tubes.process.process, tubes.ssh.ssh_channel)
     ):
         log.error("Use windbg.attach() to debug a running process")
 
@@ -115,7 +112,7 @@ def debug(args, windbgscript=None, exe=None, env=None, creationflags=0, **kwargs
         return tubes.process.process(args, executable=exe, env=env, creationflags=creationflags)
     
     windbgscript = windbgscript or ''
-    if isinstance(windbgscript, six.string_types):
+    if isinstance(windbgscript, str):
         windbgscript = windbgscript.split('\n')
     # resume main thread
     windbgscript = ['~0m'] + windbgscript
@@ -187,7 +184,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
 
     # let's see if we can find a pid to attach to
     pid = None
-    if isinstance(target, six.integer_types):
+    if isinstance(target, int):
         # target is a pid, easy peasy
         pid = target
     elif isinstance(target, str):
@@ -213,7 +210,7 @@ def attach(target, windbgscript=None, windbg_args=[]):
     cmd.extend(['-p', str(pid)])
 
     windbgscript = windbgscript or ''
-    if isinstance(windbgscript, six.string_types):
+    if isinstance(windbgscript, str):
         windbgscript = windbgscript.split('\n')
     if isinstance(windbgscript, list):
         windbgscript = ';'.join(script.strip() for script in windbgscript if script.strip())

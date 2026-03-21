@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import argparse
 
 import pwnlib.args
@@ -53,4 +50,4 @@ def main(args):
     args.output.write(result)
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

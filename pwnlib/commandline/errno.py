@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 import argparse
 import os
 import errno
@@ -46,4 +44,4 @@ def main(args):
   print(os.strerror(value))
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)

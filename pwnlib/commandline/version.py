@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import
-from __future__ import division
-
+#!/usr/bin/env python3
 import os
 import subprocess
 
@@ -29,4 +26,4 @@ def main(a):
 	log.info("Pwntools v%s" % version)
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

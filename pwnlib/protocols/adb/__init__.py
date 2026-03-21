@@ -5,12 +5,8 @@ Documentation is available here_.
 
 .. _here: https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import functools
-import six
 import stat
 import time
 
@@ -143,7 +139,7 @@ class AdbClient(Logger):
 
     def send(self, *a, **kw):
         """Sends data to the ADB server"""
-        if isinstance(a[0], six.text_type):
+        if isinstance(a[0], str):
             a = (a[0].encode('utf-8'),) + a[1:]
         return self.c.adb_send(*a, **kw)
 
@@ -431,7 +427,7 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _list(self, path):
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.flat32(b'LIST', len(path), path)
         files = {}
@@ -485,7 +481,7 @@ class AdbClient(Logger):
             >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') is None
             True
         """
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.flat32(b'STAT', len(path), path)
         if self.c.recvn(4) != b'STAT':
@@ -529,7 +525,7 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         path += b',%d' % mode
 
@@ -575,7 +571,7 @@ class AdbClient(Logger):
         Return:
             The data received as a string.
         """
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.send(b'RECV' + p32(len(path)) + path)
 

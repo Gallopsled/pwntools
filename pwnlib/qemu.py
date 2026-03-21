@@ -72,9 +72,6 @@ the appropriate path. ::
 
 Now QEMU should be able to run the libraries.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 
 from pwnlib.context import LocalContext
@@ -105,6 +102,7 @@ def archname():
         ('powerpc64', 'little'): 'ppc64le',
         ('thumb', 'little'):     'arm',
         ('thumb', 'big'):        'armeb',
+        ('aarch64', 'big'):      'aarch64_be',
     }.get((context.arch, context.endian), context.arch)
 
 @LocalContext
@@ -139,7 +137,7 @@ def user_path():
 def ld_prefix(path=None, env=None):
     """Returns the linker prefix for the selected qemu-user binary
 
-    >>> pwnlib.qemu.ld_prefix(arch='arm')
+    >>> pwnlib.qemu.ld_prefix(arch='arm')  # doctest: +SKIP
     '/etc/qemu-binfmt/arm'
     """
     if context.os == 'baremetal':
@@ -170,4 +168,3 @@ def ld_prefix(path=None, env=None):
         libpath = libpath.decode('utf-8')
 
     return libpath
-

@@ -45,8 +45,6 @@ the :mod:`pwnlib.adb` module.
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
-from __future__ import absolute_import
-from __future__ import division
 
 import functools
 import glob
@@ -54,7 +52,6 @@ import logging
 import os
 import re
 import shutil
-import six
 import stat
 import tempfile
 import time
@@ -85,7 +82,7 @@ def adb(argv, *a, **kw):
         >>> adb.adb(['shell', 'uname']) # it is better to use adb.process
         b'Linux\n'
     """
-    if isinstance(argv, (bytes, six.text_type)):
+    if isinstance(argv, (bytes, str)):
         argv = [argv]
 
     log.debug("$ " + ' '.join(context.adb + argv))
@@ -123,7 +120,7 @@ def current_device(any=False):
 
         >>> device = adb.current_device(any=True)
         >>> device  # doctest: +ELLIPSIS
-        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone_...', model='...', device='generic...')
+        AdbDevice(serial='emulator-5554', type='device', port='emulator', product='sdk_...phone..._...', model='...', device='...')
         >>> device.port
         'emulator'
     """
@@ -259,7 +256,7 @@ class AdbDevice(Device):
         >>> device.os
         'android'
         >>> device.product  # doctest: +ELLIPSIS
-        'sdk_...phone_...'
+        'sdk_...phone..._...'
         >>> device.serial
         'emulator-5554'
     """
@@ -366,7 +363,7 @@ class AdbDevice(Device):
         return AdbDevice(serial, type, **kwargs)
 
     def __wrapped(self, function):
-        """Wrapps a callable in a scope which selects the current device."""
+        """Wraps a callable in a scope which selects the current device."""
         @functools.wraps(function)
         def wrapper(*a, **kw):
             with context.local(device=self):
@@ -374,7 +371,7 @@ class AdbDevice(Device):
         return wrapper
 
     def __getattr__(self, name):
-        """Provides scoped access to ``adb`` module propertise, in the context
+        """Provides scoped access to ``adb`` module properties, in the context
         of this device.
 
         .. doctest::
@@ -838,7 +835,7 @@ def process(argv, *a, **kw):
         >>> print(adb.process(['cat','/proc/version']).recvall().decode('utf-8')) # doctest: +ELLIPSIS
         Linux version ...
     """
-    if isinstance(argv, (bytes, six.text_type)):
+    if isinstance(argv, (bytes, str)):
         argv = [argv]
 
     message = "Starting %s process %r" % ('Android', argv[0])
@@ -880,7 +877,7 @@ def which(name, all = False, *a, **kw):
         >>> adb.which('sh')
         '/system/bin/sh'
         >>> adb.which('sh', all=True)
-        ['/system/bin/sh']
+        ['/system/bin/sh', '/vendor/bin/sh']
 
         >>> adb.which('foobar') is None
         True
@@ -988,7 +985,7 @@ def proc_exe(pid):
        :skipif: skip_android
 
         >>> adb.proc_exe(1)
-        b'/init'
+        b'/system/bin/init'
     """
     with context.quiet:
         io  = process(['realpath','/proc/%d/exe' % pid])
@@ -1263,7 +1260,7 @@ class Property(object):
             >>> adb.properties.ro.build.version.sdk == "24"
             True
         """
-        if isinstance(other, six.string_types):
+        if isinstance(other, str):
             return str(self) == other
         return super(Property, self).__eq__(other)
 
@@ -1365,7 +1362,7 @@ def compile(source):
         >>> filename = adb.compile(temp)
         >>> sent = adb.push(filename, "/data/local/tmp")
         >>> adb.process(sent).recvall() # doctest: +ELLIPSIS
-        b'... /system/lib64/libc.so\n...'
+        b'... /system/lib64/libc++.so\n...'
     """
 
     ndk_build = misc.which('ndk-build')
@@ -1555,7 +1552,7 @@ def install(apk, *arguments):
     This is a wrapper around 'pm install', which backs 'adb install'.
 
     Arguments:
-        apk(str): Path to the APK to intall (e.g. ``'foo.apk'``)
+        apk(str): Path to the APK to install (e.g. ``'foo.apk'``)
         arguments: Supplementary arguments to 'pm install',
             e.g. ``'-l', '-g'``.
     """
@@ -1604,4 +1601,3 @@ def version():
     """Returns rthe platform version as a tuple."""
     prop = getprop('ro.build.version.release')
     return [int(v) for v in prop.split('.')]
-

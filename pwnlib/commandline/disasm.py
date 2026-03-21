@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import re
 import string
@@ -110,4 +106,4 @@ def main(args):
     print(disasm(dat, vma=safeeval.const(args.address)))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

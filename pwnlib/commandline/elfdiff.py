@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import shutil
 from argparse import ArgumentParser
 from subprocess import CalledProcessError
@@ -59,4 +56,4 @@ def main(a):
     print(diff(x, y))
 
 if __name__ == '__main__':
-    pwnlib.commandline.common.main(__file__)
+    pwnlib.commandline.common.main(__file__, main)

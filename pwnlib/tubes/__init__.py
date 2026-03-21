@@ -9,8 +9,6 @@ in :class:`pwnlib.tubes.tube`. The remaining classes should only implement
 just enough for the class to work and possibly code pertaining only to
 that specific kind of tube.
 """
-from __future__ import absolute_import
-
 from pwnlib.tubes import listen
 from pwnlib.tubes import process
 from pwnlib.tubes import remote

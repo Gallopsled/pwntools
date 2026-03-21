@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import argparse
 import sys
 
@@ -50,4 +47,4 @@ def main(args):
     print(encoded)
 
 if __name__ == '__main__':
-    common.main(__file__)
+    common.main(__file__, main)

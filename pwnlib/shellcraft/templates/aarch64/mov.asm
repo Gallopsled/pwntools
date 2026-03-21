@@ -8,7 +8,6 @@
   from pwnlib.util.fiddling import xor_pair
   from pwnlib.shellcraft import pretty
   from pwnlib.shellcraft.registers import aarch64 as regs
-  import six
   log = getLogger('pwnlib.shellcraft.arm.mov')
 %>
 <%page args="dst, src"/>
@@ -50,7 +49,7 @@ mov_x15 = None
 xor     = None
 
 
-if isinstance(src, six.integer_types):
+if isinstance(src, int):
     lobits = dst not in ('x0', 'x10')
     packed = pack(src)
     words  = group(2, packed)
@@ -93,7 +92,7 @@ if dst == 'x15':
     add  ${dst}, ${src}, xzr
 %elif src == 'x0':
     add  ${dst}, ${src}, xzr, lsl #1
-%elif not isinstance(src, six.integer_types):
+%elif not isinstance(src, int):
     mov  ${dst}, ${src}
 %else:
   %if src == 0:

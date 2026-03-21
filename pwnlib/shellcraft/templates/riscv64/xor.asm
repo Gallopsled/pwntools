@@ -22,12 +22,17 @@ if not isinstance(rs2, str) or rs2 not in registers.riscv:
 rs1_reg = registers.riscv[rs1]
 rs2_reg = registers.riscv[rs2]
 %>
-## 0000000  rs2   rs1
-## 0000000 00000 0000
-% if rs1_reg & 0x10 > 0 and (rs2_reg > 1 or rs1_reg & 0xf > 0) and (rs1_reg != 0x10 and rs2_reg != 10):
-    xor ${dst}, ${rs2}, ${rs1}
-% elif rs2_reg & 0x10 > 0 and (rs1_reg > 1 or rs2_reg & 0xf > 0) and (rs2_reg != 0x10 and rs1_reg != 10):
+
+##  always safe
+## c.xor rs1d  rs2
+## 100011dd d01sss01
+
+## xor      rs2  rs1      rd
+## 0000000s ssssSSSS S100ddddd 0110011
+% if rs2_reg & 0x10 and (rs1_reg >> 1 | ((rs2_reg & 0xf) << 4)) not in (0, 10):
     xor ${dst}, ${rs1}, ${rs2}
+% elif rs1_reg & 0x10 and (rs2_reg >> 1 | ((rs1_reg & 0xf) << 4)) not in (0, 10):
+    xor ${dst}, ${rs2}, ${rs1}
 % else:
     ${riscv64.mov('t4', rs1)}
     xor ${dst}, ${rs2}, t4

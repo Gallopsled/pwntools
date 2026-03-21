@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Sigreturn ROP (SROP)
 
@@ -159,9 +158,6 @@ Mipsel Example:
     0
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import namedtuple
 
 from pwnlib.abi import ABI

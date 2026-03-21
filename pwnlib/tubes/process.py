@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 import errno
 import logging
@@ -12,6 +8,7 @@ import stat
 import subprocess
 import sys
 import time
+from collections import namedtuple
 
 IS_WINDOWS = sys.platform.startswith('win')
 
@@ -85,6 +82,8 @@ class process(tube):
             By default, :const:`True` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
+        preexec_args(iterable):
+            Arguments passed to ``preexec_fn``.
         raw(bool):
             Set the created pty to raw mode (i.e. disable echo and control
             characters).  :const:`True` by default.  If no pty is created, this
@@ -215,6 +214,12 @@ class process(tube):
         >>> p = process(binary.path, cwd=binary_dir)
         >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
         >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
+
+        >>> def write(s):
+        ...    import os
+        ...    os.write(1, s)
+        >>> print(process('false', preexec_fn=write, preexec_args=(b"Hello World!", )).recvline().strip().decode())
+        Hello World!
     """
 
     STDOUT = STDOUT
@@ -237,6 +242,7 @@ class process(tube):
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
+                 preexec_args = (),
                  raw = True,
                  aslr = None,
                  setuid = None,
@@ -275,10 +281,6 @@ class process(tube):
         else:
             executable_val, argv_val, env_val = self._validate(cwd, executable, argv, env)
 
-        # Avoid the need to have to deal with the STDOUT magic value.
-        if stderr is STDOUT:
-            stderr = stdout
-
         if IS_WINDOWS:
             self.pty = None
             self.raw = False
@@ -288,6 +290,10 @@ class process(tube):
             self.sgid = self.gid = None
             internal_preexec_fn = None
         else:
+            # Avoid the need to have to deal with the STDOUT magic value.
+            if stderr is STDOUT:
+                stderr = stdout
+
             # Determine which descriptors will be attached to a new PTY
             handles = (stdin, stdout, stderr)
 
@@ -329,6 +335,7 @@ class process(tube):
         self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
+        self.preexec_args = preexec_args
         self.display    = display or self.program
         self._qemu      = False
         self._corefile  = None
@@ -369,6 +376,8 @@ class process(tube):
                                                  creationflags = creationflags)
                     break
                 except OSError as exception:
+                    if sys.platform == 'win32':
+                        raise
                     if exception.errno != errno.ENOEXEC:
                         raise
                     prefixes.append(self.__on_enoexec(exception))
@@ -433,9 +442,12 @@ class process(tube):
             except Exception:
                 self.exception("Could not disable ASLR")
 
-        # Assume that the user would prefer to have core dumps.
+        # Check that the user would prefer to have core dumps or not.
         try:
-            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+            if context.disable_corefiles:
+                resource.setrlimit(resource.RLIMIT_CORE, (0, -1))
+            else:
+                resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
         except Exception:
             pass
 
@@ -465,7 +477,7 @@ class process(tube):
         if self.alarm is not None:
             signal.alarm(self.alarm)
 
-        self.preexec_fn()
+        self.preexec_fn(*self.preexec_args)
 
     def __on_enoexec(self, exception):
         """We received an 'exec format' error (ENOEXEC)
@@ -664,6 +676,40 @@ class process(tube):
         """
         self.close()
 
+    def terminate(self):
+        """terminate()
+
+        Terminates the process by sending SIGTERM.
+        
+        This is a more graceful way to stop a process compared to :meth:`kill`,
+        which sends SIGKILL. The process has a chance to clean up and
+        exit gracefully when receiving SIGTERM.
+
+        The process can choose to ignore this signal, so proper cleanup
+        is only done in :meth:`kill`/:meth:`close`.
+        
+        Examples:
+        
+            >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");import time;time.sleep(10)'])
+            >>> p.recvline_contains(b'ready')
+            b'ready'
+            >>> p.terminate()
+            >>> p.recvuntil(b'sigterm')
+            b'sigterm'
+            >>> p.close()
+        """
+        if self.proc is None:
+            return
+            
+        try:
+            self.proc.terminate()
+        except OSError:
+            # Process might have already exited
+            pass
+
+        # Check if process is still running.
+        self.poll()
+
     def poll(self, block = False):
         """poll(block = False) -> int
 
@@ -766,9 +812,13 @@ class process(tube):
 
         if IS_WINDOWS:
             with self.countdown(timeout=timeout):
-                while self.timeout and self._read_queue.empty():
+                while self.timeout and self._read_queue.empty() and self._read_thread.is_alive():
                     time.sleep(0.01)
-                return not self._read_queue.empty()
+                if not self._read_queue.empty():
+                    return True
+                if not self._read_thread.is_alive():
+                    raise EOFError
+                return False
 
         try:
             if timeout is None:
@@ -883,6 +933,443 @@ class process(tube):
         else:
             os.close(fd)
 
+    def maps(self):
+        """maps() -> [mapping]
+
+        Returns a list of process mappings.
+        
+        A mapping object has the following fields:
+            addr, address (addr alias), start (addr alias), end, size, perms, path, rss, pss, shared_clean, shared_dirty, private_clean, private_dirty, referenced, anonymous, swap
+
+        perms is a permissions object, with the following fields:
+            read, write, execute, private, shared, string
+
+        Example:
+      
+            >>> p = process(['cat'])
+            >>> p.sendline(b"meow")
+            >>> p.recvline()
+            b'meow\\n'
+            >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
+            >>> pwn_maps = p.maps()
+            >>> len(proc_maps) == len(pwn_maps)
+            True
+            >>> checker_arr = []
+            >>> for proc, pwn in zip(proc_maps, pwn_maps):
+            ...     proc = proc.split(' ')
+            ...     p_addrs = proc[0].split('-')
+            ...     checker_arr.append(int(p_addrs[0], 16) == pwn.addr == pwn.address == pwn.start)
+            ...     checker_arr.append(int(p_addrs[1], 16) == pwn.end)
+            ...     checker_arr.append(pwn.size == pwn.end - pwn.start)
+            ...     checker_arr.append(pwn.perms.string == proc[1])
+            ...     proc_path = proc[-1].strip()
+            ...     checker_arr.append(pwn.path == proc_path or (pwn.path == '[anon]' and proc_path == ''))
+            ...
+            >>> checker_arr == [True] * len(proc_maps) * 5
+            True
+
+        Useful information about this can be found at: https://man7.org/linux/man-pages/man5/proc.5.html
+        specifically the /proc/pid/maps section.
+
+        memory_maps() returns a list of pmmap_ext objects. The definition (from psutil/_pslinux.py) is:
+
+        .. code-block:: python
+
+            pmmap_grouped = namedtuple(
+                'pmmap_grouped',
+                ['path', 'rss', 'size', 'pss', 'shared_clean', 'shared_dirty',
+                'private_clean', 'private_dirty', 'referenced', 'anonymous', 'swap'])
+            pmmap_ext = namedtuple(
+                'pmmap_ext', 'addr perms ' + ' '.join(pmmap_grouped._fields))
+
+            
+        Here is an example of a pmmap_ext entry: 
+
+        .. code-block:: python
+
+            pmmap_ext(addr='15555551c000-155555520000', perms='r--p', path='[vvar]', rss=0, size=16384, pss=0, shared_clean=0, shared_dirty=0, private_clean=0, private_dirty=0, referenced=0, anonymous=0, swap=0)
+        """
+
+        permissions = namedtuple("permissions", "read write execute private shared string")
+        mapping = namedtuple("mapping", 
+            "addr address start end size perms path rss pss shared_clean shared_dirty private_clean private_dirty referenced anonymous swap")
+        # addr = address (alias) = start (alias)
+
+        from pwnlib.util.proc import memory_maps
+        raw_maps = memory_maps(self.pid)
+
+        maps = []
+        # raw_mapping
+        for r_m in raw_maps:
+            p_perms = permissions('r' in r_m.perms, 'w' in r_m.perms, 'x' in r_m.perms, 'p' in r_m.perms, 's' in r_m.perms, r_m.perms)
+            addr_split = r_m.addr.split('-')
+            p_addr = int(addr_split[0], 16)
+            p_mapping = mapping(p_addr, p_addr, p_addr, int(addr_split[1], 16), r_m.size, p_perms, r_m.path, r_m.rss,
+                                r_m.pss, r_m.shared_clean, r_m.shared_dirty, r_m.private_clean, r_m.private_dirty,
+                                r_m.referenced, r_m.anonymous, r_m.swap)
+            maps.append(p_mapping)
+
+        return maps
+
+    def get_mapping(self, path_value, single=True):
+        """get_mapping(path_value, single=True) -> mapping
+        get_mapping(path_value, False) -> [mapping]
+
+        Arguments:
+            path_value(str): The exact path of the requested mapping,
+                valid values are also [stack], [heap], etc..
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns found mapping(s) in process memory according to 
+        path_value.
+
+        Example:
+            
+            >>> p = process(['cat'])
+            >>> mapping = p.get_mapping('[stack]')
+            >>> mapping.path == '[stack]'
+            True
+            >>> mapping.perms.execute
+            False
+            >>>
+            >>> mapping = p.get_mapping('does not exist')
+            >>> print(mapping)
+            None
+            >>>
+            >>> mappings = p.get_mapping(which('cat'), single=False)
+            >>> len(mappings) > 1
+            True
+
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                if path_value == mapping.path:
+                    return mapping
+            return None
+
+        m_mappings = []
+        for mapping in all_maps:
+            if path_value == mapping.path:
+                m_mappings.append(mapping)
+        return m_mappings
+
+    def stack_mapping(self, single=True):
+        """stack_mapping(single=True) -> mapping
+        stack_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns :meth:`.process.get_mapping` with '[stack]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> mapping = p.stack_mapping()
+            >>> mapping.path
+            '[stack]'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            True
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7fffd99fe000'
+            >>> mappings = p.stack_mapping(single=False)
+            >>> len(mappings)
+            1
+
+        """
+        return self.get_mapping('[stack]', single)
+    
+    def heap_mapping(self, single=True):
+        """heap_mapping(single=True) -> mapping
+        heap_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns :meth:`.process.get_mapping` with '[heap]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\\n'
+            >>> mapping = p.heap_mapping()
+            >>> mapping.path
+            '[heap]'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            True
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x557650fae000'
+            >>> mappings = p.heap_mapping(single=False)
+            >>> len(mappings)
+            1
+
+        """
+        return self.get_mapping('[heap]', single)
+    
+    def vdso_mapping(self, single=True):
+        """vdso_mapping(single=True) -> mapping
+        vdso_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns :meth:`.process.get_mapping` with '[vdso]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> mapping = p.vdso_mapping()
+            >>> mapping.path
+            '[vdso]'
+            >>> mapping.perms.execute
+            True
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7ffcf13af000'
+            >>> mappings = p.vdso_mapping(single=False)
+            >>> len(mappings)
+            1
+
+        """
+        return self.get_mapping('[vdso]', single)
+    
+    def vvar_mapping(self, single=True):
+        """vvar_mapping(single=True) -> mapping
+        vvar_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns :meth:`.process.get_mapping` with '[vvar]' and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> mapping = p.vvar_mapping()
+            >>> mapping.path
+            '[vvar]'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7ffee5f60000'
+            >>> mappings = p.vvar_mapping(single=False)
+            >>> len(mappings)
+            1
+
+        """
+        return self.get_mapping('[vvar]', single)
+    
+    def libc_mapping(self, single=True):
+        """libc_mapping(single=True) -> mapping
+        libc_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns either the first libc mapping found in process memory,
+        or all libc mappings, depending on "single". 
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\\n'
+            >>> mapping = p.libc_mapping()
+            >>> mapping.path # doctest: +ELLIPSIS
+            '...libc...'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x7fbde7fd7000'
+            >>>
+            >>> mappings = p.libc_mapping(single=False)
+            >>> len(mappings) > 1
+            True
+            >>> hex(mappings[1].address) # doctest: +SKIP
+            '0x7fbde7ffd000'
+            >>> mappings[0].end == mappings[1].start
+            True
+            >>> mappings[1].perms.execute
+            True
+
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
+
+        l_mappings = []
+        for mapping in all_maps:
+            lib_basename = os.path.basename(mapping.path)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
+                l_mappings.append(mapping)
+        return l_mappings
+    
+    def musl_mapping(self, single=True):
+        """musl_mapping(single=True) -> mapping
+        musl_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns either the first musl mapping found in process memory,
+        or all musl mappings, depending on "single". 
+        """
+        all_maps = self.maps()
+
+        if single:
+            for mapping in all_maps:
+                lib_basename = os.path.basename(mapping.path)
+                if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
+                    return mapping
+            return None
+        
+        m_mappings = []
+        for mapping in all_maps:
+            lib_basename = os.path.basename(mapping.path)
+            if 'musl.so' in lib_basename or ('musl-' in lib_basename and '.so' in lib_basename):
+                m_mappings.append(mapping)
+        return m_mappings
+    
+    def elf_mapping(self, single=True):
+        """elf_mapping(single=True) -> mapping
+        elf_mapping(False) -> [mapping]
+
+        Arguments:
+            single(bool=True): Whether to only return the first
+                mapping matched, or all of them.
+
+        Returns :meth:`.process.get_mapping` with the :meth:`.process.elf` path and single as arguments.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\\n'
+            >>> mapping = p.elf_mapping()
+            >>> mapping.path # doctest: +ELLIPSIS
+            '...cat...'
+            >>> mapping.perms.execute
+            False
+            >>> mapping.perms.write
+            False
+            >>> hex(mapping.address) # doctest: +SKIP
+            '0x55a2abba0000'
+            >>> mappings = p.elf_mapping(single=False)
+            >>> len(mappings) > 1
+            True
+            >>> hex(mappings[1].address) # doctest: +SKIP
+            '0x55a2abba2000'
+            >>> mappings[0].end == mappings[1].start
+            True
+            >>> mappings[1].perms.execute
+            True
+
+        """
+        return self.get_mapping(self.elf.path, single)
+
+    def lib_size(self, path_value):
+        """lib_size(path_value) -> int
+
+        Arguments:
+            path_value(str): The exact path of the shared library
+            loaded by the process
+
+        Returns the size of the shared library in process memory.
+        If the library is not found, zero is returned.
+
+        Example:
+
+            >>> from pwn import *
+            >>> p = process(['cat'])
+            >>> p.send(b'meow')
+            >>> p.recvuntil(b'meow')
+            b'meow'
+            >>> libc_size = p.lib_size(p.libc.path)
+            >>> hex(libc_size) # doctest: +SKIP
+            '0x1d5000'
+            >>> libc_mappings = p.libc_mapping(single=False)
+            >>> libc_size == (libc_mappings[-1].end - libc_mappings[0].start)
+            True
+
+        """
+
+        # Expecting this to be sorted
+        lib_mappings = self.get_mapping(path_value, single=False)
+        
+        if len(lib_mappings) == 0:
+            return 0
+    
+        is_contiguous = True
+        total_size = lib_mappings[0].size
+        for i in range(1, len(lib_mappings)):
+            total_size += lib_mappings[i].size
+
+            if lib_mappings[i].start != lib_mappings[i - 1].end:
+                is_contiguous = False
+
+        if not is_contiguous:
+            log.warn("lib_size(): %s mappings aren't contiguous" % path_value)
+
+        return total_size
+
+    def address_mapping(self, address):
+        """address_mapping(address) -> mapping
+        
+        Returns the mapping at the specified address.
+
+        Example:
+
+            >>> p = process(['cat'])
+            >>> p.sendline(b'meow')
+            >>> p.recvline()
+            b'meow\\n'
+            >>> libc = p.libc_mapping().address
+            >>> heap = p.heap_mapping().address
+            >>> elf = p.elf_mapping().address
+            >>> p.address_mapping(libc).path # doctest: +ELLIPSIS
+            '.../libc...'
+            >>> p.address_mapping(heap + 0x123).path
+            '[heap]'
+            >>> p.address_mapping(elf + 0x1234).path # doctest: +ELLIPSIS
+            '.../cat'
+            >>> p.address_mapping(elf - 0x1234) == None
+            True
+
+        """
+
+        all_maps = self.maps()
+        for mapping in all_maps:
+            if mapping.addr <= address < mapping.end:
+                return mapping
+        return None
+
     def libs(self):
         """libs() -> dict
 
@@ -890,8 +1377,7 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        from pwnlib.util.proc import memory_maps
-        maps_raw = memory_maps(self.pid)
+        maps_raw = self.poll() is None and self.maps()
 
         if not maps_raw:
             import pwnlib.elf.elf
@@ -900,23 +1386,15 @@ class process(tube):
                 return pwnlib.elf.elf.ELF(self.executable).maps
 
         # Enumerate all of the libraries actually loaded right now.
-        maps = {}
+        libs = {}
         for mapping in maps_raw:
             path = mapping.path
             if os.sep not in path: continue
             path = os.path.realpath(path)
-            if path not in maps:
-                maps[path]=0
+            if path not in libs:
+                libs[path] = mapping.addr
 
-        for lib in maps:
-            path = os.path.realpath(lib)
-            for mapping in maps_raw:
-                if mapping.path == path:
-                    address = mapping.addr.split('-')[0]
-                    maps[lib] = int(address, 16)
-                    break
-
-        return maps
+        return libs
 
     @property
     def libc(self):
@@ -929,7 +1407,12 @@ class process(tube):
         Example:
 
         >>> p = process("/bin/cat")
+        >>> p.send(b"meow")
+        >>> p.recvuntil(b"meow")
+        b'meow'
         >>> libc = p.libc
+        >>> libc is not None
+        True
         >>> libc # doctest: +SKIP
         ELF('/lib64/libc-...so')
         >>> p.close()
@@ -937,7 +1420,8 @@ class process(tube):
         from pwnlib.elf import ELF
 
         for lib, address in self.libs().items():
-            if 'libc.so' in lib or 'libc-' in lib:
+            lib_basename = os.path.basename(lib)
+            if 'libc.so' in lib_basename or ('libc-' in lib_basename and '.so' in lib_basename):
                 e = ELF(lib)
                 e.address = address
                 return e
@@ -959,8 +1443,8 @@ class process(tube):
 
         If the process is alive, attempts to create a coredump with GDB.
 
-        If the process is dead, attempts to locate the coredump created
-        by the kernel.
+        If the process is dead: returns None if context.disable_corefiles is enabled,
+        otherwise attempts to locate the coredump created by the kernel.
         """
         # If the process is still alive, try using GDB
         import pwnlib.elf.corefile
@@ -973,6 +1457,9 @@ class process(tube):
                     self.error("Could not create corefile with GDB for %s", self.executable)
                 return corefile
 
+            if context.disable_corefiles :
+                self._corefile = None
+                return self._corefile
             # Handle race condition against the kernel or QEMU to write the corefile
             # by waiting up to 5 seconds for it to be written.
             t = Timeout()

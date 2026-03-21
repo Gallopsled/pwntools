@@ -47,9 +47,6 @@ Example
 
 DynELF
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 
 from elftools.elf.enums import ENUM_D_TAG
@@ -652,7 +649,7 @@ class DynELF(object):
                 break
 
             if name:
-                self.status('Skipping %s' % name)
+                self.status('Skipping %r' % name)
 
             cur = leak.field(cur, LinkMap.l_next)
         else:

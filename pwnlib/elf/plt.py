@@ -1,6 +1,5 @@
 """Emulates instructions in the PLT to locate symbols more accurately.
 """
-from __future__ import division
 import logging
 
 from pwnlib.args import args
@@ -65,11 +64,14 @@ def __ensure_memory_to_run_unicorn():
         from mmap import mmap, MAP_ANON, MAP_PRIVATE, PROT_EXEC, PROT_READ, PROT_WRITE
 
         mm = mmap(
-            -1, 1024 * 1024 * 1024, MAP_PRIVATE | MAP_ANON, PROT_WRITE | PROT_READ | PROT_EXEC
+            -1, 1024 * 1024 * 1024, MAP_PRIVATE | MAP_ANON, PROT_WRITE | PROT_READ
         )
         mm.close()
     except OSError:
         raise OSError("Cannot allocate 1GB memory to run Unicorn Engine")
+    except ImportError:
+        # Can only mmap files on Windows, would need to use VirtualAlloc.
+        pass
 
 
 def prepare_unicorn_and_context(elf, got, address, data):
@@ -90,6 +92,7 @@ def prepare_unicorn_and_context(elf, got, address, data):
         'thumb': U.UC_ARCH_ARM,
         'riscv32': U.UC_ARCH_RISCV,
         'riscv64': U.UC_ARCH_RISCV,
+        # 'loongarch64': U.UC_ARCH_LOONGARCH, <-- Not actually supported
     }.get(elf.arch, None)
 
     if arch is None:
@@ -166,8 +169,8 @@ def emulate_plt_instructions_inner(uc, elf, got, pc, data):
         return False
 
     hooks = [
-        uc.hook_add(U.UC_HOOK_MEM_READ | U.UC_HOOK_MEM_READ_UNMAPPED,
-                    hook_mem, stopped_addr),
+        uc.hook_add(U.UC_HOOK_MEM_READ, hook_mem, stopped_addr),
+        uc.hook_add(U.UC_HOOK_MEM_READ_UNMAPPED, hook_mem, stopped_addr),
     ]
 
     # callback for tracing instructions

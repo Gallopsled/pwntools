@@ -2,6 +2,9 @@
 
    from pwn import *
 
+   import doctest
+   doctest_additional_flags = doctest.OPTIONFLAGS_BY_NAME['POSIX']
+
 Getting Started
 ========================
 
@@ -33,6 +36,8 @@ pwntools makes this stupid simple with its :mod:`pwnlib.tubes` module.
 This exposes a standard interface to talk to processes, sockets, serial ports,
 and all manner of things, along with some nifty helpers for common tasks.
 For example, remote connections via :mod:`pwnlib.tubes.remote`.
+
+::
 
     >>> conn = remote('ftp.ubuntu.com',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
