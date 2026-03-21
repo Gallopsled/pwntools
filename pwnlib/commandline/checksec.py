@@ -33,7 +33,7 @@ def main(args):
         try:
             e = ELF(f)
         except Exception as e:
-            print("{name}: {error}".format(name=f, error=e))
+            print(f"{f}: {e}")
 
 if __name__ == '__main__':
     common.main(__file__, main)

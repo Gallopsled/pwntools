@@ -708,10 +708,10 @@ class ssh(Timeout, Logger):
             try:
                 self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config, disabled_algorithms=disabled_algorithms)
             except paramiko.BadHostKeyException as e:
-                self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
+                self.error(f"Remote host {host} is using a different key than stated in known_hosts\n"
                            "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
-                           "        $ ssh-keygen -R %(host)s\n"
-                           "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
+                           "        $ ssh-keygen -R {host}\n"
+                           "        $ ssh-keygen -R [{host}]:{port}")
             except paramiko.SSHException as e:
                 if user and auth_none and str(e) == "No authentication methods available":
                     self.client.get_transport().auth_none(user)

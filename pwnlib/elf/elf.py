@@ -1239,7 +1239,7 @@ class ELF(ELFFile):
         return 0
 
     def search(self, needle, writable = False, executable = False):
-        """search(needle, writable = False, executable = False) -> generator
+        r"""search(needle, writable = False, executable = False) -> generator
 
         Search the ELF's virtual address space for the specified string.
 
@@ -1259,7 +1259,7 @@ class ELF(ELFFile):
 
         Examples:
 
-            An ELF header starts with the bytes ``\\x7fELF``, so we
+            An ELF header starts with the bytes ``\x7fELF``, so we
             sould be able to find it easily.
 
             >>> bash = ELF('/bin/bash')
@@ -1820,7 +1820,7 @@ class ELF(ELFFile):
 
     @property
     def nx(self):
-        """:class:`bool`: Whether the current binary uses NX protections.
+        r""":class:`bool`: Whether the current binary uses NX protections.
 
         Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
         by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
@@ -1883,7 +1883,7 @@ class ELF(ELFFile):
             | the rest  | [#the_rest]_ | exec / non-exec / missing |                                                | enabled  |
             +-----------+--------------+---------------------------+------------------------------------------------+----------+
 
-            \\* Hardware limitations are ignored.
+            \* Hardware limitations are ignored.
 
         If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
 
@@ -1899,7 +1899,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (executable_stack != EXSTACK_DISABLE_X)
 
         .. [#x86_5.8]
@@ -1907,7 +1907,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
 
         `mmap_is_ia32()`__:
@@ -1988,7 +1988,7 @@ class ELF(ELFFile):
 
             #ifdef __powerpc64__
             /* stripped */
-            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
+            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \
                     (exec_stk == EXSTACK_DEFAULT) : 0)
             #else
             # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
@@ -1999,7 +1999,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)					\\
+            #define elf_read_implies_exec(ex, executable_stack)					\
                 ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
 
         EF_IA_64_LINUX_EXECUTABLE_STACK__:
@@ -2253,7 +2253,7 @@ class ELF(ELFFile):
                 for name, message in sorted(values):
                     line = '{} = {}'.format(name, red(str(self.config.get(name, None))))
                     if message:
-                        line += ' ({})'.format(message)
+                        line += f' ({message})'
                     res.append('    ' + line)
 
             # res.extend(sorted(config_opts))

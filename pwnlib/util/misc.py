@@ -51,14 +51,14 @@ def align_down(alignment, x):
 
 
 def binary_ip(host):
-    """binary_ip(host) -> str
+    r"""binary_ip(host) -> str
 
     Resolve host and return IP as four byte string.
 
     Example:
 
         >>> binary_ip("127.0.0.1")
-        b'\\x7f\\x00\\x00\\x01'
+        b'\x7f\x00\x00\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -968,7 +968,7 @@ libc.execve(exe, c_argv, c_env)
 # but just in case, indicate that something went wrong.
 libc.perror(b"execve")
 raise OSError("execve failed")
-""" % locals()
+"""
     script = script.strip()
 
     return script

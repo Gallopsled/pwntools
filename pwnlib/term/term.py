@@ -160,7 +160,7 @@ def init():
             traceback.print_exception(*args)
     sys.excepthook = hook
 
-tmap = {c: '\\x{:02x}'.format(c) for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
+tmap = {c: fr'\x{c:02x}' for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
 
 def put(s):
     global cached_pos, epoch
