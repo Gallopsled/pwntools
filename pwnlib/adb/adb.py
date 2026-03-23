@@ -1275,8 +1275,25 @@ properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
+    # Prefer ro.build.date.utc (integer epoch) as ro.build.date is
+    # locale-dependent and may contain non-ASCII characters that
+    # dateutil cannot parse (e.g. Chinese locale dates).  See #2513.
+    utc = getprop('ro.build.date.utc')
+    if utc and utc.strip().isdigit():
+        import datetime
+        try:
+            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), tz=datetime.timezone.utc)
+            return as_datetime.strftime('%Y-%b-%d')
+        except (OSError, OverflowError, ValueError):
+            pass  # fall through to ro.build.date parsing
+
     as_string = getprop('ro.build.date')
-    as_datetime =  dateutil.parser.parse(as_string)
+    if not as_string:
+        return ''
+    try:
+        as_datetime = dateutil.parser.parse(as_string)
+    except (ValueError, OverflowError):
+        return as_string
     return as_datetime.strftime('%Y-%b-%d')
 
 def find_ndk_project_root(source):
