@@ -2096,7 +2096,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self._ibt
 
     def _checksec_cache(self, value=None):
-        path = self._get_cachefile('%s-%s' % (self.host, self.port))
+        path = self._get_cachefile('%s-%s-%s' % (self.host, self.port, self.user))
 
         if value is not None:
             with open(path, 'w+') as f:
