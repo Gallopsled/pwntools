@@ -2123,7 +2123,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         res = [
             "%s@%s:" % (self.user, self.host),
-            "Distro".ljust(10) + ' '.join(self.distro),
+            "Distro:".ljust(10) + ' '.join(self.distro),
             "OS:".ljust(10) + self.os,
             "Arch:".ljust(10) + self.arch,
             "Version:".ljust(10) + '.'.join(map(str, self.version)),
