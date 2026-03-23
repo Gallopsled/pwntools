@@ -1275,18 +1275,21 @@ properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
-    # Prefer ro.build.date.utc (integer epoch) as ro.build.date is
-    # locale-dependent and may contain non-ASCII characters that
-    # dateutil cannot parse (e.g. Chinese locale dates).  See #2513.
+    import datetime
+
+    # Use ro.build.date.utc (integer epoch seconds) which is set by the
+    # AOSP build system and available on all standard Android devices.
+    # This avoids ro.build.date which is locale-dependent and can contain
+    # non-ASCII characters that dateutil cannot parse.  See #2513.
     utc = getprop('ro.build.date.utc')
     if utc and utc.strip().isdigit():
-        import datetime
         try:
             as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), tz=datetime.timezone.utc)
             return as_datetime.strftime('%Y-%b-%d')
         except (OSError, OverflowError, ValueError):
-            pass  # fall through to ro.build.date parsing
+            pass
 
+    # Fallback for non-standard builds missing ro.build.date.utc.
     as_string = getprop('ro.build.date')
     if not as_string:
         return ''
