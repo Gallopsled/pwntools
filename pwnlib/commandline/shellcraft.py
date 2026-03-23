@@ -8,6 +8,7 @@ pwnlib.args.free_form = False
 
 from pwn import *
 from pwnlib.commandline import common
+from pwnlib.util.fiddling import hexstr
 
 
 #  ____  _          _ _                 __ _
@@ -15,17 +16,6 @@ from pwnlib.commandline import common
 # \___ \| '_ \ / _ \ | |/ __| '__/ _` | |_| __|
 #  ___) | | | |  __/ | | (__| | | (_| |  _| |_
 # |____/|_| |_|\___|_|_|\___|_|  \__,_|_|  \__|
-
-def _string(s):
-    out = []
-    for co in bytearray(s):
-        c = chr(co)
-        if co >= 0x20 and co <= 0x7e and c not in '/$\'"`':
-            out.append(c)
-        else:
-            out.append('\\x%02x' % co)
-    return '"' + ''.join(out) + '"\n'
-
 
 p = common.parser_commands.add_parser(
     'shellcraft',
@@ -363,7 +353,7 @@ def main(args):
         sys.exit(0)
 
     if args.format in ['s', 'str', 'string']:
-        code = _string(code)
+        code = hexstr(code)
     elif args.format == 'c':
         code = '{' + ', '.join(map(hex, bytearray(code))) + '}' + '\n'
     elif args.format in ['h', 'hex']:
@@ -371,7 +361,7 @@ def main(args):
     elif args.format in ['i', 'hexii']:
         code = hexii(code) + '\n'
     elif args.format in ['d', 'escaped']:
-        code = ''.join('\\x%02x' % c for c in bytearray(code)) + '\n'
+        code = ''.join(fr'\x{c:02x}' for c in code) + '\n'
     if not sys.stdin.isatty():
         args.out.write(getattr(sys.stdin, 'buffer', sys.stdin).read())
 

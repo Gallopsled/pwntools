@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
 - [#2638][2638] feat: add disable_corefiles context option
@@ -113,9 +114,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
+- [#2673][2673] Add libc module for libc-related functions
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
+- [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
 - [#2682][2682] Fix `server.close()` not closing the listen socket
 
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -154,7 +159,10 @@ The table below shows which release corresponds to each branch, and what date th
 [2643]: https://github.com/Gallopsled/pwntools/pull/2643
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
+[2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2687]: https://github.com/Gallopsled/pwntools/pull/2687
+[2699]: https://github.com/Gallopsled/pwntools/pull/2699
 [2682]: https://github.com/Gallopsled/pwntools/pull/2682
 
 ## 4.15.0 (`stable`)
