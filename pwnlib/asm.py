@@ -55,6 +55,7 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util.fiddling import hexstr
 from pwnlib.util.hashes import sha1sumhex
 from pwnlib.util.packing import _encode
 from pwnlib.version import __version__
@@ -129,11 +130,10 @@ def print_binutils_instructions(util, context):
     if packages:
         instructions = '$ sudo apt-get install %s' % packages[0]
 
-    log.error("""
-Could not find %(util)r installed for %(context)s
+    log.error(f"""\
+Could not find {util!r} installed for {context}
 Try installing binutils for this architecture:
-%(instructions)s
-""".strip() % locals())
+{instructions}""")
 
 
 def check_binutils_version(util):
@@ -640,8 +640,7 @@ def make_elf(data,
     assembler = _assembler()
     linker    = _linker()
     code      = _arch_header()
-    code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
-    code      += '\n'
+    code      += f'.string {hexstr(data)}\n'
 
     log.debug("Building ELF:\n" + code)
 
@@ -709,7 +708,7 @@ def make_macho(data, is_shellcode=False):
     if is_shellcode:
         code += cpp(data)
     else:
-        code += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+        code += f'.string {hexstr(data)}\n'
 
     log.debug('Assembling\n%s' % code)
 
@@ -818,7 +817,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             os.makedirs(cache_dir)
 
         # Include the context in the hash in addition to the shellcode
-        hash_params = '{}_{}_{}_{}'.format(vma, extract, shared, __version__)
+        hash_params = f'{vma}_{extract}_{shared}_{__version__}'
         fingerprint_params = _encode(code) + _encode(hash_params) + _encode(' '.join(assembler)) + _encode(' '.join(linker)) + _encode(' '.join(objcopy))
         asm_hash = sha1sumhex(fingerprint_params)
         cache_file = os.path.join(cache_dir, asm_hash)

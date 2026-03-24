@@ -45,8 +45,8 @@ def init():
     cache['bold'] = '\x1b[1m'
     cache['smul'] = '\x1b[4m'
     cache['rev'] = '\x1b[7m'
-    cache['setaf'] = lambda c: '\x1b[3{}m'.format(c) if c < 8 else '\x1b[9{}m'.format(c-8)
-    cache['setab'] = lambda c: '\x1b[4{}m'.format(c) if c < 8 else '\x1b[10{}m'.format(c-8)
+    cache['setaf'] = lambda c: f'\x1b[3{c}m' if c < 8 else f'\x1b[9{c-8}m'
+    cache['setab'] = lambda c: f'\x1b[4{c}m' if c < 8 else f'\x1b[10{c-8}m'
 
 # Enable ANSI escape sequences on Windows 10.
 # https://bugs.python.org/issue30075

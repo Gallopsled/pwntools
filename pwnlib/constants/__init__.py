@@ -146,10 +146,10 @@ class ConstantsModule(ModuleType):
         val = safeeval.values(string, self._env_store[key])
 
         # if the expression is not assembly-safe, it is not so vital to preserve it
-        if set(string) & (set(bytearray(range(32)).decode()) | set('"#$\',.;@[\\]`{}')):
+        if set(string) & (set(bytearray(range(32)).decode()) | set(r'"#$\',.;@[]`{}')):
             string = val
 
-        return Constant('(%s)' % string, val)
+        return Constant(f'({string})', val)
 
 
 # To prevent garbage collection

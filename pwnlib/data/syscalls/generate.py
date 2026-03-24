@@ -238,12 +238,7 @@ def generate_one(target):
                 string_arguments.append(argname)
 
             argtype = str(arg.type) + ('*' * arg.derefcnt)
-            arg_docs.append(
-                '    {argname_}({argtype}): {argname}'.format(
-                    argname_=argname_,
-                    argname=argname,
-                    argtype=argtype,
-                ))
+            arg_docs.append(f'    {argname_}({argtype}): {argname}')
 
             # Mako is unable to use *vararg and *kwarg, so we just stub in
             # a whole bunch of additional arguments.
