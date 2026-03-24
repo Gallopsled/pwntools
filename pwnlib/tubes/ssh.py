@@ -1989,7 +1989,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 if not self.which('lsb_release'):
                     return
 
-                with self.process(['lsb_release', '-irs']) as io:
+                with self.process(['lsb_release', '-irs'], stderr='/dev/null') as io:
                     lsb_info = io.recvall().strip().decode()
                     self._platform_info['distro'], self._platform_info['distro_ver'] = lsb_info.split()
             except Exception:
