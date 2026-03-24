@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 class Gadget(object):
     """
     Describes a ROP gadget

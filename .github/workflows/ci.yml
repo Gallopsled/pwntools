@@ -224,14 +224,14 @@ jobs:
       run: |
         python -m build
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: matrix.python_version == '3.10'
       with:
         name: packages
         path: dist/
         include-hidden-files: true
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: coverage-${{ matrix.python_version }}
         path: .coverage*
@@ -307,7 +307,7 @@ jobs:
         source .android.env
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: coverage-android
         path: .coverage*
@@ -342,7 +342,7 @@ jobs:
       run: |
         python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: coverage-windows
         path: .coverage*
@@ -356,7 +356,7 @@ jobs:
       with:
         fetch-depth: 20
 
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@v8
       with:
         pattern: coverage-*
         merge-multiple: true
@@ -398,7 +398,7 @@ jobs:
     needs: test
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: packages
         path: dist

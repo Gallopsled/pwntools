@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 import errno
 import logging
@@ -938,7 +934,7 @@ class process(tube):
             os.close(fd)
 
     def maps(self):
-        """maps() -> [mapping]
+        r"""maps() -> [mapping]
 
         Returns a list of process mappings.
         
@@ -953,7 +949,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
@@ -1090,7 +1086,7 @@ class process(tube):
         return self.get_mapping('[stack]', single)
     
     def heap_mapping(self, single=True):
-        """heap_mapping(single=True) -> mapping
+        r"""heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
 
         Arguments:
@@ -1104,7 +1100,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1180,7 +1176,7 @@ class process(tube):
         return self.get_mapping('[vvar]', single)
     
     def libc_mapping(self, single=True):
-        """libc_mapping(single=True) -> mapping
+        r"""libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
 
         Arguments:
@@ -1195,7 +1191,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1261,7 +1257,7 @@ class process(tube):
         return m_mappings
     
     def elf_mapping(self, single=True):
-        """elf_mapping(single=True) -> mapping
+        r"""elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
 
         Arguments:
@@ -1275,7 +1271,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1344,7 +1340,7 @@ class process(tube):
         return total_size
 
     def address_mapping(self, address):
-        """address_mapping(address) -> mapping
+        r"""address_mapping(address) -> mapping
         
         Returns the mapping at the specified address.
 
@@ -1353,7 +1349,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> libc = p.libc_mapping().address
             >>> heap = p.heap_mapping().address
             >>> elf = p.elf_mapping().address

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 

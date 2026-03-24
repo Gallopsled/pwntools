@@ -48,9 +48,6 @@ The full list of supported "magic arguments" and their effects are listed
 below.
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import logging
 import os

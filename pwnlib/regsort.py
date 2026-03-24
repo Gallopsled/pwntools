@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
 """
 Topographical sort
 """
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import OrderedDict
 from collections import defaultdict
 from random import randint

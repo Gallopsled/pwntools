@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
 #  mayhem/datatypes/elf.py
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -29,8 +27,6 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-from __future__ import division
-
 import ctypes
 
 Elf32_Addr = ctypes.c_uint32
