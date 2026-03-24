@@ -655,16 +655,16 @@ class ssh(Timeout, Logger):
             b'travis'
             >>> s.close()
 
-        You have to wrap the key in a :class:`paramiko.PKey` object yourself if your key requires a password:
+        You have to wrap the key in a :class:`paramiko.pkey.PKey` object yourself if your key requires a password:
 
         ::
 
             >>> from paramiko import Ed25519Key
+            >>> from io import StringIO
             >>> key_str = "..."  # some private key
             >>> key = Ed25519Key.from_private_key(StringIO(key_str), password='somepassword')
             >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
 
-            >>> from io import StringIO
             >>> key = Ed25519Key.from_private_key(open(os.path.expanduser('~/.ssh/travis')), password='somepassword')
             >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
 
