@@ -22,7 +22,7 @@ search_results = []
 startup_hook = None
 shutdown_hook = None
 
-delims = ' /;:.\\'
+delims = r' /;:\.'
 
 show_completion = True
 show_suggestions = False
