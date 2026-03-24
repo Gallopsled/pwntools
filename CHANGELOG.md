@@ -139,6 +139,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
+- [#2688][2688] Close SSH client connection when authentication failed
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -160,6 +161,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2699]: https://github.com/Gallopsled/pwntools/pull/2699
+[2688]: https://github.com/Gallopsled/pwntools/pull/2688
 
 ## 4.15.0 (`stable`)
 
