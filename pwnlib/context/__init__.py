@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import atexit
 import collections
 import errno
@@ -15,7 +11,6 @@ import os
 import os.path
 import platform
 import shutil
-import six
 import socket
 import string
 import sys
@@ -49,7 +44,7 @@ class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
 
-    This is neccesary because the ``default_factory`` method of
+    This is necessary because the ``default_factory`` method of
     :class:`collections.defaultdict` does not provide the key.
 
     Examples:
@@ -283,7 +278,7 @@ class ContextType(object):
 
     The context is usually specified at the top of the Python file for clarity. ::
 
-        #!/usr/bin/env python
+        #!/usr/bin/env python3
         context.update(arch='i386', os='linux')
 
     Currently supported properties and their defaults are listed below.
@@ -359,6 +354,7 @@ class ContextType(object):
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
+        'disable_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'encoding': 'auto',
         'endian': 'little',
@@ -1043,7 +1039,7 @@ class ContextType(object):
             >>> open(bar_txt).readlines()[-1] #doctest: +ELLIPSIS
             '...:DEBUG:...:Hello from bar!\n'
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             # check if mode was specified as "[value],[mode]"
             from pwnlib.util.packing import _need_text
             value = _need_text(value)
@@ -1261,7 +1257,7 @@ class ContextType(object):
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
         """
-        if isinstance(value, (bytes, six.text_type)):
+        if isinstance(value, (bytes, str)):
             return [value]
         return value
 
@@ -1342,7 +1338,7 @@ class ContextType(object):
     def device(self, device):
         """Sets the device being operated on.
         """
-        if isinstance(device, (bytes, six.text_type)):
+        if isinstance(device, (bytes, str)):
             device = Device(device)
         if isinstance(device, Device):
             self.arch = device.arch or self.arch
@@ -1430,7 +1426,7 @@ class ContextType(object):
         """
         try:
             # If the TLS already has a cache directory path, we return it
-            # without any futher checks since it must have been valid when it
+            # without any further checks since it must have been valid when it
             # was set and if that has changed, hiding the TOCTOU here would be
             # potentially confusing
             return self._tls["cache_dir"]
@@ -1482,6 +1478,18 @@ class ContextType(object):
         """Whether pwntools automatically deletes corefiles after exiting.
         This only affects corefiles accessed via :attr:`.process.corefile`.
 
+        Default value is ``False``.
+        """
+        return bool(v)
+
+    @_validator
+    def disable_corefiles(self, v):
+        """Whether pwntools automatically disable corefiles generation.
+
+        When enabled, sets RLIMIT_CORE to (0,-1) to prevent core dump creation
+        entirely, which is useful for brute-force scenarios and repeated segfault
+        crashes where core files consume excessive disk space 
+        
         Default value is ``False``.
         """
         return bool(v)
@@ -1758,7 +1766,7 @@ def update_context_defaults(section):
 
         default = ContextType.defaults[key]
 
-        if isinstance(default, six.string_types + six.integer_types + (tuple, list, dict)):
+        if isinstance(default, (str, int, float, tuple, list, dict)):
             value = safeeval.expr(value)
         else:
             log.warn("Unsupported configuration option %r in section %r" % (key, 'context'))

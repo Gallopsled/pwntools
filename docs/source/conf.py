@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # pwntools documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #
@@ -14,9 +12,9 @@
 import os
 import doctest
 import signal
-import six
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 build_dash = tags.has('dash')
 
@@ -71,7 +69,6 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
@@ -120,7 +117,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pwntools'
-copyright = u'2016, Gallopsled et al.'
+copyright = u'2016-2026, Gallopsled et al.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -262,11 +259,11 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'2016, Gallopsled et al.', 'manual'),
+   u'2016-2026, Gallopsled et al.', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
-                       'paramiko': ('https://docs.paramiko.org/en/2.1/', None)}
+                       'paramiko': ('https://docs.paramiko.org/en/stable/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -295,7 +292,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pwntools', u'pwntools Documentation',
-     [u'2016, Gallopsled et al.'], 1)
+     [u'2016-2026, Gallopsled et al.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -362,7 +359,7 @@ def linkcode_resolve(domain, info):
         if isinstance(val, property):
             val = val.fget
 
-        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType, type)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-L%d' % (first, first + len(lines) - 1)
@@ -430,15 +427,38 @@ class PlatformDocTestRunner(sphinx.ext.doctest.SphinxDocTestRunner):
         return super(PlatformDocTestRunner, self).run(test, compileflags, out, clear_globs)
 
 class PlatformDocTestBuilder(sphinx.ext.doctest.DocTestBuilder):
-    _test_runner = None
+
+    def __init__(self, *args, **kwargs):
+        super(PlatformDocTestBuilder, self).__init__(*args, **kwargs)
+        self._test_runner = None
+        self._doctree_had_tests = False
 
     @property
     def test_runner(self):
         return self._test_runner
-    
+
     @test_runner.setter
     def test_runner(self, value):
         self._test_runner = PlatformDocTestRunner(value._checker, value._verbose, value.optionflags)
+
+    def test_doc(self, docname, doctree):
+        start = datetime.now(timezone.utc).astimezone()
+        # self._out(f"[{start.isoformat(timespec='milliseconds')}] doctest start: {docname}\n")
+        self._doctree_had_tests = False
+        try:
+            return super(PlatformDocTestBuilder, self).test_doc(docname, doctree)
+        finally:
+            # Only print the timestamp if there were actually tests run.
+            if self._doctree_had_tests:
+                end = datetime.now(timezone.utc).astimezone()
+                duration = (end - start).total_seconds()
+                self._out(f"[{end.isoformat(timespec='milliseconds')} - {duration:.2f}s]\n")
+            self._doctree_had_tests = False
+
+    def test_group(self, group):
+        # Only called when there are tests to run in the current document.
+        self._doctree_had_tests = True
+        return super(PlatformDocTestBuilder, self).test_group(group)
 
 if 'doctest' in sys.argv:
     def setup(app):

@@ -1,12 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 import functools
 import string
-
-import six
-from six.moves import range
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -18,7 +12,7 @@ log = getLogger(__name__)
 __all__ = ['MemLeak', 'RelativeMemLeak']
 
 class MemLeak(object):
-    """MemLeak is a caching and heuristic tool for exploiting memory leaks.
+    r"""MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
     It can be used as a decorator, around functions of the form:
 
@@ -51,9 +45,9 @@ class MemLeak(object):
         >>> leaker.s(0)[:4]
         leaking 0x0
         leaking 0x4
-        b'\\x7fELF'
+        b'\x7fELF'
         >>> leaker[:4]
-        b'\\x7fELF'
+        b'\x7fELF'
         >>> hex(leaker.d(0))
         '0x464c457f'
         >>> hex(leaker.clearb(1))
@@ -166,7 +160,7 @@ class MemLeak(object):
             the type of ``field``.
         """
 
-        if isinstance(expected, six.integer_types):
+        if isinstance(expected, int):
             expected = pack(expected, bytes=obj.size)
         elif not isinstance(expected, bytes):
             raise TypeError("Expected value must be an int or bytes")

@@ -22,16 +22,16 @@ Arguments:
     >>> hello_fn = shellcraft.i386.function(hello, 'eax').strip()
     >>> exit = shellcraft.i386.linux.exit('edi')
     >>> exit_fn = shellcraft.i386.function(exit, 'edi').strip()
-    >>> shellcode = '''
+    >>> shellcode = f'''
     ...     push STDOUT_FILENO
     ...     call hello
     ...     push 33
     ...     call exit
     ... hello:
-    ...     %(hello_fn)s
+    ...     {hello_fn}
     ... exit:
-    ...     %(exit_fn)s
-    ... ''' % (locals())
+    ...     {exit_fn}
+    ... '''
     >>> p = run_assembly(shellcode)
     >>> p.recvall()
     b'Hello!'

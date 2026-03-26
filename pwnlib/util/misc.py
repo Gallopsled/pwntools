@@ -1,12 +1,9 @@
-from __future__ import division
-
 import json
 import base64
 import errno
 import os
 import re
 import signal
-import six
 import socket
 import stat
 import string
@@ -54,14 +51,14 @@ def align_down(alignment, x):
 
 
 def binary_ip(host):
-    """binary_ip(host) -> str
+    r"""binary_ip(host) -> str
 
     Resolve host and return IP as four byte string.
 
     Example:
 
         >>> binary_ip("127.0.0.1")
-        b'\\x7f\\x00\\x00\\x01'
+        b'\x7f\x00\x00\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -214,13 +211,13 @@ def normalize_argv_env(argv, env, log, level=2):
     # - Each string must not contain '\x00'
     #
     argv = argv or []
-    if isinstance(argv, (six.text_type, six.binary_type)):
+    if isinstance(argv, (str, bytes, bytearray)):
         argv = [argv]
 
     if not isinstance(argv, (list, tuple)):
         log.error('argv must be a list or tuple: %r' % argv)
 
-    if not all(isinstance(arg, (six.text_type, bytes, bytearray)) for arg in argv):
+    if not all(isinstance(arg, (str, bytes, bytearray)) for arg in argv):
         log.error("argv must be strings or bytes: %r" % argv)
 
     # Create a duplicate so we can modify it
@@ -247,13 +244,13 @@ def normalize_argv_env(argv, env, log, level=2):
         env_items = env
     if env:
         for k,v in env_items:
-            if not isinstance(k, (bytes, six.text_type)):
+            if not isinstance(k, (bytes, str)):
                 log.error('Environment keys must be strings: %r' % k)
             # Check if = is in the key, Required check since we sometimes call ctypes.execve directly
             # https://github.com/python/cpython/blob/025995feadaeebeef5d808f2564f0fd65b704ea5/Modules/posixmodule.c#L6476
             if b'=' in packing._encode(k):
                 log.error('Environment keys may not contain "=": %r' % (k))
-            if not isinstance(v, (bytes, six.text_type)):
+            if not isinstance(v, (bytes, str)):
                 log.error('Environment values must be strings: %r=%r' % (k,v))
             k = packing._need_bytes(k, level, 0x80)  # ASCII text is okay
             v = packing._need_bytes(v, level, 0x80)  # ASCII text is okay
@@ -287,6 +284,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+        - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
@@ -314,6 +313,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'ZELLIJ' in os.environ and which('zellij'):
+            terminal = 'zellij'
+            args = ['action', 'new-pane'] + ['-c'] * kill_at_exit + ['--']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -327,6 +329,25 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'DISPLAY' in os.environ and which('x-terminal-emulator'):
             terminal = 'x-terminal-emulator'
             args     = ['-e']
+        elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
+            terminal = 'kitten'
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
+        elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
+            if which('remotinator'):
+                terminal = 'remotinator'
+                args = ['vsplit', '-x']
+            else:
+                terminal = 'terminator'
+                args = ['-e']
+        elif "GNOME_TERMINAL_SCREEN" in os.environ and "GNOME_TERMINAL_SERVICE" in os.environ and which("gnome-terminal"):
+            terminal = 'gnome-terminal'
+            args     = ['-e']
+        elif "ALACRITTY_SOCKET" in os.environ and "ALACRITTY_WINDOW_ID" in os.environ and which("alacritty"):
+            terminal = 'alacritty'
+            args     = ['-e']
+        elif "TILIX_ID" in os.environ and which("tilix"):
+            terminal = "tilix"
+            args     = ['-a', 'session-add-right', '-e']
         elif 'KONSOLE_VERSION' in os.environ and which('qdbus'):
             qdbus = which('qdbus')
             window_id = os.environ['WINDOWID']
@@ -395,9 +416,21 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if terminal == 'tmux':
         args += ['-F' '#{pane_pid}', '-P']
 
+    if terminal == "kitty":
+        if not args:
+            # Likely the average user just wanted to tell pwntools to use kitty, rather than
+            # thinking about how the terminal will actually be invoked.
+            terminal = "kitten"
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
+        else:
+            # Allowing this would make our life much harder (because we don't get the window id from
+            # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
+            log.error(
+                f"Invalid kitty invocation {context.terminal}, please use `kitten @ launch`.")
+            
     argv = [which(terminal)] + args
 
-    if isinstance(command, six.string_types):
+    if isinstance(command, str):
         if ';' in command:
             log.error("Cannot use commands with semicolon.  Create a script and invoke that directly.")
         argv += [command]
@@ -451,8 +484,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal in ('kitty', 'kitten'):
+    if terminal == 'tmux' or terminal == 'zellij' or terminal == 'kitten':
         stdout = subprocess.PIPE
+    if terminal == 'kitten':
+        stderr = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
 
@@ -468,15 +503,20 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
-    elif terminal in ('kitty', 'kitten'):
+    elif terminal == "kitten":
         pid = None
-        out, _ = p.communicate()
+        out, err = p.communicate()
+
+        # Catch the most common user error
+        if b"Remote control is disabled" in err:
+            log.error("Kitty remote control is disabled. Add `allow_remote_control yes` to your ~/.config/kitty/kitty.conf .")
+
         try:
             kittyid = int(out)
         except ValueError:
             kittyid = None
         if kittyid is None:
-            log.error("Could not parse kitty window ID from output (%r)", out)
+            log.error("Could not parse kitty window ID from output (%r) (stderr: %r)", out, err)
         else:
             lsout, _ = subprocess.Popen(["kitten", "@", "ls", "--match", "id:%d" % kittyid], stdin=stdin, stdout=stdout, stderr=stderr).communicate()
             try:
@@ -493,7 +533,7 @@ end tell
         # Otherwise it's better to return nothing instead of a know wrong pid.
         from pwnlib.util.proc import pid_by_name
         pid = None
-        ran_program = command.split(' ')[0] if isinstance(command, six.string_types) else command[0]
+        ran_program = command.split(' ')[0] if isinstance(command, str) else command[0]
         t = Timeout()
         with t.countdown(timeout=5):
             while t.timeout:
@@ -696,17 +736,7 @@ def register_sizes(regs, in_sizes):
     return lists.concat(regs), sizes, bigger, smaller
 
 
-def python_2_bytes_compatible(klass):
-    """
-    A class decorator that defines __str__ methods under Python 2.
-    Under Python 3 it does nothing.
-    """
-    if six.PY2:
-        if '__str__' not in klass.__dict__:
-            klass.__str__ = klass.__bytes__
-    return klass
-
-def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
+def _create_execve_script(argv=None, executable=None, cwd=None, env=None, which=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
         shell=False, log=log):
     """
@@ -723,6 +753,8 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
             on :attr:`cwd` or set via :meth:`set_working_directory`.
         env(dict):
             Environment variables to add to the environment.
+        which(callable):
+            Function to find the path of a binary.
         ignore_environ(bool):
             Ignore default environment.  By default use default environment iff env not specified.
         stdin(int, str):
@@ -755,6 +787,9 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     if not argv and not executable:
         log.error("Must specify argv or executable")
 
+    if not which:
+        log.error("Must specify which_ parameter")
+
     aslr      = aslr if aslr is not None else context.aslr
 
     if ignore_environ is None:
@@ -771,7 +806,7 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     cwd        = cwd or '.'
 
     # Validate, since failures on the remote side will suck.
-    if not isinstance(executable, (six.text_type, six.binary_type, bytearray)):
+    if not isinstance(executable, (str, bytes, bytearray)):
         log.error("executable / argv[0] must be a string: %r" % executable)
     executable = bytearray(packing._need_bytes(executable, min_wrong=0x80))
 
@@ -796,9 +831,13 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     func_src  = inspect.getsource(func).strip()
     setuid = True if setuid is None else bool(setuid)
 
-
+    # gdbserver wrappers are freezing on first execve syscall (for debugging the wanted program).
+    # It is not related to fork&exec.
+    # `/usr/bin/env python3` overrides first execve (because env is executing python3).
+    # Resolving python3 before shebang does, for not clashing with wrapper's first execve syscall.
+    python_path = which('python3')
     script = r"""
-#!/usr/bin/env python
+#!%(python_path)s
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:
@@ -873,6 +912,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getgid()) + "\n")
     sys.stdout.write(str(suid) + "\n")
     sys.stdout.write(str(sgid) + "\n")
+    sys.stdout.flush()
     getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
     sys.stdout.flush()
 
@@ -937,7 +977,7 @@ libc.execve(exe, c_argv, c_env)
 # but just in case, indicate that something went wrong.
 libc.perror(b"execve")
 raise OSError("execve failed")
-""" % locals()
+"""
     script = script.strip()
 
     return script

@@ -70,11 +70,12 @@ from pwnlib.util.proc import pidof
 from pwnlib.util.sh_string import sh_string, sh_prepare, sh_command_with
 from pwnlib.util.splash import *
 from pwnlib.util.web import *
+from pwnlib.libc import *
 
 # Promote these modules, so that "from pwn import *" will let you access them
 
-from six.moves import cPickle as pickle, cStringIO as StringIO
-from six import BytesIO
+import pickle
+from io import BytesIO, StringIO
 
 log = getLogger("pwnlib.exploit")
 error   = log.error
@@ -89,7 +90,15 @@ try:
 except ImportError:
     pass
 else:
-    colored_traceback.add_hook()
+    try:
+        colored_traceback.add_hook()
+    except Exception:
+        # Exception: curses.error
+        # colored_traceback (curses.setupterm()) fails if TERM is unset.
+        # This is not critical, so we just ignore it.
+        # We cannot import `curses` for `curses.error` because it is not
+        # available on all platforms (e.g. Windows).
+        pass
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]

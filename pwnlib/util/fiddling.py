@@ -1,17 +1,11 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import base64
 import binascii
 import random
 import re
 import os
-import six
 import string
 
-from six import BytesIO
-from six.moves import range
+from io import BytesIO
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
@@ -62,6 +56,31 @@ def enhex(x):
     if not hasattr(x, 'encode'):
         x = x.decode('ascii')
     return x
+
+
+def hexstr(s, force=False):
+    r"""
+    hexstr(x, force=False) -> str
+
+    Escapes byte string into a C representation.
+
+    Example:
+
+	>>> print(hexstr(b"hello\n\0world\xad"))
+	"hello\x0a\x00world\xad"
+    """
+    out = bytearray(b'"')
+    ban = False
+    for co in s:
+        if 0x20 <= co < 0x7f and co not in br'/$\'"`' + string.hexdigits.encode() * ban and not force:
+            out.append(co)
+            ban = False
+        else:
+            out.extend(br'\x%02x' % co)
+            ban = True
+    out.extend(b'"')
+    return out.decode()
+
 
 def urlencode(s):
     """urlencode(s) -> str
@@ -149,7 +168,7 @@ def bits(s, endian = 'big', zero = 0, one = 1):
                 out += byte
             else:
                 out += byte[::-1]
-    elif isinstance(s, six.integer_types):
+    elif isinstance(s, int):
         if s < 0:
             s = s & ((1<<context.bits)-1)
         if s == 0:
@@ -181,7 +200,7 @@ def bits_str(s, endian = 'big', zero = '0', one = '1'):
     return ''.join(bits(s, endian, zero, one))
 
 def unbits(s, endian = 'big'):
-    """unbits(s, endian = 'big') -> str
+    r"""unbits(s, endian = 'big') -> str
 
     Converts an iterable of bits into a string.
 
@@ -195,11 +214,11 @@ def unbits(s, endian = 'big'):
     Example:
 
        >>> unbits([1])
-       b'\\x80'
+       b'\x80'
        >>> unbits([1], endian = 'little')
-       b'\\x01'
+       b'\x01'
        >>> unbits(bits(b'hello'), endian = 'little')
-       b'\\x16\\xa666\\xf6'
+       b'\x16\xa666\xf6'
     """
     if endian == 'little':
         u = lambda s: packing._p8lu(int(s[::-1], 2))
@@ -229,14 +248,14 @@ def unbits(s, endian = 'big'):
 
 
 def bitswap(s):
-    """bitswap(s) -> str
+    r"""bitswap(s) -> str
 
     Reverses the bits in every byte of a given string.
 
     Example:
 
         >>> bitswap(b"1234")
-        b'\\x8cL\\xcc,'
+        b'\x8cL\xcc,'
     """
 
     out = []
@@ -343,7 +362,7 @@ def xor(*args, **kwargs):
     if strs == []:
         return b''
 
-    if isinstance(cut, six.integer_types):
+    if isinstance(cut, int):
         cut = cut
     elif cut == 'left':
         cut = len(strs[0])
@@ -364,7 +383,7 @@ def xor(*args, **kwargs):
     return b''.join(map(get, range(cut)))
 
 def xor_pair(data, avoid = b'\x00\n'):
-    """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
+    r"""xor_pair(data, avoid = '\x00\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
@@ -379,10 +398,10 @@ def xor_pair(data, avoid = b'\x00\n'):
     Example:
 
         >>> xor_pair(b"test")
-        (b'\\x01\\x01\\x01\\x01', b'udru')
+        (b'\x01\x01\x01\x01', b'udru')
     """
 
-    if isinstance(data, six.integer_types):
+    if isinstance(data, int):
         data = packing.pack(data)
 
     if not isinstance(avoid, (bytes, bytearray)):
@@ -504,15 +523,15 @@ def rol(n, k, word_size = None):
 
     word_size = word_size or context.word_size
 
-    if not isinstance(word_size, six.integer_types) or word_size <= 0:
+    if not isinstance(word_size, int) or word_size <= 0:
         raise ValueError("rol(): 'word_size' must be a strictly positive integer")
 
-    if not isinstance(k, six.integer_types):
+    if not isinstance(k, int):
         raise ValueError("rol(): 'k' must be an integer")
 
-    if isinstance(n, (bytes, six.text_type, list, tuple)):
+    if isinstance(n, (bytes, str, list, tuple)):
         return n[k % len(n):] + n[:k % len(n)]
-    elif isinstance(n, six.integer_types):
+    elif isinstance(n, int):
         k = k % word_size
         n = (n << k) | (n >> (word_size - k))
         n &= (1 << word_size) - 1
@@ -556,7 +575,7 @@ def isprint(c):
     """isprint(c) -> bool
 
     Return True if a character is printable"""
-    if isinstance(c, six.text_type):
+    if isinstance(c, str):
         c = ord(c)
     t = bytearray(string.ascii_letters + string.digits + string.punctuation + ' ', 'ascii')
     return c in t
@@ -1025,9 +1044,9 @@ def js_escape(data, padding=context.cyclic_alphabet[0:1], **kwargs):
     data = bytearray(data)
 
     if context.endian == 'little':
-        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for b, a in iters.group(2, data))
+        return ''.join(f'%u{a:02x}{b:02x}' for b, a in iters.group(2, data))
     else:
-        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for a, b in iters.group(2, data))
+        return ''.join(f'%u{a:02x}{b:02x}' for a, b in iters.group(2, data))
 
 @LocalNoarchContext
 def js_unescape(s, **kwargs):

@@ -3,7 +3,6 @@
   from pwnlib.shellcraft import mips
   from pwnlib import constants
   from pwnlib.shellcraft import registers
-  from six import text_type, binary_type
   import re
 %>
 <%page args="value"/>
@@ -14,7 +13,7 @@ Pushes a value onto the stack.
 value_orig = value
 is_reg = value in registers.mips
 
-if not is_reg and isinstance(value, (binary_type, text_type)):
+if not is_reg and isinstance(value, (bytes, str)):
     try:
         value = constants.eval(value)
     except (ValueError, AttributeError):

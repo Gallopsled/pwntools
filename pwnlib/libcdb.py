@@ -1,15 +1,10 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import time
-import six
 import tempfile
 import struct
-import sys
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
@@ -66,6 +61,8 @@ MAP_TYPES = {
 }
 
 DEBUGINFOD_SERVERS = [
+    'https://debuginfod.ubuntu.com/',
+    'https://debuginfod.debian.net/',
     'https://debuginfod.elfutils.org/',
 ]
 
@@ -88,10 +85,10 @@ def provider_libcdb(hex_encoded_id, search_type):
 
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     # Build the URL using the requested hash type
-    url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
+    url_base = f"{GITLAB_LIBCDB_URL}/libcdb/libcdb/raw/master/hashes/{search_type}/"
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -116,7 +113,7 @@ def query_libc_rip(params):
     # Deferred import because it's slow
     import requests
 
-    url = "{}/api/find".format(LIBC_RIP_URL)
+    url = f"{LIBC_RIP_URL}/api/find"
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
@@ -294,49 +291,6 @@ def search_by_hash(search_target, search_type='build_id', unstrip=True, offline_
 
     return cache
 
-def _search_debuginfo_by_hash(base_url, hex_encoded_id):
-    """
-    Given a hex-encoded build_id, attempt to download a matching debuginfo from the debuginfod server.
-
-    >>> debuginfo_file = _search_debuginfo_by_hash(DEBUGINFOD_SERVERS[0], 'd1704d25fbbb72fa95d517b883131828c0883fe9')
-    >>> debuginfo_file is not None
-    True
-    >>> 'main_arena' in ELF(debuginfo_file).symbols
-    True
-    """
-    # Deferred import because it's slow
-    import requests
-    from six.moves import urllib
-
-    # Check if we tried this buildid before.
-    cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
-    if cache_valid:
-        return cache
-    
-    # We searched for this buildid before, but didn't find anything.
-    if cache is None:
-        return None
-
-    # Try to find separate debuginfo.
-    url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
-    url  = urllib.parse.urljoin(base_url, url)
-    data = b""
-    log.debug("Downloading data from debuginfod: %s", url)
-    try:
-        data = wget(url, timeout=20)
-    except requests.RequestException as e:
-        log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, base_url, e)
-    
-    # Save whatever we got to the cache
-    write(cache, data or b'')
-
-    # Return ``None`` if we did not get a valid ELF file
-    if not data or not data.startswith(b'\x7FELF'):
-        log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, base_url)
-        return None
-
-    return cache
-
 def _check_elf_cache(cache_type, search_target, search_type):
     """
     Check if there already is an ELF file for this hash in the cache.
@@ -421,16 +375,45 @@ def unstrip_libc(filename):
 
     log.debug('Trying debuginfod servers: %r', DEBUGINFOD_SERVERS)
 
-    for server_url in DEBUGINFOD_SERVERS:
-        libc_dbg = _search_debuginfo_by_hash(server_url, enhex(libc.buildid))
-        if libc_dbg:
-            break
-    else:
-        log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
-        return False
+    # Deferred import because it's slow
+    import requests
+    import urllib.parse
+
+    hex_encoded_id = enhex(libc.buildid)
+
+    # Check if we tried this buildid before.
+    cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
+    if not cache_valid:
+        # Cached negative result so we don't look for missing debug info everytime.
+        if cache is None:
+            return False
+        else:
+            for server_url in DEBUGINFOD_SERVERS:
+                # Try to find separate debuginfo.
+                url  = f'/buildid/{hex_encoded_id}/debuginfo'
+                url  = urllib.parse.urljoin(server_url, url)
+                data = b""
+                log.debug("Downloading data from debuginfod: %s", url)
+                try:
+                    data = wget(url, timeout=20)
+
+                    # Try next server if we didn't get a valid ELF file
+                    if not data or not data.startswith(b'\x7FELF'):
+                        log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, server_url)
+                        continue
+                    break
+                except requests.RequestException as e:
+                    log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, server_url, e)
+            else:
+                write(cache, data or b'')
+                log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
+                return False
+            
+            # Save whatever we got to the cache
+            write(cache, data or b'')
 
     # Add debug info to given libc binary inplace.
-    p = process(['eu-unstrip', '-o', filename, filename, libc_dbg])
+    p = process(['eu-unstrip', '-o', filename, filename, cache])
     output = p.recvall()
     p.close()
 
@@ -441,7 +424,7 @@ def unstrip_libc(filename):
     return True
 
 def _extract_tarfile(cache_dir, data_filename, tarball):
-    from six import BytesIO
+    from io import BytesIO
     import tarfile
     # Handle zstandard compression, since tarfile only supports gz, bz2, and xz.
     if data_filename.endswith('.zst') or data_filename.endswith('.zstd'):
@@ -452,19 +435,6 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
         decompressed_tar.seek(0)
         tarball.close()
         tarball = decompressed_tar
-
-    if six.PY2 and data_filename.endswith('.xz'):
-        # Python 2's tarfile doesn't support xz, so we need to decompress it first.
-        # Shell out to xz, since the Python 2 pylzma module is broken.
-        # (https://github.com/fancycode/pylzma/issues/67)
-        if not which('xz'):
-            log.error('Couldn\'t find "xz" in PATH. Please install xz first.')
-        import subprocess
-        try:
-            uncompressed_tarball = subprocess.check_output(['xz', '--decompress', '--stdout', tarball.name])
-            tarball = BytesIO(uncompressed_tarball)
-        except subprocess.CalledProcessError:
-            log.error('Failed to decompress xz archive.')
 
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
@@ -499,46 +469,18 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
 
 def _extract_debfile(cache_dir, package_filename, package):
     # Extract data.tar in the .deb archive.
-    if sys.version_info < (3, 6):
-        if not which('ar'):
-            log.error('Missing command line tool "ar" to extract .deb archive. Please install "ar" first.')
-
-        import atexit
-        import shutil
-        import subprocess
-
-        # Use mkdtemp instead of TemporaryDirectory because the latter is not available in Python 2.
-        tempdir = tempfile.mkdtemp(prefix=".pwntools-tmp")
-        atexit.register(shutil.rmtree, tempdir)
-        with tempfile.NamedTemporaryFile(mode='wb', dir=tempdir) as debfile:
-            debfile.write(package)
-            debfile.flush()
-            try:
-                files_in_deb = subprocess.check_output(['ar', 't', debfile.name]).split(b'\n')
-            except subprocess.CalledProcessError:
-                log.error('Failed to list files in .deb archive.')
-            [data_filename] = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)
-
-            try:
-                subprocess.check_call(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
-            except subprocess.CalledProcessError:
-                log.error('Failed to extract data.tar from .deb archive.')
-
-            with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
-                return _extract_tarfile(cache_dir, data_filename, tarball)
-    else:
-        import unix_ar
-        from six import BytesIO
-        ar_file = unix_ar.open(BytesIO(package))
-        try:
-            data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
-            tarball = ar_file.open(data_filename)
-            return _extract_tarfile(cache_dir, data_filename, tarball)
-        finally:
-            ar_file.close()
+    import unix_ar
+    from io import BytesIO
+    ar_file = unix_ar.open(BytesIO(package))
+    try:
+        data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
+        tarball = ar_file.open(data_filename)
+        return _extract_tarfile(cache_dir, data_filename, tarball)
+    finally:
+        ar_file.close()
 
 def _extract_pkgfile(cache_dir, package_filename, package):
-    from six import BytesIO
+    from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
 def _find_libc_package_lib_url(libc):
@@ -556,7 +498,7 @@ def _find_libc_package_lib_url(libc):
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
-        yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
+        yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
 def download_libraries(libc_path, unstrip=True):
     """download_libraries(str, bool) -> str
@@ -709,8 +651,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_o
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
         >>> len(matched_libcs) > 1
         True
-        >>> for buildid in matched_libcs: # doctest +SKIP
-        ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
+        >>> for buildid in matched_libcs: # doctest: +SKIP
+        ...     libc = ELF(search_by_build_id(buildid)) # doctest: +SKIP
     """
     assert search_type in TYPES, search_type
 

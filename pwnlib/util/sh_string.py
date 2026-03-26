@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Routines here are for getting any NULL-terminated sequence of bytes evaluated
 intact by any shell.  This includes all variants of quotes, whitespace, and
@@ -238,10 +237,6 @@ and should therefore be compatible with ``dash``.
 .. _OpenBSD Man Pages: https://man.openbsd.org/sh#SHELL_GRAMMAR
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
-from __future__ import absolute_import
-from __future__ import division
-
-import six
 import string
 import subprocess
 
@@ -258,7 +253,7 @@ def test_all():
     test('ab') ##
     test('a b') ##
     test(r"a\'b") ##
-    everything_1 = b''.join(six.int2byte(c) for c in range(1,256))
+    everything_1 = bytes(range(1,256))
     for s in everything_1:
         test(s)
         test(s*4)
@@ -271,7 +266,7 @@ def test_all():
     test(everything_1)
     test(everything_1 * 2)
     test(everything_1 * 4)
-    everything_2 = b''.join(six.int2byte(c) * 2 for c in range(1,256)) ##
+    everything_2 = b''.join(bytes([c,c]) for c in range(1,256)) ##
     test(everything_2)
 
     test(randoms(1000, everything_1))
@@ -296,10 +291,10 @@ def test(original):
     """
     input = sh_string(original)
 
-    if not isinstance(input, str):
-        input = input.decode('latin1')
+    if isinstance(input, str):
+        input = input.encode()
 
-    cmdstr = six.b('/bin/echo %s' % input)
+    cmdstr = b'/bin/echo %s' % input
 
     SUPPORTED_SHELLS = [
         ['ash', '-c', cmdstr],
@@ -354,7 +349,7 @@ ESCAPED_SINGLE_QUOTE = r"\'" ##
 
 ESCAPED = {
     # The single quote itself must be escaped, outside of single quotes.
-    "'": "\\'", ##
+    "'": r"\'", ##
 
     # Slashes must themselves be escaped
     #
@@ -461,8 +456,8 @@ def sh_prepare(variables, export = False):
         >>> sh_prepare({'X': 'foobar'})
         b'X=foobar'
         >>> r = sh_prepare({'X': 'foobar', 'Y': 'cookies'})
-        >>> r == b'X=foobar;Y=cookies' or r == b'Y=cookies;X=foobar' or r
-        True
+        >>> r
+        b'X=foobar;Y=cookies'
         >>> sh_prepare({'X': 'foo bar'})
         b"X='foo bar'"
         >>> sh_prepare({'X': "foo'bar"})

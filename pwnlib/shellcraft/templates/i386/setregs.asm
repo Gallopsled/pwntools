@@ -1,5 +1,4 @@
 <%
-  import six
   from pwnlib.regsort import regsort
   from pwnlib.constants import Constant, eval
   from pwnlib.shellcraft import registers
@@ -45,7 +44,7 @@ if isinstance(edx, str):
     except NameError:
         pass
 
-if isinstance(eax, six.integer_types) and isinstance(edx, six.integer_types) and eax >> 31 == edx:
+if isinstance(eax, int) and isinstance(edx, int) and eax >> 31 == edx:
     cdq = True
     reg_context.pop('edx')
 
@@ -54,7 +53,7 @@ sorted_regs = regsort(reg_context, registers.i386)
 % if not sorted_regs:
   /* setregs noop */
 % else:
-% for how, src, dst in regsort(reg_context, registers.i386):
+% for how, src, dst in regsort(reg_context, registers.i386, registers.native32):
 % if how == 'xchg':
     xchg ${src}, ${dst}
 % else:

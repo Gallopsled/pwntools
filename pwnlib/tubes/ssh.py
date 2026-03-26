@@ -1,11 +1,7 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import os
 import re
 import shutil
-import six
 import string
 import sys
 import tarfile
@@ -13,7 +9,9 @@ import tempfile
 import threading
 import time
 
-from pwnlib import term
+from io import StringIO
+
+from pwnlib import atexit, term
 from pwnlib.context import context, LocalContext
 from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
@@ -68,7 +66,7 @@ class ssh_channel(sock):
         self.env  = env
         self.process = process
         self.cwd  = cwd or '.'
-        if isinstance(cwd, six.text_type):
+        if isinstance(cwd, str):
             cwd = packing._need_bytes(cwd, 2, 0x80)
 
         env = env or {}
@@ -76,7 +74,7 @@ class ssh_channel(sock):
 
         if isinstance(process, (list, tuple)):
             process = b' '.join(sh_string(packing._need_bytes(s, 2, 0x80)) for s in process)
-        if isinstance(process, six.text_type):
+        if isinstance(process, str):
             process = packing._need_bytes(process, 2, 0x80)
 
         if process and cwd:
@@ -441,14 +439,39 @@ class ssh_connecter(sock):
         # keep the parent from being garbage collected in some cases
         self.parent = parent
 
+        # keep reference to tunnel process to avoid garbage collection
+        self.tunnel = None
+
         self.host  = parent.host
         self.rhost = host
         self.rport = port
 
+        import paramiko.ssh_exception
         msg = 'Connecting to %s:%d via SSH to %s' % (self.rhost, self.rport, self.host)
         with self.waitfor(msg) as h:
             try:
                 self.sock = parent.transport.open_channel('direct-tcpip', (host, port), ('127.0.0.1', 0))
+            except paramiko.ssh_exception.ChannelException as e:
+                # Workaround AllowTcpForwarding no in sshd_config
+                if e.args != (1, 'Administratively prohibited'):
+                    self.exception(str(e))
+                    raise e
+                
+                self.debug('Failed to open channel, trying to connect to remote port manually using netcat or bash.')
+                ncats = ['nc', 'ncat', 'netcat']
+                cmd = []
+                for ncat in ncats:
+                    if parent.which(ncat):
+                        cmd = [ncat, host, str(port)]
+                        break
+                else:
+                    if parent.which('bash'):
+                        cmd = ['bash', '-c', 'exec 3<>/dev/tcp/{}/{}; cat <&3 & cat >&3; kill $!'.format(host, port)]
+                    else:
+                        self.exception('Could not find nc, ncat, netcat, or bash on remote. Cannot connect to remote port.')
+                        raise
+                self.tunnel = parent.process(cmd)
+                self.sock = self.tunnel.sock
             except Exception as e:
                 self.exception(str(e))
                 raise
@@ -574,7 +597,7 @@ class ssh(Timeout, Logger):
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
                  keyfile=None, proxy_command=None, proxy_sock=None, level=None,
                  cache=True, ssh_agent=False, ignore_config=False, raw=False, 
-                 auth_none=False, *a, **kw):
+                 auth_none=False, disabled_algorithms=None, *a, **kw):
         """Creates a new ssh connection.
 
         Arguments:
@@ -593,6 +616,9 @@ class ssh(Timeout, Logger):
             ignore_config(bool): If :const:`True`, disable usage of ~/.ssh/config and ~/.ssh/authorized_keys
             raw(bool): If :const:`True`, assume a non-standard shell and don't probe the environment
             auth_none(bool): If :const:`True`, try to authenticate with no authentication methods
+            disabled_algorithms(dict):
+                Mapping of algorithm type and list of algorithm identifiers to disable.
+                See :class:`paramiko.transport.Transport` for more information.
 
         NOTE: The proxy_command and proxy_sock arguments is only available if a
         fairly new version of paramiko is used.
@@ -607,6 +633,41 @@ class ssh(Timeout, Logger):
             >>> s2 = ssh(host='example.pwnme', proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
             >>> for x in r2, s2, r1, s1: x.close()
+
+        You can authenticate using a password, a private key, or an ssh agent.
+        By default the constructor will attempt to parse ``~/.ssh/config`` for configuration. You can disable this with ``ignore_config=True``.
+        
+        ::
+
+            >>> s = ssh(user='bandit0', host='bandit.labs.overthewire.org', password='bandit0', port=2220)
+
+        The private key can be passed as a string or as a file:
+
+        .. doctest::
+
+            >>> s = ssh(user='travis', host='example.pwnme', keyfile='~/.ssh/travis')
+            >>> s.whoami()
+            b'travis'
+            >>> s.close()
+
+            >>> s = ssh(user='travis', host='example.pwnme', key=open(os.path.expanduser('~/.ssh/travis')).read())
+            >>> s.whoami()
+            b'travis'
+            >>> s.close()
+
+        You have to wrap the key in a :class:`paramiko.pkey.PKey` object yourself if your key requires a password:
+
+        ::
+
+            >>> from paramiko import Ed25519Key
+            >>> from io import StringIO
+            >>> key_str = "..."  # some private key
+            >>> key = Ed25519Key.from_private_key(StringIO(key_str), password='somepassword')
+            >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
+
+            >>> key = Ed25519Key.from_private_key(open(os.path.expanduser('~/.ssh/travis')), password='somepassword')
+            >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
+
         """
         super(ssh, self).__init__(*a, **kw)
 
@@ -656,6 +717,22 @@ class ssh(Timeout, Logger):
         except Exception as e:
             self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
+        # Create paramiko.PKey if key is provided as str or bytes
+        if isinstance(key, (str, bytes, bytearray)):
+            key = packing._need_text(key, 2)
+            file_object = StringIO(key)
+
+            for key_class in (paramiko.RSAKey, paramiko.ECDSAKey, paramiko.Ed25519Key):
+                try:
+                    file_object.seek(0)
+                    key = key_class.from_private_key(file_object)
+                    self.debug('SSH key string converted to paramiko.%s', type(key).__name__)
+                    break
+                except paramiko.SSHException:
+                    continue
+            else:
+                self.error('Could not convert key str to paramiko.PKey')
+
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         msg = 'Connecting to %s on port %d' % (host, port)
@@ -682,21 +759,23 @@ class ssh(Timeout, Logger):
                 proxy_sock = None
 
             try:
-                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config)
+                self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config, disabled_algorithms=disabled_algorithms)
             except paramiko.BadHostKeyException as e:
-                self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
-                           "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
-                           "        $ ssh-keygen -R %(host)s\n"
-                           "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
+                self.error(f"""Remote host {host} is using a different key than stated in known_hosts
+    To remove the existing entry from your known_hosts and trust the new key, run the following commands:
+        $ ssh-keygen -R {host}
+        $ ssh-keygen -R [{host}]:{port}""")
             except paramiko.SSHException as e:
                 if user and auth_none and str(e) == "No authentication methods available":
                     self.client.get_transport().auth_none(user)
                 else:
+                    self.close()
                     raise
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
+            atexit.register(self.close)
             h.success()
 
         if self.raw:
@@ -913,6 +992,13 @@ class ssh(Timeout, Logger):
             >>> io.recvline()
             b''
 
+            >>> io = s.process(['tty'], tty=True)
+            >>> io.recvline() # doctest: +ELLIPSIS
+            b'/dev/pts/...\n'
+            >>> io = s.process(['tty'], tty=False)
+            >>> io.recvline()
+            b'not a tty\n'
+
             >>> # Testing that empty argv works
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
@@ -932,7 +1018,7 @@ class ssh(Timeout, Logger):
         """
         cwd = cwd or self.cwd
         script = misc._create_execve_script(argv=argv, executable=executable,
-                cwd=cwd, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
+                cwd=cwd, env=env, which=self.which, stdin=stdin, stdout=stdout, stderr=stderr,
                 ignore_environ=ignore_environ, preexec_fn=preexec_fn, preexec_args=preexec_args,
                 aslr=aslr, setuid=setuid, shell=shell, log=self)
 
@@ -949,6 +1035,7 @@ class ssh(Timeout, Logger):
             self.upload_data(script, tmpfile)
             return tmpfile
 
+        executable = executable or argv[0]
         if self.isEnabledFor(logging.DEBUG):
             execve_repr = "execve(%r, %s, %s)" % (executable,
                                                   argv,
@@ -970,7 +1057,7 @@ class ssh(Timeout, Logger):
 
             script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=tty, cwd=cwd, raw=raw, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1363,7 +1450,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             update(len(data), total)
 
         result = c.wait()
-        if result != 0:
+
+        if result == -1:
+            self.warn_once("Could not verify success of file download %r, no error code" % (remote))
+
+        if result != 0 and result != -1:
             h.failure('Could not download file %r (%r)' % (remote, result))
             return
 
@@ -1543,7 +1634,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             s.shutdown('send')
             data   = s.recvall()
             result = s.wait()
-            if result != 0:
+
+            if result == -1:
+                self.warn_once("Could not verify success of file upload %r, no error code" % (remote))
+
+            if result != 0 and result != -1:
                 self.error("Could not upload file %r (%r)\n%s" % (remote, result, data))
 
     def upload_file(self, filename, remote = None):
@@ -1813,12 +1908,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         status = 0
 
-        if symlink and not isinstance(symlink, (six.binary_type, six.text_type)):
+        if symlink and not isinstance(symlink, (bytes, str)):
             symlink = os.path.join(self.pwd(), b'*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
             
-        if isinstance(wd, six.text_type):
+        if isinstance(wd, str):
             wd = packing._need_bytes(wd, 2, 0x80)
 
         if not wd:

@@ -16,15 +16,15 @@ Args:
 Example:
 
     >>> print(shellcraft.setregs({'t0':1, 'a3':'0'}).rstrip())
-        c.li a3, 0
-        c.li t0, 1
+        xor a3, t6, t6
+        sltiu t0, zero, 0x7ff | 1
     >>> print(shellcraft.setregs({'a0':'a1', 'a1':'a0', 'a2':'a1'}).rstrip())
-        c.mv a2, a1
-        c.mv t4, a1
+        sra a2, a1, zero
+        sra t4, a1, zero
         xor a1, a0, t4 /* xchg a1, a0 */
-        c.mv t4, a0
+        sra t4, a0, zero
         xor a0, a1, t4
-        c.mv t4, a1
+        sra t4, a1, zero
         xor a1, a0, t4
 </%docstring>
 <%
@@ -34,7 +34,7 @@ sorted_regs = regsort(reg_context, registers.riscv)
 % if not sorted_regs:
   /* setregs noop */
 % else:
-% for how, src, dst in regsort(reg_context, registers.riscv):
+% for how, src, dst in sorted_regs:
 % if how == 'xchg':
     ${riscv64.xor(dst, dst, src)} /* xchg ${dst}, ${src} */
     ${riscv64.xor(src, src, dst)}

@@ -19,9 +19,6 @@ Or adding the following lines to ~/.pwn.conf (or system-wide /etc/pwn.conf):
     interval=never
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import datetime
 import json
 import os

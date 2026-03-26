@@ -3,7 +3,6 @@
   from pwnlib.shellcraft import thumb, registers, pretty
   from pwnlib import constants
   from pwnlib.context import context as ctx # Ugly hack, mako will not let it be called context
-  import six
   import re
 %>
 <%page args="value"/>
@@ -50,7 +49,7 @@ Example:
 value_orig = value
 is_register = value in registers.arm
 
-if not is_register and isinstance(value, (six.binary_type, six.text_type)):
+if not is_register and isinstance(value, (bytes, str)):
     try:
         with ctx.local(arch = 'thumb'):
             value = constants.eval(value)
@@ -60,7 +59,7 @@ if not is_register and isinstance(value, (six.binary_type, six.text_type)):
 
 % if is_register:
     push {${value}}
-% elif isinstance(value, six.integer_types):
+% elif isinstance(value, int):
     /* push ${pretty(value_orig, False)} */
     ${re.sub(r'^\s*/.*\n', '', thumb.pushstr(packing.pack(value), False), 1)}
 % else:
