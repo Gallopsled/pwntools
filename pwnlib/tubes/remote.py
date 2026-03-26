@@ -1,3 +1,5 @@
+import asyncio
+import concurrent
 import socket
 import socks
 
@@ -106,8 +108,35 @@ class remote(sock):
         sock    = None
         timeout = self.timeout
 
+        async def async_getaddrinfo(host, port, fam=0, typ=0, proto=0, flags=0):
+            loop = asyncio.get_running_loop()
+            result = await loop.getaddrinfo(host, port, family=fam, type=typ, proto=proto, flags=flags)
+            return result
+
+        def run_async_in_thread(coro):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            future = loop.run_until_complete(coro)
+            loop.close()
+            return future
+
+        # Using asyncio to avoid process blocking when DNS resolution fail. It's probably better
+        # to use async all the ways to `sock.connect`. However, let's keep the changes small
+        # until we have the needs.
+        def sync_getaddrinfo(*args):
+            # Run in a separate thread to avoid deadlocks when users nest eventloops.
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                try:
+                    future = executor.submit(run_async_in_thread, async_getaddrinfo(*args))
+                    return future.result()
+                except asyncio.exceptions.CancelledError:
+                    return []
+                except socket.gaierror:
+                    return []
+
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
-            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+            hostnames = sync_getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE)
+            for res in hostnames:
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
