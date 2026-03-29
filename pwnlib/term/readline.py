@@ -380,7 +380,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
     from pwnlib.term import term_mode
     if not term_mode:
         six.print_(prompt, end='', flush=True)
-        return getattr(sys.stdin, 'buffer', sys.stdin).readline(_size).rstrip(b'\n')
+        return force_to_bytes(getattr(sys.stdin, 'buffer', sys.stdin).readline(_size)).rstrip(b'\n')
     show_suggestions = False
     eof = False
     if prompt:
