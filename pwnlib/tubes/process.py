@@ -999,7 +999,7 @@ class process(tube):
         raw_maps = self.poll() is None and memory_maps(self.pid)
 
         if not raw_maps:
-            raise RuntimeError("Could not read maps, process %s has finished" % self.pid)
+            self.error("Could not read maps, process %d has finished", self.pid)
 
         maps = []
         # raw_mapping
