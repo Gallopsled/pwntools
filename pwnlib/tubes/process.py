@@ -996,7 +996,10 @@ class process(tube):
         # addr = address (alias) = start (alias)
 
         from pwnlib.util.proc import memory_maps
-        raw_maps = memory_maps(self.pid)
+        raw_maps = self.poll() is None and memory_maps(self.pid)
+
+        if not raw_maps:
+            self.error("Could not read maps, process %d has finished", self.pid)
 
         maps = []
         # raw_mapping
@@ -1377,17 +1380,11 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        maps_raw = self.poll() is None and self.maps()
-
-        if not maps_raw:
-            import pwnlib.elf.elf
-
-            with context.quiet:
-                return pwnlib.elf.elf.ELF(self.executable).maps
+        all_maps = self.maps()
 
         # Enumerate all of the libraries actually loaded right now.
         libs = {}
-        for mapping in maps_raw:
+        for mapping in all_maps:
             path = mapping.path
             if os.sep not in path: continue
             path = os.path.realpath(path)
