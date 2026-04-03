@@ -123,6 +123,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2671][2671] ssh: support raw string input for 'key' argument as documented
 - [#2688][2688] Close SSH client connection when authentication failed
 - [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
+- [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 
 [2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -172,6 +173,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2671]: https://github.com/Gallopsled/pwntools/pull/2671
 [2688]: https://github.com/Gallopsled/pwntools/pull/2688
 [2686]: https://github.com/Gallopsled/pwntools/pull/2686
+[2704]: https://github.com/Gallopsled/pwntools/pull/2704
 
 ## 4.15.0 (`stable`)
 
