@@ -1284,7 +1284,7 @@ def _build_date():
     utc = getprop('ro.build.date.utc')
     if utc and utc.strip().isdigit():
         try:
-            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), tz=datetime.timezone.utc)
+            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), dateutil.tz.UTC)
             return as_datetime.strftime('%Y-%b-%d')
         except (OSError, OverflowError, ValueError):
             pass
