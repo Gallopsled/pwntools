@@ -19,6 +19,6 @@ psutil
 requests>=2.5.1
 ropgadget>=5.3
 sphinx==1.8.6; python_version<'3'
-sphinx>=7.0.0; python_version>='3'
+sphinx>=8.1.3, <9; python_version>='3'
 sphinx_rtd_theme
 sphinxcontrib-autoprogram<=0.1.5
