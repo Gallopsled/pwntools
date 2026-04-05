@@ -126,7 +126,7 @@ class FileStructure(object):
 
         >>> context.clear(arch='i386')
         >>> fileStr2 = FileStructure(null=0)
-        >>> fileStr2.vtable = 0x565251859f0
+        >>> fileStr2.vtable = 0x561859f0
         >>> old_len = len(bytes(fileStr2))
         >>> fileStr2.unknown2 = b'AB'
         >>> len(bytes(fileStr2)) == old_len
