@@ -132,12 +132,13 @@ The table below shows which release corresponds to each branch, and what date th
 ## 4.15.1
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
+- [#2513][2513] Fix `adb._build_date()` crash on devices with non-standard locale date strings
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
+[2513]: https://github.com/Gallopsled/pwntools/pull/2513
 
 ## 4.15.0 (`stable`)
 
-- [#2513][2513] Fix `_build_date()` crash on devices with non-standard locale date strings
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
 - [#2358][2358] Cache output of `asm()`
@@ -169,7 +170,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2612][2612] Fix lookup of binutils for `mipsel` architecture
 - [#2624][2624] Fix regression: gdbserver can't handle command-line argument containing whitespace
 
-[2513]: https://github.com/Gallopsled/pwntools/pull/2701
 [2508]: https://github.com/Gallopsled/pwntools/pull/2508
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
 [2358]: https://github.com/Gallopsled/pwntools/pull/2358
