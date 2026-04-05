@@ -129,6 +129,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
 
+## 4.15.1
+
+- [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
+
+[2694]: https://github.com/Gallopsled/pwntools/pull/2694
+
 ## 4.15.0 (`stable`)
 
 - [#2508][2508] Ignore a warning when compiling with asm on nix
@@ -193,7 +199,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
 [2624]: https://github.com/Gallopsled/pwntools/pull/2624
 
-## 4.14.1 (`stable`)
+## 4.14.1
 
 - [#2451][2451] Show symbols defined to value 0 (start of file)
 - [#2533][2533] Fix installation on Python 3.5 and lower
@@ -644,7 +650,7 @@ In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of 
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.7 (`stable`)
+## 4.1.7
 
 - [#1615][1615] Fix aarch64 pushstr and pushstr_array
 
