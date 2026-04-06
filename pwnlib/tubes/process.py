@@ -700,8 +700,14 @@ class process(tube):
 
         The process can choose to ignore this signal, so proper cleanup
         is only done in :meth:`kill`/:meth:`close`.
+
+        Note: On Windows, there is no SIGTERM signal, so the Win32 API function ``TerminateProcess()`` is called
+        instead, leading to :meth:`terminate()` and :meth:`kill()` being effectively the same.
         
         Examples:
+
+        .. doctest::
+            :options: +POSIX
         
             >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");import time;time.sleep(10)'])
             >>> p.recvline_contains(b'ready')
