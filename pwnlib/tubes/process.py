@@ -292,6 +292,10 @@ class process(tube):
             self.suid = self.uid = None
             self.sgid = self.gid = None
             internal_preexec_fn = None
+            # Expect Windows to use CRLF newlines, but if the user explicitly
+            # set it to something else, don't mess with it.
+            if 'newline' not in context._tls and context.newline == b'\n':
+                self.newline = b'\r\n'
         else:
             # Avoid the need to have to deal with the STDOUT magic value.
             if stderr is STDOUT:
