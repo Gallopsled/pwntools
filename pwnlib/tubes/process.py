@@ -135,14 +135,14 @@ class process(tube):
         True
         >>> p.connected('send')
         False
-        >>> p.recvline() # doctest: +ELLIPSIS
-        b'Hello world...\n'
+        >>> p.recvline(drop=True)
+        b'Hello world'
         >>> p.recvuntil(b',')
         b'Wow,'
         >>> p.recvregex(b'.*data')
         b' such data'
-        >>> p.recv() # doctest: +ELLIPSIS
-        b'...\n'
+        >>> p.recv()[-1:] == b'\n'
+        True
         >>> p.recv() # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
