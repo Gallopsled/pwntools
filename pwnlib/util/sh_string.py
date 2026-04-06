@@ -349,7 +349,7 @@ ESCAPED_SINGLE_QUOTE = r"\'" ##
 
 ESCAPED = {
     # The single quote itself must be escaped, outside of single quotes.
-    "'": "\\'", ##
+    "'": r"\'", ##
 
     # Slashes must themselves be escaped
     #
@@ -456,8 +456,8 @@ def sh_prepare(variables, export = False):
         >>> sh_prepare({'X': 'foobar'})
         b'X=foobar'
         >>> r = sh_prepare({'X': 'foobar', 'Y': 'cookies'})
-        >>> r == b'X=foobar;Y=cookies' or r == b'Y=cookies;X=foobar' or r
-        True
+        >>> r
+        b'X=foobar;Y=cookies'
         >>> sh_prepare({'X': 'foo bar'})
         b"X='foo bar'"
         >>> sh_prepare({'X': "foo'bar"})

@@ -10,7 +10,7 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-stable)  | `stable` | Oct 12, 2025
+| [4.15.0](#4150-stable) | `stable` | Oct 12, 2025
 | [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
 - [#2638][2638] feat: add disable_corefiles context option
@@ -101,6 +102,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2496][2496] Add linux ko file search support
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
+- [#2606][2606] Improve error of `process.maps()` after the process exited
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
@@ -113,9 +115,18 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
+- [#2673][2673] Add libc module for libc-related functions
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
+- [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
+- [#2682][2682] Fix `server.close()` not closing the listen socket
+- [#2671][2671] ssh: support raw string input for 'key' argument as documented
+- [#2688][2688] Close SSH client connection when authentication failed
+- [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
+- [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 - [#2655][2655] Add `context.debugger` to select which debugger to use
 
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -142,6 +153,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2496]: https://github.com/Gallopsled/pwntools/pull/2496
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
+[2606]: https://github.com/Gallopsled/pwntools/pull/2606
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
@@ -154,7 +166,15 @@ The table below shows which release corresponds to each branch, and what date th
 [2643]: https://github.com/Gallopsled/pwntools/pull/2643
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
+[2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2687]: https://github.com/Gallopsled/pwntools/pull/2687
+[2699]: https://github.com/Gallopsled/pwntools/pull/2699
+[2682]: https://github.com/Gallopsled/pwntools/pull/2682
+[2671]: https://github.com/Gallopsled/pwntools/pull/2671
+[2688]: https://github.com/Gallopsled/pwntools/pull/2688
+[2686]: https://github.com/Gallopsled/pwntools/pull/2686
+[2704]: https://github.com/Gallopsled/pwntools/pull/2704
 [2655]: https://github.com/Gallopsled/pwntools/pull/2655
 
 ## 4.15.0 (`stable`)
@@ -221,7 +241,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
 [2624]: https://github.com/Gallopsled/pwntools/pull/2624
 
-## 4.14.1 (`stable`)
+## 4.14.1
 
 - [#2451][2451] Show symbols defined to value 0 (start of file)
 - [#2533][2533] Fix installation on Python 3.5 and lower
@@ -672,7 +692,7 @@ In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of 
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.7 (`stable`)
+## 4.1.7
 
 - [#1615][1615] Fix aarch64 pushstr and pushstr_array
 

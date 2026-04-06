@@ -146,8 +146,9 @@ class module(ModuleType):
         if not isinstance(n, int):
             return n
         if isinstance(n, constants.Constant):
-            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
-            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+            pretty = self.pretty(int(n))
+            if comment: return f'{n} /* {pretty} */'
+            else:       return f'{n} ({pretty})'
         elif abs(n) < 10:
             return '%d' % n
         else:

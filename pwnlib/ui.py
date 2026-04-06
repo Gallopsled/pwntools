@@ -316,7 +316,7 @@ def more(text):
  
         >>> more("text")
         text
-        >>> p = testpwnproc("more('text\\n' * (term.height + 2))")
+        >>> p = testpwnproc(r"more('text\n' * (term.height + 2))")
         >>> p.send(b"x")
         >>> data = p.recvall()
         >>> b"text" in data or data

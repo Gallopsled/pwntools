@@ -934,7 +934,7 @@ class process(tube):
             os.close(fd)
 
     def maps(self):
-        """maps() -> [mapping]
+        r"""maps() -> [mapping]
 
         Returns a list of process mappings.
         
@@ -949,7 +949,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
@@ -996,7 +996,10 @@ class process(tube):
         # addr = address (alias) = start (alias)
 
         from pwnlib.util.proc import memory_maps
-        raw_maps = memory_maps(self.pid)
+        raw_maps = self.poll() is None and memory_maps(self.pid)
+
+        if not raw_maps:
+            self.error("Could not read maps, process %d has finished", self.pid)
 
         maps = []
         # raw_mapping
@@ -1086,7 +1089,7 @@ class process(tube):
         return self.get_mapping('[stack]', single)
     
     def heap_mapping(self, single=True):
-        """heap_mapping(single=True) -> mapping
+        r"""heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
 
         Arguments:
@@ -1100,7 +1103,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1176,7 +1179,7 @@ class process(tube):
         return self.get_mapping('[vvar]', single)
     
     def libc_mapping(self, single=True):
-        """libc_mapping(single=True) -> mapping
+        r"""libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
 
         Arguments:
@@ -1191,7 +1194,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1257,7 +1260,7 @@ class process(tube):
         return m_mappings
     
     def elf_mapping(self, single=True):
-        """elf_mapping(single=True) -> mapping
+        r"""elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
 
         Arguments:
@@ -1271,7 +1274,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1340,7 +1343,7 @@ class process(tube):
         return total_size
 
     def address_mapping(self, address):
-        """address_mapping(address) -> mapping
+        r"""address_mapping(address) -> mapping
         
         Returns the mapping at the specified address.
 
@@ -1349,7 +1352,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> libc = p.libc_mapping().address
             >>> heap = p.heap_mapping().address
             >>> elf = p.elf_mapping().address
@@ -1377,17 +1380,11 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        maps_raw = self.poll() is None and self.maps()
-
-        if not maps_raw:
-            import pwnlib.elf.elf
-
-            with context.quiet:
-                return pwnlib.elf.elf.ELF(self.executable).maps
+        all_maps = self.maps()
 
         # Enumerate all of the libraries actually loaded right now.
         libs = {}
-        for mapping in maps_raw:
+        for mapping in all_maps:
             path = mapping.path
             if os.sep not in path: continue
             path = os.path.realpath(path)

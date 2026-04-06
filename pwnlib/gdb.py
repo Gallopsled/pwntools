@@ -241,8 +241,8 @@ def debug_shellcode(data, gdbscript=None, vma=None, api=False):
 
     return debug(tmp_elf, gdbscript=gdbscript, arch=context.arch, api=api)
 
-def _execve_script(argv, executable, env, ssh, preexec_fn, preexec_args):
-    """_execve_script(argv, executable, env, ssh, preexec_fn, preexec_args) -> str
+def _execve_script(argv, executable, env, ssh, which, preexec_fn, preexec_args):
+    """_execve_script(argv, executable, env, ssh, which, preexec_fn, preexec_args) -> str
 
     Returns the filename of a python script that calls
     execve the specified program with the specified arguments.
@@ -254,6 +254,7 @@ def _execve_script(argv, executable, env, ssh, preexec_fn, preexec_args):
         executable(bytes): Path to the program to run
         env(dict): Environment variables to pass to the program
         ssh(ssh): SSH connection to use if we are debugging a remote process
+        which(callable): Function to find the path of a binary.
         preexec_fn(callable): Callable to invoke before exec()
         preexec_args(tuple): Args to pass to callable
 
@@ -267,7 +268,8 @@ def _execve_script(argv, executable, env, ssh, preexec_fn, preexec_args):
         # ssh.process with run=false creates the script for us
         return ssh.process(argv, executable=executable, env=env, run=False)
 
-    script = misc._create_execve_script(argv=argv, executable=executable, env=env, log=log, preexec_fn=preexec_fn,
+    script = misc._create_execve_script(argv=argv, executable=executable, env=env,
+                                        which=which, log=log, preexec_fn=preexec_fn,
                                         preexec_args=preexec_args)
     script = script.strip()
     # Create a temporary file to hold the script
@@ -292,7 +294,7 @@ def _gdbserver_args(pid=None, path=None, port=0, gdbserver_args=None, args=None,
         port(int): Port to use for gdbserver, default: random
         gdbserver_args(list): List of additional arguments to pass to gdbserver
         args(list): List of arguments to provide on the debugger command line
-        which(callaable): Function to find the path of a binary.
+        which(callable): Function to find the path of a binary.
         env(dict): Environment variables to pass to the program
         python_wrapper_script(str): Path to a python script to use with ``--wrapper``
 
@@ -676,7 +678,7 @@ def debug(args, gdbscript=None, gdb_args=None, exe=None, ssh=None, env=None, por
             # but can use the ``--wrapper`` option to execute commands and catches
             # ``execve`` calls.
             # Therefore, we use a wrapper script to execute the target binary
-            script = _execve_script(args, executable=exe, env=env, ssh=ssh, preexec_fn=preexec_fn, preexec_args=preexec_args)
+            script = _execve_script(args, executable=exe, env=env, ssh=ssh, which=which, preexec_fn=preexec_fn, preexec_args=preexec_args)
             args = _gdbserver_args(gdbserver_args=gdbserver_args, args=args, port=port, which=which, env=env, python_wrapper_script=script)
     else:
         qemu_port = port if port != 0 else random.randint(1024, 65535)
