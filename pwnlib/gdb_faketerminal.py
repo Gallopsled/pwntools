@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from pwnlib.tubes.process import process
 from time import sleep
 from sys import argv

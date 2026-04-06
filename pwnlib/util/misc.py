@@ -1,5 +1,3 @@
-from __future__ import division
-
 import json
 import base64
 import errno
@@ -53,14 +51,14 @@ def align_down(alignment, x):
 
 
 def binary_ip(host):
-    """binary_ip(host) -> str
+    r"""binary_ip(host) -> str
 
     Resolve host and return IP as four byte string.
 
     Example:
 
         >>> binary_ip("127.0.0.1")
-        b'\\x7f\\x00\\x00\\x01'
+        b'\x7f\x00\x00\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -288,6 +286,8 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
           a ``wsl.exe`` binary in the ``$PATH`` and ``/proc/sys/kernel/osrelease``
           containing ``Microsoft``), a new ``cmd.exe`` window will be opened.
+        - If zellij is detected (by the presence of the ``$ZELLIJ`` environment
+          variable), a new screen will be opened.`)
 
     If `kill_at_exit` is :const:`True`, try to close the command/terminal when the
     current process exits. This may not work for all terminal types.
@@ -315,6 +315,9 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         elif 'TMUX' in os.environ and which('tmux'):
             terminal = 'tmux'
             args     = ['splitw']
+        elif 'ZELLIJ' in os.environ and which('zellij'):
+            terminal = 'zellij'
+            args = ['action', 'new-pane'] + ['-c'] * kill_at_exit + ['--']
         elif 'STY' in os.environ and which('screen'):
             terminal = 'screen'
             args     = ['-t','pwntools-gdb','bash','-c']
@@ -330,7 +333,7 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
             args     = ['-e']
         elif 'KITTY_PID' in os.environ and which('kitty') and which('kitten'):
             terminal = 'kitten'
-            args = ['@', 'launch']
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
         elif 'TERMINATOR_UUID' in os.environ and which('terminator'):
             if which('remotinator'):
                 terminal = 'remotinator'
@@ -415,6 +418,18 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
     if terminal == 'tmux':
         args += ['-F' '#{pane_pid}', '-P']
 
+    if terminal == "kitty":
+        if not args:
+            # Likely the average user just wanted to tell pwntools to use kitty, rather than
+            # thinking about how the terminal will actually be invoked.
+            terminal = "kitten"
+            args = ['@', 'launch', '--copy-env', '--cwd', 'current']
+        else:
+            # Allowing this would make our life much harder (because we don't get the window id from
+            # running `kitty`, but we do from `kitten @ launch`) and it's an easy fix for the user.
+            log.error(
+                f"Invalid kitty invocation {context.terminal}, please use `kitten @ launch`.")
+            
     argv = [which(terminal)] + args
 
     if isinstance(command, str):
@@ -471,8 +486,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal in ('kitty', 'kitten'):
+    if terminal == 'tmux' or terminal == 'zellij' or terminal == 'kitten':
         stdout = subprocess.PIPE
+    if terminal == 'kitten':
+        stderr = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
 
@@ -488,15 +505,20 @@ end tell
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
-    elif terminal in ('kitty', 'kitten'):
+    elif terminal == "kitten":
         pid = None
-        out, _ = p.communicate()
+        out, err = p.communicate()
+
+        # Catch the most common user error
+        if b"Remote control is disabled" in err:
+            log.error("Kitty remote control is disabled. Add `allow_remote_control yes` to your ~/.config/kitty/kitty.conf .")
+
         try:
             kittyid = int(out)
         except ValueError:
             kittyid = None
         if kittyid is None:
-            log.error("Could not parse kitty window ID from output (%r)", out)
+            log.error("Could not parse kitty window ID from output (%r) (stderr: %r)", out, err)
         else:
             lsout, _ = subprocess.Popen(["kitten", "@", "ls", "--match", "id:%d" % kittyid], stdin=stdin, stdout=stdout, stderr=stderr).communicate()
             try:
@@ -716,7 +738,7 @@ def register_sizes(regs, in_sizes):
     return lists.concat(regs), sizes, bigger, smaller
 
 
-def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
+def _create_execve_script(argv=None, executable=None, cwd=None, env=None, which=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
         shell=False, log=log):
     """
@@ -733,6 +755,8 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
             on :attr:`cwd` or set via :meth:`set_working_directory`.
         env(dict):
             Environment variables to add to the environment.
+        which(callable):
+            Function to find the path of a binary.
         ignore_environ(bool):
             Ignore default environment.  By default use default environment iff env not specified.
         stdin(int, str):
@@ -764,6 +788,9 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     """
     if not argv and not executable:
         log.error("Must specify argv or executable")
+
+    if not which:
+        log.error("Must specify which_ parameter")
 
     aslr      = aslr if aslr is not None else context.aslr
 
@@ -806,9 +833,13 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     func_src  = inspect.getsource(func).strip()
     setuid = True if setuid is None else bool(setuid)
 
-
+    # gdbserver wrappers are freezing on first execve syscall (for debugging the wanted program).
+    # It is not related to fork&exec.
+    # `/usr/bin/env python3` overrides first execve (because env is executing python3).
+    # Resolving python3 before shebang does, for not clashing with wrapper's first execve syscall.
+    python_path = which('python3')
     script = r"""
-#!/usr/bin/env python
+#!%(python_path)s
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:
@@ -883,6 +914,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getgid()) + "\n")
     sys.stdout.write(str(suid) + "\n")
     sys.stdout.write(str(sgid) + "\n")
+    sys.stdout.flush()
     getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
     sys.stdout.flush()
 
@@ -947,7 +979,7 @@ libc.execve(exe, c_argv, c_env)
 # but just in case, indicate that something went wrong.
 libc.perror(b"execve")
 raise OSError("execve failed")
-""" % locals()
+"""
     script = script.strip()
 
     return script

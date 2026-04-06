@@ -45,8 +45,6 @@ the :mod:`pwnlib.adb` module.
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
-from __future__ import absolute_import
-from __future__ import division
 
 import functools
 import glob
@@ -365,7 +363,7 @@ class AdbDevice(Device):
         return AdbDevice(serial, type, **kwargs)
 
     def __wrapped(self, function):
-        """Wrapps a callable in a scope which selects the current device."""
+        """Wraps a callable in a scope which selects the current device."""
         @functools.wraps(function)
         def wrapper(*a, **kw):
             with context.local(device=self):
@@ -373,7 +371,7 @@ class AdbDevice(Device):
         return wrapper
 
     def __getattr__(self, name):
-        """Provides scoped access to ``adb`` module propertise, in the context
+        """Provides scoped access to ``adb`` module properties, in the context
         of this device.
 
         .. doctest::
@@ -887,15 +885,15 @@ def which(name, all = False, *a, **kw):
         []
     """
     # Unfortunately, there is no native 'which' on many phones.
-    which_cmd = '''
+    which_cmd = fr'''
 (IFS=:
   for directory in $PATH; do
       [ -x "$directory/{name}" ] || continue;
-      echo -n "$directory/{name}\\x00";
+      echo -n "$directory/{name}\x00";
   done
 )
-[ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
-'''.format(name=name)
+[ -x "{name}" ] && echo -n "$PWD/{name}\x00"
+'''
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
@@ -1554,7 +1552,7 @@ def install(apk, *arguments):
     This is a wrapper around 'pm install', which backs 'adb install'.
 
     Arguments:
-        apk(str): Path to the APK to intall (e.g. ``'foo.apk'``)
+        apk(str): Path to the APK to install (e.g. ``'foo.apk'``)
         arguments: Supplementary arguments to 'pm install',
             e.g. ``'-l', '-g'``.
     """
@@ -1562,9 +1560,9 @@ def install(apk, *arguments):
         log.error("APK must have .apk extension")
 
     basename = os.path.basename(apk)
-    target_path = '/data/local/tmp/{}.apk'.format(basename)
+    target_path = f'/data/local/tmp/{basename}.apk'
 
-    with log.progress("Installing APK {}".format(basename)) as p:
+    with log.progress(f"Installing APK {basename}") as p:
         with context.quiet:
             p.status('Copying APK to device')
             push(apk, target_path)
@@ -1585,7 +1583,7 @@ def uninstall(package, *arguments):
         package(str): Name of the package to uninstall (e.g. ``'com.foo.MyPackage'``)
         arguments: Supplementary arguments to ``'pm install'``, e.g. ``'-k'``.
     """
-    with log.progress("Uninstalling package {}".format(package)):
+    with log.progress(f"Uninstalling package {package}"):
         with context.quiet:
             return process(['pm','uninstall',package] + list(arguments)).recvall()
 
@@ -1603,4 +1601,3 @@ def version():
     """Returns rthe platform version as a tuple."""
     prop = getprop('ro.build.version.release')
     return [int(v) for v in prop.split('.')]
-

@@ -34,7 +34,6 @@ binary_repr = repr(binary)
 libc_repr = repr(libc)
 %>\
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 %if not quiet:
 # This exploit template was generated via:
 # $ ${' '.join(map(sh_string, argv))}
@@ -155,7 +154,7 @@ def start(argv=[], *a, **kw):
 # GDB will be launched if the exploit is run via e.g.
 # ./exploit.py GDB
 %endif
-gdbscript = '''
+gdbscript = f'''
 %if ctx.binary:
   %if 'main' in ctx.binary.symbols:
 tbreak main
@@ -164,7 +163,7 @@ tbreak *0x{exe.entry:x}
   %endif
 %endif
 continue
-'''.format(**locals())
+'''
 %endif
 
 

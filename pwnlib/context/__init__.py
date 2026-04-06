@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Implements context management so that nested/scoped contexts and threaded
 contexts work properly and as expected.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import atexit
 import collections
 import errno
@@ -48,7 +44,7 @@ class _defaultdict(dict):
     """
     Dictionary which loads missing keys from another dictionary.
 
-    This is neccesary because the ``default_factory`` method of
+    This is necessary because the ``default_factory`` method of
     :class:`collections.defaultdict` does not provide the key.
 
     Examples:
@@ -282,7 +278,7 @@ class ContextType(object):
 
     The context is usually specified at the top of the Python file for clarity. ::
 
-        #!/usr/bin/env python
+        #!/usr/bin/env python3
         context.update(arch='i386', os='linux')
 
     Currently supported properties and their defaults are listed below.
@@ -358,11 +354,15 @@ class ContextType(object):
         'cyclic_alphabet': string.ascii_lowercase.encode(),
         'cyclic_size': 4,
         'delete_corefiles': False,
+        'disable_corefiles': False,
         'device': os.getenv('ANDROID_SERIAL', None) or None,
         'encoding': 'auto',
         'endian': 'little',
         'gdbinit': "",
         'gdb_binary': "",
+        'windbg_binary': "",
+        'windbgx_binary': "",
+        'debugger': "auto",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
@@ -451,6 +451,9 @@ class ContextType(object):
     }
 
     valid_signed = sorted(signednesses)
+
+    #: Valid values for :attr:`debugger`
+    debugger_choices = ['auto', 'gdb', 'windbgx', 'windbg']
 
     def __init__(self, **kwargs):
         """
@@ -1429,7 +1432,7 @@ class ContextType(object):
         """
         try:
             # If the TLS already has a cache directory path, we return it
-            # without any futher checks since it must have been valid when it
+            # without any further checks since it must have been valid when it
             # was set and if that has changed, hiding the TOCTOU here would be
             # potentially confusing
             return self._tls["cache_dir"]
@@ -1481,6 +1484,18 @@ class ContextType(object):
         """Whether pwntools automatically deletes corefiles after exiting.
         This only affects corefiles accessed via :attr:`.process.corefile`.
 
+        Default value is ``False``.
+        """
+        return bool(v)
+
+    @_validator
+    def disable_corefiles(self, v):
+        """Whether pwntools automatically disable corefiles generation.
+
+        When enabled, sets RLIMIT_CORE to (0,-1) to prevent core dump creation
+        entirely, which is useful for brute-force scenarios and repeated segfault
+        crashes where core files consume excessive disk space 
+        
         Default value is ``False``.
         """
         return bool(v)
@@ -1561,6 +1576,60 @@ class ContextType(object):
 
         Default value is ``""``.
         """
+        return str(value)
+
+    @_validator
+    def windbg_binary(self, value):
+        """Path to the binary that is used when running WinDbg locally.
+
+        This is useful when you have multiple versions of WinDbg installed or the WinDbg binary is
+        called something different.
+
+        Usually, it is installed to ``C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe``.
+        Adding the path to the Windows SDK to your PATH variable is recommended.
+
+        If set to an empty string, pwntools will try to search for a reasonable WinDbg binary from 
+        the path.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def windbgx_binary(self, value):
+        """Path to the binary that is used when running WinDbgX locally.
+
+        This is useful when you have multiple versions of WinDbgX installed or the WinDbgX binary is
+        called something different.
+
+        Usually, it is installed to ``%LocalAppData%\Microsoft\WindowsApps\WinDbgX.exe``.
+
+        If set to an empty string, pwntools will try to search for a reasonable WinDbgX binary from 
+        the path.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def debugger(self, value):
+        """Type of debugger to use when running locally.
+
+        Possible values are:
+
+        - ``gdb``: Use GDB as the debugger.
+        - ``windbg``: Use WinDbg as the debugger.
+        - ``windbgx``: Use WinDbgX as the debugger.
+
+        Defaults to ``windbgx`` on Windows and ``gdb`` on other platforms.
+
+        ``auto``: Automatically select the available debugger based on the platform.
+        On Windows, it will prefer ``windbgx`` over ``windbg`` if both are available.
+        
+        Default value is ``"auto"``.
+        """
+        if value not in self.debugger_choices:
+            raise AttributeError("debugger must be one of %r" % sorted(self.debugger_choices))
         return str(value)
 
     @_validator

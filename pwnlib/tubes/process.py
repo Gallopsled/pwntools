@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 import errno
 import logging
@@ -86,6 +82,8 @@ class process(tube):
             By default, :const:`True` is used.
         preexec_fn(callable):
             Callable to invoke immediately before calling ``execve``.
+        preexec_args(iterable):
+            Arguments passed to ``preexec_fn``.
         raw(bool):
             Set the created pty to raw mode (i.e. disable echo and control
             characters).  :const:`True` by default.  If no pty is created, this
@@ -219,6 +217,12 @@ class process(tube):
         >>> p = process(binary.path, cwd=binary_dir)
         >>> p = process('./{}'.format(binary_name), cwd=os.path.relpath(binary_dir))
         >>> p = process(binary.path, cwd=os.path.relpath(binary_dir))
+
+        >>> def write(s):
+        ...    import os
+        ...    os.write(1, s)
+        >>> print(process('false', preexec_fn=write, preexec_args=(b"Hello World!", )).recvline().strip().decode())
+        Hello World!
     """
 
     STDOUT = STDOUT
@@ -241,6 +245,7 @@ class process(tube):
                  stderr = STDOUT,
                  close_fds = True,
                  preexec_fn = lambda: None,
+                 preexec_args = (),
                  raw = True,
                  aslr = None,
                  setuid = None,
@@ -333,6 +338,7 @@ class process(tube):
         self.alarm        = alarm
 
         self.preexec_fn = preexec_fn
+        self.preexec_args = preexec_args
         self.display    = display or self.program
         self._qemu      = False
         self._corefile  = None
@@ -439,9 +445,12 @@ class process(tube):
             except Exception:
                 self.exception("Could not disable ASLR")
 
-        # Assume that the user would prefer to have core dumps.
+        # Check that the user would prefer to have core dumps or not.
         try:
-            resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+            if context.disable_corefiles:
+                resource.setrlimit(resource.RLIMIT_CORE, (0, -1))
+            else:
+                resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
         except Exception:
             pass
 
@@ -471,7 +480,7 @@ class process(tube):
         if self.alarm is not None:
             signal.alarm(self.alarm)
 
-        self.preexec_fn()
+        self.preexec_fn(*self.preexec_args)
 
     def __on_enoexec(self, exception):
         """We received an 'exec format' error (ENOEXEC)
@@ -675,6 +684,40 @@ class process(tube):
         Kills the process.
         """
         self.close()
+
+    def terminate(self):
+        """terminate()
+
+        Terminates the process by sending SIGTERM.
+        
+        This is a more graceful way to stop a process compared to :meth:`kill`,
+        which sends SIGKILL. The process has a chance to clean up and
+        exit gracefully when receiving SIGTERM.
+
+        The process can choose to ignore this signal, so proper cleanup
+        is only done in :meth:`kill`/:meth:`close`.
+        
+        Examples:
+        
+            >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");import time;time.sleep(10)'])
+            >>> p.recvline_contains(b'ready')
+            b'ready'
+            >>> p.terminate()
+            >>> p.recvuntil(b'sigterm')
+            b'sigterm'
+            >>> p.close()
+        """
+        if self.proc is None:
+            return
+            
+        try:
+            self.proc.terminate()
+        except OSError:
+            # Process might have already exited
+            pass
+
+        # Check if process is still running.
+        self.poll()
 
     def poll(self, block = False):
         """poll(block = False) -> int
@@ -900,7 +943,7 @@ class process(tube):
             os.close(fd)
 
     def maps(self):
-        """maps() -> [mapping]
+        r"""maps() -> [mapping]
 
         Returns a list of process mappings.
         
@@ -918,7 +961,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
@@ -965,7 +1008,10 @@ class process(tube):
         # addr = address (alias) = start (alias)
 
         from pwnlib.util.proc import memory_maps
-        raw_maps = memory_maps(self.pid)
+        raw_maps = self.poll() is None and memory_maps(self.pid)
+
+        if not raw_maps:
+            self.error("Could not read maps, process %d has finished", self.pid)
 
         maps = []
         # raw_mapping
@@ -1061,7 +1107,7 @@ class process(tube):
         return self.get_mapping('[stack]', single)
     
     def heap_mapping(self, single=True):
-        """heap_mapping(single=True) -> mapping
+        r"""heap_mapping(single=True) -> mapping
         heap_mapping(False) -> [mapping]
 
         Arguments:
@@ -1078,7 +1124,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1160,7 +1206,7 @@ class process(tube):
         return self.get_mapping('[vvar]', single)
     
     def libc_mapping(self, single=True):
-        """libc_mapping(single=True) -> mapping
+        r"""libc_mapping(single=True) -> mapping
         libc_mapping(False) -> [mapping]
 
         Arguments:
@@ -1178,7 +1224,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1244,7 +1290,7 @@ class process(tube):
         return m_mappings
     
     def elf_mapping(self, single=True):
-        """elf_mapping(single=True) -> mapping
+        r"""elf_mapping(single=True) -> mapping
         elf_mapping(False) -> [mapping]
 
         Arguments:
@@ -1261,7 +1307,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1332,7 +1378,7 @@ class process(tube):
         return total_size
 
     def address_mapping(self, address):
-        """address_mapping(address) -> mapping
+        r"""address_mapping(address) -> mapping
         
         Returns the mapping at the specified address.
 
@@ -1344,7 +1390,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\\n'
+            b'meow\n'
             >>> libc = p.libc_mapping().address
             >>> heap = p.heap_mapping().address
             >>> elf = p.elf_mapping().address
@@ -1372,17 +1418,11 @@ class process(tube):
         by the process to the address it is loaded at in the process' address
         space.
         """
-        maps_raw = self.poll() is None and self.maps()
-
-        if not maps_raw:
-            import pwnlib.elf.elf
-
-            with context.quiet:
-                return pwnlib.elf.elf.ELF(self.executable).maps
+        all_maps = self.maps()
 
         # Enumerate all of the libraries actually loaded right now.
         libs = {}
-        for mapping in maps_raw:
+        for mapping in all_maps:
             path = mapping.path
             if os.sep not in path: continue
             path = os.path.realpath(path)
@@ -1441,8 +1481,8 @@ class process(tube):
 
         If the process is alive, attempts to create a coredump with GDB.
 
-        If the process is dead, attempts to locate the coredump created
-        by the kernel.
+        If the process is dead: returns None if context.disable_corefiles is enabled,
+        otherwise attempts to locate the coredump created by the kernel.
         """
         # If the process is still alive, try using GDB
         import pwnlib.elf.corefile
@@ -1455,6 +1495,9 @@ class process(tube):
                     self.error("Could not create corefile with GDB for %s", self.executable)
                 return corefile
 
+            if context.disable_corefiles :
+                self._corefile = None
+                return self._corefile
             # Handle race condition against the kernel or QEMU to write the corefile
             # by waiting up to 5 seconds for it to be written.
             t = Timeout()

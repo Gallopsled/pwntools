@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Read information from Core Dumps.
 
 Core dumps are extremely useful when writing exploits, even outside of
@@ -60,9 +59,6 @@ Module Members
 ----------------------------------------
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import ctypes
 import glob
@@ -124,7 +120,7 @@ class Mapping(object):
         #: :class:`int`: First mapped byte in the mapping
         self.start = start
 
-        #: :class:`int`: First byte after the end of hte mapping
+        #: :class:`int`: First byte after the end of the mapping
         self.stop = stop
 
         #: :class:`int`: Size of the mapping, in bytes
@@ -326,7 +322,7 @@ class Corefile(ELF):
         >>> hex(core.exe.address)
         '0x41410000'
 
-        The core file also has registers which can be accessed direclty.
+        The core file also has registers which can be accessed directly.
         Pseudo-registers :attr:`pc` and :attr:`sp` are available on all architectures,
         to make writing architecture-agnostic code more simple.
         If this were an amd64 corefile, we could access e.g. ``core.rax``.
@@ -483,6 +479,22 @@ class Corefile(ELF):
         True
         >>> core.sp in core.stack
         False
+
+        context.disable_corefiles disables the automatic corefile generation
+        for crashed processes. For running processes, io.corefile still invoke
+        GDB to generate a coredump.
+
+        >>> context.clear(arch='amd64')
+        >>> context.disable_corefiles = True
+        >>> elf = ELF.from_assembly(shellcraft.crash())
+        >>> io = elf.process()
+        >>> io.wait(1)
+        >>> io.corefile is None
+        True
+        >>> io = process('bash')
+        >>> core = io.corefile
+        >>> core is not None
+        True
 
         Corefile gracefully handles the stack being filled with garbage, including
         argc / argv / envp being overwritten.
@@ -734,7 +746,7 @@ class Corefile(ELF):
         for m in self.mappings:
             first_segment_for_name.setdefault(m.name, m)
 
-        # Find which segment conains the entry point
+        # Find which segment contains the entry point
         for m in self.mappings:
             if m.start <= self.at_entry < m.stop:
 

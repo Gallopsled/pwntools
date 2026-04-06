@@ -10,10 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -31,3 +31,8 @@ jobs:
         flake8 pwnlib setup.py docs travis --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         flake8 examples --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F403,F405'
         flake8 pwn --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --ignore='F401,F403,F405'
+
+    - name: Minimum Python version check
+      run: |
+        pip install vermin
+        vermin -vvv --no-tips -t=3.10- --violations  ./pwnlib ./pwn

@@ -1,9 +1,6 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import time
 import tempfile
@@ -91,7 +88,7 @@ def provider_libcdb(hex_encoded_id, search_type):
     import urllib.parse
 
     # Build the URL using the requested hash type
-    url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
+    url_base = f"{GITLAB_LIBCDB_URL}/libcdb/libcdb/raw/master/hashes/{search_type}/"
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -116,7 +113,7 @@ def query_libc_rip(params):
     # Deferred import because it's slow
     import requests
 
-    url = "{}/api/find".format(LIBC_RIP_URL)
+    url = f"{LIBC_RIP_URL}/api/find"
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
@@ -393,7 +390,7 @@ def unstrip_libc(filename):
         else:
             for server_url in DEBUGINFOD_SERVERS:
                 # Try to find separate debuginfo.
-                url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
+                url  = f'/buildid/{hex_encoded_id}/debuginfo'
                 url  = urllib.parse.urljoin(server_url, url)
                 data = b""
                 log.debug("Downloading data from debuginfod: %s", url)
@@ -501,7 +498,7 @@ def _find_libc_package_lib_url(libc):
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
-        yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
+        yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
 def download_libraries(libc_path, unstrip=True):
     """download_libraries(str, bool) -> str
@@ -654,8 +651,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_o
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
         >>> len(matched_libcs) > 1
         True
-        >>> for buildid in matched_libcs: # doctest +SKIP
-        ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
+        >>> for buildid in matched_libcs: # doctest: +SKIP
+        ...     libc = ELF(search_by_build_id(buildid)) # doctest: +SKIP
     """
     assert search_type in TYPES, search_type
 

@@ -16,7 +16,7 @@ Creating a ROP object which looks up symbols in the binary is pretty straightfor
 
     >>> rop = ROP(binary)
 
-Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
+Once the ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.
 Each :class:`Gadget` has an ``address`` property which has the real address as well.
 
     >>> rop.eax
@@ -31,12 +31,12 @@ Other, more complicated gadgets also happen magically
 
 The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
 This has the benefit of using multi-pop gadgets to set multiple registers with one gadget.
-    
+
     >>> rop(eax=0x11111111, ecx=0x22222222)
 
 Setting register values this way accounts for padding and extra registers which are popped off the stack.
 Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
-which corresponds to their offset, which is useful when debuggging your exploit.
+which corresponds to their offset, which is useful when debugging your exploit.
 
     >>> print(rop.dump())
     0x0000:       0x10000006 pop ecx; pop ebx; ret
@@ -76,7 +76,7 @@ object by register name.
     0x0000:       0x10000004 pop eax; ret
     0x0004:       0x12345678
 
-Let's re-create our ROP object now to show for some other examples.:
+Let's re-create our ROP object now to show for some other examples.
 
     >>> rop = ROP(binary)
 
@@ -109,7 +109,7 @@ standard Linux ABIs.
     0x001c:              0x6 arg2
 
 You can also use a shorthand to invoke calls.
-The stack is automatically adjusted for the next frame
+The stack is automatically adjusted for the next frame.
 
     >>> rop.write(7,8,9)
     >>> rop.exit()
@@ -357,9 +357,6 @@ Let's try it out!
     >>> p.recvline()
     b'hello\n'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import copy
 import hashlib
@@ -389,6 +386,7 @@ from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util import safeeval
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
 
@@ -653,7 +651,7 @@ class ROP(object):
         regset = set(registers)
 
         bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
-        
+
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
@@ -1041,7 +1039,7 @@ class ROP(object):
 
     def chain(self, base=None):
         """Build the ROP chain
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1054,7 +1052,7 @@ class ROP(object):
 
     def dump(self, base=None):
         """Dump the ROP chain in an easy-to-read manner
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1245,8 +1243,7 @@ class ROP(object):
             return None
 
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
-        if not os.path.exists(cachedir):
-            os.mkdir(cachedir)
+        os.makedirs(cachedir, exist_ok=True)
 
         if isinstance(files, ELF):
             files = [files]
@@ -1269,7 +1266,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = safeeval.const(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
         log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets
@@ -1317,25 +1314,6 @@ class ROP(object):
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
-        #
-        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.  We also
-        # monkey-patch sys.stdout to suppress output from ropgadget.
-        #
-        argv = sys.argv
-        stdout = sys.stdout
-
-        class Wrapper:
-
-            def __init__(self, fd):
-                self._fd = fd
-
-            def write(self, s):
-                pass
-
-            def __getattr__(self, k):
-                return getattr(self._fd, k)
-
         gadgets = {}
         for elf in self.elfs:
             cache = self.__cache_load(elf)
@@ -1343,17 +1321,12 @@ class ROP(object):
                 gadgets.update(cache)
                 continue
             log.info_once('Loading gadgets for %r' % elf.path)
-            try:
-                sys.stdout = Wrapper(sys.stdout)
-                import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
-                args = ropgadget.args.Args().getArgs()
-                core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
-                core.do_load(0)
-            finally:
-                sys.argv = argv
-                sys.stdout = stdout
+            import ropgadget
+            arguments = ['--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
+            args = ropgadget.args.Args(arguments).getArgs()
+            core = ropgadget.core.Core(args)
+            core.do_binary(elf.path, silent=True)
+            core.do_load(0, silent=True)
 
             elf_gadgets = {}
             for gadget in core._Core__gadgets:

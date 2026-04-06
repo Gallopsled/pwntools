@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from pwn import *
 from pwnlib.commandline import common
 from pwnlib.util.misc import which, parse_ldd_output, write
@@ -89,7 +85,7 @@ def get_docker_image_libraries():
             if not (libc and ld):
                 progress.failure("Could not find libraries")
                 return None, None
-            
+
             progress.status("Copying libraries to current directory")
             for filename, basename in zip((libc, ld), (libc_basename, ld_basename)):
                 cat_command = ["-c", "chroot %s /bin/sh -c '/bin/cat %s'" % (chroot_dir, filename)]
@@ -108,8 +104,9 @@ def get_docker_image_libraries():
                 write(basename, contents)
 
         except subprocess.CalledProcessError as e:
-            print(e.stderr.decode())
-            log.error("docker failed with status: %d" % e.returncode)
+            print(e.stderr.decode(), file=sys.stderr)
+            progress.failure("docker failed with status: %d" % e.returncode)
+            return None, None
 
         progress.success("Retrieved libraries from Docker image")
     return libc_basename, ld_basename

@@ -1,8 +1,5 @@
 # Copyright (c) 2013 Pratik Kumar Sahu, Nagendra Chowdary, Anish Mathuria
 # Ported to Python by Gallopsled
-from __future__ import absolute_import
-from __future__ import division
-
 from . import alphanum_byte
 from . import ARM_Instructions
 from . import random_funcs

@@ -408,7 +408,7 @@ c.TerminalInteractiveShell.prompts_class = ClassicPrompts
 # Options for configuring the SQLite connection
 #
 # These options are passed as keyword args to sqlite3.connect when establishing
-# database conenctions.
+# database connections.
 # c.HistoryManager.connection_options = {}
 
 # enable the SQLite history
