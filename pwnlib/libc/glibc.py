@@ -114,10 +114,14 @@ def reveal_ptr_same_page(ptr_value: int) -> int:
 
 
 class ExitFlavor(IntEnum):
-    """Enum adapted from glibc ``exit.h``.
+    """Enum adapted from glibc ``exit.h``. Check definitions from `here`_.
 
     Original enums are: ``ef_free``, ``ef_us``, ``ef_on``, ``ef_at``
     and ``ef_cxa``.
+
+    .. _here:
+        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L25-L32
+
     """
     FREE = 0
     USED = 1
@@ -129,7 +133,8 @@ class ExitFunc:
     """
     Craft a ``struct exit_function`` object. If user has arbitrary write
     to libc area and knows pointer guard used in ``PTR_MANGLE``, then
-    the user is able to hijack control flow when process exits.
+    the user is able to hijack control flow when process exits. Check
+    definitions `here`_.
 
     Arguments:
         flavor(ExitFlavor): Which flavor of exit func is registered.
@@ -149,6 +154,10 @@ class ExitFunc:
         ExitFunc(AT, fn=0x401f0 ^ 0x13371337deadbeef)
         >>> bytes(exit_func).hex()
         '03000000000000006e263e7e53bd6f26'
+
+    .. _here:
+        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L34-L54
+
     """
     flavor: ExitFlavor
     fn: int
@@ -232,7 +241,7 @@ class ExitFunc:
             ExitFunc(USED)
         """
         data = _need_bytes(data)
-        if len(data) % 4 != 0 or len(data) == 0:
+        if len(data) % context.bytes != 0 or len(data) == 0:
             raise ValueError(f'data must be aligned to word boundry ({context.bytes} bytes)')
         words = unpack_many(data)
         try:
@@ -256,13 +265,13 @@ class ExitFuncList:
     """
     Craft a ``struct exit_function_list`` object. glibc has a static variable
     ``initial`` to store most atexit objects and a pointer ``__exit_funcs``
-    pointing to ``initial``.
+    pointing to ``initial``. Check definitions from `here`_.
 
     Arguments:
         nextp(int):          Next ``struct exit_function_list`` pointer on chain.
         fns(list[ExitFunc]): Registered exit functions
 
-    Members:
+    Attributes:
         idx(int): Total size of registered exit funcs.
                   (This field is automatically obtained via ``len(funcs)``)
 
@@ -275,6 +284,10 @@ class ExitFuncList:
         ExitFuncList(next=0x0, idx=2, fns=[ExitFunc(FREE), ExitFunc(AT, fn=0x401f0 ^ 0x13371337)])
         >>> bytes(flist).hex()
         '00000000020000000000000000000000000000000000000003000000268e25660000000000000000'
+
+    .. _here:
+        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L55-L60
+
     """
     nextp: int
     idx: int
