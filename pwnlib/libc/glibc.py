@@ -217,10 +217,10 @@ class ExitFunc:
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFunc:
         """
-        Construct an ExitFunc from bytes object.
+        Construct an ``ExitFunc`` from bytes object.
 
         Arguments:
-            data(bytes): The bytes object to convert to ExitFunc. Must be aligned
+            data(bytes): The bytes object to convert to ``ExitFunc``. Must be aligned
                          to ``context.arch`` word boundry.
             guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
 
@@ -314,10 +314,10 @@ class ExitFuncList:
     @staticmethod
     def from_bytes(data: bytes, guard: int) -> ExitFuncList:
         """
-        Construct an ExitFuncList from bytes object.
+        Construct an ``ExitFuncList`` from bytes object.
 
         Arguments:
-            data(bytes): The bytes object to convert to ExitFuncList. Should be
+            data(bytes): The bytes object to convert to ``ExitFuncList``. Should be
                          large enough to resolve all entries specified by ``idx``.
             guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
 
@@ -339,3 +339,78 @@ class ExitFuncList:
             return ExitFuncList(nextp, fns)
         except IndexError:
             raise ValueError(f'Insufficient data when decoding ExitFuncList') from None
+
+class ExitDtorList:
+    """
+    Craft a ``struct dtor_list`` object. glibc will invoke functions in it
+    if it's not null when exits. Note that to avoid program aborting, the
+    ``ExitDtorList`` pointer must be free-able. Check definitions from `here`_.
+
+    Arguments:
+        func(int):  A pointer to function to execute.
+        guard(int): Process ``POINTER_GUARD``.
+        obj(int):   Argument passed to ``func``.
+        lmap(int):  A valid pointer to a ``link_map`` if you want
+                    program not to abort. (``func`` is executed first.)
+        nextl(int): Next ``ExitDtorList`` on chain. ``0`` means end of chain.
+
+    Examples:
+        >>> context.clear(arch='amd64')
+        >>> dtor = glibc.ExitDtorList(0x402c0, 0xdeadbeef, 0, 0, 0)
+        >>> dtor
+        ExitDtorList(func=0x402c0 ^ 0xdeadbeef, obj=0x0, map=0x0, next=0x0)
+        >>> bytes(dtor).hex()
+        '00005e7853bd0100000000000000000000000000000000000000000000000000'
+
+    .. _here:
+        https://elixir.bootlin.com/glibc/glibc-2.38/source/stdlib/cxa_thread_atexit_impl.c#L82-L88
+
+    """
+    func: int
+    guard: int
+    obj: int
+    lmap: int
+    nextl: int
+
+    def __init__(self, func: int, guard: int, obj: int, lmap: int, nextl: int):
+        self.func = func
+        self.guard = guard
+        self.obj = obj
+        self.lmap = lmap
+        self.nextl = nextl
+
+    def __repr__(self) -> str:
+        return (
+            f'{type(self).__name__}(func={self.func:#x} ^ {self.guard:#x}, '
+            f'obj={self.obj:#x}, map={self.lmap:#x}, next={self.nextl:#x})'
+        )
+
+    def __bytes__(self) -> bytes:
+        return flat(ptr_mangle(self.guard, self.func),
+                    self.obj, self.lmap, self.nextl)
+
+    def __flat__(self) -> bytes:
+        return bytes(self)
+
+    @staticmethod
+    def from_bytes(data: bytes, guard: int) -> ExitFuncList:
+        """
+        Construct an ``ExitDtorList`` from bytes object.
+
+        Arguments:
+            data(bytes): The bytes object to convert to ``ExitDtorList``, whose
+                         length should exactly be ``4 * sizeof(size_t)``.
+            guard(int):  Process ``POINTER_GUARD`` to demangle pointers.
+
+        Examples:
+            >>> context.clear(arch='amd64')
+            >>> guard = 0xd36a59fe4e9853d8
+            >>> blob = bytes.fromhex('d4a611029a375619000000000000000010915555555500000000000000000000')
+            >>> glibc.ExitDtorList.from_bytes(blob, guard)
+            ExitDtorList(func=0x5555555552d0 ^ 0xd36a59fe4e9853d8, obj=0x0, map=0x555555559110, next=0x0)
+        """
+        data = _need_bytes(data)
+        if len(data) != 4 * context.bytes:
+            raise ValueError(f'The Length of data is not {4 * context.bytes}')
+        func, obj, lmap, nextl = unpack_many(data)
+        return ExitDtorList(ptr_demangle(guard, func), guard, obj, lmap, nextl)
