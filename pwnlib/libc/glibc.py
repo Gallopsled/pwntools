@@ -194,9 +194,12 @@ class ExitFunc:
             case ExitFlavor.CXA:
                 extra = f', arg={self.arg:#x}, dso_handle={self.dso:#x}'
             case ExitFlavor.USED | ExitFlavor.FREE:
-                return f'ExitFunc({self.flavor.name})'
+                return f'{type(self).__name__}({self.flavor.name})'
 
-        return f'ExitFunc({self.flavor.name}, fn={self.fn:#x} ^ {self.guard:#x}{extra})'
+        return (
+            f'{type(self).__name__}({self.flavor.name}, '
+            f'fn={self.fn:#x} ^ {self.guard:#x}{extra})'
+        )
 
     def __bytes__(self) -> bytes:
         match self.flavor:
@@ -299,7 +302,10 @@ class ExitFuncList:
         self.idx = len(fns)
 
     def __repr__(self) -> str:
-        return f'ExitFuncList(next={self.nextp:#x}, idx={self.idx}, fns={self.fns})'
+        return (
+            f'{type(self).__name__}(next={self.nextp:#x}, '
+            f'idx={self.idx}, fns={self.fns})'
+        )
 
     def __bytes__(self) -> bytes:
         func_sz = 4 * context.bytes
