@@ -46,6 +46,7 @@ the :mod:`pwnlib.adb` module.
 
 """
 
+import datetime
 import functools
 import glob
 import logging
@@ -55,8 +56,6 @@ import shutil
 import stat
 import tempfile
 import time
-
-import dateutil.parser
 
 from pwnlib import atexit
 from pwnlib import tubes
@@ -1272,7 +1271,6 @@ properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
-    import datetime
 
     # Use ro.build.date.utc (integer epoch seconds) which is set by the
     # AOSP build system and available on all standard Android devices.
@@ -1281,7 +1279,7 @@ def _build_date():
     utc = getprop('ro.build.date.utc')
     if utc and utc.strip().isdigit():
         try:
-            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), dateutil.tz.UTC)
+            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), tz=datetime.timezone.utc)
             return as_datetime.strftime('%Y-%b-%d')
         except (OSError, OverflowError, ValueError):
             pass
@@ -1290,6 +1288,11 @@ def _build_date():
     as_string = getprop('ro.build.date')
     if not as_string:
         return ''
+    try:
+        import dateutil.parser
+    except ImportError:
+        log.exception("dateutil is required to parse ro.build.date since ro.build.date.utc is missing.  Please install it with 'pip install python-dateutil'")
+
     try:
         as_datetime = dateutil.parser.parse(as_string)
     except (ValueError, OverflowError):

@@ -42,7 +42,6 @@ dependencies = [
     "requests>=2.0",
     "pygments>=2.0",
     "pysocks",
-    "python-dateutil",
     "packaging",
     "psutil>=3.3.0",
     "intervaltree>=3.0",
