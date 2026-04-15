@@ -697,6 +697,9 @@ class ssh(Timeout, Logger):
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
+            self.public_key = self.transport.get_remote_server_key()
+            self.fingerprint = self.public_key.get_fingerprint().hex()
+
             h.success()
 
         if self.raw:
@@ -843,7 +846,7 @@ class ssh(Timeout, Logger):
             aslr(bool):
                 See :class:`pwnlib.tubes.process.process` for more information.
             setuid(bool):
-                See :class:`pwnlib.tubes.process.process` for more information.
+                See :class:`pwnlib.tubes.process.process` for moresha256+base64. information.
             shell(bool):
                 Pass the command-line arguments to the shell.
 
@@ -2096,7 +2099,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self._ibt
 
     def _checksec_cache(self, value=None):
-        path = self._get_cachefile('%s-%s-%s' % (self.host, self.port, self.user))
+        path = self._get_cachefile('%s-%s-%s' % (self.host, self.port, self.fingerprint))
 
         if value is not None:
             with open(path, 'w+') as f:
@@ -2114,37 +2117,40 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             banner(bool): Whether to print the path to the ELF binary.
         """
         cached = self._checksec_cache()
+        checksec_header = "%s@%s:" % (self.user, self.host)
+
         if cached:
-            return cached
+            return '\n'.join((checksec_header, cached))
+
 
         red    = text.red
         green  = text.green
         yellow = text.yellow
 
         res = [
-            "%s@%s:" % (self.user, self.host),
-            "Distro:".ljust(10) + ' '.join(self.distro),
-            "OS:".ljust(10) + self.os,
-            "Arch:".ljust(10) + self.arch,
-            "Version:".ljust(10) + '.'.join(map(str, self.version)),
+            "Distro:".ljust(15) + ' '.join(self.distro),
+            "OS:".ljust(15) + self.os,
+            "Arch:".ljust(15) + self.arch,
+            "Version:".ljust(15) + '.'.join(map(str, self.version)),
 
-            "ASLR:".ljust(10) + {
+            "ASLR:".ljust(15) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.aslr],
-            "SHSTK:".ljust(10) + {
+            "SHSTK:".ljust(15) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.user_shstk],
-            "IBT:".ljust(10) + {
+            "IBT:".ljust(15) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.ibt],
         ]
 
         if self.aslr_ulimit:
-            res += [ "Note:".ljust(10) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
+            res += [ "Note:".ljust(15) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
 
         cached = '\n'.join(res)
         self._checksec_cache(cached)
-        return cached
+
+        return '\n'.join((checksec_header, cached))
