@@ -1256,6 +1256,12 @@ class ContextType(object):
         Default terminal used by :meth:`pwnlib.util.misc.run_in_new_terminal`.
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
+        
+        Note:
+            :meth:`pwnlib.util.misc.run_in_new_terminal` has special handlers for
+            supported terminals with windowing capabilities, which might apply
+            to terminals set with this context option. See its documentation
+            for additional information on this behavior.
         """
         if isinstance(value, (bytes, str)):
             return [value]
