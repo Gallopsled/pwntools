@@ -1272,8 +1272,28 @@ properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
+    import datetime
+
+    # Use ro.build.date.utc (integer epoch seconds) which is set by the
+    # AOSP build system and available on all standard Android devices.
+    # This avoids ro.build.date which is locale-dependent and can contain
+    # non-ASCII characters that dateutil cannot parse.  See #2513.
+    utc = getprop('ro.build.date.utc')
+    if utc and utc.strip().isdigit():
+        try:
+            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), dateutil.tz.UTC)
+            return as_datetime.strftime('%Y-%b-%d')
+        except (OSError, OverflowError, ValueError):
+            pass
+
+    # Fallback for non-standard builds missing ro.build.date.utc.
     as_string = getprop('ro.build.date')
-    as_datetime =  dateutil.parser.parse(as_string)
+    if not as_string:
+        return ''
+    try:
+        as_datetime = dateutil.parser.parse(as_string)
+    except (ValueError, OverflowError):
+        return as_string
     return as_datetime.strftime('%Y-%b-%d')
 
 def find_ndk_project_root(source):

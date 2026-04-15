@@ -260,6 +260,18 @@ class FileStructure(object):
          _mode: 0x0
          _unused2: 0x0
          vtable: 0x0}
+
+        Bytes fields are padded to the correct field size.
+        For example, _unused2 is 40 bytes on i386, so a short value gets
+        zero-padded to 40, not to context.bytes (4):
+
+        >>> context.clear(arch='i386')
+        >>> fileStr2 = FileStructure(null=0)
+        >>> fileStr2.vtable = 0x561859f0
+        >>> old_len = len(bytes(fileStr2))
+        >>> fileStr2._unused2 = b'AB'
+        >>> len(bytes(fileStr2)) == old_len
+        True
     """
 
     vars_=[]
@@ -300,7 +312,7 @@ class FileStructure(object):
         structure = b''
         for val in self.vars_:
             if isinstance(getattr(self, val), bytes):
-                structure += getattr(self, val).ljust(context.bytes, b'\x00')
+                structure += getattr(self, val).ljust(self.length[val], b'\x00')
             else:
                 if self.length[val] > 0:
                     structure += pack(int(getattr(self, val)), self.length[val]*8)
@@ -329,7 +341,7 @@ class FileStructure(object):
         structure = b''
         for val in self.vars_:
             if isinstance(getattr(self, val), bytes):
-                structure += getattr(self, val).ljust(context.bytes, b'\x00')
+                structure += getattr(self, val).ljust(self.length[val], b'\x00')
             else:
                 structure += pack(int(getattr(self, val)), self.length[val]*8)
             if val == v:

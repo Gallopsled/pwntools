@@ -10,7 +10,7 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-stable)  | `stable` | Oct 12, 2025
+| [4.15.0](#4150-stable) | `stable` | Oct 12, 2025
 | [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
@@ -102,6 +102,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2496][2496] Add linux ko file search support
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
+- [#2606][2606] Improve error of `process.maps()` after the process exited
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
@@ -123,6 +124,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2688][2688] Close SSH client connection when authentication failed
 - [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
 - [#2706][2706] doc: Update `run_in_new_terminal` docstring with new overrides
+- [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
+- [#2655][2655] Add `context.debugger` to select which debugger to use
 
 [2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -151,6 +154,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2496]: https://github.com/Gallopsled/pwntools/pull/2496
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
+[2606]: https://github.com/Gallopsled/pwntools/pull/2606
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
@@ -171,6 +175,16 @@ The table below shows which release corresponds to each branch, and what date th
 [2671]: https://github.com/Gallopsled/pwntools/pull/2671
 [2688]: https://github.com/Gallopsled/pwntools/pull/2688
 [2686]: https://github.com/Gallopsled/pwntools/pull/2686
+[2704]: https://github.com/Gallopsled/pwntools/pull/2704
+[2655]: https://github.com/Gallopsled/pwntools/pull/2655
+
+## 4.15.1
+
+- [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
+- [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
+
+[2694]: https://github.com/Gallopsled/pwntools/pull/2694
+[2701]: https://github.com/Gallopsled/pwntools/pull/2701
 
 ## 4.15.0 (`stable`)
 
@@ -236,7 +250,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
 [2624]: https://github.com/Gallopsled/pwntools/pull/2624
 
-## 4.14.1 (`stable`)
+## 4.14.1
 
 - [#2451][2451] Show symbols defined to value 0 (start of file)
 - [#2533][2533] Fix installation on Python 3.5 and lower
@@ -687,7 +701,7 @@ In memoriam — [Zach Riggle][zach] — long time contributor and maintainer of 
 [fecf9f]: http://github.com/Gallopsled/pwntools/commit/fecf9f
 [1454]: https://github.com/Gallopsled/pwntools/pull/1454
 
-## 4.1.7 (`stable`)
+## 4.1.7
 
 - [#1615][1615] Fix aarch64 pushstr and pushstr_array
 
