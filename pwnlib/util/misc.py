@@ -308,8 +308,12 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         kill_at_exit (bool): Whether to close the command/terminal on process exit.
         preexec_fn (callable): Callable to invoke before exec().
 
-    Note:
-        The command is opened with ``/dev/null`` for stdin, stdout, stderr.
+    Notes:
+        - The command is opened with ``/dev/null`` for stdin, stdout, stderr.
+        - When ``context.terminal`` is not a path and the terminal is one of the above
+          which support windowing/tiling, this will also cause the terminal to split.
+          Setting ``context.terminal`` to a path (e.g. using ``which(terminal)``)
+          bypasses this.
 
     Returns:
       PID of the new terminal process
