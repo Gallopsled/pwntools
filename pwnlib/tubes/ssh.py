@@ -846,7 +846,7 @@ class ssh(Timeout, Logger):
             aslr(bool):
                 See :class:`pwnlib.tubes.process.process` for more information.
             setuid(bool):
-                See :class:`pwnlib.tubes.process.process` for moresha256+base64. information.
+                See :class:`pwnlib.tubes.process.process` for more information.
             shell(bool):
                 Pass the command-line arguments to the shell.
 
