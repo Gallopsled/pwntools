@@ -48,9 +48,6 @@ pwnlib/util/fiddling.py:0: error: Module has no attribute "green"  [attr-defined
 pwnlib/asm.py:0: error: Module "pwnlib.util.hashes" has no attribute "sha1sumhex"  [attr-defined]
 pwnlib/asm.py:0: error: Need type annotation for "util_versions"  [var-annotated]
 pwnlib/tubes/tube.py:0: error: Argument 1 to "make_wrapper" has incompatible type "function"; expected "tube"  [arg-type]
-pwnlib/tubes/tube.py:0: error: Name "make_wrapper" already defined on line 0  [no-redef]
-pwnlib/tubes/tube.py:0: error: Too many arguments for "make_wrapper"  [call-arg]
-pwnlib/tubes/tube.py:0: note: Looks like the first special argument in a method is not named "self", "cls", or "mcs", maybe it is missing?
 pwnlib/tubes/process.py:0: error: Module "pwnlib.util.hashes" has no attribute "sha256file"  [attr-defined]
 pwnlib/tubes/process.py:0: error: Cannot assign to a type  [misc]
 pwnlib/tubes/process.py:0: error: Incompatible types in assignment (expression has type "PTY", variable has type "type[PTY]")  [assignment]
