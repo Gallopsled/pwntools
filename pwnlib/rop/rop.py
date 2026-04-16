@@ -369,6 +369,8 @@ import struct
 import sys
 import tempfile
 
+from enum import Enum
+
 from pwnlib import abi
 from pwnlib import constants
 from pwnlib.context import LocalContext
@@ -393,13 +395,7 @@ from pwnlib.util.packing import pack
 log = getLogger(__name__)
 __all__ = ['ROP']
 
-enums = Call, constants.Constant
-try:
-    from enum import Enum
-except ImportError:
-    pass
-else:
-    enums += Enum,
+enums = Call, constants.Constant, Enum
 
 class Padding(object):
     """
@@ -469,7 +465,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-class ROP(object):
+class ROP:
     r"""Class which simplifies the generation of ROP-chains.
 
     Example:

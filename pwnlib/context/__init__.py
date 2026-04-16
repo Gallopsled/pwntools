@@ -24,10 +24,7 @@ from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
 
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
+from collections.abc import Iterable
 
 __all__ = ['context', 'ContextType', 'Thread']
 

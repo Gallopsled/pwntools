@@ -3,15 +3,8 @@ from os.path import basename
 
 from docutils import nodes
 from docutils import statemachine
-try:
-    from sphinx.util.compat import Directive
-except ImportError:
-    from docutils.parsers.rst import Directive
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from docutils.parsers.rst import Directive
+from io import StringIO
 
 
 class ExecDirective(Directive):
