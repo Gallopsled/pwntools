@@ -16,7 +16,6 @@ if sys.platform != 'win32':
 
 from ..context import ContextType
 from . import termcap
-from .. import py2compat
 
 __all__ = ['output', 'init']
 
