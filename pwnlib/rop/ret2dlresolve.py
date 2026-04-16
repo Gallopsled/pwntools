@@ -78,7 +78,7 @@ log = getLogger(__name__)
 ELF32_R_SYM_SHIFT = 8
 ELF64_R_SYM_SHIFT = 32
 
-class Elf32_Rel(object):
+class Elf32_Rel:
     ''
     """
     .. code-block:: c
@@ -100,7 +100,7 @@ class Elf32_Rel(object):
         return self.__flat__()
 
 
-class Elf64_Rel(object):
+class Elf64_Rel:
     ''
     """
     .. code-block:: c
@@ -122,7 +122,7 @@ class Elf64_Rel(object):
         return self.__flat__()
 
 
-class Elf32_Sym(object):
+class Elf32_Sym:
     ''
     """
     .. code-block:: c
@@ -157,7 +157,7 @@ class Elf32_Sym(object):
         return self.__flat__()
 
 
-class Elf64_Sym(object):
+class Elf64_Sym:
     ''
     """
     .. code-block:: c
@@ -211,7 +211,7 @@ class MarkedBytes(bytes):
     pass
 
 
-class Ret2dlresolvePayload(object):
+class Ret2dlresolvePayload:
     """Create a ret2dlresolve payload
 
     Arguments:

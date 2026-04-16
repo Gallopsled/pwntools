@@ -168,7 +168,7 @@ all_regs, sizes, bigger, smaller = register_sizes(i386_ordered, [64, 32, 16, 8, 
 native64 = {k:v[0] for k,v in bigger.items()}
 native32 = {k:v[1] for k,v in bigger.items() if not k.startswith('r')}
 
-class Register(object):
+class Register:
     #: Register name
     name = None
 

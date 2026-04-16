@@ -1116,7 +1116,7 @@ def unlock_bootloader():
         if 'unlocked: yes' not in unlocked:
             log.error("Unlock failed")
 
-class Kernel(object):
+class Kernel:
     _kallsyms = None
 
     @property
@@ -1226,7 +1226,7 @@ class Kernel(object):
 
 kernel = Kernel()
 
-class Property(object):
+class Property:
     def __init__(self, name=None):
         # Need to avoid overloaded setattr() so we go through __dict__
         self.__dict__['_name'] = name
@@ -1441,7 +1441,7 @@ def compile(source):
 
     return output[0]
 
-class Partition(object):
+class Partition:
     def __init__(self, path, name, blocks=0):
         self.path = path
         self.name = name
@@ -1493,7 +1493,7 @@ def readlink(path):
 
     return path.decode()
 
-class Partitions(object):
+class Partitions:
     """Enable access to partitions
 
     Example:

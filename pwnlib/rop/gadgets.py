@@ -1,4 +1,4 @@
-class Gadget(object):
+class Gadget:
     """
     Describes a ROP gadget
     """

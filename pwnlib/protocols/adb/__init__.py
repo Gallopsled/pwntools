@@ -33,7 +33,7 @@ def unpack(val):
 OKAY = b"OKAY"
 FAIL = b"FAIL"
 
-class Message(object):
+class Message:
     """An ADB hex-length-prefixed message"""
     def __init__(self, string):
         self.string = string

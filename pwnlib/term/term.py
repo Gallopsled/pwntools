@@ -34,7 +34,7 @@ fd = sys.stdout
 winchretry = False
 rlock = threading.RLock()
 
-class WinchLock(object):
+class WinchLock:
     def __init__(self):
         self.guard = threading.RLock()
         self.lock = threading.Lock()
@@ -230,7 +230,7 @@ def goto(rc):
         do('cud', r - nowr)
 
 
-class Cell(object):
+class Cell:
     def __init__(self, value, float):
         self.value = value
         self.float = float
@@ -326,7 +326,7 @@ class Cell(object):
         return '{}({!r}, float={}, pos={})'.format(self.__class__.__name__, self.value, self.float, self.pos)
 
 
-class WeakCellList(object):
+class WeakCellList:
     def __init__(self):
         self._cells = []
         self._floats = []

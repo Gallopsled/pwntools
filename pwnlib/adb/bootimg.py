@@ -33,7 +33,7 @@ class boot_img_hdr(ctypes.Structure):
         ('extra_cmdline', ctypes.c_char * BOOT_EXTRA_ARGS_SIZE),
     ]
 
-class BootImage(object):
+class BootImage:
     def __init__(self, data):
         self.data = data
         self.header = boot_img_hdr.from_buffer_copy(data)

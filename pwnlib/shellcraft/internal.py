@@ -17,7 +17,7 @@ def init_mako():
     if lookup is not None:
         return
 
-    class IsInsideManager(object):
+    class IsInsideManager:
         def __init__(self, parent):
             self.parent = parent
         def __enter__(self):

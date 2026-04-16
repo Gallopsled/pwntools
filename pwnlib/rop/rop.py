@@ -397,7 +397,7 @@ __all__ = ['ROP']
 
 enums = Call, constants.Constant, Enum
 
-class Padding(object):
+class Padding:
     """
     Placeholder for exactly one pointer-width of padding.
     """
