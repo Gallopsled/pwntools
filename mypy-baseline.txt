@@ -82,8 +82,6 @@ pwnlib/util/getdents.py:0: error: Incompatible types in assignment (expression h
 pwnlib/util/getdents.py:0: error: Incompatible types in assignment (expression has type "bytes", variable has type "str")  [assignment]
 pwnlib/util/getdents.py:0: error: "str" has no attribute "decode"; maybe "encode"?  [attr-defined]
 pwnlib/util/getdents.py:0: error: Argument 1 to "split" of "str" has incompatible type "bytes"; expected "str | None"  [arg-type]
-pwnlib/data/syscalls/generate.py:0: error: Cannot find implementation or library stub for module named "functions"  [import-not-found]
-pwnlib/data/syscalls/generate.py:0: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
 pwnlib/encoders/encoder.py:0: error: Need type annotation for "_encoders"  [var-annotated]
 pwnlib/encoders/encoder.py:0: error: Need type annotation for "blacklist" (hint: "blacklist: set[<type>] = ...")  [var-annotated]
 pwnlib/encoders/arm/alphanumeric/__init__.py:0: error: Incompatible types in assignment (expression has type "str", base class "Encoder" defined the type as "None")  [assignment]
