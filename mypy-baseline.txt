@@ -9,7 +9,6 @@ pwnlib/filesystem/path.py:0: error: "type[Path]" has no attribute "mkdtemp"  [at
 pwnlib/gdb_api_bridge.py:0: error: Name "socket_path" is not defined  [name-defined]
 pwnlib/rop/gadgets.py:0: error: Need type annotation for "insns" (hint: "insns: list[<type>] = ...")  [var-annotated]
 pwnlib/rop/gadgets.py:0: error: Need type annotation for "regs" (hint: "regs: dict[<type>, <type>] = ...")  [var-annotated]
-pwnlib/term/windows_termcap.py:0: error: Module has no attribute "WinDLL"  [attr-defined]
 pwnlib/term/__init__.py:0: error: Module has no attribute "width"  [attr-defined]
 pwnlib/term/__init__.py:0: error: Module has no attribute "height"  [attr-defined]
 pwnlib/term/key.py:0: error: Need type annotation for "_kbuf" (hint: "_kbuf: list[<type>] = ...")  [var-annotated]
