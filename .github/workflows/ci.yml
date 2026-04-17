@@ -54,8 +54,36 @@ jobs:
       run: |
         sudo chown -R 101:101 /home/runner/libcdb-cache
         container_id=$(docker ps --all --filter volume=/home/runner/libcdb-cache --no-trunc --format "{{.ID}}")
+        if [ -z "$container_id" ]; then
+          echo "libcdb-cache container not found, trying name filter"
+          container_id=$(docker ps --all --filter name=libcdb-cache --no-trunc --format "{{.ID}}")
+        fi
+        if [ -z "$container_id" ]; then
+          echo "ERROR: Could not find libcdb-cache container"
+          exit 1
+        fi
         docker cp ./travis/libcdb_nginx_cache.conf $container_id:/etc/nginx/nginx.conf
         docker restart $container_id
+        # Wait for nginx to be listening after restart.
+        # On restart, nginx's entrypoint re-runs and nginx may fail to start
+        # if Docker's embedded DNS (127.0.0.11) is not yet ready, causing
+        # "host not found in upstream" errors. Retry until nginx is up.
+        for i in $(seq 1 10); do
+          sleep 3
+          if docker exec $container_id ss -tlpn 2>/dev/null | grep -q ':3000\|:3001\|:3002\|:3003\|:3004'; then
+            echo "nginx listening on cache ports after ${i} attempt(s)"
+            break
+          fi
+          echo "nginx not listening, retrying (attempt $i/10)..."
+          docker restart $container_id
+        done
+        # Verify nginx is up after the loop
+        sleep 3
+        if ! docker exec $container_id ss -tlpn 2>/dev/null | grep -q ':3000\|:3001\|:3002\|:3003\|:3004'; then
+          echo "nginx failed to start, checking logs:"
+          docker logs $container_id 2>&1 | tail -30
+          exit 1
+        fi
 
     - name: Install RPyC for gdb
       run: |
