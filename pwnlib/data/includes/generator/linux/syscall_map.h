@@ -23,6 +23,7 @@
 #define SYS_brk __NR_brk
 #define SYS_cachectl __NR_cachectl
 #define SYS_cacheflush __NR_cacheflush
+#define SYS_cachestat __NR_cachestat
 #define SYS_capget __NR_capget
 #define SYS_capset __NR_capset
 #define SYS_chdir __NR_chdir
@@ -80,6 +81,7 @@
 #define SYS_fchdir __NR_fchdir
 #define SYS_fchmod __NR_fchmod
 #define SYS_fchmodat __NR_fchmodat
+#define SYS_fchmodat2 __NR_fchmodat2
 #define SYS_fchown __NR_fchown
 #define SYS_fchown32 __NR_fchown32
 #define SYS_fchownat __NR_fchownat
@@ -109,7 +111,11 @@
 #define SYS_ftruncate __NR_ftruncate
 #define SYS_ftruncate64 __NR_ftruncate64
 #define SYS_futex __NR_futex
+#define SYS_futex_requeue __NR_futex_requeue
 #define SYS_futex_time64 __NR_futex_time64
+#define SYS_futex_wait __NR_futex_wait
+#define SYS_futex_waitv __NR_futex_waitv
+#define SYS_futex_wake __NR_futex_wake
 #define SYS_futimesat __NR_futimesat
 #define SYS_getcpu __NR_getcpu
 #define SYS_getcwd __NR_getcwd
@@ -217,6 +223,7 @@
 #define SYS_lstat64 __NR_lstat64
 #define SYS_madvise __NR_madvise
 #define SYS_madvise1 __NR_madvise1
+#define SYS_map_shadow_stack __NR_map_shadow_stack
 #define SYS_mbind __NR_mbind
 #define SYS_membarrier __NR_membarrier
 #define SYS_memfd_create __NR_memfd_create
@@ -410,6 +417,7 @@
 #define SYS_preadv2 __NR_preadv2
 #define SYS_prlimit64 __NR_prlimit64
 #define SYS_process_madvise __NR_process_madvise
+#define SYS_process_mrelease __NR_process_mrelease
 #define SYS_process_vm_readv __NR_process_vm_readv
 #define SYS_process_vm_writev __NR_process_vm_writev
 #define SYS_prof __NR_prof
@@ -425,6 +433,7 @@
 #define SYS_pwritev2 __NR_pwritev2
 #define SYS_query_module __NR_query_module
 #define SYS_quotactl __NR_quotactl
+#define SYS_quotactl_fd __NR_quotactl_fd
 #define SYS_read __NR_read
 #define SYS_readahead __NR_readahead
 #define SYS_readdir __NR_readdir
@@ -506,6 +515,7 @@
 #define SYS_sethostname __NR_sethostname
 #define SYS_setitimer __NR_setitimer
 #define SYS_set_mempolicy __NR_set_mempolicy
+#define SYS_set_mempolicy_home_node __NR_set_mempolicy_home_node
 #define SYS_setns __NR_setns
 #define SYS_setpgid __NR_setpgid
 #define SYS_setpgrp __NR_setpgrp

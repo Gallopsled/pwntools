@@ -1,10 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import itertools
 import os
 import re
-import six
 import sys
 from types import ModuleType
 
@@ -137,7 +133,7 @@ class module(ModuleType):
         return templates
 
     def eval(self, item):
-        if isinstance(item, six.integer_types):
+        if isinstance(item, int):
             return item
         return constants.eval(item)
 
@@ -147,18 +143,19 @@ class module(ModuleType):
             if not comment:  # then it can be inside a comment!
                 r = r.replace('*/', r'\x2a/')
             return r
-        if not isinstance(n, six.integer_types):
+        if not isinstance(n, int):
             return n
         if isinstance(n, constants.Constant):
-            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
-            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+            pretty = self.pretty(int(n))
+            if comment: return f'{n} /* {pretty} */'
+            else:       return f'{n} ({pretty})'
         elif abs(n) < 10:
             return '%d' % n
         else:
             return '%#x' % n
 
     def okay(self, s, *a, **kw):
-        if isinstance(s, six.integer_types):
+        if isinstance(s, int):
             s = packing.pack(s, *a, **kw)
         return b'\0' not in s and b'\n' not in s
 

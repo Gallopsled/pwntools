@@ -5,8 +5,7 @@ ENV HISTFILE=/home/pwntools/.history
 
 # Uninstall existing versions of pwntools
 USER root
-RUN python2.7 -m pip uninstall -q -y pwntools \
-    && python3 -m pip uninstall -q -y pwntools
+RUN python3 -m pip uninstall --break-system-packages -q -y pwntools
 
 # Switch back to the pwntools user from here forward
 USER pwntools
@@ -18,17 +17,14 @@ ENV PATH="/home/pwntools/.local/bin:${PATH}"
 
 # Install Pwntools to the home directory, make it an editable install
 RUN git clone https://github.com/Gallopsled/pwntools \
- && python2.7 -m pip install --no-cache-dir --upgrade --editable pwntools \
- && python3 -m pip install --no-cache-dir --upgrade --editable pwntools \
+ && python3 -m pip install --break-system-packages --upgrade --editable pwntools \
  && PWNLIB_NOTERM=1 pwn version
 
 # Requirements for running the tests
-RUN python2.7 -m pip install --no-cache-dir --upgrade --requirement pwntools/docs/requirements.txt \
-    && python3 -m pip install --no-cache-dir --upgrade --requirement pwntools/docs/requirements.txt
+RUN python3 -m pip install --break-system-packages --upgrade --requirement pwntools/docs/requirements.txt
 
 # Python niceties for debugging
-RUN python2.7 -m pip install --no-cache-dir -U ipython ipdb \
-    && python3 -m pip install --no-cache-dir -U ipython ipdb
+RUN python3 -m pip install --break-system-packages -U ipython ipdb
 
 # Dependencies from .travis.yml addons -> apt -> packages
 ARG DEBIAN_FRONTEND=noninteractive
@@ -84,11 +80,6 @@ ADD ipython_config.py  /home/pwntools/.ipython/profile_default
 
 # Do not require password for sudo
 RUN echo "pwntools ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/travis
-
-# Some additional debugging tools that are useful
-RUN python2.7 -m pip install --no-cache-dir ipdb && \
-    python3 -m pip install --no-cache-dir ipdb
-
 # Install debugging utilities
 USER root
 RUN apt-get -y install gdb gdbserver tmux gdb-multiarch
@@ -103,7 +94,8 @@ RUN mkdir /etc/qemu-binfmt && \
     ln -sf /usr/lib/powerpc-linux-gnu   /etc/qemu-binfmt/powerpc && \
     ln -sf /usr/lib/powerpc-linux-gnu64 /etc/qemu-binfmt/powerpc64 && \
     ln -sf /usr/lib/sparc64-linux-gnu   /etc/qemu-binfmt/sparc64 && \
-    ln -sf /usr/lib/riscv64-linux-gnu   /etc/qemu-binfmt/riscv64
+    ln -sf /usr/lib/riscv64-linux-gnu   /etc/qemu-binfmt/riscv64 && \
+    ln -sf /usr/lib/loongarch64-linux-gnu   /etc/qemu-binfmt/loongarch64
 
 # Create the Travis user
 USER root
@@ -112,29 +104,30 @@ RUN echo "travis ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/travis
 
 # Set up SSH stuff so we can SSH into localhost
 USER pwntools
-RUN ssh-keygen -t rsa -f ~/.ssh/id_rsa -N '' && \
-    cp ~/.ssh/id_rsa.pub /tmp && \
+RUN ssh-keygen -t rsa -f ~/.ssh/travis -N '' && \
+    cp ~/.ssh/travis.pub /tmp && \
     echo \
 "Host *\n\
     User travis\n\
     HostName 127.0.0.1\n\
+    IdentityFile ~/.ssh/travis\n\
 "> ~/.ssh/config
 
 # Set up authorized_keys so we can login as travis with no creds
 USER travis
 RUN mkdir -m 0700 ~/.ssh && \
-    echo 'from="127.0.0.1"' $(cat /tmp/id_rsa.pub) > ~/.ssh/authorized_keys
+    echo 'from="127.0.0.1"' $(cat /tmp/travis.pub) > ~/.ssh/authorized_keys
 
 # Add the doctest entrypoint to /usr/bin so we don't have to supply the full path
 USER root
-ADD doctest2 doctest3 /usr/bin
+ADD doctest3 /usr/bin
 
 # Switch back to pwntools to actually run the image
 USER pwntools
 WORKDIR /home/pwntools
 
 # Copy in the Doctest script
-COPY doctest2 doctest3 tmux.sh /home/pwntools
+COPY doctest3 tmux.sh /home/pwntools/
 
 # Do everything in UTF-8 mode!
 ENV LANG=C.UTF-8

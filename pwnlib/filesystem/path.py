@@ -1,10 +1,6 @@
-import six
 import tempfile
 
-if six.PY3:
-    from pathlib import *
-else:
-    from pathlib2 import *
+from pathlib import *
 
 @classmethod
 def mktemp(cls):

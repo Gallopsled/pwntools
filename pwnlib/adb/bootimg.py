@@ -1,5 +1,3 @@
-from __future__ import division
-
 import ctypes
 
 BOOT_MAGIC = b"ANDROID!"

@@ -1,4 +1,3 @@
-
 class Device(object):
     arch = None
     bits = None

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Allows per-user and per-host configuration of Pwntools settings.
 
 The list of configurable options includes all of the logging symbols
@@ -32,10 +31,7 @@ supported by ``pwnlib.util.safeeval.expr``.
     [update]
     interval=7
 """
-from __future__ import absolute_import
-from __future__ import division
-
-from six.moves import configparser
+import configparser
 import os
 
 registered_configs = {}

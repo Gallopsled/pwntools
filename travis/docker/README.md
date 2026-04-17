@@ -9,12 +9,6 @@ $ make -C travis/docker ANDROID=yes
 $ make -C travis/docker ANDROID=no TARGET=ssh.rst
 ```
 
-By default the Python 3 tests are run. You can choose the Python version using the `doctest2` or `doctest3` target.
-
-```shell
-$ make -C travis/docker ANDROID=no doctest2
-```
-
 You can get drop into a tmux session in the container to debug tests using the `shell` or `bash` targets.
 
 ```shell

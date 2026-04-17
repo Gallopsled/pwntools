@@ -22,10 +22,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from __future__ import absolute_import
-from __future__ import division
-
-import six
 from pwnlib import asm
 from pwnlib import shellcraft
 from pwnlib.context import context
@@ -128,8 +124,8 @@ class MipsXorEncoder(Encoder):
         sizehi = size >> 8
 
         decoder = decoders[context.endian]
-        decoder = decoder.replace(b'SIZ1', six.int2byte(sizehi))
-        decoder = decoder.replace(b'SIZ2', six.int2byte(sizelo))
+        decoder = decoder.replace(b'SIZ1', bytes([sizehi]))
+        decoder = decoder.replace(b'SIZ2', bytes([sizelo]))
 
         key, data = xor_key(raw_bytes, avoid=avoid)
 

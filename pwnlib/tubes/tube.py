@@ -1,19 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import abc
 import logging
 import os
 import re
-import six
 import string
 import subprocess
 import sys
 import threading
 import time
-
-from six.moves import range
 
 from pwnlib import atexit
 from pwnlib import term
@@ -364,7 +357,7 @@ class tube(Timeout, Logger):
 
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
         delims = tuple(map(packing._need_bytes, delims))
 
@@ -660,7 +653,7 @@ class tube(Timeout, Logger):
             >>> t.recvline_contains((b'car', b'train'))
             b'bicycle car train'
         """
-        if isinstance(items, (bytes, bytearray, six.text_type)):
+        if isinstance(items, (bytes, bytearray, str)):
             items = (items,)
         items = tuple(map(packing._need_bytes, items))
 
@@ -698,7 +691,7 @@ class tube(Timeout, Logger):
             b'World'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
         delims = tuple(map(packing._need_bytes, delims))
 
@@ -730,7 +723,7 @@ class tube(Timeout, Logger):
             b'Kaboodle'
         """
         # Convert string into singleton tupple
-        if isinstance(delims, (bytes, bytearray, six.text_type)):
+        if isinstance(delims, (bytes, bytearray, str)):
             delims = (delims,)
 
         delims = tuple(packing._need_bytes(delim) + self.newline for delim in delims)
@@ -766,7 +759,7 @@ class tube(Timeout, Logger):
             b'Bla blubb blargh\n'
         """
 
-        if isinstance(regex, (bytes, bytearray, six.text_type)):
+        if isinstance(regex, (bytes, bytearray, str)):
             regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 
@@ -793,7 +786,7 @@ class tube(Timeout, Logger):
         all data is buffered and an empty string (``''``) is returned.
         """
 
-        if isinstance(regex, (bytes, bytearray, six.text_type)):
+        if isinstance(regex, (bytes, bytearray, str)):
             regex = packing._need_bytes(regex)
             regex = re.compile(regex)
 
@@ -1134,7 +1127,7 @@ class tube(Timeout, Logger):
             return cached_data + self.clean(timeout)
 
     def upload_manually(self, data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE'):
-        """upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
+        r"""upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
 
         Upload a file manually using base64 encoding and compression.
         This can be used when the tube is connected to a shell.
@@ -1166,26 +1159,29 @@ class tube(Timeout, Logger):
 
         Examples:
 
-        >>> l = listen()
-        >>> l.spawn_process('/bin/sh')
-        >>> r = remote('127.0.0.1', l.lport)
-        >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
-        >>> r.sendline(b'cat ./payload')
-        >>> r.recvline()
-        b'some\\xca\\xfedata\\n'
+        .. doctest::
+            :options: +POSIX +TODO
 
-        >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
-        >>> r.sendline(b'sha256sum ./cyclic_pattern')
-        >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
-        True
+            >>> l = listen()
+            >>> l.spawn_process('/bin/sh')
+            >>> r = remote('127.0.0.1', l.lport)
+            >>> r.upload_manually(b'some\xca\xfedata\n', prompt=b'', chmod_flags='')
+            >>> r.sendline(b'cat ./payload')
+            >>> r.recvline()
+            b'some\xca\xfedata\n'
 
-        >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
-        >>> r.upload_manually(blob.data, prompt=b'')
-        >>> r.sendline(b'./payload')
-        >>> r.recvline()
-        b'Hello world!\\n'
-        >>> r.close()
-        >>> l.close()
+            >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
+            >>> r.sendline(b'sha256sum ./cyclic_pattern')
+            >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
+            True
+
+            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\n') + shellcraft.exit(0))
+            >>> r.upload_manually(blob.data, prompt=b'')
+            >>> r.sendline(b'./payload')
+            >>> r.recvline()
+            b'Hello world!\n'
+            >>> r.close()
+            >>> l.close()
         """
         echo_end = ""
         if not prompt:
@@ -1196,9 +1192,7 @@ class tube(Timeout, Logger):
 
         # Detect available compression utility, fallback to uncompressed upload.
         compression_mode = None
-        possible_compression = ['gzip']
-        if six.PY3:
-            possible_compression.insert(0, 'xz')
+        possible_compression = ['xz', 'gzip']
         if not prompt:
             self.sendline("echo {}".format(end_marker).encode())
         if compression == 'auto':
@@ -1222,7 +1216,7 @@ class tube(Timeout, Logger):
             compressed_path = target_path + '.xz'
         elif compression_mode == 'gzip':
             import gzip
-            from six import BytesIO
+            from io import BytesIO
             f = BytesIO()
             with gzip.GzipFile(fileobj=f, mode='wb', compresslevel=9) as g:
                 g.write(data)
@@ -1656,12 +1650,18 @@ class tube(Timeout, Logger):
 
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
+    def p56(self, *a, **kw):        return self.send(packing.p56(*a, **kw))
+    def p48(self, *a, **kw):        return self.send(packing.p48(*a, **kw))
+    def p40(self, *a, **kw):        return self.send(packing.p40(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
     def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
     def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))
     def pack(self, *a, **kw):       return self.send(packing.pack(*a, **kw))
 
     def u64(self, *a, **kw):        return packing.u64(self.recvn(8), *a, **kw)
+    def u56(self, *a, **kw):        return packing.u56(self.recvn(7), *a, **kw)
+    def u48(self, *a, **kw):        return packing.u48(self.recvn(6), *a, **kw)
+    def u40(self, *a, **kw):        return packing.u40(self.recvn(5), *a, **kw)
     def u32(self, *a, **kw):        return packing.u32(self.recvn(4), *a, **kw)
     def u16(self, *a, **kw):        return packing.u16(self.recvn(2), *a, **kw)
     def u8(self, *a, **kw):         return packing.u8(self.recvn(1), *a, **kw)
