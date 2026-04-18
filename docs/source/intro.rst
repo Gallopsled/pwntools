@@ -143,9 +143,6 @@ Additionally, you can use a shorthand to set all of the values at once.
     >>> asm('nop')
     b'\xe3 \xf0\x00'
 
-.. doctest::
-   :hide:
-
     >>> context.clear()
 
 Setting Logging Verbosity
@@ -158,9 +155,6 @@ For example, setting
     >>> context.log_level = 'debug'
 
 Will cause all of the data sent and received by a ``tube`` to be printed to the screen.
-
-.. doctest::
-   :hide:
 
     >>> context.clear()
 
