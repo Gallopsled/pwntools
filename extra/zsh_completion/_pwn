@@ -8,6 +8,52 @@
 # NOTE: Don't use Zargparse any more as it may bring known errors!
 # ----------------------------------------------------------------------------------------
 
+_comp_pid() {
+    if [[ $1 == 'pid' ]] {
+        local line pids lines
+        pids=()
+        # extract command output line by line
+        lines=("${(@f)$(ps --ppid 2 -p 2 -N -o pid=,tty=,user=,comm=)}")
+        for line ($lines) {
+            pids+=${line[(w)1]} # extract first word (pid)
+        }
+        _wanted nonk-pids expl 'non-kernel process ID' \
+            compadd -o nosort -ld lines -a pids
+    } elif [[ $1 == 'procs' ]] {
+        local line names lines
+        names=()
+        # extract command output line by line
+        lines=("${(@f)$(ps --ppid 2 -p 2 -N -o comm=,pid=,tty=,user=)}")
+        for line ($lines) {
+            names+=${line[(w)1]} # extract first word (pid)
+        }
+        _wanted nonk-comm expl 'non-kernel process names' \
+            compadd -o nosort -ld lines -a names
+    }
+}
+
+_comp_funcs() {
+    local names
+    output=$(readelf -Ws $1 2>/dev/null)
+    if [[ $? -ne 0 ]] {
+        return
+    }
+    names=("${(f)$(awk '$4=="FUNC" && $7!="UND" {print $8}' <(echo "$output"))}")
+    if [[ $#names -gt 0 ]] {
+      _values "FUNCTIONS" $names
+    }
+}
+
+_comp_error() {
+    local -a names
+    which errno > /dev/null
+    if [[ $? -ne 0 ]] {
+        return
+    }
+    names=("${(f)$(LC_ALL=C errno -l | awk '{printf "%s:(%d) %s\n", $1, $2, substr($0, length($1 $2)+3)}')}")
+    _describe "ERRORS" names
+}
+
 typeset -A opt_args
 
 _pwn() {
@@ -94,32 +140,11 @@ _pwn() {
           _arguments \
             '(-h --help)'{-h,--help}'[show help message and exit]' \
             '-x[Execute GDB commands from this file]:GDBSCRIPT:_files' \
-            '--pid[PID to attach to]:PID:->pid' \
+            '--pid[PID to attach to]:PID: _comp_pid pid' \
             '(-c --context)'{-c,--context}'[The os/architecture/endianness/bits the shellcode will run in (default: linux/i386)]:CONTEXT:(16 32 64 baremetal freebsd windows android darwin linux cgc loongarch64 powerpc64 aarch64 powerpc riscv32 riscv64 sparc64 mips64 msp430 alpha amd64 sparc thumb cris i386 ia64 m68k mips s390 none avr arm vax little big be eb le el)' \
             '--exec[File to debug]:EXE:_files' \
-            '--process[Name of the process to attach to (e.g. "bash")]:NAME:->procs' \
+            '--process[Name of the process to attach to (e.g. "bash")]:NAME: _comp_pid procs' \
             '--sysroot[GDB sysroot path]:PATH:_files -/'
-          if [[ $state == 'pid' ]] {
-                local line pids lines
-                pids=()
-                # extract command output line by line
-                lines=("${(@f)$(ps --ppid 2 -p 2 -N -o pid=,tty=,user=,comm=)}")
-                for line ($lines) {
-                    pids+=${line[(w)1]} # extract first word (pid)
-                }
-                _wanted nonk-pids expl 'non-kernel process ID' \
-                    compadd -o nosort -ld lines -a pids
-          } elif [[ $state == 'procs' ]] {
-                local line names lines
-                names=()
-                # extract command output line by line
-                lines=("${(@f)$(ps --ppid 2 -p 2 -N -o comm=,pid=,tty=,user=)}")
-                for line ($lines) {
-                    names+=${line[(w)1]} # extract first word (pid)
-                }
-                _wanted nonk-comm expl 'non-kernel process names' \
-                    compadd -o nosort -ld lines -a names
-          }
           ;;
         disasm)
           _arguments \
@@ -153,7 +178,7 @@ _pwn() {
         errno)
           _arguments \
             '(-h --help)'{-h,--help}'[show help message and exit]' \
-            '2:ERROR: ' \
+            '1:ERROR:_comp_error' \
             '*: :'
             ;;
         hex)
@@ -201,13 +226,13 @@ _pwn() {
                 '(-s --symbols)'{-s,--symbols}'[List of symbol offsets to dump in addition to the common ones]:SYMBOLS: ' \
                 '(-o --offset)'{-o,--offset}'[Display all offsets relative to this symbol]:OFFSET: ' \
                 '--unstrip[Attempt to unstrip the libc binary inplace with debug symbols from a debuginfod server]' \
-                '*:FILE: '
+                '*:FILE:_files'
               ;;
             (fetch)
               _arguments \
                 '(-h --help)'{-h,--help}'[show help message and exit]' \
                 '(-u --update)'{-u,--update}'[Fetch the desired libc categories]:UPDATE: ' \
-                '1:PATH: ' \
+                '1:PATH:_files' \
                 '*: :'
               ;;
           }
@@ -241,15 +266,7 @@ _pwn() {
             } else {
                 return
             }
-            local names
-            output=$(readelf -Ws $filename 2>/dev/null)
-            if [[ $? -ne 0 ]] {
-                return
-            }
-            names=("${(f)$(awk '$4=="FUNC" && $7!="UND" {print $8}' <(echo "$output"))}")
-            if [[ $#names -gt 0 ]] {
-              _values "FUNCTIONS" $names
-            }
+            _comp_funcs $filename
           }
           ;;
         scramble)
