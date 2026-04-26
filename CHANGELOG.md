@@ -127,6 +127,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 - [#2655][2655] Add `context.debugger` to select which debugger to use
 - [#2713][2713] Remove python-dateutil dependency
+- [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
 
 [2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -179,6 +180,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2704]: https://github.com/Gallopsled/pwntools/pull/2704
 [2655]: https://github.com/Gallopsled/pwntools/pull/2655
 [2713]: https://github.com/Gallopsled/pwntools/pull/2713
+[2720]: https://github.com/Gallopsled/pwntools/pull/2720
 
 ## 4.15.1
 
