@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 
-from io import StringIO
+from io import StringIO, BytesIO
 
 from pwnlib import atexit, term
 from pwnlib.context import context, LocalContext
@@ -1621,11 +1621,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = os.path.join(self.cwd, remote)
 
         if self.sftp:
-            with tempfile.NamedTemporaryFile() as f:
-                f.write(data)
-                f.flush()
-                self.sftp.put(f.name, remote)
-                return
+            flo = BytesIO(data)
+            file_size = len(data)
+            self.sftp.putfo(flo, remote, file_size=file_size)
+            return
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat > ' + sh_string(remote)
