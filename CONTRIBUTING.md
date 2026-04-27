@@ -40,10 +40,10 @@ You can use [this cheat sheet](https://mypy.readthedocs.io/en/stable/cheat_sheet
 Pwntools uses [mypy](https://mypy.readthedocs.io/en/stable/index.html) as a static type checker. Instead of trying to
 introduce type hints everywhere at once, Pwntools uses [mypy-baseline](https://mypy-baseline.orsinium.dev/usage) to gradually reduce the number of problems over time.
 
-To run the type checker locally, you can install Pwntools with the `dev` extra and check for new errors:
+To run the type checker locally, you can install Pwntools with the `dev` extra and check for new errors (`--group dev` requires pip 25.1+):
 
 ```shell
-$ pip install -U .[dev]
+$ pip install -U . --group dev
 $ mypy | mypy-baseline filter
 ```
 

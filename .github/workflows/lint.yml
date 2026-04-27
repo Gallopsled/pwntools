@@ -39,5 +39,5 @@ jobs:
 
     - name: MyPy type hint baseline
       run: |
-        pip install -U .[dev]
+        pip install -U . --group dev
         mypy | mypy-baseline filter

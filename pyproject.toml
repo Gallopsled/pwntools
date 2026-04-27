@@ -58,7 +58,7 @@ dependencies = [
 homepage = "https://pwntools.com"
 download = "https://github.com/Gallopsled/pwntools/releases"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "mypy-baseline",
     "mypy",
