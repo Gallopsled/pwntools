@@ -16,7 +16,6 @@ if sys.platform != 'win32':
 
 from ..context import ContextType
 from . import termcap
-from .. import py2compat
 
 __all__ = ['output', 'init']
 
@@ -35,7 +34,7 @@ fd = sys.stdout
 winchretry = False
 rlock = threading.RLock()
 
-class WinchLock(object):
+class WinchLock:
     def __init__(self):
         self.guard = threading.RLock()
         self.lock = threading.Lock()
@@ -160,7 +159,7 @@ def init():
             traceback.print_exception(*args)
     sys.excepthook = hook
 
-tmap = {c: '\\x{:02x}'.format(c) for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
+tmap = {c: fr'\x{c:02x}' for c in set(range(0x20)) - {0x09, 0x0a, 0x0d, 0x1b} | {0x7f}}
 
 def put(s):
     global cached_pos, epoch
@@ -231,7 +230,7 @@ def goto(rc):
         do('cud', r - nowr)
 
 
-class Cell(object):
+class Cell:
     def __init__(self, value, float):
         self.value = value
         self.float = float
@@ -327,7 +326,7 @@ class Cell(object):
         return '{}({!r}, float={}, pos={})'.format(self.__class__.__name__, self.value, self.float, self.pos)
 
 
-class WeakCellList(object):
+class WeakCellList:
     def __init__(self):
         self._cells = []
         self._floats = []

@@ -10,12 +10,19 @@ To run the test suite, it is best to use Ubuntu 22.04 or 24.04, and run the foll
 bash travis/install.sh
 bash travis/ssh_setup.sh
 pip install --upgrade --editable .
+pip install --upgrade -r docs/requirements.txt
 PWNLIB_NOTERM=1 make -C docs doctest
+```
+
+You can run doctests for a single file for faster iteration:
+
+```sh
+PWNLIB_NOTERM=1 python -m sphinx -b doctest docs/source docs/build/doctest docs/source/elf/elf.rst
 ```
 
 ## Testing in Docker
 
-A `Dockerfile` has been provided which has a clean testing environment with Ubuntu Jammy.  It is very similar to the online Github Actions CI testing environment, but uses a more modern version of Ubuntu.
+A `Dockerfile` has been provided which has a clean testing environment with Ubuntu Noble.  It is very similar to the online Github Actions CI testing environment.
 
 See `travis/docker/README.md` for more information.
 

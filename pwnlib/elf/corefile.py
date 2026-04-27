@@ -108,7 +108,7 @@ siginfo_types = {
 }
 
 
-class Mapping(object):
+class Mapping:
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
     def __init__(self, core, name, start, stop, flags, page_offset):
@@ -1161,7 +1161,7 @@ class Core(Corefile):
 class Coredump(Corefile):
     """Alias for :class:`.Corefile`"""
 
-class CorefileFinder(object):
+class CorefileFinder:
     def __init__(self, proc):
         if proc.poll() is None:
             log.error("Process %i has not exited" % (proc.pid))

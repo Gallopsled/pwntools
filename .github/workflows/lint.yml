@@ -36,3 +36,8 @@ jobs:
       run: |
         pip install vermin
         vermin -vvv --no-tips -t=3.10- --violations  ./pwnlib ./pwn
+
+    - name: MyPy type hint baseline
+      run: |
+        pip install -U . --group dev
+        mypy | mypy-baseline filter

@@ -51,14 +51,14 @@ def align_down(alignment, x):
 
 
 def binary_ip(host):
-    """binary_ip(host) -> str
+    r"""binary_ip(host) -> str
 
     Resolve host and return IP as four byte string.
 
     Example:
 
         >>> binary_ip("127.0.0.1")
-        b'\\x7f\\x00\\x00\\x01'
+        b'\x7f\x00\x00\x01'
     """
     return socket.inet_aton(socket.gethostbyname(host))
 
@@ -161,8 +161,10 @@ def which(name, all = False, path=None):
 
     Example:
 
-        >>> which('sh') # doctest: +ELLIPSIS +POSIX +TODO
+        >>> which('sh') # doctest: +ELLIPSIS +POSIX
         '.../bin/sh'
+        >>> which('cmd') # doctest: +ELLIPSIS +WINDOWS
+        '...\\cmd.EXE'
     """
     # If name is a path, do not attempt to resolve it.
     if os.path.sep in name:
@@ -279,6 +281,17 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         - If ``$TERM_PROGRAM`` is set, that is used.
         - If X11 is detected (by the presence of the ``$DISPLAY`` environment
           variable), ``x-terminal-emulator`` is used.
+        - If kitty is detected (by the presence of the ``$KITTY_PID`` environment
+          variable), a new kitty window will be opened.
+        - If Terminator is detected (by the presence of the ``$TERMINATOR_UUID``
+          environment variable), a new terminator window will be opened.
+        - If GNOME Terminal is detected (by the presence of the ``$GNOME_TERMINAL_SCREEN``
+          and ``$GNOME_TERMINAL_SERVICE`` environment variables), a new GNOME
+          Terminal will be opened.
+        - If Alacritty is detected (by the presence of the ``$ALACRITTY_SOCKET``
+          and ``$ALACRITTY_WINDOW_ID`` environment variables), Alacritty is used.
+        - If Tilix is detected (by the presence of the ``$TILIX_ID`` environment
+          variable), a new pane is split.
         - If KDE Konsole is detected (by the presence of the ``$KONSOLE_VERSION``
           environment variable), a terminal will be split.
         - If WSL (Windows Subsystem for Linux) is detected (by the presence of
@@ -297,8 +310,12 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         kill_at_exit (bool): Whether to close the command/terminal on process exit.
         preexec_fn (callable): Callable to invoke before exec().
 
-    Note:
-        The command is opened with ``/dev/null`` for stdin, stdout, stderr.
+    Notes:
+        - The command is opened with ``/dev/null`` for stdin, stdout, stderr.
+        - When ``context.terminal`` is not a path and the terminal is one of the above
+          which support windowing/tiling, this will also cause the terminal to split.
+          Setting ``context.terminal`` to a path (e.g. using ``which(terminal)``)
+          bypasses this.
 
     Returns:
       PID of the new terminal process
@@ -736,7 +753,7 @@ def register_sizes(regs, in_sizes):
     return lists.concat(regs), sizes, bigger, smaller
 
 
-def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore_environ=None,
+def _create_execve_script(argv=None, executable=None, cwd=None, env=None, which=None, ignore_environ=None,
         stdin=0, stdout=1, stderr=2, preexec_fn=None, preexec_args=(), aslr=None, setuid=None,
         shell=False, log=log):
     """
@@ -753,6 +770,8 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
             on :attr:`cwd` or set via :meth:`set_working_directory`.
         env(dict):
             Environment variables to add to the environment.
+        which(callable):
+            Function to find the path of a binary.
         ignore_environ(bool):
             Ignore default environment.  By default use default environment iff env not specified.
         stdin(int, str):
@@ -784,6 +803,9 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     """
     if not argv and not executable:
         log.error("Must specify argv or executable")
+
+    if not which:
+        log.error("Must specify which_ parameter")
 
     aslr      = aslr if aslr is not None else context.aslr
 
@@ -826,9 +848,13 @@ def _create_execve_script(argv=None, executable=None, cwd=None, env=None, ignore
     func_src  = inspect.getsource(func).strip()
     setuid = True if setuid is None else bool(setuid)
 
-
+    # gdbserver wrappers are freezing on first execve syscall (for debugging the wanted program).
+    # It is not related to fork&exec.
+    # `/usr/bin/env python3` overrides first execve (because env is executing python3).
+    # Resolving python3 before shebang does, for not clashing with wrapper's first execve syscall.
+    python_path = which('python3')
     script = r"""
-#!/usr/bin/env python3
+#!%(python_path)s
 import os, sys, ctypes, resource, platform, stat
 from collections import OrderedDict
 try:
@@ -903,6 +929,7 @@ if sys.argv[-1] == 'check':
     sys.stdout.write(str(os.getgid()) + "\n")
     sys.stdout.write(str(suid) + "\n")
     sys.stdout.write(str(sgid) + "\n")
+    sys.stdout.flush()
     getattr(sys.stdout, 'buffer', sys.stdout).write(os.path.realpath(exe) + b'\x00')
     sys.stdout.flush()
 
@@ -967,7 +994,7 @@ libc.execve(exe, c_argv, c_env)
 # but just in case, indicate that something went wrong.
 libc.perror(b"execve")
 raise OSError("execve failed")
-""" % locals()
+"""
     script = script.strip()
 
     return script

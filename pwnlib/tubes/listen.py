@@ -32,12 +32,14 @@ class listen(sock):
         >>> l.sendline(b'Hello')
         >>> r.recvline()
         b'Hello\n'
+        >>> l.close()
+        >>> r.close()
 
         .. doctest::
             :options: +POSIX +TODO
             
             >>> # It works with ipv4 by default
-            >>> l = listen()
+            >>> l = listen(1234)
             >>> l.spawn_process('/bin/sh')
             >>> r = remote('127.0.0.1', l.lport)
             >>> r.sendline(b'echo Goodbye')
@@ -106,9 +108,12 @@ class listen(sock):
                 except (socket.error, AttributeError):
                     self.warn("could not set socket to accept also IPV4")
             listen_sock.bind(self.sockaddr)
+            # Set a timeout so `accept()` doesn't block indefinitely.
+            listen_sock.settimeout(0.5)
             self.lhost, self.lport = listen_sock.getsockname()[:2]
             if self.type == socket.SOCK_STREAM:
                 listen_sock.listen(1)
+            self._listen_sock = listen_sock
             break
         else:
             h.failure()
@@ -131,7 +136,17 @@ class listen(sock):
                         self.unrecv(data)
                     self.settimeout(self.timeout)
                     break
+                # If the timeout is reached, just try again.
+                # This allows us to check if the listen socket has been closed in the meantime.
+                except socket.timeout:
+                    continue
                 except socket.error as e:
+                    # EBADF means the listen socket was closed,
+                    # so we should stop trying to accept connections and just exit the thread.
+                    # ENOTSOCK is raised on Windows when accepting on a closed socket.
+                    if e.errno in (errno.EBADF, errno.ENOTSOCK):
+                        h.failure("Listen socket was closed")
+                        return
                     if e.errno == errno.EINTR:
                         continue
                     h.failure()
@@ -176,8 +191,5 @@ class listen(sock):
         self.__dict__['sock'] = s
 
     def close(self):
-        # since `close` is scheduled to run on exit we must check that we got
-        # a connection or the program will hang in the `join` call above
-        if self._accepter and self._accepter.is_alive():
-            return
+        self._listen_sock.close()
         super(listen, self).close()

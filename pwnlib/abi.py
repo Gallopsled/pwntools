@@ -2,7 +2,7 @@ from pwnlib.context import LocalContext
 from pwnlib.context import context
 
 
-class ABI(object):
+class ABI:
     """
     Encapsulates information about a calling convention.
     """

@@ -31,7 +31,7 @@ classifiers = [
 ]
 keywords = ["pwntools", "exploit", "ctf", "capture", "the", "flag", "binary", "wargame", "overflow", "stack", "heap", "defcon"]
 
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies = [
     "paramiko>=1.15.2",
     "mako>=1.0.0",
@@ -42,7 +42,6 @@ dependencies = [
     "requests>=2.0",
     "pygments>=2.0",
     "pysocks",
-    "python-dateutil",
     "packaging",
     "psutil>=3.3.0",
     "intervaltree>=3.0",
@@ -57,6 +56,21 @@ dependencies = [
 [project.urls]
 homepage = "https://pwntools.com"
 download = "https://github.com/Gallopsled/pwntools/releases"
+
+[dependency-groups]
+dev = [
+    "mypy-baseline",
+    "mypy",
+    "types-beautifulsoup4",
+    "types-gdb",
+    "types-paramiko",
+    "types-psutil",
+    "types-Pygments",
+    "types-pyserial",
+    "types-PySocks",
+    "types-python-dateutil",
+    "types-requests",
+]
 
 [tool.distutils.bdist_wheel]
 universal = 1
@@ -87,3 +101,22 @@ disable_warnings = ["module-not-imported"]
 [tool.coverage.paths]
 pwnlib = ["pwnlib", "*/pwntools/pwnlib", "*\\pwntools\\pwnlib"]
 pwn = ["pwn", "*/pwntools/pwn", "*\\pwntools\\pwn"]
+
+[tool.mypy]
+files = [
+    "pwn/**/*.py",
+    "pwnlib/**/*.py",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "unix_ar.*",
+    "capstone.*",
+    "colored_traceback.*",
+    "intervaltree.*",
+    "mako.*",
+    "ropgadget.*",
+    "rpyc.*",
+    "sortedcontainers.*",
+]
+ignore_missing_imports = true

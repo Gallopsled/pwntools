@@ -85,7 +85,7 @@ pwnlib.log.rootlogger.setLevel(1)
 # Sphinx modifies sys.stdout, and context.log_terminal has
 # a reference to the original instance.  We need to update
 # it for logging to be captured.
-class stdout(object):
+class stdout:
     def __getattr__(self, name):
         return getattr(sys.stdout, name)
     def __setattr__(self, name, value):

@@ -161,7 +161,7 @@ def pack(number: int, word_size: str | int = None, endianness: str = None, sign:
 
 @LocalNoarchContext
 def unpack(data: bytes, word_size: str | int = None) -> str:
-    r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
+    r"""unpack(data, word_size = None, *, endianness = None, sign = None, **kwargs) -> int
 
     Unpacks arbitrary-sized integer.
 
@@ -235,7 +235,7 @@ def unpack(data: bytes, word_size: str | int = None) -> str:
 
 @LocalNoarchContext
 def unpack_many(data: bytes, word_size: int | str = None) -> str:
-    """unpack_many(data, word_size = None, endianness = None, sign = None) -> int list
+    r"""unpack_many(data, word_size = None, *, endianness = None, sign = None) -> int list
 
     Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
 
@@ -253,15 +253,15 @@ def unpack_many(data: bytes, word_size: int | str = None) -> str:
 
     Examples:
 
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='big', sign=False)))
         ['0xaa55', '0xcc33']
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='big', sign=True)))
         ['-0x55ab', '-0x33cd']
-        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='little', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xff\x02\x03', 'all', endian='little', sign=True)))
         ['0x302ff']
-        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='big', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xff\x02\x03', 'all', endian='big', sign=True)))
         ['-0xfdfd']
     """
     # Lookup in context if None
@@ -650,7 +650,7 @@ def u64(data: bytes, endianness: str = None, **kwargs: dict[str, Any]) -> int:
     return _do_packing('u', 64, data, endianness)
 
 def make_packer(word_size: int = None, sign: str = None, **kwargs: dict[str, Any]) -> Callable[[int], str]:
-    """make_packer(word_size = None, endianness = None, sign = None) -> number → str
+    r"""make_packer(word_size = None, endianness = None, sign = None) -> number → str
 
     Creates a packer by "freezing" the given arguments.
 
@@ -674,7 +674,7 @@ def make_packer(word_size: int = None, sign: str = None, **kwargs: dict[str, Any
         >>> p
         <function _p32lu at 0x...>
         >>> p(42)
-        b'*\\x00\\x00\\x00'
+        b'*\x00\x00\x00'
         >>> p(-1)
         Traceback (most recent call last):
             ...
@@ -1106,7 +1106,7 @@ def unsigned(integer: int) -> str:
     return unpack(pack(integer))
 
 def dd(dst: BinaryIO | Sequence, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> BinaryIO | Sequence:
-    """dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
+    r"""dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
     values from offset `seek` in `src` to offset `skip` in `dst`.  If `count` is
@@ -1150,10 +1150,10 @@ def dd(dst: BinaryIO | Sequence, src: Iterable, count: int = 0, skip: int = 0, s
 
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
-        'AAA\\x00\\x00\\x00\\x00AAA'
+        'AAA\x00\x00\x00\x00AAA'
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
-        'AAA\\x00\\x00\\x00\\x00'
+        'AAA\x00\x00\x00\x00'
     """
 
     # Re-open file objects to make sure we have the mode right
@@ -1308,8 +1308,8 @@ def _need_bytes(s: Sequence, level: int = 1, min_wrong: int = 0) -> bytes:
             encoding = 'ASCII'
 
     if worst >= min_wrong:
-        warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                      .format(encoding), BytesWarning, level + 2)
+        warnings.warn(f"Text is not bytes; assuming {encoding}, no guarantees. See https://docs.pwntools.com/#bytes",
+                      BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
 def _need_text(s: str | bytes | bytearray, level: int = 1) -> str:
@@ -1330,8 +1330,8 @@ def _need_text(s: str | bytes | bytearray, level: int = 1) -> str:
             else:
                 break
 
-    warnings.warn("Bytes is not text; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                  .format(encoding), BytesWarning, level + 2)
+    warnings.warn(f"Bytes is not text; assuming {encoding}, no guarantees. See https://docs.pwntools.com/#bytes",
+                  BytesWarning, level + 2)
     return s.decode(encoding, errors)
 
 def _encode(s: Sequence) -> bytes:

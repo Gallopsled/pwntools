@@ -59,6 +59,31 @@ def enhex(x: Sequence) -> str:
         x = x.decode('ascii')
     return x
 
+
+def hexstr(s: bytes, force: bool = False) -> str:
+    r"""
+    hexstr(x, force=False) -> str
+
+    Escapes byte string into a C representation.
+
+    Example:
+
+	>>> print(hexstr(b"hello\n\0world\xad"))
+	"hello\x0a\x00world\xad"
+    """
+    out = bytearray(b'"')
+    ban = False
+    for co in s:
+        if 0x20 <= co < 0x7f and co not in br'/$\'"`' + string.hexdigits.encode() * ban and not force:
+            out.append(co)
+            ban = False
+        else:
+            out.extend(br'\x%02x' % co)
+            ban = True
+    out.extend(b'"')
+    return out.decode()
+
+
 def urlencode(s: str) -> str:
     """urlencode(s) -> str
 
@@ -177,7 +202,7 @@ def bits_str(s: Sequence, endian: str = 'big', zero: str = '0', one: str = '1') 
     return ''.join(bits(s, endian, zero, one))
 
 def unbits(s: Iterable, endian: str = 'big') -> str:
-    """unbits(s, endian = 'big') -> str
+    r"""unbits(s, endian = 'big') -> str
 
     Converts an iterable of bits into a string.
 
@@ -191,11 +216,11 @@ def unbits(s: Iterable, endian: str = 'big') -> str:
     Example:
 
        >>> unbits([1])
-       b'\\x80'
+       b'\x80'
        >>> unbits([1], endian = 'little')
-       b'\\x01'
+       b'\x01'
        >>> unbits(bits(b'hello'), endian = 'little')
-       b'\\x16\\xa666\\xf6'
+       b'\x16\xa666\xf6'
     """
     if endian == 'little':
         u = lambda s: packing._p8lu(int(s[::-1], 2))
@@ -225,14 +250,14 @@ def unbits(s: Iterable, endian: str = 'big') -> str:
 
 
 def bitswap(s: bytes) -> bytes:
-    """bitswap(s) -> str
+    r"""bitswap(s) -> str
 
     Reverses the bits in every byte of a given string.
 
     Example:
 
         >>> bitswap(b"1234")
-        b'\\x8cL\\xcc,'
+        b'\x8cL\xcc,'
     """
 
     out = []
@@ -360,7 +385,7 @@ def xor(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
     return b''.join(map(get, range(cut)))
 
 def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
-    """xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
+    r"""xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
 
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
@@ -375,7 +400,7 @@ def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[s
     Example:
 
         >>> xor_pair(b"test")
-        (b'\\x01\\x01\\x01\\x01', b'udru')
+        (b'\x01\x01\x01\x01', b'udru')
     """
 
     if isinstance(data, int):
@@ -1021,9 +1046,9 @@ def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwar
     data = bytearray(data)
 
     if context.endian == 'little':
-        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for b, a in iters.group(2, data))
+        return ''.join(f'%u{a:02x}{b:02x}' for b, a in iters.group(2, data))
     else:
-        return ''.join('%u{a:02x}{b:02x}'.format(a=a, b=b) for a, b in iters.group(2, data))
+        return ''.join(f'%u{a:02x}{b:02x}' for a, b in iters.group(2, data))
 
 @LocalNoarchContext
 def js_unescape(s: str, **kwargs: dict[str, Any]) -> bytes:
