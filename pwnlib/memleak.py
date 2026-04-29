@@ -11,7 +11,7 @@ log = getLogger(__name__)
 
 __all__ = ['MemLeak', 'RelativeMemLeak']
 
-class MemLeak(object):
+class MemLeak:
     r"""MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
     It can be used as a decorator, around functions of the form:

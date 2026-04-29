@@ -15,7 +15,7 @@ p = common.parser_commands.add_parser(
 g = p.add_argument_group("actions")
 g.add_argument('-b', '--build-id', help="Strip build ID", action='store_true')
 g.add_argument('-p', '--patch', metavar='FUNCTION', help="Patch function", action='append')
-p.add_argument('-o', '--output', type=argparse.FileType('wb'), default=getattr(sys.stdout, 'buffer', sys.stdout))
+p.add_argument('-o', '--output', type=argparse.FileType('wb'), default=getattr(sys.stdout, 'buffer', sys.stdout), help='Output file')
 p.add_argument('file', type=argparse.FileType('rb'))
 
 def main(args):

@@ -34,7 +34,7 @@ from pwnlib.util.packing import _decode
 
 log = getLogger(__name__)
 
-class PTY(object): pass
+class PTY: pass
 PTY=PTY()
 STDOUT = subprocess.STDOUT
 PIPE = subprocess.PIPE

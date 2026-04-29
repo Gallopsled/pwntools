@@ -196,7 +196,7 @@ class _IOFileFlags2(_FlagsUnionBase):
     ]
 
 
-class FileStructure(object):
+class FileStructure:
     r"""
     Crafts a FILE structure, with default values for some fields, like _lock which should point to null ideally, set.
 

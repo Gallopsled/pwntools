@@ -123,10 +123,13 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2671][2671] ssh: support raw string input for 'key' argument as documented
 - [#2688][2688] Close SSH client connection when authentication failed
 - [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
+- [#2706][2706] doc: Update `run_in_new_terminal` docstring with new overrides
 - [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 - [#2655][2655] Add `context.debugger` to select which debugger to use
+- [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
+- [#2713][2713] Remove python-dateutil dependency
+- [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
 
-[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -176,14 +179,20 @@ The table below shows which release corresponds to each branch, and what date th
 [2686]: https://github.com/Gallopsled/pwntools/pull/2686
 [2704]: https://github.com/Gallopsled/pwntools/pull/2704
 [2655]: https://github.com/Gallopsled/pwntools/pull/2655
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
+[2689]: https://github.com/Gallopsled/pwntools/pull/2689
+[2713]: https://github.com/Gallopsled/pwntools/pull/2713
+[2720]: https://github.com/Gallopsled/pwntools/pull/2720
 
 ## 4.15.1
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
+- [#2721][2721] Allow running with Unicorn 2.1.[34] but throw when emulating MIPS
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
+[2721]: https://github.com/Gallopsled/pwntools/pull/2721
 
 ## 4.15.0 (`stable`)
 

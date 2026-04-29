@@ -6,13 +6,13 @@ import time
 import pwnlib
 
 
-class _DummyContextClass(object):
+class _DummyContextClass:
     def __enter__(self):   pass
     def __exit__(self,*a): pass
 
 _DummyContext = _DummyContextClass()
 
-class _countdown_handler(object):
+class _countdown_handler:
     def __init__(self, obj, timeout):
         self.obj     = obj
         self.timeout = timeout
@@ -33,7 +33,7 @@ class _countdown_handler(object):
         self.obj._stop    = self.old_stop
         self.obj.timeout_change()
 
-class _local_handler(object):
+class _local_handler:
     def __init__(self, obj, timeout):
         self.obj     = obj
         self.timeout = timeout
@@ -50,7 +50,7 @@ class _local_handler(object):
         self.obj._stop    = self.old_stop
         self.obj.timeout_change()
 
-class TimeoutDefault(object):
+class TimeoutDefault:
     def __repr__(self): return "pwnlib.timeout.Timeout.default"
     def __str__(self): return "<default timeout>"
 
@@ -59,7 +59,7 @@ class Maximum(float):
         return 'pwnlib.timeout.maximum'
 maximum = Maximum(2**20)
 
-class Timeout(object):
+class Timeout:
     """
     Implements a basic class which has a timeout, and support for
     scoped timeout countdowns.

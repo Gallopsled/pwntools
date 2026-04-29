@@ -1700,7 +1700,7 @@ class tube(Timeout, Logger):
         for wrapper in make_wrapper(func):
             locals()[wrapper.__name__] = wrapper
 
-    def make_wrapper(func, alias):
+    def make_alias_wrapper(func, alias):
         def wrapper(self, *a, **kw):
             return func(self, *a, **kw)
         wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
@@ -1714,7 +1714,7 @@ class tube(Timeout, Logger):
             _name2 = _name.replace('send', 'write')
         else:
             continue
-        locals()[_name2] = make_wrapper(locals()[_name], _name2)
+        locals()[_name2] = make_alias_wrapper(locals()[_name], _name2)
 
     # Clean up the scope
-    del wrapper, func, make_wrapper, _name, _name2
+    del wrapper, func, make_wrapper, make_alias_wrapper, _name, _name2
