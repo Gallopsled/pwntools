@@ -775,8 +775,7 @@ class ssh(Timeout, Logger):
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
-            self.public_key = self.transport.get_remote_server_key()
-            self.fingerprint = self.public_key.get_fingerprint().hex()
+            self.fingerprint = self.transport.get_remote_server_key().get_fingerprint().hex()
 
             atexit.register(self.close)
             h.success()
@@ -2219,27 +2218,27 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         yellow = text.yellow
 
         res = [
-            "Distro:".ljust(15) + ' '.join(self.distro),
-            "OS:".ljust(15) + self.os,
-            "Arch:".ljust(15) + self.arch,
-            "Version:".ljust(15) + '.'.join(map(str, self.version)),
+            "Distro:".ljust(10) + ' '.join(self.distro),
+            "OS:".ljust(10) + self.os,
+            "Arch:".ljust(10) + self.arch,
+            "Version:".ljust(10) + '.'.join(map(str, self.version)),
 
-            "ASLR:".ljust(15) + {
+            "ASLR:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.aslr],
-            "SHSTK:".ljust(15) + {
+            "SHSTK:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.user_shstk],
-            "IBT:".ljust(15) + {
+            "IBT:".ljust(10) + {
                 True: green("Enabled"),
                 False: red("Disabled")
             }[self.ibt],
         ]
 
         if self.aslr_ulimit:
-            res += [ "Note:".ljust(15) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
+            res += [ "Note:".ljust(10) + red("Susceptible to ASLR ulimit trick (CVE-2016-3672)")]
 
         cached = '\n'.join(res)
         self._checksec_cache(cached)
