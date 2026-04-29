@@ -129,6 +129,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
 - [#2713][2713] Remove python-dateutil dependency
 - [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
+- [#2702][2702] ssh: Don't cache username in ssh checksec output
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -183,6 +184,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2689]: https://github.com/Gallopsled/pwntools/pull/2689
 [2713]: https://github.com/Gallopsled/pwntools/pull/2713
 [2720]: https://github.com/Gallopsled/pwntools/pull/2720
+[2702]: https://github.com/Gallopsled/pwntools/pull/2702
 
 ## 4.15.1
 
