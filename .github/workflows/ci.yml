@@ -133,7 +133,9 @@ jobs:
         pip install 'unicorn==2.1.2'
 
     - name: Sanity checks
-      run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
+      run: |
+        PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
+        python -c "import hashlib; assert hashlib.algorithms_guaranteed == {'sha256', 'blake2s', 'sha3_384', 'shake_256', 'sha1', 'md5', 'shake_128', 'sha224', 'sha512', 'blake2b', 'sha3_512', 'sha3_224', 'sha3_256', 'sha384'}"
 
     - name: Install documentation dependencies
       run: pip install -r docs/requirements.txt
