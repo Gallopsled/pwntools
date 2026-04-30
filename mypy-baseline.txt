@@ -91,6 +91,7 @@ pwnlib/term/readline.py:0: error: Module has no attribute "reverse"  [attr-defin
 pwnlib/term/readline.py:0: error: Need type annotation for "history" (hint: "history: list[<type>] = ...")  [var-annotated]
 pwnlib/term/readline.py:0: error: Need type annotation for "search_results" (hint: "search_results: list[<type>] = ...")  [var-annotated]
 pwnlib/term/term.py:0: error: Need type annotation for "on_winch" (hint: "on_winch: list[<type>] = ...")  [var-annotated]
+pwnlib/timeout.py:0: error: Incompatible return value type (got "float | TimeoutDefault", expected "float")  [return-value]
 pwnlib/tubes/process.py:0: error: Cannot assign to a type  [misc]
 pwnlib/tubes/process.py:0: error: Incompatible types in assignment (expression has type "PTY", variable has type "type[PTY]")  [assignment]
 pwnlib/tubes/process.py:0: error: Module "pwnlib.util.hashes" has no attribute "sha256file"  [attr-defined]
