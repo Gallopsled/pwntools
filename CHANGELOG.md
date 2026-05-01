@@ -130,6 +130,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2713][2713] Remove python-dateutil dependency
 - [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
 - [#2702][2702] ssh: Don't cache username in ssh checksec output
+- [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -185,6 +186,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2713]: https://github.com/Gallopsled/pwntools/pull/2713
 [2720]: https://github.com/Gallopsled/pwntools/pull/2720
 [2702]: https://github.com/Gallopsled/pwntools/pull/2702
+[2722]: https://github.com/Gallopsled/pwntools/pull/2722
 
 ## 4.15.1
 
