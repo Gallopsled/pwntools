@@ -3,7 +3,7 @@ _const_codes = [
     'BUILD_LIST','BUILD_MAP', 'MAP_ADD', 'BUILD_TUPLE','BUILD_SET',
     'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
     'LOAD_CONST','LOAD_SMALL_INT','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
-    'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
+    'LIST_TO_TUPLE', 'LIST_APPEND', 'LIST_EXTEND', 'SET_ADD', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
     'COPY', 'RESUME', 'RETURN_CONST'
     ]
 
@@ -69,6 +69,10 @@ def const(expr):
         Traceback (most recent call last):
         ...
         ValueError: opcode BINARY_ADD not allowed
+        >>> const("[" + ",".join(str(i) for i in range(40)) + "]") == list(range(40))
+        True
+        >>> const("{" + ",".join(str(i) for i in range(40)) + "}") == set(range(40))
+        True
     """
 
     c = test_expr(expr, _const_codes)
