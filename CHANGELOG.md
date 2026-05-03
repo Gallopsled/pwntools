@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
@@ -187,6 +188,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2720]: https://github.com/Gallopsled/pwntools/pull/2720
 [2702]: https://github.com/Gallopsled/pwntools/pull/2702
 [2722]: https://github.com/Gallopsled/pwntools/pull/2722
+[2726]: https://github.com/Gallopsled/pwntools/pull/2726
 
 ## 4.15.1
 
