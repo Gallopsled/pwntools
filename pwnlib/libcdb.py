@@ -70,6 +70,65 @@ if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
+
+def _local_debuginfod_cache_dirs():
+    """Yield candidate directories where the upstream debuginfod client (used
+    by gdb / eu-debuginfod-find / abrt) caches downloaded debuginfo files.
+
+    The lookup follows the conventions documented in
+    `debuginfod-client-config(7) <https://man.archlinux.org/man/debuginfod-client-config.7>`_:
+
+    1. ``$DEBUGINFOD_CACHE_PATH`` if set.
+    2. ``$XDG_CACHE_HOME/debuginfod_client`` if ``XDG_CACHE_HOME`` is set.
+    3. ``~/.cache/debuginfod_client`` (the default).
+    """
+    explicit = os.environ.get('DEBUGINFOD_CACHE_PATH')
+    if explicit:
+        yield explicit
+
+    xdg = os.environ.get('XDG_CACHE_HOME')
+    if xdg:
+        yield os.path.join(xdg, 'debuginfod_client')
+    else:
+        home = os.path.expanduser('~')
+        if home and home != '~':
+            yield os.path.join(home, '.cache', 'debuginfod_client')
+
+
+def _local_debuginfod_cached_path(hex_encoded_id):
+    """Return the path to a cached debuginfo file for ``hex_encoded_id`` if a
+    local debuginfod client has already downloaded it, otherwise ``None``.
+
+    The on-disk layout written by debuginfod-client is
+    ``<cache>/<hex-build-id>/debuginfo``.
+
+    Examples:
+
+        >>> import os, tempfile
+        >>> from pwnlib.libcdb import _local_debuginfod_cached_path
+        >>> tmp = tempfile.mkdtemp()
+        >>> os.environ['DEBUGINFOD_CACHE_PATH'] = tmp
+        >>> _local_debuginfod_cached_path('deadbeef') is None
+        True
+        >>> os.makedirs(os.path.join(tmp, 'deadbeef'))
+        >>> _ = open(os.path.join(tmp, 'deadbeef', 'debuginfo'), 'wb').write(b'\\x7FELF')
+        >>> _local_debuginfod_cached_path('deadbeef') == os.path.join(tmp, 'deadbeef', 'debuginfo')
+        True
+        >>> del os.environ['DEBUGINFOD_CACHE_PATH']
+    """
+    if not hex_encoded_id:
+        return None
+    for cache_dir in _local_debuginfod_cache_dirs():
+        candidate = os.path.join(cache_dir, hex_encoded_id, 'debuginfo')
+        try:
+            with open(candidate, 'rb') as f:
+                head = f.read(4)
+        except OSError:
+            continue
+        if head == b'\x7FELF':
+            return candidate
+    return None
+
 # Allow to override url with a caching proxy in CI
 LIBC_RIP_URL = os.environ.get("PWN_LIBCRIP_URL", "https://libc.rip").rstrip("/")
 GITLAB_LIBCDB_URL = os.environ.get("PWN_GITLAB_LIBCDB_URL", "https://gitlab.com").rstrip("/")
@@ -380,6 +439,21 @@ def unstrip_libc(filename):
     import urllib.parse
 
     hex_encoded_id = enhex(libc.buildid)
+
+    # Check if a local debuginfod client (e.g. gdb's `set debuginfod enabled on`
+    # or eu-debuginfod-find) has already downloaded matching debuginfo. If so,
+    # use it instead of doing another network round-trip.
+    local_debuginfo = _local_debuginfod_cached_path(hex_encoded_id)
+    if local_debuginfo is not None:
+        log.debug('Found debuginfo in local debuginfod cache: %s', local_debuginfo)
+        # Add debug info to given libc binary inplace.
+        p = process(['eu-unstrip', '-o', filename, filename, local_debuginfo])
+        output = p.recvall()
+        p.close()
+        if output:
+            log.error('Failed to unstrip libc binary: %r', output)
+            return False
+        return True
 
     # Check if we tried this buildid before.
     cache, cache_valid = _check_elf_cache('libcdb_dbg', hex_encoded_id, 'build_id')
