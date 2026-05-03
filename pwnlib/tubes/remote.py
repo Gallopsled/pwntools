@@ -1,11 +1,41 @@
+import contextlib
+import signal
 import socket
 import socks
+import threading
 
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.sock import sock
 
 log = getLogger(__name__)
+
+
+@contextlib.contextmanager
+def _interruptible_block():
+    """Temporarily reset SIGINT to its default handler for the duration of the
+    block, then restore the previous handler.
+
+    This lets a Ctrl-C interrupt blocking C-level calls such as
+    :func:`socket.getaddrinfo`, which on glibc hold the GIL and are otherwise
+    uninterruptible from Python (#2540).
+
+    Signal handlers can only be changed from the main thread, so on any other
+    thread (or in embedded interpreters that refuse the change) this is a
+    no-op and the caller's existing semantics are preserved.
+    """
+    if threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    try:
+        old = signal.signal(signal.SIGINT, signal.SIG_DFL)
+    except ValueError:
+        yield
+        return
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGINT, old)
 
 class remote(sock):
     r"""Creates a TCP or UDP-connection to a remote host. It supports
@@ -107,7 +137,9 @@ class remote(sock):
         timeout = self.timeout
 
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
-            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+            with _interruptible_block():
+                addrinfos = socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE)
+            for res in addrinfos:
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
