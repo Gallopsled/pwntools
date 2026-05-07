@@ -118,6 +118,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2673][2673] Add libc module for libc-related functions
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2683][2683] libc: add atexit functions for glibc exploits
 - [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
 - [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
 - [#2682][2682] Fix `server.close()` not closing the listen socket
@@ -174,6 +175,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2683]: https://github.com/Gallopsled/pwntools/pull/2683
 [2687]: https://github.com/Gallopsled/pwntools/pull/2687
 [2699]: https://github.com/Gallopsled/pwntools/pull/2699
 [2682]: https://github.com/Gallopsled/pwntools/pull/2682
