@@ -10,7 +10,7 @@ from pwnlib.util.fiddling import hexdump
 
 log = getLogger(__name__)
 
-class Encoder(object):
+class Encoder:
     _encoders = collections.defaultdict(lambda: [])
 
     #: Architecture which this encoder works on

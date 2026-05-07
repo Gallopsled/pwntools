@@ -34,7 +34,7 @@ from pwnlib.util.packing import _decode
 
 log = getLogger(__name__)
 
-class PTY(object): pass
+class PTY: pass
 PTY=PTY()
 STDOUT = subprocess.STDOUT
 PIPE = subprocess.PIPE
@@ -133,18 +133,21 @@ class process(tube):
         True
         >>> p.connected('send')
         False
-        >>> p.recvline()
-        b'Hello world\n'
+        >>> p.recvline(drop=True)
+        b'Hello world'
         >>> p.recvuntil(b',')
         b'Wow,'
         >>> p.recvregex(b'.*data')
         b' such data'
-        >>> p.recv()
-        b'\n'
+        >>> p.recv()[-1:] == b'\n'
+        True
         >>> p.recv() # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         EOFError
+
+    .. doctest::
+        :options: +POSIX
 
         >>> p = process('cat')
         >>> d = open('/dev/urandom', 'rb').read(4096)
@@ -289,6 +292,10 @@ class process(tube):
             self.suid = self.uid = None
             self.sgid = self.gid = None
             internal_preexec_fn = None
+            # Expect Windows to use CRLF newlines, but if the user explicitly
+            # set it to something else, don't mess with it.
+            if 'newline' not in context._tls and context.newline == b'\n':
+                self.newline = b'\r\n'
         else:
             # Avoid the need to have to deal with the STDOUT magic value.
             if stderr is STDOUT:
@@ -524,6 +531,9 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+            :options: +POSIX +TODO
+
             >>> p = process('/bin/true')
             >>> p.executable == '/bin/true'
             True
@@ -538,6 +548,9 @@ class process(tube):
         """Directory that the process is working in.
 
         Example:
+
+        .. doctest::
+            :options: +POSIX +TODO
 
             >>> p = process('sh')
             >>> p.sendline(b'cd /tmp; echo AAA')
@@ -687,8 +700,14 @@ class process(tube):
 
         The process can choose to ignore this signal, so proper cleanup
         is only done in :meth:`kill`/:meth:`close`.
+
+        Note: On Windows, there is no SIGTERM signal, so the Win32 API function ``TerminateProcess()`` is called
+        instead, leading to :meth:`terminate()` and :meth:`kill()` being effectively the same.
         
         Examples:
+
+        .. doctest::
+            :options: +POSIX
         
             >>> p = process(['python', '-u', '-c', 'import signal;signal.signal(signal.SIGTERM, lambda signum,frame: (print("sigterm"),exit(0)));print("ready");import time;time.sleep(10)'])
             >>> p.recvline_contains(b'ready')
@@ -945,7 +964,10 @@ class process(tube):
             read, write, execute, private, shared, string
 
         Example:
-      
+
+        .. doctest::
+            :options: +POSIX +TODO
+
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
@@ -1028,7 +1050,10 @@ class process(tube):
         path_value.
 
         Example:
-            
+
+        .. doctest::
+            :options: +POSIX
+
             >>> p = process(['cat'])
             >>> mapping = p.get_mapping('[stack]')
             >>> mapping.path == '[stack]'
@@ -1071,6 +1096,9 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+            :options: +POSIX
+
             >>> p = process(['cat'])
             >>> mapping = p.stack_mapping()
             >>> mapping.path
@@ -1099,6 +1127,9 @@ class process(tube):
         Returns :meth:`.process.get_mapping` with '[heap]' and single as arguments.
 
         Example:
+
+        .. doctest::
+            :options: +POSIX
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
@@ -1132,6 +1163,9 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+            :options: +LINUX
+
             >>> p = process(['cat'])
             >>> mapping = p.vdso_mapping()
             >>> mapping.path
@@ -1160,6 +1194,9 @@ class process(tube):
         Returns :meth:`.process.get_mapping` with '[vvar]' and single as arguments.
 
         Example:
+
+        .. doctest::
+            :options: +LINUX
 
             >>> p = process(['cat'])
             >>> mapping = p.vvar_mapping()
@@ -1190,6 +1227,9 @@ class process(tube):
         or all libc mappings, depending on "single". 
 
         Example:
+
+        .. doctest::
+            :options: +POSIX
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
@@ -1271,6 +1311,9 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+            :options: +POSIX
+
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
@@ -1309,7 +1352,9 @@ class process(tube):
 
         Example:
 
-            >>> from pwn import *
+        .. doctest::
+            :options: +POSIX
+
             >>> p = process(['cat'])
             >>> p.send(b'meow')
             >>> p.recvuntil(b'meow')
@@ -1348,6 +1393,9 @@ class process(tube):
         Returns the mapping at the specified address.
 
         Example:
+
+        .. doctest::
+            :options: +POSIX
 
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
@@ -1403,16 +1451,19 @@ class process(tube):
 
         Example:
 
-        >>> p = process("/bin/cat")
-        >>> p.send(b"meow")
-        >>> p.recvuntil(b"meow")
-        b'meow'
-        >>> libc = p.libc
-        >>> libc is not None
-        True
-        >>> libc # doctest: +SKIP
-        ELF('/lib64/libc-...so')
-        >>> p.close()
+        .. doctest::
+            :options: +POSIX
+
+            >>> p = process("/bin/cat")
+            >>> p.send(b"meow")
+            >>> p.recvuntil(b"meow")
+            b'meow'
+            >>> libc = p.libc
+            >>> libc is not None
+            True
+            >>> libc # doctest: +SKIP
+            ELF('/lib64/libc-...so')
+            >>> p.close()
         """
         from pwnlib.elf import ELF
 
@@ -1490,6 +1541,9 @@ class process(tube):
 
         Example:
 
+        .. doctest::
+            :options: +POSIX +TODO
+
             >>> e = ELF(which('bash-static'))
             >>> p = process(e.path)
 
@@ -1525,6 +1579,9 @@ class process(tube):
         Example:
         
             Let's write data to  the beginning of the mapped memory of the  ELF.
+
+        .. doctest::
+            :options: +POSIX +TODO
 
             >>> context.clear(arch='i386')
             >>> address = 0x100000

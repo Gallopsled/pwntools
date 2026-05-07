@@ -61,17 +61,11 @@ from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.dynamic import DynamicSection
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
+from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS, ENUM_P_TYPE_BASE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
-
-# See https://github.com/Gallopsled/pwntools/issues/1189
-try:
-    from elftools.elf.enums import ENUM_P_TYPE
-except ImportError:
-    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -104,7 +98,7 @@ def _iter_symbols(sec):
         sec._symbols = list(sec.iter_symbols())
     return iter(sec._symbols)
 
-class Function(object):
+class Function:
     """Encapsulates information about a function in an :class:`.ELF` binary.
 
     Arguments:
@@ -2455,7 +2449,7 @@ class ELF(ELFFile):
 
         Zeroes out the ``PT_GNU_STACK`` program header ``p_type`` field.
         """
-        PT_GNU_STACK = packing.p32(ENUM_P_TYPE['PT_GNU_STACK'])
+        PT_GNU_STACK = packing.p32(ENUM_P_TYPE_BASE['PT_GNU_STACK'])
 
         if not self.executable:
             log.error("Can only make stack executable with executables")

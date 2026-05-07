@@ -7,7 +7,7 @@ from pwnlib import constants
 from pwnlib.context import context
 
 # github.com/zachriggle/functions
-from functions import functions, Function, Argument
+from functions import functions, Function, Argument  # type: ignore[import-not-found]
 
 ARCHITECTURES = ['i386', 'amd64', 'arm', 'aarch64', 'mips', 'riscv64', 'powerpc64']
 

@@ -1,4 +1,4 @@
-class Device(object):
+class Device:
     arch = None
     bits = None
     endian = None

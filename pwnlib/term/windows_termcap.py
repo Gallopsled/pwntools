@@ -4,6 +4,9 @@ import ctypes
 import sys
 from ctypes import wintypes
 
+if sys.platform != 'win32':
+    raise ImportError("This module is only for Windows")
+
 __all__ = ['get']
 
 cache = None

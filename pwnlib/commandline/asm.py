@@ -76,7 +76,8 @@ parser.add_argument(
 parser.add_argument(
     '-e',
     '--encoder',
-    help="Specific encoder to use"
+    metavar='X',
+    help="Compatibility flag, ignored"
 )
 
 parser.add_argument(

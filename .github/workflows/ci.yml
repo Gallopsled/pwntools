@@ -129,6 +129,8 @@ jobs:
         pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
         pip install --upgrade --editable .
+        # Pin to known working version until 2.1.5 is out. https://github.com/unicorn-engine/unicorn/issues/2134
+        pip install 'unicorn==2.1.2'
 
     - name: Sanity checks
       run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
@@ -316,7 +318,6 @@ jobs:
   windows-test:
     runs-on: windows-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
     - uses: actions/checkout@v6
 
@@ -350,7 +351,7 @@ jobs:
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, android-test, windows-test]
     steps:
     - uses: actions/checkout@v6
       with:

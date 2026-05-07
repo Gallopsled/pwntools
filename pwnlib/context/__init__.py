@@ -24,16 +24,13 @@ from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
 
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
+from collections.abc import Iterable
 
 __all__ = ['context', 'ContextType', 'Thread']
 
 _original_socket = socket.socket
 
-class _devnull(object):
+class _devnull:
     name = None
     def write(self, *a, **kw): pass
     def read(self, *a, **kw):  return ''
@@ -80,7 +77,7 @@ class _defaultdict(dict):
     def __missing__(self, key):
         return self.default[key]
 
-class _DictStack(object):
+class _DictStack:
     """
     Manages a dictionary-like object, permitting saving and restoring from
     a stack of states via :func:`push` and :func:`pop`.
@@ -269,7 +266,7 @@ def _longest(d):
     """
     return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
 
-class ContextType(object):
+class ContextType:
     r"""
     Class for specifying information about the target machine.
     Intended for use as a pseudo-singleton through the global
@@ -552,7 +549,7 @@ class ContextType(object):
             >>> print(context.timeout)
             1.0
         """
-        class LocalContext(object):
+        class LocalContext:
             def __enter__(a):
                 self._tls.push()
                 self.update(**{k:v for k,v in kwargs.items() if v is not None})
@@ -1262,6 +1259,12 @@ class ContextType(object):
         Default terminal used by :meth:`pwnlib.util.misc.run_in_new_terminal`.
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
+        
+        Note:
+            :meth:`pwnlib.util.misc.run_in_new_terminal` has special handlers for
+            supported terminals with windowing capabilities, which might apply
+            to terminals set with this context option. See its documentation
+            for additional information on this behavior.
         """
         if isinstance(value, (bytes, str)):
             return [value]
@@ -1580,7 +1583,7 @@ class ContextType(object):
 
     @_validator
     def windbg_binary(self, value):
-        """Path to the binary that is used when running WinDbg locally.
+        r"""Path to the binary that is used when running WinDbg locally.
 
         This is useful when you have multiple versions of WinDbg installed or the WinDbg binary is
         called something different.
@@ -1597,7 +1600,7 @@ class ContextType(object):
 
     @_validator
     def windbgx_binary(self, value):
-        """Path to the binary that is used when running WinDbgX locally.
+        r"""Path to the binary that is used when running WinDbgX locally.
 
         This is useful when you have multiple versions of WinDbgX installed or the WinDbgX binary is
         called something different.
