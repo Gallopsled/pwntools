@@ -67,7 +67,6 @@ pwnlib/rop/rop.py:0: error: Need type annotation for "descriptions" (hint: "desc
 pwnlib/rop/srop.py:0: error: Need type annotation for "_regs" (hint: "_regs: list[<type>] = ...")  [var-annotated]
 pwnlib/shellcraft/__init__.py:0: error: Argument 1 to "append" of "list" has incompatible type "LazyImporter"; expected "MetaPathFinderProtocol"  [arg-type]
 pwnlib/shellcraft/__init__.py:0: error: Need type annotation for "_templates" (hint: "_templates: list[<type>] = ...")  [var-annotated]
-pwnlib/shellcraft/internal.py:0: error: Need type annotation for "loaded" (hint: "loaded: dict[<type>, <type>] = ...")  [var-annotated]
 pwnlib/term/__init__.py:0: error: Module has no attribute "height"  [attr-defined]
 pwnlib/term/__init__.py:0: error: Module has no attribute "width"  [attr-defined]
 pwnlib/term/key.py:0: error: Need type annotation for "_cbuf" (hint: "_cbuf: list[<type>] = ...")  [var-annotated]

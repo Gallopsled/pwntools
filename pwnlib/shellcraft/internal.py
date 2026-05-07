@@ -1,11 +1,16 @@
+from __future__ import annotations
 import os
 import sys
+from typing import TYPE_CHECKING
 
 from pwnlib.context import context
 
 __all__ = ['make_function']
 
-loaded = {}
+if TYPE_CHECKING:
+    from mako.template import Template
+
+loaded: dict[str, Template] = {}
 lookup = None
 def init_mako():
     global lookup, render_global
