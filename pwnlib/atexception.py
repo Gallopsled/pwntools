@@ -5,6 +5,8 @@ be run if an unhandled exception occurs.
 import sys
 import threading
 import traceback
+from types import TracebackType
+from typing import Any, Callable, ParamSpec, TypeVar
 
 from pwnlib.context import context
 
@@ -12,9 +14,12 @@ __all__ = ['register', 'unregister']
 
 _lock = threading.Lock()
 _ident = 0
-_handlers = {}
+_handlers: dict[int, tuple[Callable[..., Any], Any, Any, dict[str, Any]]] = {}
 
-def register(func, *args, **kwargs):
+_P = ParamSpec('_P')
+_R = TypeVar('_R')
+
+def register(func: Callable[_P, _R], *args: _P.args, **kwargs: _P.kwargs) -> int:
     """register(func, *args, **kwargs)
 
     Registers a function to be called when an unhandled exception occurs.  The
@@ -40,7 +45,8 @@ def register(func, *args, **kwargs):
     actual exception-handler.  The exception-handler can then be unregistered
     with::
 
-      atexception.unregister(handler)
+      ident = atexception.register(handler)
+      atexception.unregister(ident)
 
     This function is thread safe.
 
@@ -52,16 +58,16 @@ def register(func, *args, **kwargs):
     _handlers[ident] = (func, args, kwargs, vars(context))
     return ident
 
-def unregister(func):
-    """unregister(func)
+def unregister(ident: int) -> None:
+    """unregister(ident)
 
-    Remove `func` from the collection of registered functions.  If `func` isn't
-    registered this is a no-op.
+    Remove the exception-handler identified by `ident` from the list of registered
+    handlers.  If `ident` isn't registered this is a no-op.
     """
-    if func in _handlers:
-        del _handlers[func]
+    if ident in _handlers:
+        del _handlers[ident]
 
-def _run_handlers():
+def _run_handlers() -> None:
     """_run_handlers()
 
     Run registered handlers.  They run in the reverse order of which they were
@@ -83,12 +89,12 @@ def _run_handlers():
             # extract the current exception and rewind the traceback to where it
             # originated
             typ, val, tb = sys.exc_info()
-            traceback.print_exception(typ, val, tb.tb_next)
+            traceback.print_exception(typ, value=val, tb=tb.tb_next if tb else None)
 
 # we rely on the existing excepthook to print exceptions
 _oldhook = getattr(sys, 'excepthook', None)
 
-def _newhook(typ, val, tb):
+def _newhook(typ: type[BaseException], val: BaseException, tb: TracebackType | None) -> None:
     """_newhook(typ, val, tb)
 
     Our excepthook replacement.  First the original hook is called to print the
@@ -96,7 +102,7 @@ def _newhook(typ, val, tb):
     """
     if _oldhook:
         _oldhook(typ, val, tb)
-    if _run_handlers:
+    if _handlers:
         _run_handlers()
 
 sys.excepthook = _newhook
