@@ -75,7 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2725][2725] feat(libcdb): add extra_mirrors arg + PWN_EXTRA_LIBC_MIRRORS env to download_libraries
+- [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
