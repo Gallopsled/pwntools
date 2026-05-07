@@ -485,7 +485,7 @@ def _extract_pkgfile(cache_dir, package_filename, package):
 
 def _collect_extra_mirrors(extra_mirrors):
     """Normalize the user-supplied ``extra_mirrors`` argument and merge it with
-    the comma- or whitespace-separated ``PWN_EXTRA_LIBC_MIRRORS`` environment
+    the comma- or whitespace-separated ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment
     variable.
 
     Returns a list of ``str`` URL prefixes (each with no trailing slash). Empty
@@ -507,7 +507,7 @@ def _collect_extra_mirrors(extra_mirrors):
             mirrors.append(extra_mirrors)
         else:
             mirrors.extend(extra_mirrors)
-    env_mirrors = os.environ.get('PWN_EXTRA_LIBC_MIRRORS')
+    env_mirrors = os.environ.get('PWNLIB_EXTRA_LIBC_MIRRORS')
     if env_mirrors:
         # Allow either commas or whitespace as separators so URL schemes
         # (https:) don't accidentally get split mid-URL.
@@ -595,8 +595,8 @@ def download_libraries(libc_path, unstrip=True, extra_mirrors=None):
             dropped older vulnerable libc versions: each candidate URL is
             re-tried with everything before ``/pool/`` swapped for the
             mirror prefix. Mirrors can also be supplied via the
-            ``PWN_EXTRA_LIBC_MIRRORS`` environment variable as a
-            colon-separated list. Example: pass
+            ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment variable as a
+            comma- or whitespace-separated list. Example: pass
             ``"https://debian.sipwise.com/debian-security"`` to find
             ``GLIBC 2.36-9+deb12u6`` after the official Debian mirrors
             removed it.
