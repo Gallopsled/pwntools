@@ -1588,7 +1588,7 @@ class ContextType:
         This is useful when you have multiple versions of WinDbg installed or the WinDbg binary is
         called something different.
 
-        Usually, it is installed to ``C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe``.
+        Usually, it is installed to ``C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe``.
         Adding the path to the Windows SDK to your PATH variable is recommended.
 
         If set to an empty string, pwntools will try to search for a reasonable WinDbg binary from 
@@ -1605,7 +1605,7 @@ class ContextType:
         This is useful when you have multiple versions of WinDbgX installed or the WinDbgX binary is
         called something different.
 
-        Usually, it is installed to ``%LocalAppData%\\Microsoft\\WindowsApps\\WinDbgX.exe``.
+        Usually, it is installed to ``%LocalAppData%\Microsoft\WindowsApps\WinDbgX.exe``.
 
         If set to an empty string, pwntools will try to search for a reasonable WinDbgX binary from 
         the path.

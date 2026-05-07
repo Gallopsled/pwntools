@@ -119,8 +119,7 @@ class ExitFlavor(IntEnum):
     Original enums are: ``ef_free``, ``ef_us``, ``ef_on``, ``ef_at``
     and ``ef_cxa``.
 
-    .. _here:
-        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L25-L32
+    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L25-L32
 
     """
     FREE = 0
@@ -155,15 +154,14 @@ class ExitFunc:
         >>> bytes(exit_func).hex()
         '03000000000000006e263e7e53bd6f26'
 
-    .. _here:
-        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L34-L54
+    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L34-L54
 
     """
     flavor: ExitFlavor
     fn: int
     guard: int
-    arg: int
-    dso: int
+    arg: int | None
+    dso: int | None
 
     def __init__(self, flavor: ExitFlavor, func: int, guard: int,
                  arg: int | None = None, dso: int | None = None):
@@ -176,12 +174,12 @@ class ExitFunc:
         match flavor:
             case ExitFlavor.ON:
                 if arg is None:
-                    raise TypeError(f'on_exit requires an arg pointer')
+                    raise TypeError('on_exit requires an arg pointer')
             case ExitFlavor.FREE | ExitFlavor.USED | ExitFlavor.AT:
                 pass
             case ExitFlavor.CXA:
                 if arg is None or dso is None:
-                    raise TypeError(f'cxa_exit requires both arg and dso_handle pointer')
+                    raise TypeError('cxa_exit requires both arg and dso_handle pointer')
             case _:
                 raise TypeError(f'flavor must be an ExitFlavor, instead of {type(flavor)}')
 
@@ -261,7 +259,7 @@ class ExitFunc:
                     return ExitFunc(flavor, ptr_demangle(guard, words[1]), guard,
                                     words[2], words[3])
         except IndexError:
-            raise ValueError(f'Insufficient data when decoding ExitFunc') from None
+            raise ValueError('Insufficient data when decoding ExitFunc') from None
 
 
 class ExitFuncList:
@@ -288,8 +286,7 @@ class ExitFuncList:
         >>> bytes(flist).hex()
         '00000000020000000000000000000000000000000000000003000000268e25660000000000000000'
 
-    .. _here:
-        https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L55-L60
+    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L55-L60
 
     """
     nextp: int
@@ -344,7 +341,7 @@ class ExitFuncList:
                    for i in range(size)]
             return ExitFuncList(nextp, fns)
         except IndexError:
-            raise ValueError(f'Insufficient data when decoding ExitFuncList') from None
+            raise ValueError('Insufficient data when decoding ExitFuncList') from None
 
 class ExitDtorList:
     """
@@ -368,8 +365,7 @@ class ExitDtorList:
         >>> bytes(dtor).hex()
         '00005e7853bd0100000000000000000000000000000000000000000000000000'
 
-    .. _here:
-        https://elixir.bootlin.com/glibc/glibc-2.38/source/stdlib/cxa_thread_atexit_impl.c#L82-L88
+    .. _here: https://elixir.bootlin.com/glibc/glibc-2.38/source/stdlib/cxa_thread_atexit_impl.c#L82-L88
 
     """
     func: int
@@ -399,7 +395,7 @@ class ExitDtorList:
         return bytes(self)
 
     @staticmethod
-    def from_bytes(data: bytes, guard: int) -> ExitFuncList:
+    def from_bytes(data: bytes, guard: int) -> ExitDtorList:
         """
         Construct an ``ExitDtorList`` from bytes object.
 
