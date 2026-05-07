@@ -60,7 +60,7 @@ def ptr_demangle(guard: int, mangled: int) -> int:
 
 def protect_ptr(word_addr: int, value: int) -> int:
     """
-    Perform ` ``PROTECT_PTR`` <https://elixir.bootlin.com/glibc/glibc-2.42/source/malloc/malloc.c#L331>`__ 
+    Perform `PROTECT_PTR <https://elixir.bootlin.com/glibc/glibc-2.42/source/malloc/malloc.c#L331>`__ 
     in glibc heap macros to protect pointers.
     ``REVEAL_PTR`` is basically ``PROTECT_PTR``, and since we don't know
     the address of the word, so use ``protect_ptr`` instead.
@@ -114,13 +114,12 @@ def reveal_ptr_same_page(ptr_value: int) -> int:
 
 
 class ExitFlavor(IntEnum):
-    """Enum adapted from glibc ``exit.h``. Check definitions from `here`_.
+    """Enum adapted from glibc ``exit.h``. Check `enum definitions`_.
 
     Original enums are: ``ef_free``, ``ef_us``, ``ef_on``, ``ef_at``
     and ``ef_cxa``.
 
-    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L25-L32
-
+    .. _enum definitions: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L25-L32
     """
     FREE = 0
     USED = 1
@@ -133,7 +132,7 @@ class ExitFunc:
     Craft a ``struct exit_function`` object. If user has arbitrary write
     to libc area and knows pointer guard used in ``PTR_MANGLE``, then
     the user is able to hijack control flow when process exits. Check
-    definitions `here`_.
+    `struct exit_function definitions`_.
 
     Arguments:
         flavor(ExitFlavor): Which flavor of exit func is registered.
@@ -154,8 +153,7 @@ class ExitFunc:
         >>> bytes(exit_func).hex()
         '03000000000000006e263e7e53bd6f26'
 
-    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L34-L54
-
+    .. _struct exit_function definitions: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L34-L54
     """
     flavor: ExitFlavor
     fn: int
@@ -266,7 +264,7 @@ class ExitFuncList:
     """
     Craft a ``struct exit_function_list`` object. glibc has a static variable
     ``initial`` to store most atexit objects and a pointer ``__exit_funcs``
-    pointing to ``initial``. Check definitions from `here`_.
+    pointing to ``initial``. Check `struct exit_function_list definitions`_.
 
     Arguments:
         nextp(int):          Next ``struct exit_function_list`` pointer on chain.
@@ -286,8 +284,7 @@ class ExitFuncList:
         >>> bytes(flist).hex()
         '00000000020000000000000000000000000000000000000003000000268e25660000000000000000'
 
-    .. _here: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L55-L60
-
+    .. _struct exit_function_list definitions: https://elixir.bootlin.com/glibc/glibc-2.43/source/stdlib/exit.h#L55-L60
     """
     nextp: int
     idx: int
@@ -347,7 +344,7 @@ class ExitDtorList:
     """
     Craft a ``struct dtor_list`` object. glibc will invoke functions in it
     if it's not null when exits. Note that to avoid program aborting, the
-    ``ExitDtorList`` pointer must be free-able. Check definitions from `here`_.
+    ``ExitDtorList`` pointer must be free-able. Check `struct dtor_list definitions`_.
 
     Arguments:
         func(int):  A pointer to function to execute.
@@ -365,8 +362,7 @@ class ExitDtorList:
         >>> bytes(dtor).hex()
         '00005e7853bd0100000000000000000000000000000000000000000000000000'
 
-    .. _here: https://elixir.bootlin.com/glibc/glibc-2.38/source/stdlib/cxa_thread_atexit_impl.c#L82-L88
-
+    .. _struct dtor_list definitions: https://elixir.bootlin.com/glibc/glibc-2.38/source/stdlib/cxa_thread_atexit_impl.c#L82-L88
     """
     func: int
     guard: int
