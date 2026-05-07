@@ -1,6 +1,7 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
+from collections.abc import Generator
 import os
 import re
 import time
@@ -9,6 +10,7 @@ import struct
 from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
+from pwnlib.internal.typing import BytesPath
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex, unhex
@@ -483,7 +485,7 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
-def _collect_extra_mirrors(extra_mirrors):
+def _collect_extra_mirrors(extra_mirrors: str | list[str] | None) -> list[str]:
     """Normalize the user-supplied ``extra_mirrors`` argument and merge it with
     the comma- or whitespace-separated ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment
     variable.
@@ -515,7 +517,7 @@ def _collect_extra_mirrors(extra_mirrors):
     return [m.rstrip('/') for m in mirrors if m]
 
 
-def _mirror_variants(url, extra_mirrors):
+def _mirror_variants(url: str, extra_mirrors: list[str] | None) -> Generator[str, None, None]:
     """Yield ``url`` followed by mirror-swapped variants for each entry in
     ``extra_mirrors``.
 
@@ -551,7 +553,7 @@ def _mirror_variants(url, extra_mirrors):
             yield candidate
 
 
-def _find_libc_package_lib_url(libc, extra_mirrors=None):
+def _find_libc_package_lib_url(libc: ELF, extra_mirrors: list[str] | None = None) -> Generator[str, None, None]:
     # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
@@ -569,7 +571,7 @@ def _find_libc_package_lib_url(libc, extra_mirrors=None):
         libc_version = version.group(1).decode()
         yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
-def download_libraries(libc_path, unstrip=True, extra_mirrors=None):
+def download_libraries(libc_path: BytesPath, unstrip: bool = True, extra_mirrors: str | list[str] | None = None) -> str | None:
     """download_libraries(str, bool, extra_mirrors=None) -> str
     Download the matching libraries for the given libc binary and cache
     them in a local directory. The libraries are looked up using `libc.rip <https://libc.rip>`_
