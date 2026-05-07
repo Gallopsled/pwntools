@@ -69,8 +69,6 @@ pwnlib/shellcraft/__init__.py:0: error: Argument 1 to "append" of "list" has inc
 pwnlib/shellcraft/__init__.py:0: error: Need type annotation for "_templates" (hint: "_templates: list[<type>] = ...")  [var-annotated]
 pwnlib/term/__init__.py:0: error: Module has no attribute "height"  [attr-defined]
 pwnlib/term/__init__.py:0: error: Module has no attribute "width"  [attr-defined]
-pwnlib/term/key.py:0: error: Need type annotation for "_cbuf" (hint: "_cbuf: list[<type>] = ...")  [var-annotated]
-pwnlib/term/key.py:0: error: Need type annotation for "_kbuf" (hint: "_kbuf: list[<type>] = ...")  [var-annotated]
 pwnlib/term/readline.py:0: error: Need type annotation for "history" (hint: "history: list[<type>] = ...")  [var-annotated]
 pwnlib/term/readline.py:0: error: Need type annotation for "search_results" (hint: "search_results: list[<type>] = ...")  [var-annotated]
 pwnlib/term/term.py:0: error: Need type annotation for "on_winch" (hint: "on_winch: list[<type>] = ...")  [var-annotated]
