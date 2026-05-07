@@ -50,6 +50,19 @@ def register(func: Callable[_P, _R], *args: _P.args, **kwargs: _P.kwargs) -> int
 
     This function is thread safe.
 
+    >>> def handler(a, b):
+    ...     print("Exception handler", a, b)
+    >>> ident = atexception.register(handler, 13, 37)
+    >>> raise Exception("Unexpected error") # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    Exception: Unexpected error
+    Exception handler 13 37
+    >>> atexception.unregister(ident)
+    >>> raise Exception("Unexpected error") # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    Exception: Unexpected error
     """
     global _ident
     with _lock:
