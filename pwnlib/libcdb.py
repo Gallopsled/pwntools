@@ -613,6 +613,13 @@ def download_libraries(libc_path: BytesPath, unstrip: bool = True, extra_mirrors
         True
         >>> os.path.exists(os.path.join(lib_path, 'ld-linux-x86-64.so.2'))
         True
+
+        Fetch libraries from a different mirror for a vulnerable libc version
+        ``libc6_2.36-9+deb12u6_amd64`` that was removed from the official Debian mirrors:
+        
+        >>> libc_path = libcdb.search_by_build_id("ee3145ecaaff87a133daea77fbc3eecd458fa0d1") # doctest: +SKIP
+        >>> libcdb.download_libraries(libc_path, extra_mirrors="https://debian.sipwise.com/debian-security") # doctest: +ELLIPSIS +SKIP
+        '.../libcdb_libs/ee3145ecaaff87a133daea77fbc3eecd458fa0d1'
     """
 
     libc = ELF(libc_path, checksec=False)
