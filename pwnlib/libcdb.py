@@ -2,8 +2,8 @@
 Fetch a LIBC binary based on some heuristics.
 """
 import os
+import re
 import time
-import tempfile
 import struct
 
 from pwnlib.context import context
@@ -511,8 +511,7 @@ def _collect_extra_mirrors(extra_mirrors):
     if env_mirrors:
         # Allow either commas or whitespace as separators so URL schemes
         # (https:) don't accidentally get split mid-URL.
-        import re as _re
-        mirrors.extend(_re.split(r'[,\s]+', env_mirrors))
+        mirrors.extend(re.split(r'[,\s]+', env_mirrors))
     return [m.rstrip('/') for m in mirrors if m]
 
 
@@ -540,8 +539,7 @@ def _mirror_variants(url, extra_mirrors):
     yield url
     if not extra_mirrors:
         return
-    import re as _re
-    match = _re.search(r'/(pool/.+)$', url)
+    match = re.search(r'/(pool/.+)$', url)
     if not match:
         return
     suffix = match.group(1)
@@ -566,7 +564,6 @@ def _find_libc_package_lib_url(libc, extra_mirrors=None):
 
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
-    import re
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
