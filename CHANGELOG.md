@@ -136,6 +136,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2702][2702] ssh: Don't cache username in ssh checksec output
 - [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
 - [#2730][2730] Fix atexception handlers in term mode
+- [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -196,6 +197,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2722]: https://github.com/Gallopsled/pwntools/pull/2722
 [2725]: https://github.com/Gallopsled/pwntools/pull/2725
 [2730]: https://github.com/Gallopsled/pwntools/pull/2730
+[2732]: https://github.com/Gallopsled/pwntools/pull/2732
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
