@@ -294,7 +294,7 @@ class ContextType:
         >>> context.os == 'linux'
         True
         >>> context.arch = 'arm'
-        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n'}
+        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n', 'path_sep': b'/', 'pathlist_sep': b':'}
         True
         >>> context.endian
         'little'
@@ -368,6 +368,8 @@ class ContextType:
         'randomize': False,
         'rename_corefiles': True,
         'newline': b'\n',
+        'path_sep': b'/',
+        'pathlist_sep': b':',
         'throw_eof_on_incomplete_line': None,
         'noptrace': False,
         'os': 'linux',
@@ -378,8 +380,8 @@ class ContextType:
         'timeout': Timeout.maximum,
     }
 
-    unix_like    = {'newline': b'\n'}
-    windows_like = {'newline': b'\r\n'}
+    unix_like    = {'newline': b'\n', 'path_sep': b'/', 'pathlist_sep': b':'}
+    windows_like = {'newline': b'\r\n', 'path_sep': b'\\', 'pathlist_sep': b';'}
 
     #: Keys are valid values for :meth:`pwnlib.context.ContextType.os`
     oses = _longest({
@@ -470,7 +472,7 @@ class ContextType:
 
             >>> context.clear()
             >>> context.os   = 'linux'
-            >>> vars(context) == {'os': 'linux', 'newline': b'\n'}
+            >>> vars(context) == {'os': 'linux', 'newline': b'\n', 'path_sep': b'/', 'pathlist_sep': b':'}
             True
         """
         return self._tls.copy()
@@ -1165,8 +1167,12 @@ class ContextType:
             >>> context.clear()
             >>> context.newline == b'\n' # Default value
             True
+            >>> context.path_sep == b'/' # Default value
+            True
             >>> context.os = 'windows'
             >>> context.newline == b'\r\n' # New value
+            True
+            >>> context.path_sep == b'\\' # New value
             True
 
             Note that expressly setting :attr:`newline` means that we use
@@ -1182,7 +1188,7 @@ class ContextType:
 
             >>> context.clear()
             >>> context.os = 'windows'
-            >>> vars(context) == {'os': 'windows', 'newline': b'\r\n'}
+            >>> vars(context) == {'os': 'windows', 'newline': b'\r\n', 'path_sep': b'\\', 'pathlist_sep': b';'}
             True
         """
         os = os.lower()
@@ -1530,6 +1536,30 @@ class ContextType:
         # circular imports
         from pwnlib.util.packing import _need_bytes
         return _need_bytes(v)
+
+    @_validator
+    def path_sep(self, v):
+        """Sets the path separator used for Tubes by default.
+
+        This configures the path separator used by e.g. ``which`` and similar
+        functions.
+        """
+        # circular imports
+        from pwnlib.util.packing import _need_bytes
+        return _need_bytes(v)
+
+
+    @_validator
+    def pathlist_sep(self, v):
+        """Sets the path list separator used for Tubes by default.
+
+        This configures the path list separator used by functions that 
+        inspect or split path lists such as ``PATH``.
+        """
+        # circular imports
+        from pwnlib.util.packing import _need_bytes
+        return _need_bytes(v)
+
 
     @_validator
     def throw_eof_on_incomplete_line(self, v):

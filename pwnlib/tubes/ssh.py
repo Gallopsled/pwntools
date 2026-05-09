@@ -1122,14 +1122,14 @@ class ssh(Timeout, Logger):
         system which adds the current working directory to the end of ``$PATH``.
         """
         # If name is a path, do not attempt to resolve it.
-        if '/' in program:
+        if context.path_sep.decode() in program:
             return program
 
         program = packing._encode(program)
 
         result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
 
-        if (b'/' + program) not in result:
+        if (context.path_sep + program) not in result:
             return None
 
         return packing._decode(result)
