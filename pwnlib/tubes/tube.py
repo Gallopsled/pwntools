@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import abc
 import logging
 import os
@@ -1135,7 +1131,7 @@ class tube(Timeout, Logger):
             return cached_data + self.clean(timeout)
 
     def upload_manually(self, data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE'):
-        """upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
+        r"""upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
 
         Upload a file manually using base64 encoding and compression.
         This can be used when the tube is connected to a shell.
@@ -1173,17 +1169,17 @@ class tube(Timeout, Logger):
             >>> l = listen()
             >>> l.spawn_process('/bin/sh')
             >>> r = remote('127.0.0.1', l.lport)
-            >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
+            >>> r.upload_manually(b'some\xca\xfedata\n', prompt=b'', chmod_flags='')
             >>> r.sendline(b'cat ./payload')
             >>> r.recvline()
-            b'some\\xca\\xfedata'
+            b'some\xca\xfedata'
 
             >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
             >>> r.sendline(b'sha256sum ./cyclic_pattern')
             >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
             True
 
-            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
+            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\n') + shellcraft.exit(0))
             >>> r.upload_manually(blob.data, prompt=b'')
             >>> r.sendline(b'./payload')
             >>> r.recvline()
@@ -1658,12 +1654,18 @@ class tube(Timeout, Logger):
 
 
     def p64(self, *a, **kw):        return self.send(packing.p64(*a, **kw))
+    def p56(self, *a, **kw):        return self.send(packing.p56(*a, **kw))
+    def p48(self, *a, **kw):        return self.send(packing.p48(*a, **kw))
+    def p40(self, *a, **kw):        return self.send(packing.p40(*a, **kw))
     def p32(self, *a, **kw):        return self.send(packing.p32(*a, **kw))
     def p16(self, *a, **kw):        return self.send(packing.p16(*a, **kw))
     def p8(self, *a, **kw):         return self.send(packing.p8(*a, **kw))
     def pack(self, *a, **kw):       return self.send(packing.pack(*a, **kw))
 
     def u64(self, *a, **kw):        return packing.u64(self.recvn(8), *a, **kw)
+    def u56(self, *a, **kw):        return packing.u56(self.recvn(7), *a, **kw)
+    def u48(self, *a, **kw):        return packing.u48(self.recvn(6), *a, **kw)
+    def u40(self, *a, **kw):        return packing.u40(self.recvn(5), *a, **kw)
     def u32(self, *a, **kw):        return packing.u32(self.recvn(4), *a, **kw)
     def u16(self, *a, **kw):        return packing.u16(self.recvn(2), *a, **kw)
     def u8(self, *a, **kw):         return packing.u8(self.recvn(1), *a, **kw)
@@ -1702,7 +1704,7 @@ class tube(Timeout, Logger):
         for wrapper in make_wrapper(func):
             locals()[wrapper.__name__] = wrapper
 
-    def make_wrapper(func, alias):
+    def make_alias_wrapper(func, alias):
         def wrapper(self, *a, **kw):
             return func(self, *a, **kw)
         wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
@@ -1716,7 +1718,7 @@ class tube(Timeout, Logger):
             _name2 = _name.replace('send', 'write')
         else:
             continue
-        locals()[_name2] = make_wrapper(locals()[_name], _name2)
+        locals()[_name2] = make_alias_wrapper(locals()[_name], _name2)
 
     # Clean up the scope
-    del wrapper, func, make_wrapper, _name, _name2
+    del wrapper, func, make_wrapper, make_alias_wrapper, _name, _name2

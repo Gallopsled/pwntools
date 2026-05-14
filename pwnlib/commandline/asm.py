@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import argparse
 import sys
 
@@ -79,7 +76,8 @@ parser.add_argument(
 parser.add_argument(
     '-e',
     '--encoder',
-    help="Specific encoder to use"
+    metavar='X',
+    help="Compatibility flag, ignored"
 )
 
 parser.add_argument(

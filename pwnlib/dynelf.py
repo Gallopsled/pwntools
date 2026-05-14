@@ -47,9 +47,6 @@ Example
 
 DynELF
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 
 from elftools.elf.enums import ENUM_D_TAG
@@ -92,7 +89,7 @@ def gnu_hash(s):
         h = h * 33 + c
     return h & 0xffffffff
 
-class DynELF(object):
+class DynELF:
     '''
     DynELF knows how to resolve symbols in remote processes via an infoleak or
     memleak vulnerability encapsulated by :class:`pwnlib.memleak.MemLeak`.

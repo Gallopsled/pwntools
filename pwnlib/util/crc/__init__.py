@@ -17,9 +17,6 @@ This doctest is to ensure that the known data are accurate:
     >>> known.all_crcs == known.generate()
     True
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import sys
 import types
 
@@ -29,7 +26,7 @@ from pwnlib.util import safeeval
 from pwnlib.util.crc import known
 
 
-class BitPolynom(object):
+class BitPolynom:
     """Class for representing GF(2)[X], i.e. the field of polynomials over
     GF(2).
 

@@ -5,9 +5,6 @@ Documentation is available here_.
 
 .. _here: https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import functools
 import stat
@@ -36,7 +33,7 @@ def unpack(val):
 OKAY = b"OKAY"
 FAIL = b"FAIL"
 
-class Message(object):
+class Message:
     """An ADB hex-length-prefixed message"""
     def __init__(self, string):
         self.string = string

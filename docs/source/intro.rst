@@ -37,6 +37,8 @@ This exposes a standard interface to talk to processes, sockets, serial ports,
 and all manner of things, along with some nifty helpers for common tasks.
 For example, remote connections via :mod:`pwnlib.tubes.remote`.
 
+::
+
     >>> conn = remote('ftp.ubuntu.com',21)
     >>> conn.recvline() # doctest: +ELLIPSIS
     b'220 ...'

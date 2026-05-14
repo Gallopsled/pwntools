@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Sigreturn ROP (SROP)
 
@@ -15,7 +14,7 @@ i386 Example:
 
     Let's just print a message out using SROP.
 
-    >>> message = "Hello, World\\n"
+    >>> message = r"Hello, World\n"
 
     First, we'll create our example binary.
     It just reads some data onto the stack, and invokes
@@ -159,9 +158,6 @@ Mipsel Example:
     0
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 from collections import namedtuple
 
 from pwnlib.abi import ABI

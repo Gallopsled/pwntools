@@ -1,6 +1,5 @@
 capstone
 coverage[toml]
-python-dateutil
 doc2dash
 docutils>=0.18
 intervaltree

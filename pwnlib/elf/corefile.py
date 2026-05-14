@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Read information from Core Dumps.
 
 Core dumps are extremely useful when writing exploits, even outside of
@@ -60,9 +59,6 @@ Module Members
 ----------------------------------------
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import ctypes
 import glob
@@ -112,7 +108,7 @@ siginfo_types = {
 }
 
 
-class Mapping(object):
+class Mapping:
     """Encapsulates information about a memory mapping in a :class:`Corefile`.
     """
     def __init__(self, core, name, start, stop, flags, page_offset):
@@ -1165,7 +1161,7 @@ class Core(Corefile):
 class Coredump(Corefile):
     """Alias for :class:`.Corefile`"""
 
-class CorefileFinder(object):
+class CorefileFinder:
     def __init__(self, proc):
         if proc.poll() is None:
             log.error("Process %i has not exited" % (proc.pid))

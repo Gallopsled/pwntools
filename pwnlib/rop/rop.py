@@ -357,9 +357,6 @@ Let's try it out!
     >>> p.recvline()
     b'hello'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import copy
 import hashlib
@@ -371,6 +368,8 @@ import string
 import struct
 import sys
 import tempfile
+
+from enum import Enum
 
 from pwnlib import abi
 from pwnlib import constants
@@ -389,21 +388,16 @@ from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util import safeeval
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
 __all__ = ['ROP']
 
-enums = Call, constants.Constant
-try:
-    from enum import Enum
-except ImportError:
-    pass
-else:
-    enums += Enum,
+enums = Call, constants.Constant, Enum
 
-class Padding(object):
+class Padding:
     """
     Placeholder for exactly one pointer-width of padding.
     """
@@ -471,7 +465,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-class ROP(object):
+class ROP:
     r"""Class which simplifies the generation of ROP-chains.
 
     Example:
@@ -1268,7 +1262,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = safeeval.const(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
         log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets
