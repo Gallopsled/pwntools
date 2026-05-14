@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import os
 import re
 
@@ -85,7 +82,7 @@ class LongestPrefixCompleter(WordCompleter):
 class PathCompleter(Completer):
     def __init__(self, mask = '*', only_dirs = False):
         if mask != '*':
-            mask = mask.replace('.', '\\.').replace('*', '.*')
+            mask = mask.replace('.', r'\.').replace('*', '.*')
             self.mask = re.compile('^' + mask + '$')
         else:
             self.mask = None

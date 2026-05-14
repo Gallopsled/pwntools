@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import os
 import re
@@ -12,7 +9,9 @@ import tempfile
 import threading
 import time
 
-from pwnlib import term
+from io import StringIO, BytesIO
+
+from pwnlib import atexit, term
 from pwnlib.context import context, LocalContext
 from pwnlib.exception import PwnlibException
 from pwnlib.log import Logger
@@ -634,6 +633,41 @@ class ssh(Timeout, Logger):
             >>> s2 = ssh(host='example.pwnme', proxy_sock=r1.sock)
             >>> r2 = s2.remote('localhost', 22) # and so on...
             >>> for x in r2, s2, r1, s1: x.close()
+
+        You can authenticate using a password, a private key, or an ssh agent.
+        By default the constructor will attempt to parse ``~/.ssh/config`` for configuration. You can disable this with ``ignore_config=True``.
+        
+        ::
+
+            >>> s = ssh(user='bandit0', host='bandit.labs.overthewire.org', password='bandit0', port=2220)
+
+        The private key can be passed as a string or as a file:
+
+        .. doctest::
+
+            >>> s = ssh(user='travis', host='example.pwnme', keyfile='~/.ssh/travis')
+            >>> s.whoami()
+            b'travis'
+            >>> s.close()
+
+            >>> s = ssh(user='travis', host='example.pwnme', key=open(os.path.expanduser('~/.ssh/travis')).read())
+            >>> s.whoami()
+            b'travis'
+            >>> s.close()
+
+        You have to wrap the key in a :class:`paramiko.pkey.PKey` object yourself if your key requires a password:
+
+        ::
+
+            >>> from paramiko import Ed25519Key
+            >>> from io import StringIO
+            >>> key_str = "..."  # some private key
+            >>> key = Ed25519Key.from_private_key(StringIO(key_str), password='somepassword')
+            >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
+
+            >>> key = Ed25519Key.from_private_key(open(os.path.expanduser('~/.ssh/travis')), password='somepassword')
+            >>> s = ssh(user='travis', host='example.pwnme', key=key, ignore_config=True)
+
         """
         super(ssh, self).__init__(*a, **kw)
 
@@ -683,6 +717,22 @@ class ssh(Timeout, Logger):
         except Exception as e:
             self.debug("An error occurred while parsing ~/.ssh/config:\n%s" % e)
 
+        # Create paramiko.PKey if key is provided as str or bytes
+        if isinstance(key, (str, bytes, bytearray)):
+            key = packing._need_text(key, 2)
+            file_object = StringIO(key)
+
+            for key_class in (paramiko.RSAKey, paramiko.ECDSAKey, paramiko.Ed25519Key):
+                try:
+                    file_object.seek(0)
+                    key = key_class.from_private_key(file_object)
+                    self.debug('SSH key string converted to paramiko.%s', type(key).__name__)
+                    break
+                except paramiko.SSHException:
+                    continue
+            else:
+                self.error('Could not convert key str to paramiko.PKey')
+
         keyfiles = [os.path.expanduser(keyfile)] if keyfile else []
 
         msg = 'Connecting to %s on port %d' % (host, port)
@@ -711,19 +761,23 @@ class ssh(Timeout, Logger):
             try:
                 self.client.connect(host, port, user, password, key, keyfiles, self.timeout, allow_agent=ssh_agent, compress=True, sock=proxy_sock, look_for_keys=not ignore_config, disabled_algorithms=disabled_algorithms)
             except paramiko.BadHostKeyException as e:
-                self.error("Remote host %(host)s is using a different key than stated in known_hosts\n"
-                           "    To remove the existing entry from your known_hosts and trust the new key, run the following commands:\n"
-                           "        $ ssh-keygen -R %(host)s\n"
-                           "        $ ssh-keygen -R [%(host)s]:%(port)s" % locals())
+                self.error(f"""Remote host {host} is using a different key than stated in known_hosts
+    To remove the existing entry from your known_hosts and trust the new key, run the following commands:
+        $ ssh-keygen -R {host}
+        $ ssh-keygen -R [{host}]:{port}""")
             except paramiko.SSHException as e:
                 if user and auth_none and str(e) == "No authentication methods available":
                     self.client.get_transport().auth_none(user)
                 else:
+                    self.close()
                     raise
 
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
+            self.fingerprint = self.transport.get_remote_server_key().get_fingerprint().hex()
+
+            atexit.register(self.close)
             h.success()
 
         if self.raw:
@@ -940,6 +994,13 @@ class ssh(Timeout, Logger):
             >>> io.recvline()
             b''
 
+            >>> io = s.process(['tty'], tty=True)
+            >>> io.recvline() # doctest: +ELLIPSIS
+            b'/dev/pts/...\n'
+            >>> io = s.process(['tty'], tty=False)
+            >>> io.recvline()
+            b'not a tty\n'
+
             >>> # Testing that empty argv works
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
@@ -959,7 +1020,7 @@ class ssh(Timeout, Logger):
         """
         cwd = cwd or self.cwd
         script = misc._create_execve_script(argv=argv, executable=executable,
-                cwd=cwd, env=env, stdin=stdin, stdout=stdout, stderr=stderr,
+                cwd=cwd, env=env, which=self.which, stdin=stdin, stdout=stdout, stderr=stderr,
                 ignore_environ=ignore_environ, preexec_fn=preexec_fn, preexec_args=preexec_args,
                 aslr=aslr, setuid=setuid, shell=shell, log=self)
 
@@ -998,7 +1059,7 @@ class ssh(Timeout, Logger):
 
             script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=tty, cwd=cwd, raw=raw, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1413,7 +1474,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
-            local += time.strftime('-%Y-%m-%d-%H:%M:%S')
+            local += time.strftime('-%Y-%m-%d-%H%M%S')
             local = os.path.join(self._cachedir, local)
 
             self._download_raw(remote, local, p)
@@ -1562,11 +1623,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = os.path.join(self.cwd, remote)
 
         if self.sftp:
-            with tempfile.NamedTemporaryFile() as f:
-                f.write(data)
-                f.flush()
-                self.sftp.put(f.name, remote)
-                return
+            flo = BytesIO(data)
+            file_size = len(data)
+            self.sftp.putfo(flo, remote, file_size=file_size)
+            return
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat > ' + sh_string(remote)
@@ -1930,7 +1990,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 if not self.which('lsb_release'):
                     return
 
-                with self.process(['lsb_release', '-irs']) as io:
+                with self.process(['lsb_release', '-irs'], stderr='/dev/null') as io:
                     lsb_info = io.recvall().strip().decode()
                     self._platform_info['distro'], self._platform_info['distro_ver'] = lsb_info.split()
             except Exception:
@@ -2128,7 +2188,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self._ibt
 
     def _checksec_cache(self, value=None):
-        path = self._get_cachefile('%s-%s' % (self.host, self.port))
+        path = self._get_cachefile('%s-%s-%s' % (self.host, self.port, self.fingerprint))
 
         if value is not None:
             with open(path, 'w+') as f:
@@ -2146,16 +2206,18 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             banner(bool): Whether to print the path to the ELF binary.
         """
         cached = self._checksec_cache()
+        checksec_header = "%s@%s:" % (self.user, self.host)
+
         if cached:
-            return cached
+            return '\n'.join((checksec_header, cached))
+
 
         red    = text.red
         green  = text.green
         yellow = text.yellow
 
         res = [
-            "%s@%s:" % (self.user, self.host),
-            "Distro".ljust(10) + ' '.join(self.distro),
+            "Distro:".ljust(10) + ' '.join(self.distro),
             "OS:".ljust(10) + self.os,
             "Arch:".ljust(10) + self.arch,
             "Version:".ljust(10) + '.'.join(map(str, self.version)),
@@ -2179,4 +2241,5 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         cached = '\n'.join(res)
         self._checksec_cache(cached)
-        return cached
+
+        return '\n'.join((checksec_header, cached))

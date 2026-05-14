@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 Utilities for assembling and disassembling code.
 
@@ -39,9 +38,6 @@ Disassembly
     '   0:   b8 0b 00 00 00          mov    eax, 0xb'
 
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import os
 import platform
@@ -59,6 +55,7 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util.fiddling import hexstr
 from pwnlib.util.hashes import sha1sumhex
 from pwnlib.util.packing import _encode
 from pwnlib.version import __version__
@@ -133,11 +130,10 @@ def print_binutils_instructions(util, context):
     if packages:
         instructions = '$ sudo apt-get install %s' % packages[0]
 
-    log.error("""
-Could not find %(util)r installed for %(context)s
+    log.error(f"""\
+Could not find {util!r} installed for {context}
 Try installing binutils for this architecture:
-%(instructions)s
-""".strip() % locals())
+{instructions}""")
 
 
 def check_binutils_version(util):
@@ -188,31 +184,37 @@ def which_binutils(util, check_version=False):
 
     # Fix up pwntools vs Debian triplet naming, and account
     # for 'thumb' being its own pwntools architecture.
-    arches = [arch] + {
+    aliases = {
         'thumb':  ['arm',    'aarch64'],
-        'i386':   ['x86_64', 'amd64'],
         'i686':   ['x86_64', 'amd64'],
-        'amd64':  ['x86_64', 'i386'],
+        'amd64':  ['x86_64'],
+        'loongarch64': ['loong64'],
+    }.get(arch, [])
+
+    # Some binutils can support multiple architectures. Try them as fallbacks.
+    fallback_arches = {
+        'i386':   ['x86_64', 'amd64'],
+        'amd64':  ['i386'],
         'arm':  ['aarch64'],
         'mips': ['mipsel'],
         'mipsel': ['mips'],
-        'mips64': ['mips', 'mipsel'],
-        'mips64el': ['mipsel', 'mips'],
+        'mips64': ['mips64el', 'mips', 'mipsel'],
+        'mips64el': ['mips64', 'mipsel', 'mips'],
         'powerpc64': ['powerpc'],
         'sparc64': ['sparc'],
         'riscv32': ['riscv64', 'riscv'],
         'riscv64': ['riscv32', 'riscv'],
-        'loongarch64': ['loong64'],
     }.get(arch, [])
+    arches = [arch] + aliases + fallback_arches
 
     # If one of the candidate architectures matches the native
-    # architecture, use that as a last resort.
+    # architecture, use that as a last resort before trying fallbacks.
     machine = platform.machine()
     machine = 'i386' if machine == 'i686' else machine
     try:
         with context.local(arch = machine):
             if context.arch in arches:
-                arches.append(None)
+                arches = [arch] + aliases + [None] + fallback_arches
     except AttributeError:
         log.warn_once("Your local binutils won't be used because architecture %r is not supported." % machine)
 
@@ -225,6 +227,8 @@ def which_binutils(util, check_version=False):
     if platform.system() == 'Windows':
         utils = [util + '.exe']
 
+    # Try the explicit tools for the target architecture first,
+    # then the native one optionally, then fallbacks.
     for arch in arches:
         for gutil in utils:
             # e.g. objdump
@@ -636,8 +640,7 @@ def make_elf(data,
     assembler = _assembler()
     linker    = _linker()
     code      = _arch_header()
-    code      += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
-    code      += '\n'
+    code      += f'.string {hexstr(data)}\n'
 
     log.debug("Building ELF:\n" + code)
 
@@ -705,7 +708,7 @@ def make_macho(data, is_shellcode=False):
     if is_shellcode:
         code += cpp(data)
     else:
-        code += '.string "%s"' % ''.join('\\x%02x' % c for c in bytearray(data))
+        code += f'.string {hexstr(data)}\n'
 
     log.debug('Assembling\n%s' % code)
 
@@ -814,7 +817,7 @@ def asm(shellcode, vma = 0, extract = True, shared = False):
             os.makedirs(cache_dir)
 
         # Include the context in the hash in addition to the shellcode
-        hash_params = '{}_{}_{}_{}'.format(vma, extract, shared, __version__)
+        hash_params = f'{vma}_{extract}_{shared}_{__version__}'
         fingerprint_params = _encode(code) + _encode(hash_params) + _encode(' '.join(assembler)) + _encode(' '.join(linker)) + _encode(' '.join(objcopy))
         asm_hash = sha1sumhex(fingerprint_params)
         cache_file = os.path.join(cache_dir, asm_hash)

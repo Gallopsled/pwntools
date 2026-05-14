@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+#!/usr/bin/env python3
 import re
 import shutil
 import sys
@@ -239,6 +235,9 @@ def main(args):
 
         symbols = {pairs[i]:pairs[i+1] for i in range(0, len(pairs), 2)}
         matched_libcs = libcdb.search_by_symbol_offsets(symbols, offline_only=args.offline_only, return_raw=True)
+
+        if not matched_libcs:
+            return
 
         for libc in matched_libcs:
             print_libc_info(libc)

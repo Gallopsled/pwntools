@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # pwntools documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #
@@ -16,6 +14,7 @@ import doctest
 import signal
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 build_dash = tags.has('dash')
 
@@ -86,7 +85,7 @@ pwnlib.log.rootlogger.setLevel(1)
 # Sphinx modifies sys.stdout, and context.log_terminal has
 # a reference to the original instance.  We need to update
 # it for logging to be captured.
-class stdout(object):
+class stdout:
     def __getattr__(self, name):
         return getattr(sys.stdout, name)
     def __setattr__(self, name, value):
@@ -118,7 +117,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pwntools'
-copyright = u'2016, Gallopsled et al.'
+copyright = u'2016-2026, Gallopsled et al.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -260,7 +259,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'2016, Gallopsled et al.', 'manual'),
+   u'2016-2026, Gallopsled et al.', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
@@ -293,7 +292,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pwntools', u'pwntools Documentation',
-     [u'2016, Gallopsled et al.'], 1)
+     [u'2016-2026, Gallopsled et al.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -428,15 +427,38 @@ class PlatformDocTestRunner(sphinx.ext.doctest.SphinxDocTestRunner):
         return super(PlatformDocTestRunner, self).run(test, compileflags, out, clear_globs)
 
 class PlatformDocTestBuilder(sphinx.ext.doctest.DocTestBuilder):
-    _test_runner = None
+
+    def __init__(self, *args, **kwargs):
+        super(PlatformDocTestBuilder, self).__init__(*args, **kwargs)
+        self._test_runner = None
+        self._doctree_had_tests = False
 
     @property
     def test_runner(self):
         return self._test_runner
-    
+
     @test_runner.setter
     def test_runner(self, value):
         self._test_runner = PlatformDocTestRunner(value._checker, value._verbose, value.optionflags)
+
+    def test_doc(self, docname, doctree):
+        start = datetime.now(timezone.utc).astimezone()
+        # self._out(f"[{start.isoformat(timespec='milliseconds')}] doctest start: {docname}\n")
+        self._doctree_had_tests = False
+        try:
+            return super(PlatformDocTestBuilder, self).test_doc(docname, doctree)
+        finally:
+            # Only print the timestamp if there were actually tests run.
+            if self._doctree_had_tests:
+                end = datetime.now(timezone.utc).astimezone()
+                duration = (end - start).total_seconds()
+                self._out(f"[{end.isoformat(timespec='milliseconds')} - {duration:.2f}s]\n")
+            self._doctree_had_tests = False
+
+    def test_group(self, group):
+        # Only called when there are tests to run in the current document.
+        self._doctree_had_tests = True
+        return super(PlatformDocTestBuilder, self).test_group(group)
 
 if 'doctest' in sys.argv:
     def setup(app):

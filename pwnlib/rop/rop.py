@@ -16,7 +16,7 @@ Creating a ROP object which looks up symbols in the binary is pretty straightfor
 
     >>> rop = ROP(binary)
 
-Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
+Once the ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.
 Each :class:`Gadget` has an ``address`` property which has the real address as well.
 
     >>> rop.eax
@@ -31,12 +31,12 @@ Other, more complicated gadgets also happen magically
 
 The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
 This has the benefit of using multi-pop gadgets to set multiple registers with one gadget.
-    
+
     >>> rop(eax=0x11111111, ecx=0x22222222)
 
 Setting register values this way accounts for padding and extra registers which are popped off the stack.
 Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
-which corresponds to their offset, which is useful when debuggging your exploit.
+which corresponds to their offset, which is useful when debugging your exploit.
 
     >>> print(rop.dump())
     0x0000:       0x10000006 pop ecx; pop ebx; ret
@@ -76,7 +76,7 @@ object by register name.
     0x0000:       0x10000004 pop eax; ret
     0x0004:       0x12345678
 
-Let's re-create our ROP object now to show for some other examples.:
+Let's re-create our ROP object now to show for some other examples.
 
     >>> rop = ROP(binary)
 
@@ -109,7 +109,7 @@ standard Linux ABIs.
     0x001c:              0x6 arg2
 
 You can also use a shorthand to invoke calls.
-The stack is automatically adjusted for the next frame
+The stack is automatically adjusted for the next frame.
 
     >>> rop.write(7,8,9)
     >>> rop.exit()
@@ -357,9 +357,6 @@ Let's try it out!
     >>> p.recvline()
     b'hello\n'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import copy
 import hashlib
@@ -371,6 +368,8 @@ import string
 import struct
 import sys
 import tempfile
+
+from enum import Enum
 
 from pwnlib import abi
 from pwnlib import constants
@@ -389,21 +388,16 @@ from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util import safeeval
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
 
 log = getLogger(__name__)
 __all__ = ['ROP']
 
-enums = Call, constants.Constant
-try:
-    from enum import Enum
-except ImportError:
-    pass
-else:
-    enums += Enum,
+enums = Call, constants.Constant, Enum
 
-class Padding(object):
+class Padding:
     """
     Placeholder for exactly one pointer-width of padding.
     """
@@ -471,7 +465,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-class ROP(object):
+class ROP:
     r"""Class which simplifies the generation of ROP-chains.
 
     Example:
@@ -653,7 +647,7 @@ class ROP(object):
         regset = set(registers)
 
         bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
-        
+
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
@@ -1041,7 +1035,7 @@ class ROP(object):
 
     def chain(self, base=None):
         """Build the ROP chain
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1054,7 +1048,7 @@ class ROP(object):
 
     def dump(self, base=None):
         """Dump the ROP chain in an easy-to-read manner
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1268,7 +1262,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = safeeval.const(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
         log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets

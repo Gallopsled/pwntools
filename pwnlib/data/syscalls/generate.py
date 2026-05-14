@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from __future__ import division
 import argparse
 import keyword
 import os
@@ -8,7 +7,7 @@ from pwnlib import constants
 from pwnlib.context import context
 
 # github.com/zachriggle/functions
-from functions import functions, Function, Argument
+from functions import functions, Function, Argument  # type: ignore[import-not-found]
 
 ARCHITECTURES = ['i386', 'amd64', 'arm', 'aarch64', 'mips', 'riscv64', 'powerpc64']
 
@@ -86,7 +85,7 @@ CALL = r"""
         elif name in can_pushstr_array and isinstance(arg, dict):
             array_arguments[name] = ['%s=%s' % (k,v) for (k,v) in arg.items()]
 
-        # The arguent is not a register.  It is a list, and we are expecting
+        # The argument is not a register.  It is a list, and we are expecting
         # a list of arguments.
         elif name in can_pushstr_array and isinstance(arg, (list, tuple)):
             array_arguments[name] = arg
@@ -213,7 +212,7 @@ def generate_one(target):
             function = Function('long', 0, name, args)
 
         # Some syscalls have different names on different architectures,
-        # or are superceded.  We try to do the "best" thing at runtime.
+        # or are superseded.  We try to do the "best" thing at runtime.
         syscalls = fix_syscall_names(syscall)
 
         # Set up the argument string for Mako
@@ -239,12 +238,7 @@ def generate_one(target):
                 string_arguments.append(argname)
 
             argtype = str(arg.type) + ('*' * arg.derefcnt)
-            arg_docs.append(
-                '    {argname_}({argtype}): {argname}'.format(
-                    argname_=argname_,
-                    argname=argname,
-                    argtype=argtype,
-                ))
+            arg_docs.append(f'    {argname_}({argtype}): {argname}')
 
             # Mako is unable to use *vararg and *kwarg, so we just stub in
             # a whole bunch of additional arguments.

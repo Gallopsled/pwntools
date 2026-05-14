@@ -1,4 +1,3 @@
- # -*- coding: utf-8 -*-
 r"""
 Module for packing and unpacking integers.
 
@@ -30,9 +29,6 @@ Examples:
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     b'\xff\x01'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import struct
 import sys
@@ -164,7 +160,7 @@ def pack(number, word_size = None, endianness = None, sign = None, **kwargs):
 
 @LocalNoarchContext
 def unpack(data, word_size = None):
-    r"""unpack(data, word_size = None, endianness = None, sign = None, **kwargs) -> int
+    r"""unpack(data, word_size = None, *, endianness = None, sign = None, **kwargs) -> int
 
     Unpacks arbitrary-sized integer.
 
@@ -238,7 +234,7 @@ def unpack(data, word_size = None):
 
 @LocalNoarchContext
 def unpack_many(data, word_size = None):
-    """unpack_many(data, word_size = None, endianness = None, sign = None) -> int list
+    r"""unpack_many(data, word_size = None, *, endianness = None, sign = None) -> int list
 
     Splits `data` into groups of ``word_size//8`` bytes and calls :func:`unpack` on each group.  Returns a list of the results.
 
@@ -256,15 +252,15 @@ def unpack_many(data, word_size = None):
 
     Examples:
 
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='little', sign=False)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='little', sign=False)))
         ['0x55aa', '0x33cc']
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=False)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='big', sign=False)))
         ['0xaa55', '0xcc33']
-        >>> list(map(hex, unpack_many(b'\\xaa\\x55\\xcc\\x33', 16, endian='big', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xaa\x55\xcc\x33', 16, endian='big', sign=True)))
         ['-0x55ab', '-0x33cd']
-        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='little', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xff\x02\x03', 'all', endian='little', sign=True)))
         ['0x302ff']
-        >>> list(map(hex, unpack_many(b'\\xff\\x02\\x03', 'all', endian='big', sign=True)))
+        >>> list(map(hex, unpack_many(b'\xff\x02\x03', 'all', endian='big', sign=True)))
         ['-0xfdfd']
     """
     # Lookup in context if None
@@ -292,7 +288,7 @@ def unpack_many(data, word_size = None):
 # Make individual packers, e.g. _p8lu
 #
 ops   = ['p','u']
-sizes = {8:'b', 16:'h', 32:'i', 64:'q'}
+sizes = {8:'b', 16:'h', 32:'i', 40: '', 48: '', 56: '', 64:'q'}
 ends  = ['b','l']
 signs = ['s','u']
 
@@ -302,6 +298,20 @@ op_verbs         = {'p': 'pack', 'u': 'unpack'}
 def make_single(op,size,end,sign):
     name = '_%s%s%s%s' % (op, size, end, sign)
     fmt  = sizes[size]
+
+    # Handle non-standard sizes without the struct module.
+    if fmt == '':
+        endianess = 'big' if end == 'b' else 'little'
+        if op == 'u':
+            def routine(data, stacklevel=1):
+                data = _need_bytes(data, stacklevel)
+                return unpack(data, size, endianness=endianess, sign=sign == 's')
+        else:
+            def routine(data, stacklevel=None):
+                return pack(data, size, endianness=endianess, sign=sign == 's')
+        routine.__name__ = routine.__qualname__ = name
+        return name, routine            
+
     end = '>' if end == 'b' else '<'
 
     if sign == 'u':
@@ -415,6 +425,81 @@ def p32(number, endianness = None, **kwargs):
     return _do_packing('p', 32, number, endianness)
 
 @LocalNoarchContext
+def p40(number, endianness = None, **kwargs):
+    """p40(number, endianness, sign, ...) -> bytes
+
+    Packs an 40-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p40(0x4142434445, 'big')
+        b'ABCDE'
+        >>> p40(0x4142434445, endianness='big')
+        b'ABCDE'
+    """
+    return _do_packing('p', 40, number, endianness)
+
+@LocalNoarchContext
+def p48(number, endianness = None, **kwargs):
+    """p48(number, endianness, sign, ...) -> bytes
+
+    Packs an 48-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p48(0x414243444546, 'big')
+        b'ABCDEF'
+        >>> p48(0x414243444546, endianness='big')
+        b'ABCDEF'
+    """
+    return _do_packing('p', 48, number, endianness)
+
+@LocalNoarchContext
+def p56(number, endianness = None, **kwargs):
+    """p56(number, endianness, sign, ...) -> bytes
+
+    Packs an 56-bit integer
+
+    Arguments:
+        number (int): Number to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The packed number as a byte string
+
+    Examples:
+
+        >>> p56(0x41424344454647, 'big')
+        b'ABCDEFG'
+        >>> p56(0x41424344454647, endianness='big')
+        b'ABCDEFG'
+    """
+    return _do_packing('p', 56, number, endianness)
+
+@LocalNoarchContext
 def p64(number, endianness = None, **kwargs):
     """p64(number, endianness, sign, ...) -> bytes
 
@@ -494,6 +579,60 @@ def u32(data, endianness = None, **kwargs):
     return _do_packing('u', 32, data, endianness)
 
 @LocalNoarchContext
+def u40(data, endianness = None, **kwargs):
+    """u40(data, endianness, sign, ...) -> int
+
+    Unpacks an 40-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 40, data, endianness)
+
+@LocalNoarchContext
+def u48(data, endianness = None, **kwargs):
+    """u48(data, endianness, sign, ...) -> int
+
+    Unpacks an 48-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 48, data, endianness)
+
+@LocalNoarchContext
+def u56(data, endianness = None, **kwargs):
+    """u56(data, endianness, sign, ...) -> int
+
+    Unpacks an 56-bit integer
+
+    Arguments:
+        data (bytes): Byte string to convert
+        endianness (str): Endianness of the converted integer ("little"/"big")
+        sign (str): Signedness of the converted integer ("unsigned"/"signed")
+        kwargs (dict): Arguments passed to context.local(), such as
+            ``endian`` or ``signed``.
+
+    Returns:
+        The unpacked number
+    """
+    return _do_packing('u', 56, data, endianness)
+
+@LocalNoarchContext
 def u64(data, endianness = None, **kwargs):
     """u64(data, endianness, sign, ...) -> int
 
@@ -512,7 +651,7 @@ def u64(data, endianness = None, **kwargs):
     return _do_packing('u', 64, data, endianness)
 
 def make_packer(word_size = None, sign = None, **kwargs):
-    """make_packer(word_size = None, endianness = None, sign = None) -> number → str
+    r"""make_packer(word_size = None, endianness = None, sign = None) -> number → str
 
     Creates a packer by "freezing" the given arguments.
 
@@ -536,7 +675,7 @@ def make_packer(word_size = None, sign = None, **kwargs):
         >>> p
         <function _p32lu at 0x...>
         >>> p(42)
-        b'*\\x00\\x00\\x00'
+        b'*\x00\x00\x00'
         >>> p(-1)
         Traceback (most recent call last):
             ...
@@ -968,7 +1107,7 @@ def unsigned(integer):
     return unpack(pack(integer))
 
 def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
-    """dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
+    r"""dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
     values from offset `seek` in `src` to offset `skip` in `dst`.  If `count` is
@@ -1012,10 +1151,10 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
 
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
-        'AAA\\x00\\x00\\x00\\x00AAA'
+        'AAA\x00\x00\x00\x00AAA'
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4, truncate = True).read()
-        'AAA\\x00\\x00\\x00\\x00'
+        'AAA\x00\x00\x00\x00'
     """
 
     # Re-open file objects to make sure we have the mode right
@@ -1170,8 +1309,8 @@ def _need_bytes(s, level=1, min_wrong=0):
             encoding = 'ASCII'
 
     if worst >= min_wrong:
-        warnings.warn("Text is not bytes; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                      .format(encoding), BytesWarning, level + 2)
+        warnings.warn(f"Text is not bytes; assuming {encoding}, no guarantees. See https://docs.pwntools.com/#bytes",
+                      BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
 def _need_text(s, level=1):
@@ -1192,8 +1331,8 @@ def _need_text(s, level=1):
             else:
                 break
 
-    warnings.warn("Bytes is not text; assuming {}, no guarantees. See https://docs.pwntools.com/#bytes"
-                  .format(encoding), BytesWarning, level + 2)
+    warnings.warn(f"Bytes is not text; assuming {encoding}, no guarantees. See https://docs.pwntools.com/#bytes",
+                  BytesWarning, level + 2)
     return s.decode(encoding, errors)
 
 def _encode(s):
@@ -1219,6 +1358,97 @@ def _decode(b):
         except AttributeError:
             return b
     return b.decode(context.encoding)
+
+def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
+    r"""overlap(*structs: bytes | tuple[bytes, int]) -> bytes
+
+    Merge multiple byte sequences with possible positional offsets into a
+    single overlapped bytes object. From lowest byte index, scan through
+    every bytes object, if only one byte is non-zero, then the output will
+    append that byte. If multiple non-zero bytes are found at the same index,
+    an error will be thrown as these bytes objects can not be overlapped.
+
+    If holes present as the bytes object has an ``offset`` or its length is
+    not enough to align to the output bytes object length, these holes are
+    set to ``\x00`` implicitly.
+
+    See the examples below for how this function works.
+
+    Arguments:
+        *structs(bytes | tuple[bytes, int]): ``bytes`` objects like ``b'123'``
+            or adding an optional offset like ``(b'123', 3)``. The ``offset``
+            can be positive or negative or 0. ``bytes`` objects has an
+            implicit offset 0.
+
+    Returns:
+        A **minimal** bytes object merged from input bytes objects.
+        That means, offsets are aligned to 0 first to keep output minimal.
+
+    Raises:
+        BufferError: If multiple non-zero values appears at the same index
+
+    Examples:
+
+        >>> overlap(b'\x00123', b'a\x00\x00\x00b')
+        b'a123b'
+        >>> overlap(b'11\x00\x0022', (b'33\x00\x0044', 2))
+        b'11332244'
+        >>> overlap((b'123', -10), (b'45\x00', -6)) # not b'123\x0045\x00\x00\x00\x00'
+        b'123\x0045\x00'
+        >>> overlap((b'xx', 2), (b'yy', 0))
+        b'yyxx'
+        >>> overlap((b'123', 1), b'456')
+        Traceback (most recent call last):
+            ...
+        BufferError: Conflicting value structs[0][0] = 0x31 and structs[1][1] = 0x35 when overlapping
+    """
+    if len(structs) == 0:
+        return b''
+    if len(structs) == 1:
+        if isinstance(structs[0], tuple):
+            return _need_bytes(structs[0][0])
+        return _need_bytes(structs[0])  # structs[0] is bytes
+
+    segments: list[tuple[bytes, int]] = [
+        # ensure types
+        (_need_bytes(elem[0]), int(elem[1]))
+        if isinstance(elem, tuple) else
+        (_need_bytes(elem), 0)
+        for elem in structs
+    ]
+
+    # find lowest offset and subtract it to align offsets
+    compensation = min(elem[1] for elem in segments)
+    segments = [(elem[0], elem[1] - compensation) for elem in segments]
+
+    length = max(len(elem[0]) + elem[1] for elem in segments)
+    output = bytearray(length) # bytearray initialize all bytes as 0
+
+    # overlap segments and fail if multiple non-zero value at the same index
+    for seg_i, e in enumerate(segments):
+        segment, offset = e
+        for i, b in enumerate(segment):
+            if b != 0:
+                abs_idx = offset + i
+                if output[abs_idx] == 0:
+                    output[abs_idx] = b
+                else:
+                    old = output[abs_idx]
+                    for seg_j, e in enumerate(segments[:seg_i]):
+                        prev_seg, prev_off = e
+                        if abs_idx < prev_off or abs_idx >= prev_off + len(prev_seg):
+                            continue
+                        j = abs_idx - prev_off
+                        if old == prev_seg[abs_idx - prev_off]:
+                            break
+                    raise BufferError(
+                        f'Conflicting value '
+                        f'structs[{seg_j}][{j}] = {old:#x} '
+                        f'and structs[{seg_i}][{i}] = {b:#x} '
+                        f'when overlapping'
+                    )
+
+    return bytes(output)
 
 del op, size, end, sign
 del name, routine, mod

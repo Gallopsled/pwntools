@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-from __future__ import print_function
-
+#!/usr/bin/env python3
 import re
 import sys
 
@@ -39,7 +37,7 @@ for l in data:
 
     if paren:
         val = '(%s)' % val
-    print("{key} = Constant({key!r},{val})".format(**locals()), file=python)
+    print(f"{key} = Constant({key!r},{val})", file=python)
     if re.search(r'0o[0-7]', val) or re.match(r'[^0-9a-fA-Fx]0[0-9]', val):
         print("#define %s %s" % (key, hex(safeeval.expr(val))), file=header)
     else:

@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import string
 
 from pwnlib.context import context, LocalNoarchContext
@@ -368,7 +365,7 @@ def _join_sequence(seq, alphabet):
     else:
         return seq
 
-class cyclic_gen(object):
+class cyclic_gen:
     """
     Creates a stateful cyclic generator which can generate sequential chunks of de Bruijn sequences.
 

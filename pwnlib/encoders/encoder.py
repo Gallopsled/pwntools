@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import random
 import re
@@ -14,7 +10,7 @@ from pwnlib.util.fiddling import hexdump
 
 log = getLogger(__name__)
 
-class Encoder(object):
+class Encoder:
     _encoders = collections.defaultdict(lambda: [])
 
     #: Architecture which this encoder works on

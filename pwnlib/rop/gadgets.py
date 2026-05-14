@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-class Gadget(object):
+class Gadget:
     """
     Describes a ROP gadget
     """
