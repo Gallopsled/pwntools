@@ -45,9 +45,8 @@ the :mod:`pwnlib.adb` module.
     adb.write('/data/local/tmp/foo', 'my data')
 
 """
-from __future__ import absolute_import
-from __future__ import division
 
+import datetime
 import functools
 import glob
 import logging
@@ -57,8 +56,6 @@ import shutil
 import stat
 import tempfile
 import time
-
-import dateutil.parser
 
 from pwnlib import atexit
 from pwnlib import tubes
@@ -887,15 +884,15 @@ def which(name, all = False, *a, **kw):
         []
     """
     # Unfortunately, there is no native 'which' on many phones.
-    which_cmd = '''
+    which_cmd = fr'''
 (IFS=:
   for directory in $PATH; do
       [ -x "$directory/{name}" ] || continue;
-      echo -n "$directory/{name}\\x00";
+      echo -n "$directory/{name}\x00";
   done
 )
-[ -x "{name}" ] && echo -n "$PWD/{name}\\x00"
-'''.format(name=name)
+[ -x "{name}" ] && echo -n "$PWD/{name}\x00"
+'''
 
     which_cmd = which_cmd.strip()
     data = process(['sh','-c', which_cmd], *a, **kw).recvall()
@@ -1118,7 +1115,7 @@ def unlock_bootloader():
         if 'unlocked: yes' not in unlocked:
             log.error("Unlock failed")
 
-class Kernel(object):
+class Kernel:
     _kallsyms = None
 
     @property
@@ -1228,7 +1225,7 @@ class Kernel(object):
 
 kernel = Kernel()
 
-class Property(object):
+class Property:
     def __init__(self, name=None):
         # Need to avoid overloaded setattr() so we go through __dict__
         self.__dict__['_name'] = name
@@ -1274,8 +1271,32 @@ properties = Property()
 
 def _build_date():
     """Returns the build date in the form YYYY-MM-DD as a string"""
+
+    # Use ro.build.date.utc (integer epoch seconds) which is set by the
+    # AOSP build system and available on all standard Android devices.
+    # This avoids ro.build.date which is locale-dependent and can contain
+    # non-ASCII characters that dateutil cannot parse.  See #2513.
+    utc = getprop('ro.build.date.utc')
+    if utc and utc.strip().isdigit():
+        try:
+            as_datetime = datetime.datetime.fromtimestamp(int(utc.strip()), tz=datetime.timezone.utc)
+            return as_datetime.strftime('%Y-%b-%d')
+        except (OSError, OverflowError, ValueError):
+            pass
+
+    # Fallback for non-standard builds missing ro.build.date.utc.
     as_string = getprop('ro.build.date')
-    as_datetime =  dateutil.parser.parse(as_string)
+    if not as_string:
+        return ''
+    try:
+        import dateutil.parser
+    except ImportError:
+        log.exception("dateutil is required to parse ro.build.date since ro.build.date.utc is missing.  Please install it with 'pip install python-dateutil'")
+
+    try:
+        as_datetime = dateutil.parser.parse(as_string)
+    except (ValueError, OverflowError):
+        return as_string
     return as_datetime.strftime('%Y-%b-%d')
 
 def find_ndk_project_root(source):
@@ -1423,7 +1444,7 @@ def compile(source):
 
     return output[0]
 
-class Partition(object):
+class Partition:
     def __init__(self, path, name, blocks=0):
         self.path = path
         self.name = name
@@ -1475,7 +1496,7 @@ def readlink(path):
 
     return path.decode()
 
-class Partitions(object):
+class Partitions:
     """Enable access to partitions
 
     Example:
@@ -1562,9 +1583,9 @@ def install(apk, *arguments):
         log.error("APK must have .apk extension")
 
     basename = os.path.basename(apk)
-    target_path = '/data/local/tmp/{}.apk'.format(basename)
+    target_path = f'/data/local/tmp/{basename}.apk'
 
-    with log.progress("Installing APK {}".format(basename)) as p:
+    with log.progress(f"Installing APK {basename}") as p:
         with context.quiet:
             p.status('Copying APK to device')
             push(apk, target_path)
@@ -1585,7 +1606,7 @@ def uninstall(package, *arguments):
         package(str): Name of the package to uninstall (e.g. ``'com.foo.MyPackage'``)
         arguments: Supplementary arguments to ``'pm install'``, e.g. ``'-k'``.
     """
-    with log.progress("Uninstalling package {}".format(package)):
+    with log.progress(f"Uninstalling package {package}"):
         with context.quiet:
             return process(['pm','uninstall',package] + list(arguments)).recvall()
 
@@ -1603,4 +1624,3 @@ def version():
     """Returns rthe platform version as a tuple."""
     prop = getprop('ro.build.version.release')
     return [int(v) for v in prop.split('.')]
-

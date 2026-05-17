@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Script for downloading lists of user agent strings."""
-from __future__ import division
 import os
 import urllib
 

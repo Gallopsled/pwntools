@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-from __future__ import division
-
 import ctypes
 import io
 import os
@@ -26,7 +23,7 @@ class bootloader_images_header(ctypes.Structure):
 
 BOOTLDR_MAGIC = b'BOOTLDR!'
 
-class BootloaderImage(object):
+class BootloaderImage:
     def __init__(self, data):
         """Android Bootloader image
 

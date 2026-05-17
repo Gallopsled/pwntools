@@ -1,9 +1,7 @@
 """
 Kernel-specific ELF functionality
 """
-from __future__ import division
-
-class KernelConfig(object):
+class KernelConfig:
     def __init__(self, name, title, requires=[], excludes=[], minver=0, maxver=99):
 
         #: Name of the configuration option
