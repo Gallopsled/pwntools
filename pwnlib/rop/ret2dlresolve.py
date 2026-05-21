@@ -329,16 +329,16 @@ class Ret2dlresolvePayload:
 
         ver_addr = self.versym + 2 * index # Elf_HalfWord
 
-        log.debug("Symtab: %s", hex(self.symtab))
-        log.debug("Strtab: %s", hex(self.strtab))
-        log.debug("Versym: %s", hex(self.versym))
-        log.debug("Jmprel: %s", hex(self.jmprel))
-        log.debug("ElfSym addr: %s", hex(sym_addr))
-        log.debug("ElfRel addr: %s", hex(rel_addr))
-        log.debug("Symbol name addr: %s", hex(symbol_name_addr))
-        log.debug("Version index addr: %s", hex(ver_addr))
-        log.debug("Data addr: %s", hex(self.data_addr))
-        log.debug("Resolution addr: %s", hex(self.resolution_addr))
+        log.debug("Symtab: %#x", self.symtab)
+        log.debug("Strtab: %#x", self.strtab)
+        log.debug("Versym: %#x", self.versym)
+        log.debug("Jmprel: %#x", self.jmprel)
+        log.debug("ElfSym addr: %#x", sym_addr)
+        log.debug("ElfRel addr: %#x", rel_addr)
+        log.debug("Symbol name addr: %#x", symbol_name_addr)
+        log.debug("Version index addr: %#x", ver_addr)
+        log.debug("Data addr: %#x", self.data_addr)
+        log.debug("Resolution addr: %#x", self.resolution_addr)
         if not self.elf.memory[ver_addr]:
             log.warn("Ret2dlresolve is likely impossible in this ELF "
                      "(too big gap between text and writable sections).\n"

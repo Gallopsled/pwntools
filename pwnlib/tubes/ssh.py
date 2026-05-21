@@ -777,7 +777,6 @@ class ssh(Timeout, Logger):
 
             self.fingerprint = self.transport.get_remote_server_key().get_fingerprint().hex()
 
-            atexit.register(self.close)
             h.success()
 
         if self.raw:
