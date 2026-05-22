@@ -592,6 +592,7 @@ class ssh(Timeout, Logger):
     pid = None
 
     _cwd = '.'
+    _sep = '/'
     _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
@@ -1122,14 +1123,15 @@ class ssh(Timeout, Logger):
         system which adds the current working directory to the end of ``$PATH``.
         """
         # If name is a path, do not attempt to resolve it.
-        if context.path_sep.decode() in program:
+        if self._sep in program:
             return program
 
         program = packing._encode(program)
+        pathsep = self._sep.encode()
 
         result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
 
-        if (context.path_sep + program) not in result:
+        if (pathsep + program) not in result:
             return None
 
         return packing._decode(result)
