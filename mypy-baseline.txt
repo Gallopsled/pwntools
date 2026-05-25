@@ -63,7 +63,6 @@ pwnlib/rop/call.py:0: error: Need type annotation for "args" (hint: "args: list[
 pwnlib/rop/call.py:0: error: Need type annotation for "values" (hint: "values: list[<type>] = ...")  [var-annotated]
 pwnlib/rop/gadgets.py:0: error: Need type annotation for "insns" (hint: "insns: list[<type>] = ...")  [var-annotated]
 pwnlib/rop/gadgets.py:0: error: Need type annotation for "regs" (hint: "regs: dict[<type>, <type>] = ...")  [var-annotated]
-pwnlib/rop/rop.py:0: error: Need type annotation for "descriptions" (hint: "descriptions: dict[<type>, <type>] = ...")  [var-annotated]
 pwnlib/rop/srop.py:0: error: Need type annotation for "_regs" (hint: "_regs: list[<type>] = ...")  [var-annotated]
 pwnlib/shellcraft/__init__.py:0: error: Argument 1 to "append" of "list" has incompatible type "LazyImporter"; expected "MetaPathFinderProtocol"  [arg-type]
 pwnlib/shellcraft/__init__.py:0: error: Need type annotation for "_templates" (hint: "_templates: list[<type>] = ...")  [var-annotated]
