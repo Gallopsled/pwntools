@@ -11,7 +11,7 @@ from pwnlib.util import packing
 
 
 class module(ModuleType):
-    _templates = []
+    _templates: list[str] = []
 
     def __init__(self, name, directory):
         super(module, self).__init__(name)

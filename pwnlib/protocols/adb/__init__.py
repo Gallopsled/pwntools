@@ -9,6 +9,7 @@ import logging
 import functools
 import stat
 import time
+from typing import Callable, Concatenate, ParamSpec, TypeVar
 
 from pwnlib.context import context
 from pwnlib.log import Logger
@@ -73,6 +74,9 @@ class Connection(remote):
 class Process(Connection):
     """Duck-typed ``tubes.remote`` object to add properties of a ``tubes.process``"""
 
+P = ParamSpec('P')
+R = TypeVar('R')
+
 class AdbClient(Logger):
     """ADB Client"""
     def __init__(self, level=None):
@@ -113,11 +117,12 @@ class AdbClient(Logger):
             self._c = Connection(self.host, self.port, level=self.level)
         return self._c
 
-    def _autoclose(fn):
+    @staticmethod
+    def _autoclose(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which automatically closes the connection to the ADB server
         after calling the decorated function."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self: "AdbClient", *a: P.args, **kw: P.kwargs) -> R:
             rv = fn(self, *a, **kw)
             if self._c:
                 self._c.close()
@@ -125,11 +130,12 @@ class AdbClient(Logger):
             return rv
         return wrapper
 
-    def _with_transport(fn):
+    @staticmethod
+    def _with_transport(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which automatically selects a device transport before calling
         the decorated function, and closes the connection afterward."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self: "AdbClient", *a: P.args, **kw: P.kwargs) -> R:
             self.transport()
             rv = fn(self, *a, **kw)
             if self._c:
@@ -366,11 +372,12 @@ class AdbClient(Logger):
                 response = self.recvl().decode('utf-8')
             self.error("An error occurred while waiting for device with serial %r (%r)" % (serial, response))
 
-    def _sync(fn):
+    @staticmethod
+    def _sync(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which enters 'sync:' mode to the selected transport,
         then invokes the decorated funciton."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self, *a: P.args, **kw: P.kwargs) -> R:
             if self.send('sync:') == FAIL:
                 self.error("An error occurred while trying to use SYNC API (%r)" % self.recvl().decode('utf-8'))
             return fn(self, *a, **kw)

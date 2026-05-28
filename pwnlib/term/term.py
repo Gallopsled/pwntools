@@ -1,4 +1,5 @@
 import atexit
+from collections.abc import Callable
 import errno
 import os
 import re
@@ -23,12 +24,14 @@ __all__ = ['output', 'init']
 MAX_TERM_HEIGHT = 200
 
 # list of callbacks triggered on SIGWINCH
-on_winch = []
+on_winch: list[Callable[[], None]] = []
 
 cached_pos = None
 settings = None
 setup_done = False
 epoch = 0
+width = 0
+height = 0
 
 fd = sys.stdout
 winchretry = False

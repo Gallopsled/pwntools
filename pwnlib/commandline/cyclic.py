@@ -1,4 +1,3 @@
-import argparse
 import string
 import sys
 
@@ -39,8 +38,8 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
-group = parser.add_mutually_exclusive_group(required=False)
-group.add_argument(
+xgroup = parser.add_mutually_exclusive_group(required=False)
+xgroup.add_argument(
     '-l', '-o', '--offset', '--lookup',
     dest = 'lookup',
     type = str.encode,
@@ -48,7 +47,7 @@ group.add_argument(
     help = 'Do a lookup instead printing the alphabet',
 )
 
-group.add_argument(
+xgroup.add_argument(
     'count',
     type=int,
     nargs='?',

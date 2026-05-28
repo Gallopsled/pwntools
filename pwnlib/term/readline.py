@@ -12,13 +12,13 @@ cursor = text.reverse
 
 buffer_left, buffer_right = '', ''
 saved_buffer = None
-history = []
+history: list[str] = []
 history_idx = None
 prompt_handle = None
 buffer_handle = None
 suggest_handle = None
 search_idx = None
-search_results = []
+search_results: list[tuple[int, int, int]] = []
 startup_hook = None
 shutdown_hook = None
 
