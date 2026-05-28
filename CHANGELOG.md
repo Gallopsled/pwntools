@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
 - [#2652][2652] Make setting the context.terminal to kitty more user friendly
@@ -118,6 +119,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2673][2673] Add libc module for libc-related functions
 - [#2679][2679] Add type hints to parts of pwnlib.utils
 - [#2680][2680] Cleanup Python 2 legacy
+- [#2683][2683] libc: add atexit functions for glibc exploits
 - [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
 - [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
 - [#2682][2682] Fix `server.close()` not closing the listen socket
@@ -127,9 +129,14 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2706][2706] doc: Update `run_in_new_terminal` docstring with new overrides
 - [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
 - [#2655][2655] Add `context.debugger` to select which debugger to use
+- [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
 - [#2713][2713] Remove python-dateutil dependency
+- [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
+- [#2702][2702] ssh: Don't cache username in ssh checksec output
+- [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
+- [#2730][2730] Fix atexception handlers in term mode
+- [#2733][2733] loongarch64: fix incorrect mov assembly template
 
-[2677]: https://github.com/Gallopsled/pwntools/pull/2677
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -172,6 +179,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
 [2679]: https://github.com/Gallopsled/pwntools/pull/2679
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2683]: https://github.com/Gallopsled/pwntools/pull/2683
 [2687]: https://github.com/Gallopsled/pwntools/pull/2687
 [2699]: https://github.com/Gallopsled/pwntools/pull/2699
 [2682]: https://github.com/Gallopsled/pwntools/pull/2682
@@ -180,15 +188,25 @@ The table below shows which release corresponds to each branch, and what date th
 [2686]: https://github.com/Gallopsled/pwntools/pull/2686
 [2704]: https://github.com/Gallopsled/pwntools/pull/2704
 [2655]: https://github.com/Gallopsled/pwntools/pull/2655
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
+[2689]: https://github.com/Gallopsled/pwntools/pull/2689
 [2713]: https://github.com/Gallopsled/pwntools/pull/2713
+[2720]: https://github.com/Gallopsled/pwntools/pull/2720
+[2702]: https://github.com/Gallopsled/pwntools/pull/2702
+[2722]: https://github.com/Gallopsled/pwntools/pull/2722
+[2725]: https://github.com/Gallopsled/pwntools/pull/2725
+[2730]: https://github.com/Gallopsled/pwntools/pull/2730
+[2733]: https://github.com/Gallopsled/pwntools/pull/2733
 
 ## 4.15.1
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
+- [#2721][2721] Allow running with Unicorn 2.1.[34] but throw when emulating MIPS
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
+[2721]: https://github.com/Gallopsled/pwntools/pull/2721
 
 ## 4.15.0 (`stable`)
 

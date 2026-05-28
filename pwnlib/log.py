@@ -99,6 +99,7 @@ import string
 import sys
 import threading
 import time
+from typing import Any
 
 from pwnlib import term
 from pwnlib.config import register_config
@@ -131,7 +132,7 @@ _msgtype_prefixes = {
     }
 
 
-def read_log_config(settings):
+def read_log_config(settings: dict[str, Any]) -> None:
     log = getLogger(__name__)
     for key, value in settings.items():
         if '.' not in key:
@@ -260,8 +261,8 @@ class Logger:
 
     Loggers instantiated with :func:`getLogger` will be of this class.
     """
-    _one_time_infos    = set()
-    _one_time_warnings = set()
+    _one_time_infos: set[str]    = set()
+    _one_time_warnings: set[str] = set()
 
     def __init__(self, logger=None):
         if logger is None:

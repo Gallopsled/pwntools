@@ -1672,6 +1672,7 @@ class tube(Timeout, Logger):
 
     # Dynamic functions
 
+    @staticmethod
     def make_wrapper(func):
         def wrapperb(self, *a, **kw):
             return bytearray(func(self, *a, **kw))
@@ -1700,6 +1701,7 @@ class tube(Timeout, Logger):
         for wrapper in make_wrapper(func):
             locals()[wrapper.__name__] = wrapper
 
+    @staticmethod
     def make_alias_wrapper(func, alias):
         def wrapper(self, *a, **kw):
             return func(self, *a, **kw)

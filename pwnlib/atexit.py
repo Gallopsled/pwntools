@@ -11,6 +11,7 @@ import sys
 import threading
 import traceback
 import atexit as std_atexit
+from typing import Any, Callable, ParamSpec, TypeVar
 
 from pwnlib.context import context
 
@@ -18,9 +19,12 @@ __all__ = ['register', 'unregister']
 
 _lock = threading.Lock()
 _ident = 0
-_handlers = {}
+_handlers: dict[int, tuple[Callable[..., Any], Any, Any, dict[str, Any]]] = {}
 
-def register(func, *args, **kwargs):
+_P = ParamSpec('_P')
+_R = TypeVar('_R')
+
+def register(func: Callable[_P, _R], *args: _P.args, **kwargs: _P.kwargs) -> int:
     """register(func, *args, **kwargs)
 
     Registers a function to be called on program termination.  The function will
@@ -44,7 +48,8 @@ def register(func, *args, **kwargs):
     Notice however that this will bind ``handler`` to the identifier and not the
     actual exit-handler.  The exit-handler can then be unregistered with::
 
-      atexit.unregister(handler)
+      ident = atexit.register(handler)
+      atexit.unregister(ident)
 
     This function is thread safe.
 
@@ -56,7 +61,7 @@ def register(func, *args, **kwargs):
     _handlers[ident] = (func, args, kwargs, vars(context))
     return ident
 
-def unregister(ident):
+def unregister(ident: int) -> None:
     """unregister(ident)
 
     Remove the exit-handler identified by `ident` from the list of registered
@@ -65,7 +70,7 @@ def unregister(ident):
     if ident in _handlers:
         del _handlers[ident]
 
-def _run_handlers():
+def _run_handlers() -> None:
     """_run_handlers()
 
     Run registered exit-handlers.  They run in the reverse order of which they
@@ -87,13 +92,6 @@ def _run_handlers():
             # extract the current exception and rewind the traceback to where it
             # originated
             typ, val, tb = sys.exc_info()
-            traceback.print_exception(typ, val, tb.tb_next)
+            traceback.print_exception(typ, value=val, tb=tb.tb_next if tb else None)
 
-# if there's already an exitfunc registered be sure to run that too
-if hasattr(sys, "exitfunc"):
-    register(sys.exitfunc)
-
-if sys.version_info[0] < 3:
-    sys.exitfunc = _run_handlers
-else:
-    std_atexit.register(_run_handlers)
+std_atexit.register(_run_handlers)

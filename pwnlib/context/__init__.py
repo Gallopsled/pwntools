@@ -336,7 +336,7 @@ class ContextType:
     __slots__ = '_tls',
 
     #: Default values for :class:`pwnlib.context.ContextType`
-    defaults = {
+    defaults: dict[str, object] = {
         'adb_host': 'localhost',
         'adb_port': 5037,
         'arch': 'i386',
@@ -1761,7 +1761,7 @@ if 'ANDROID_ADB_SERVER_HOST' in os.environ:
     context.adb_host = os.environ.get('ANDROID_ADB_SERVER_HOST')
 
 if 'ANDROID_ADB_SERVER_PORT' in os.environ:
-    context.adb_port = int(os.getenv('ANDROID_ADB_SERVER_PORT'))
+    context.adb_port = int(os.environ.get('ANDROID_ADB_SERVER_PORT', 5037))
 
 def LocalContext(function):
     """

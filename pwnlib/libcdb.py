@@ -1,14 +1,16 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
+from collections.abc import Generator
 import os
+import re
 import time
-import tempfile
 import struct
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
+from pwnlib.internal.typing import BytesPath
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex, unhex
@@ -483,25 +485,94 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
-def _find_libc_package_lib_url(libc):
+def _collect_extra_mirrors(extra_mirrors: str | list[str] | None) -> list[str]:
+    """Normalize the user-supplied ``extra_mirrors`` argument and merge it with
+    the comma- or whitespace-separated ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment
+    variable.
+
+    Returns a list of ``str`` URL prefixes (each with no trailing slash). Empty
+    entries are dropped.
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _collect_extra_mirrors
+        >>> _collect_extra_mirrors(None)
+        []
+        >>> _collect_extra_mirrors('https://example.com/m/')
+        ['https://example.com/m']
+        >>> _collect_extra_mirrors(['https://a/', 'https://b'])
+        ['https://a', 'https://b']
+    """
+    mirrors = []
+    if extra_mirrors:
+        if isinstance(extra_mirrors, str):
+            mirrors.append(extra_mirrors)
+        else:
+            mirrors.extend(extra_mirrors)
+    env_mirrors = os.environ.get('PWNLIB_EXTRA_LIBC_MIRRORS')
+    if env_mirrors:
+        # Allow either commas or whitespace as separators so URL schemes
+        # (https:) don't accidentally get split mid-URL.
+        mirrors.extend(re.split(r'[,\s]+', env_mirrors))
+    return [m.rstrip('/') for m in mirrors if m]
+
+
+def _mirror_variants(url: str, extra_mirrors: list[str] | None) -> Generator[str, None, None]:
+    """Yield ``url`` followed by mirror-swapped variants for each entry in
+    ``extra_mirrors``.
+
+    A mirror is applied by replacing everything before ``/pool/`` in the
+    candidate URL with the mirror prefix. URLs without a ``/pool/`` segment are
+    still yielded once but no mirror substitution is performed (for example,
+    Launchpad's ``+files`` archive URLs do not follow the Debian pool layout).
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _mirror_variants
+        >>> list(_mirror_variants('http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb', None))
+        ['http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb',
+        ...                      ['https://debian.sipwise.com/debian-security']))
+        ['http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb', 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb',
+        ...                      ['https://anywhere.example']))
+        ['https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb']
+    """
+    yield url
+    if not extra_mirrors:
+        return
+    match = re.search(r'/(pool/.+)$', url)
+    if not match:
+        return
+    suffix = match.group(1)
+    seen = {url}
+    for prefix in extra_mirrors:
+        candidate = '%s/%s' % (prefix, suffix)
+        if candidate not in seen:
+            seen.add(candidate)
+            yield candidate
+
+
+def _find_libc_package_lib_url(libc: ELF, extra_mirrors: list[str] | None = None) -> Generator[str, None, None]:
     # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
         for match in libc_match:
             # Allow to override url with a caching proxy in CI
             ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
-            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
-    
+            url = match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
+            for variant in _mirror_variants(url, extra_mirrors):
+                yield variant
+
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
-    import re
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
         yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
-def download_libraries(libc_path, unstrip=True):
-    """download_libraries(str, bool) -> str
+def download_libraries(libc_path: BytesPath, unstrip: bool = True, extra_mirrors: str | list[str] | None = None) -> str | None:
+    """download_libraries(str, bool, extra_mirrors=None) -> str
     Download the matching libraries for the given libc binary and cache
     them in a local directory. The libraries are looked up using `libc.rip <https://libc.rip>`_
     and fetched from the official package repositories if available.
@@ -517,6 +588,17 @@ def download_libraries(libc_path, unstrip=True):
             The path the libc binary.
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        extra_mirrors(str or list of str):
+            Optional additional Debian-style apt mirror prefix(es) to try
+            after the libc.rip URL. Useful when the official mirror has
+            dropped older vulnerable libc versions: each candidate URL is
+            re-tried with everything before ``/pool/`` swapped for the
+            mirror prefix. Mirrors can also be supplied via the
+            ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment variable as a
+            comma- or whitespace-separated list. Example: pass
+            ``"https://debian.sipwise.com/debian-security"`` to find
+            ``GLIBC 2.36-9+deb12u6`` after the official Debian mirrors
+            removed it.
 
     Returns:
         The path to the cached directory containing the downloaded libraries.
@@ -531,23 +613,32 @@ def download_libraries(libc_path, unstrip=True):
         True
         >>> os.path.exists(os.path.join(lib_path, 'ld-linux-x86-64.so.2'))
         True
+
+        Fetch libraries from a different mirror for a vulnerable libc version
+        ``libc6_2.36-9+deb12u6_amd64`` that was removed from the official Debian mirrors:
+        
+        >>> libc_path = libcdb.search_by_build_id("ee3145ecaaff87a133daea77fbc3eecd458fa0d1") # doctest: +SKIP
+        >>> libcdb.download_libraries(libc_path, extra_mirrors="https://debian.sipwise.com/debian-security") # doctest: +ELLIPSIS +SKIP
+        '.../libcdb_libs/ee3145ecaaff87a133daea77fbc3eecd458fa0d1'
     """
 
     libc = ELF(libc_path, checksec=False)
     if not libc.buildid:
         log.warn_once('Given libc does not have a buildid.')
         return None
-    
+
     # Handle caching and don't redownload if it already exists.
     cache_dir = os.path.join(context.cache_dir, 'libcdb_libs')
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
-    
+
     cache_dir = os.path.join(cache_dir, enhex(libc.buildid))
     if os.path.exists(cache_dir):
         return cache_dir
 
-    for package_url in _find_libc_package_lib_url(libc):
+    extra_mirrors = _collect_extra_mirrors(extra_mirrors)
+
+    for package_url in _find_libc_package_lib_url(libc, extra_mirrors=extra_mirrors):
         extension_handlers = {
             '.deb': _extract_debfile,
             '.pkg.tar.xz': _extract_pkgfile,

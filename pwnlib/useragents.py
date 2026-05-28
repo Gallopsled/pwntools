@@ -6,9 +6,9 @@ __all__ = ['getall', 'random']
 import os
 import random as randommod
 
-_cache = None
+_cache: set[str] | None = None
 
-def _load():
+def _load() -> set[str]:
     global _cache
     if _cache is None:
         _cache = set()
@@ -20,7 +20,7 @@ def _load():
                     _cache.add(line.strip())
     return _cache
 
-def getall():
+def getall() -> set[str]:
     """getall() -> str set
 
     Get all the user agents that we know about.
@@ -40,7 +40,7 @@ def getall():
     """
     return _load().copy()
 
-def random():
+def random() -> str:
     """random() -> str
 
     Get a random user agent string.

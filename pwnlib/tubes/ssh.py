@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 
-from io import StringIO
+from io import StringIO, BytesIO
 
 from pwnlib import atexit, term
 from pwnlib.context import context, LocalContext
@@ -775,7 +775,8 @@ class ssh(Timeout, Logger):
             self.transport = self.client.get_transport()
             self.transport.use_compression(True)
 
-            atexit.register(self.close)
+            self.fingerprint = self.transport.get_remote_server_key().get_fingerprint().hex()
+
             h.success()
 
         if self.raw:
@@ -1472,7 +1473,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         if fingerprint is None:
             local = os.path.normpath(remote)
             local = os.path.basename(local)
-            local += time.strftime('-%Y-%m-%d-%H:%M:%S')
+            local += time.strftime('-%Y-%m-%d-%H%M%S')
             local = os.path.join(self._cachedir, local)
 
             self._download_raw(remote, local, p)
@@ -1621,11 +1622,10 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             remote = os.path.join(self.cwd, remote)
 
         if self.sftp:
-            with tempfile.NamedTemporaryFile() as f:
-                f.write(data)
-                f.flush()
-                self.sftp.put(f.name, remote)
-                return
+            flo = BytesIO(data)
+            file_size = len(data)
+            self.sftp.putfo(flo, remote, file_size=file_size)
+            return
 
         with context.local(log_level = 'ERROR'):
             cmd = 'cat > ' + sh_string(remote)
@@ -2187,7 +2187,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         return self._ibt
 
     def _checksec_cache(self, value=None):
-        path = self._get_cachefile('%s-%s' % (self.host, self.port))
+        path = self._get_cachefile('%s-%s-%s' % (self.host, self.port, self.fingerprint))
 
         if value is not None:
             with open(path, 'w+') as f:
@@ -2205,16 +2205,18 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             banner(bool): Whether to print the path to the ELF binary.
         """
         cached = self._checksec_cache()
+        checksec_header = "%s@%s:" % (self.user, self.host)
+
         if cached:
-            return cached
+            return '\n'.join((checksec_header, cached))
+
 
         red    = text.red
         green  = text.green
         yellow = text.yellow
 
         res = [
-            "%s@%s:" % (self.user, self.host),
-            "Distro".ljust(10) + ' '.join(self.distro),
+            "Distro:".ljust(10) + ' '.join(self.distro),
             "OS:".ljust(10) + self.os,
             "Arch:".ljust(10) + self.arch,
             "Version:".ljust(10) + '.'.join(map(str, self.version)),
@@ -2238,4 +2240,5 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         cached = '\n'.join(res)
         self._checksec_cache(cached)
-        return cached
+
+        return '\n'.join((checksec_header, cached))
