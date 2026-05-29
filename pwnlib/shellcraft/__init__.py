@@ -1,3 +1,5 @@
+import importlib.abc
+import importlib.util
 import itertools
 import os
 import re
@@ -167,8 +169,8 @@ tether = sys.modules[__name__]
 # Create the module structure
 shellcraft = module(__name__, '')
 
-class LazyImporter:
-    def find_module(self, fullname, path=None):
+class LazyImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    def find_spec(self, fullname, path=None, target=None):
         if not fullname.startswith('pwnlib.shellcraft.'):
             return None
 
@@ -179,9 +181,15 @@ class LazyImporter:
             if not isinstance(cur, ModuleType):
                 return None
 
-        return self
+        return importlib.util.spec_from_loader(fullname, self)
 
-    def load_module(self, fullname):
-        return sys.modules[fullname]
+    def create_module(self, spec):
+        # The submodule was already built and registered in sys.modules by
+        # the getattr walk in find_spec, so hand that object back instead
+        # of letting the import system make a fresh empty module.
+        return sys.modules.get(spec.name)
+
+    def exec_module(self, module):
+        pass
 
 sys.meta_path.append(LazyImporter())
