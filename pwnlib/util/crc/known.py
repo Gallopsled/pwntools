@@ -1,9 +1,8 @@
 import os
 import re
-from typing import Any
 
 
-def generate() -> dict[str, dict]:
+def generate() -> dict[str, dict[str, str | int | bool]]:
     """Generates a dictionary of all the known CRC formats from:
     https://reveng.sourceforge.io/crc-catalogue/all.htm
 
@@ -14,9 +13,9 @@ def generate() -> dict[str, dict]:
     path = os.path.join(curdir, '..', '..', 'data', 'crcsums.txt')
     with open(path) as fd:
         data = fd.read()
-    out = {}
+    out: dict[str, dict[str, str | int | bool]] = {}
 
-    def fixup(s: str) -> Any | int | bool:
+    def fixup(s: str) -> str | int | bool:
         if s == 'true':
             return True
         elif s == 'false':
@@ -37,11 +36,12 @@ def generate() -> dict[str, dict]:
 
         ref, l = l.split(' ', 1)
 
-        cur = {}
+        cur: dict[str, str | int | bool] = {}
         cur['link'] = 'https://reveng.sourceforge.io/crc-catalogue/all.htm#' + ref
         for key in ['width', 'poly', 'init', 'refin', 'refout', 'xorout', 'check', 'name']:
             cur[key] = fixup(re.findall(r'%s=(\S+)' % key, l)[0])
 
+        assert isinstance(cur['name'], str)
         cur['name'] = cur['name'].lower().replace('/', '_').replace('-', '_')
         assert cur['name'] not in out
         out[cur['name']] = cur

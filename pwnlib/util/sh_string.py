@@ -238,10 +238,10 @@ and should therefore be compatible with ``dash``.
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
 import string
-import subprocess
-from typing import Callable
+from typing import Callable, overload
 
 from pwnlib.context import context
+from pwnlib.internal.typing import ASCIIStr
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util import fiddling
@@ -273,7 +273,7 @@ def test_all() -> None:
     test(fiddling.randoms(1000, everything_1))
 
 
-def test(original: bytes) -> None:
+def test(original: bytes | str) -> None:
     r"""Tests the output provided by a shell interpreting a string
 
     .. doctest::
@@ -359,7 +359,11 @@ ESCAPED = {
     # '\\': '"\\\\\\\\"'
 }
 
-def sh_string(s: str) -> bytes | str:
+@overload
+def sh_string(s: bytes | bytearray) -> bytes: ...
+@overload
+def sh_string(s: str) -> str: ...
+def sh_string(s: ASCIIStr) -> ASCIIStr:
     r"""Outputs a string in a format that will be understood by /bin/sh.
 
     If the string does not contain any bad characters, it will simply be
@@ -388,6 +392,8 @@ def sh_string(s: str) -> bytes | str:
         "'foo\\\\'\\''bar'"
         >>> sh_string("foo\\x01'bar")
         "'foo\\x01'\\''bar'"
+        >>> sh_string(b"foo\\x01'bar")
+        b"'foo\\x01'\\''bar'"
     """
     orig_s = s
     if isinstance(s, (bytes, bytearray)):
@@ -398,7 +404,7 @@ def sh_string(s: str) -> bytes | str:
     if not s:
         quoted_string = "''" ##
         if isinstance(orig_s, (bytes, bytearray)):
-            quoted_string = quoted_string.encode('latin1')
+            return quoted_string.encode('latin1')
         return quoted_string
 
     chars = set(s)
@@ -412,7 +418,7 @@ def sh_string(s: str) -> bytes | str:
     if not (chars & set(ESCAPED)):
         quoted_string = "'%s'" % s ##
         if isinstance(orig_s, (bytes, bytearray)):
-            quoted_string = quoted_string.encode('latin1')
+            return quoted_string.encode('latin1')
         return quoted_string
 
     # If there are single-quotes, we can single-quote around them, and simply
@@ -435,10 +441,10 @@ def sh_string(s: str) -> bytes | str:
         quoted_string += SINGLE_QUOTE
 
     if isinstance(orig_s, (bytes, bytearray)):
-        quoted_string = quoted_string.encode('latin1')
+        return quoted_string.encode('latin1')
     return quoted_string
 
-def sh_prepare(variables: dict, export: bool = False) -> bytes:
+def sh_prepare(variables: dict[str, ASCIIStr], export: bool = False) -> bytes:
     r"""Outputs a posix compliant shell command that will put the data specified
     by the dictionary into the environment.
 
@@ -489,7 +495,7 @@ def sh_prepare(variables: dict, export: bool = False) -> bytes:
 
     return b';'.join(out)
 
-def sh_command_with(f: Callable, *args: tuple) -> str:
+def sh_command_with(f: Callable[[str | bytes], str] | str, *args: ASCIIStr) -> str:
     r"""sh_command_with(f, arg0, ..., argN) -> command
 
     Returns a command create by evaluating `f(new_arg0, ..., new_argN)`

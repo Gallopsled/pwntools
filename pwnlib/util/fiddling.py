@@ -6,11 +6,12 @@ import os
 import string
 
 from io import BytesIO
-from typing import Any, Generator, Iterable, Optional, BinaryIO
-from collections.abc import Sequence
+from typing import Any, Generator, Iterable, BinaryIO, Literal, TypeAlias, TypeVar, overload
+from collections.abc import Buffer, Sequence
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
+from pwnlib.internal.typing import ASCIIStr
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.util import iters
@@ -22,8 +23,10 @@ from pwnlib.util.cyclic import cyclic_find
 
 log = getLogger(__name__)
 
-def unhex(s: Sequence) -> bytes:
-    r"""unhex(s) -> str
+EndianStr: TypeAlias = Literal['big', 'little']
+
+def unhex(s: ASCIIStr) -> bytes:
+    r"""unhex(s) -> bytes
 
     Hex-decodes a string.
 
@@ -44,7 +47,7 @@ def unhex(s: Sequence) -> bytes:
             s = '0' + s
     return binascii.unhexlify(s)
 
-def enhex(x: Sequence) -> str:
+def enhex(x: Buffer) -> str:
     """enhex(x) -> str
 
     Hex-encodes a string.
@@ -54,10 +57,7 @@ def enhex(x: Sequence) -> str:
         >>> enhex(b"test")
         '74657374'
     """
-    x = binascii.hexlify(x)
-    if not hasattr(x, 'encode'):
-        x = x.decode('ascii')
-    return x
+    return binascii.hexlify(x).decode('ascii')
 
 
 def hexstr(s: bytes, force: bool = False) -> str:
@@ -130,7 +130,13 @@ def urldecode(s: str, ignore_invalid: bool = False) -> str:
                 raise ValueError("Invalid input to urldecode")
     return res
 
-def bits(s: int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> list[int | str]:
+ZeroT = TypeVar('ZeroT')
+OneT = TypeVar('OneT')
+@overload
+def bits(s: int | bytes, endian: EndianStr, zero: ZeroT, one: OneT) -> list[ZeroT | OneT]: ...
+@overload
+def bits(s: int | bytes, endian: EndianStr = 'big', zero: int = 0, one: int = 1) -> list[int]: ...
+def bits(s: int | bytes, endian: EndianStr = 'big', zero: ZeroT | int = 0, one: OneT | int = 1) -> list[ZeroT | OneT] | list[int]:
     """bits(s, endian = 'big', zero = 0, one = 1) -> list
 
     Converts the argument into a list of bits.
@@ -138,8 +144,8 @@ def bits(s: int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> li
     Arguments:
         s: A bytestring or number to be converted into bits.
         endian (str): The binary endian, default 'big'.
-        zero: The representing a 0-bit.
-        one: The representing a 1-bit.
+        zero: The value representing a 0-bit.
+        one: The value representing a 1-bit.
 
     Returns:
         A list consisting of the values specified in `zero` and `one`.
@@ -187,7 +193,7 @@ def bits(s: int | bytes, endian: str = 'big', zero: str = 0, one: str = 1) -> li
 
     return out
 
-def bits_str(s: Sequence, endian: str = 'big', zero: str = '0', one: str = '1') -> str:
+def bits_str(s: int | bytes, endian: EndianStr = 'big', zero: str = '0', one: str = '1') -> str:
     """bits_str(s, endian = 'big', zero = '0', one = '1') -> str
 
     A wrapper around :func:`bits`, which converts the output into a string.
@@ -201,8 +207,8 @@ def bits_str(s: Sequence, endian: str = 'big', zero: str = '0', one: str = '1') 
     """
     return ''.join(bits(s, endian, zero, one))
 
-def unbits(s: Iterable, endian: str = 'big') -> str:
-    r"""unbits(s, endian = 'big') -> str
+def unbits(s: Iterable[int | str | bool], endian: EndianStr = 'big') -> bytes:
+    r"""unbits(s, endian = 'big') -> bytes
 
     Converts an iterable of bits into a string.
 
@@ -267,7 +273,7 @@ def bitswap(s: bytes) -> bytes:
 
     return b''.join(out)
 
-def bitswap_int(n: int, width: int) -> str:
+def bitswap_int(n: int, width: int) -> int:
     """bitswap_int(n) -> int
 
     Reverses the bits of a numbers and returns the result as a new number.
@@ -297,7 +303,7 @@ def bitswap_int(n: int, width: int) -> str:
     return int(s, 2)
 
 
-def b64e(s: bytes) -> str:
+def b64e(s: Buffer) -> str:
     """b64e(s) -> str
 
     Base64 encodes a string
@@ -307,13 +313,10 @@ def b64e(s: bytes) -> str:
        >>> b64e(b"test")
        'dGVzdA=='
        """
-    x = base64.b64encode(s)
-    if not hasattr(x, 'encode'):
-        x = x.decode('ascii')
-    return x
+    return base64.b64encode(s).decode('ascii')
 
-def b64d(s: str) -> bytes:
-    """b64d(s) -> str
+def b64d(s: str | Buffer) -> bytes:
+    """b64d(s) -> bytes
 
     Base64 decodes a string
 
@@ -325,7 +328,7 @@ def b64d(s: str) -> bytes:
     return base64.b64decode(s)
 
 # misc binary functions
-def xor(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
+def xor(*args: Any, **kwargs: Any) -> bytes:
     """xor(*args, cut = 'max') -> str
 
     Flattens its arguments using :func:`pwnlib.util.packing.flat` and
@@ -384,14 +387,14 @@ def xor(*args: tuple, **kwargs: dict[str, Any]) -> bytes:
 
     return b''.join(map(get, range(cut)))
 
-def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[str, str]]:
-    r"""xor_pair(data, avoid = '\\x00\\n') -> None or (str, str)
+def xor_pair(data: int | bytes, avoid: ASCIIStr = b'\x00\n') -> tuple[bytes, bytes] | None:
+    r"""xor_pair(data, avoid = '\\x00\\n') -> None or (bytes, bytes)
 
     Finds two strings that will xor into a given string, while only
     using a given alphabet.
 
     Arguments:
-        data (str): The desired string.
+        data (bytes): The desired string.
         avoid: The list of disallowed characters. Defaults to nulls and newlines.
 
     Returns:
@@ -410,7 +413,7 @@ def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[s
         avoid = avoid.encode('utf-8')
 
     avoid = bytearray(avoid)
-    alphabet = list(packing._p8lu(n) for n in range(256) if n not in avoid)
+    alphabet: list[bytes] = list(packing._p8lu(n) for n in range(256) if n not in avoid)
 
     res1 = b''
     res2 = b''
@@ -429,20 +432,20 @@ def xor_pair(data: int | Sequence, avoid: bytes = b'\x00\n') -> Optional[tuple[s
 
     return res1, res2
 
-def xor_key(data: str, avoid: bytes = b'\x00\n', size: int = None) -> Optional[tuple[str, str]]:
-    r"""xor_key(data, size=None, avoid='\x00\n') -> None or (int, str)
+def xor_key(data: bytes, avoid: bytes = b'\x00\n', size: int | None = None) -> tuple[bytes, bytes] | None:
+    r"""xor_key(data, size=None, avoid='\x00\n') -> None or (bytes, bytes)
 
     Finds a ``size``-width value that can be XORed with a string
     to produce ``data``, while neither the XOR value or XOR string
     contain any bytes in ``avoid``.
 
     Arguments:
-        data (str): The desired string.
+        data (bytes): The desired string.
         avoid: The list of disallowed characters. Defaults to nulls and newlines.
         size (int): Size of the desired output value, default is word size.
 
     Returns:
-        A tuple containing two strings; the XOR key and the XOR string.
+        A tuple containing two byte strings; the XOR key and the XOR string.
         If no such pair exists, None is returned.
 
     Example:
@@ -498,8 +501,12 @@ def randoms(count: int, alphabet: str = string.ascii_lowercase) -> str:
 
     return ''.join(random.choice(alphabet) for _ in range(count))
 
-
-def rol(n: Sequence | int, k: int, word_size: int = None) -> str:
+T = TypeVar('T')
+@overload
+def rol(n: Sequence[T], k: int, word_size: int | None = None) -> Sequence[T]: ...
+@overload
+def rol(n: int, k: int, word_size: int | None = None) -> int: ...
+def rol(n: int | Sequence[T], k: int, word_size: int | None = None) -> int | Sequence[T]:
     """Returns a rotation by `k` of `n`.
 
     When `n` is a number, then means ``((n << k) | (n >> (word_size - k)))`` truncated to `word_size` bits.
@@ -542,7 +549,11 @@ def rol(n: Sequence | int, k: int, word_size: int = None) -> str:
     else:
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
-def ror(n: Sequence | int, k: int, word_size: int = None) -> str:
+@overload
+def ror(n: Sequence[T], k: int, word_size: int | None = None) -> Sequence[T]: ...
+@overload
+def ror(n: int, k: int, word_size: int | None = None) -> int: ...
+def ror(n: int | Sequence[T], k: int, word_size: int | None = None) -> int | Sequence[T]:
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
     return rol(n, -k, word_size)
@@ -990,7 +1001,7 @@ def hexdump(s: bytes, width: int = 16, skip: bool = True, hexii: bool = False, b
                                   groupsize,
                                   total))
 
-def negate(value: int, width: int = None) -> int:
+def negate(value: int, width: int | None = None) -> int:
     """
     Returns the two's complement of 'value'.
     """
@@ -999,7 +1010,7 @@ def negate(value: int, width: int = None) -> int:
     mask = ((1<<width)-1)
     return ((mask+1) - value) & mask
 
-def bnot(value: int, width: int = None) -> int:
+def bnot(value: int, width: int | None = None) -> int:
     """
     Returns the binary inverse of 'value'.
     """
@@ -1009,7 +1020,7 @@ def bnot(value: int, width: int = None) -> int:
     return mask ^ value
 
 @LocalNoarchContext
-def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwargs: dict[str, Any]) -> bytes:
+def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwargs: Any) -> bytes:
     r"""js_escape(data, padding=context.cyclic_alphabet[0:1], endian = None, **kwargs) -> str
 
     Pack data as an escaped Unicode string for use in JavaScript's `unescape()` function
@@ -1051,7 +1062,7 @@ def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwar
         return ''.join(f'%u{a:02x}{b:02x}' for a, b in iters.group(2, data))
 
 @LocalNoarchContext
-def js_unescape(s: str, **kwargs: dict[str, Any]) -> bytes:
+def js_unescape(s: str, **kwargs: Any) -> bytes:
     r"""js_unescape(s, endian = None, **kwargs) -> bytes
 
     Unpack an escaped Unicode string from JavaScript's `escape()` function
@@ -1140,7 +1151,7 @@ def tty_escape(s: bytes, lnext: bytes = b'\x16', dangerous: bytes = bytes(bytear
     """
     s = s.replace(lnext, lnext * 2)
     for b in bytearray(dangerous):
-        b = bytes(bytearray([b]))
         if b in lnext: continue
-        s = s.replace(b, lnext + b)
+        bs = bytes([b])
+        s = s.replace(bs, lnext + bs)
     return s
