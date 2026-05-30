@@ -170,21 +170,47 @@ tether = sys.modules[__name__]
 # Create the module structure
 shellcraft = module(__name__, '')
 
-class LazyImporter:
-    def find_module(self, fullname, path=None):
-        if not fullname.startswith('pwnlib.shellcraft.'):
-            return None
-
-        parts = fullname.split('.')[2:]
-        cur = shellcraft
-        for part in parts:
-            cur = getattr(cur, part, None)
-            if not isinstance(cur, ModuleType):
+if sys.version_info >= (3, 4):
+    import importlib.abc
+    import importlib.util
+    class LazyImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+        def find_spec(self, fullname, path=None, target=None):
+            if not fullname.startswith('pwnlib.shellcraft.'):
                 return None
 
-        return self
+            parts = fullname.split('.')[2:]
+            cur = shellcraft
+            for part in parts:
+                cur = getattr(cur, part, None)
+                if not isinstance(cur, ModuleType):
+                    return None
 
-    def load_module(self, fullname):
-        return sys.modules[fullname]
+            return importlib.util.spec_from_loader(fullname, self)
+
+        def create_module(self, spec):
+            # The submodule was already built and registered in sys.modules by
+            # the getattr walk in find_spec, so hand that object back instead
+            # of letting the import system make a fresh empty module.
+            return sys.modules.get(spec.name)
+
+        def exec_module(self, module):
+            pass
+else:
+    class LazyImporter:
+        def find_module(self, fullname, path=None):
+            if not fullname.startswith('pwnlib.shellcraft.'):
+                return None
+
+            parts = fullname.split('.')[2:]
+            cur = shellcraft
+            for part in parts:
+                cur = getattr(cur, part, None)
+                if not isinstance(cur, ModuleType):
+                    return None
+
+            return self
+
+        def load_module(self, fullname):
+            return sys.modules[fullname]
 
 sys.meta_path.append(LazyImporter())
