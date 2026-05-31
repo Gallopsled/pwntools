@@ -1,9 +1,15 @@
 import collections
-from collections.abc import Sequence
-from typing import Any, Callable, Generator, Literal
+from collections.abc import Iterable, Sequence
+from typing import Any, Callable, Generator, Literal, TypeVar, overload
 
+T = TypeVar('T')
+R = TypeVar('R')
 
-def partition(lst: list, f: Callable, save_keys: bool = False) -> list:
+@overload
+def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: Literal[True]) -> collections.OrderedDict[R, list[T]]: ...
+@overload
+def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: Literal[False]) -> list[list[T]]: ...
+def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: bool = False) -> list[list[T]] | collections.OrderedDict[R, list[T]]:
     """partition(lst, f, save_keys = False) -> list
 
     Partitions an iterable into sublists using a function to specify which
@@ -25,7 +31,7 @@ def partition(lst: list, f: Callable, save_keys: bool = False) -> list:
       >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True) == collections.OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
       True
     """
-    d = collections.OrderedDict()
+    d: collections.OrderedDict[R, list[T]] = collections.OrderedDict()
 
     for l in lst:
         c = f(l)
@@ -36,7 +42,7 @@ def partition(lst: list, f: Callable, save_keys: bool = False) -> list:
     else:
         return list(d.values())
 
-def group(n: int, lst: Sequence, underfull_action: str = 'ignore', fill_value: list | tuple | bytes | str = None) -> list:
+def group(n: int, lst: Sequence[T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: T | None = None) -> list[Sequence[T]]:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be
@@ -94,7 +100,7 @@ def group(n: int, lst: Sequence, underfull_action: str = 'ignore', fill_value: l
 
     return out
 
-def concat(l: list) -> list:
+def concat(l: list[list[Any]]) -> list[Any]:
     """concat(l) -> list
 
     Concats a list of lists into a list.
@@ -112,7 +118,7 @@ def concat(l: list) -> list:
 
     return res
 
-def concat_all(*args: tuple) -> list:
+def concat_all(*args: Any) -> list[Any]:
     """concat_all(*args) -> list
 
     Concats all the arguments together.
@@ -123,7 +129,7 @@ def concat_all(*args: tuple) -> list:
        [0, 1, 2, 3, 4, 5, 6]
     """
 
-    def go(arg: tuple | list | Any, output: list) -> list:
+    def go(arg: Any, output: list[Any]) -> list[Any]:
         if isinstance(arg, (tuple, list)):
             for e in arg:
                 go(e, output)
@@ -157,7 +163,7 @@ def unordlist(cs: list[int]) -> str:
     """
     return ''.join(chr(c) for c in cs)
 
-def findall(haystack: list, needle: Any) -> list | Any:
+def findall(haystack: Sequence[T], needle: T) -> Generator[int, None, None]:
     """findall(l, e) -> l
 
     Generate all indices of needle in haystack, using the
@@ -177,10 +183,10 @@ def findall(haystack: list, needle: Any) -> list | Any:
       >>> list(findall("aaabaaabc", "aab"))
       [1, 5]
     """
-    def __kmp_table(W: Any) -> list:
+    def __kmp_table(W: Sequence[T]) -> list[int]:
         pos = 1
         cnd = 0
-        T = []
+        T: list[int] = []
         T.append(-1)
         T.append(0)
         while pos < len(W):
@@ -195,7 +201,7 @@ def findall(haystack: list, needle: Any) -> list | Any:
                 T.append(0)
         return T
 
-    def __kmp_search(S: list, W: Any) -> Generator[Any | Literal[0], Any, None]:
+    def __kmp_search(S: Sequence[T], W: Sequence[T]) -> Generator[int, None, None]:
         m = 0
         i = 0
         T = __kmp_table(W)
@@ -210,7 +216,7 @@ def findall(haystack: list, needle: Any) -> list | Any:
                 m += i - T[i]
                 i = max(T[i], 0)
 
-    def __single_search(S: list, w: Any) -> Generator[int, Any, None]:
+    def __single_search(S: Sequence[T], w: T) -> Generator[int, None, None]:
         for i, v in enumerate(S):
             if v == w:
                 yield i
