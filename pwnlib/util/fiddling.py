@@ -594,13 +594,13 @@ def isprint(c: str | int) -> bool:
     return c in t
 
 
-def hexii(s: str, width: int = 16, skip: bool = True) -> str:
+def hexii(s: bytes, width: int = 16, skip: bool = True) -> str:
     """hexii(s, width = 16, skip = True) -> str
 
     Return a HEXII-dump of a string.
 
     Arguments:
-        s(str): The string to dump
+        s(bytes): The bytes to dump
         width(int): The number of characters per line
         skip(bool): Should repeated lines be replaced by a "*"
 
@@ -632,7 +632,7 @@ default_style = {
 cyclic_pregen = b''
 de_bruijn_gen = de_bruijn()
 
-def sequential_lines(a: int, b: int) -> bool:
+def sequential_lines(a: bytes, b: bytes) -> bool:
     return (a+b) in cyclic_pregen
 
 def update_cyclic_pregenerated(size: int) -> None:
@@ -640,8 +640,8 @@ def update_cyclic_pregenerated(size: int) -> None:
     while size > len(cyclic_pregen):
         cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
-def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict = None,
-                 highlight: Iterable = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str, None, None]:
+def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, text._TextDecorator] | None = None,
+                 highlight: Iterable[int | str] | str | None = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str, None, None]:
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                     highlight = None, cyclic = False, groupsize=4, total = True) -> str generator
 
@@ -649,7 +649,7 @@ def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool =
     massive amounts of data you probably want to use :meth:`hexdump`.
 
     Arguments:
-        fd(file): File object to dump.  Use :meth:`StringIO.StringIO` or :meth:`hexdump` to dump a string.
+        fd(file): File object to dump.  Use :class:`io.BytesIO` or :meth:`hexdump` to dump a byte string.
         width(int): The number of characters per line
         groupsize(int): The number of characters per group
         skip(bool): Set to True, if repeated lines should be replaced by a "*"
@@ -694,7 +694,6 @@ def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool =
     style.update(_style)
 
     skipping    = False
-    lines       = []
     last_unique = ''
     byte_width  = len('00 ')
     spacer      = ' '
@@ -804,8 +803,8 @@ def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool =
         line = "%08x" % (begin + numb)
         yield line
 
-def hexdump(s: bytes, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict = None,
-            highlight: Iterable = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> str:
+def hexdump(s: ASCIIStr, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, text._TextDecorator] | None = None,
+            highlight: Iterable[int | str] | str | None = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> str:
     r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                 highlight = None, cyclic = False, groupsize=4, total = True) -> str
 
