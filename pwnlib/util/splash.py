@@ -29,7 +29,7 @@ def splash() -> None:
 
     def updater() -> None:
 
-        colors: list[int] = [
+        colors = [
             text.blue   , text.bold_blue   ,
             text.magenta, text.bold_magenta,
             text.red    , text.bold_red    ,
@@ -37,7 +37,7 @@ def splash() -> None:
             text.green  , text.bold_green  ,
             text.cyan   , text.bold_cyan   ,
         ]
-        def getcolor(n: int) -> int:
+        def getcolor(n: int) -> text._TextDecorator:
             return colors[(n // 4) % len(colors)]
 
         lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]
