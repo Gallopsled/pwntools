@@ -31,8 +31,7 @@ Examples:
 """
 import struct
 import sys
-from typing import Any, Callable, Iterable, BinaryIO, Literal
-from collections.abc import Sequence
+from typing import Any, Callable, Literal, overload
 import warnings
 
 from pwnlib.context import LocalNoarchContext
@@ -342,7 +341,11 @@ for op,size,end,sign in iters.product(ops, sizes, ends, signs):
 #
 # Make normal user-oriented packers, e.g. p8
 #
-def _do_packing(op: str, size: int, number: int, endianness: str | None = None) -> bytes:
+@overload
+def _do_packing(op: Literal['p'], size: int, number: int, endianness: str | None = None) -> bytes: ...
+@overload
+def _do_packing(op: Literal['u'], size: int, number: bytes, endianness: str | None = None) -> int: ...
+def _do_packing(op: Literal['p', 'u'], size: int, number: int | bytes, endianness: str | None = None) -> bytes | int:
 
     name = "%s%s" % (op,size)
     mod = sys.modules[__name__]
@@ -778,7 +781,7 @@ def make_unpacker(word_size: Literal["all"] | int | None = None, endianness: str
     else:
         return lambda number: unpack(number, word_size, endianness, sign)
 
-def _fit(pieces: dict, preprocessor: Callable, packer: Callable, filler: Iterable, stacklevel: int = 1) -> tuple[iters.chain[int], bytes]:
+def _fit(pieces, preprocessor, packer, filler, stacklevel: int = 1):
 
     # Pulls bytes from `filler` and adds them to `pad` until it ends in `key`.
     # Returns the index of `key` in `pad`.
@@ -853,7 +856,7 @@ def _fit(pieces: dict, preprocessor: Callable, packer: Callable, filler: Iterabl
 
     return filler, out_negative + out
 
-def _flat(args: list[list | tuple | dict | bytes | str | int], preprocessor: Callable, packer: Callable, filler: Iterable, stacklevel: int = 1) -> bytes:
+def _flat(args, preprocessor, packer, filler, stacklevel: int = 1) -> bytes:
     out = []
     for arg in args:
 
@@ -1061,7 +1064,7 @@ def flat(*args: Any, **kwargs: Any) -> bytes:
 
     return out
 
-def fit(*args: tuple, **kwargs: Any) -> bytes:
+def fit(*args: Any, **kwargs: Any) -> bytes:
     """Legacy alias for :func:`flat`"""
     kwargs['stacklevel'] = kwargs.get('stacklevel', 0) + 1
     return flat(*args, **kwargs)
@@ -1109,7 +1112,7 @@ def signed(integer: int) -> int:
 def unsigned(integer: int) -> int:
     return unpack(pack(integer))
 
-def dd(dst: BinaryIO | Sequence, src: Iterable, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False) -> BinaryIO | Sequence:
+def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = False):
     r"""dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False) -> dst
 
     Inspired by the command line tool ``dd``, this function copies `count` byte
