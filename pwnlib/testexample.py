@@ -42,9 +42,8 @@ which documents the module.
 
 """
 
-def add(a, b):
-    '''add(a, b) -> int
-
+def add(a: int, b: int) -> int:
+    '''
     Adds the numbers ``a`` and ``b``.
 
     Arguments:
