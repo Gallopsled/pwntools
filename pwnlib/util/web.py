@@ -8,7 +8,7 @@ from pwnlib.util.misc import size
 
 log = getLogger(__name__)
 
-def wget(url: str | bytes, save: str | bytes | bool = False, timeout: float | tuple[float, float] | None = 5.0, **kwargs: Any) -> None | bytes:
+def wget(url: str | bytes, save: str | bytes | bool = False, timeout: float | tuple[float, float] | None = 5.0, **kwargs: Any) -> bytes | None:
     r"""wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
@@ -41,7 +41,7 @@ def wget(url: str | bytes, save: str | bytes | bool = False, timeout: float | tu
 
         if not response.ok:
             w.failure("Got code %s" % response.status_code)
-            return
+            return None
 
         total_size = int(response.headers.get('content-length',0))
 

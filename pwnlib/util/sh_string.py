@@ -256,6 +256,7 @@ def test_all() -> None:
     test(r"a\'b") ##
     everything_1 = bytes(range(1,256))
     for s in everything_1:
+        s = bytes([s])
         test(s)
         test(s*4)
         test(s * 2 + b'X')
