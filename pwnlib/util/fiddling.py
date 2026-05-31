@@ -130,13 +130,13 @@ def urldecode(s: str, ignore_invalid: bool = False) -> str:
                 raise ValueError("Invalid input to urldecode")
     return res
 
-ZeroT = TypeVar('ZeroT')
-OneT = TypeVar('OneT')
+_ZeroT = TypeVar('_ZeroT')
+_OneT = TypeVar('_OneT')
 @overload
-def bits(s: int | bytes, endian: EndianStr, zero: ZeroT, one: OneT) -> list[ZeroT | OneT]: ...
+def bits(s: int | bytes, endian: EndianStr, zero: _ZeroT, one: _OneT) -> list[_ZeroT | _OneT]: ...
 @overload
 def bits(s: int | bytes, endian: EndianStr = 'big', zero: int = 0, one: int = 1) -> list[int]: ...
-def bits(s: int | bytes, endian: EndianStr = 'big', zero: ZeroT | int = 0, one: OneT | int = 1) -> list[ZeroT | OneT] | list[int]:
+def bits(s: int | bytes, endian: EndianStr = 'big', zero: _ZeroT | int = 0, one: _OneT | int = 1) -> list[_ZeroT | _OneT] | list[int]:
     """bits(s, endian = 'big', zero = 0, one = 1) -> list
 
     Converts the argument into a list of bits.
@@ -501,12 +501,12 @@ def randoms(count: int, alphabet: str = string.ascii_lowercase) -> str:
 
     return ''.join(random.choice(alphabet) for _ in range(count))
 
-T = TypeVar('T')
+_T = TypeVar('_T')
 @overload
-def rol(n: Sequence[T], k: int, word_size: int | None = None) -> Sequence[T]: ...
+def rol(n: Sequence[_T], k: int, word_size: int | None = None) -> Sequence[_T]: ...
 @overload
 def rol(n: int, k: int, word_size: int | None = None) -> int: ...
-def rol(n: int | Sequence[T], k: int, word_size: int | None = None) -> int | Sequence[T]:
+def rol(n: int | Sequence[_T], k: int, word_size: int | None = None) -> int | Sequence[_T]:
     """Returns a rotation by `k` of `n`.
 
     When `n` is a number, then means ``((n << k) | (n >> (word_size - k)))`` truncated to `word_size` bits.
@@ -550,10 +550,10 @@ def rol(n: int | Sequence[T], k: int, word_size: int | None = None) -> int | Seq
         raise ValueError("rol(): 'n' must be an integer, string, list or tuple")
 
 @overload
-def ror(n: Sequence[T], k: int, word_size: int | None = None) -> Sequence[T]: ...
+def ror(n: Sequence[_T], k: int, word_size: int | None = None) -> Sequence[_T]: ...
 @overload
 def ror(n: int, k: int, word_size: int | None = None) -> int: ...
-def ror(n: int | Sequence[T], k: int, word_size: int | None = None) -> int | Sequence[T]:
+def ror(n: int | Sequence[_T], k: int, word_size: int | None = None) -> int | Sequence[_T]:
     """A simple wrapper around :func:`rol`, which negates the values of `k`."""
 
     return rol(n, -k, word_size)

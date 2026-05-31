@@ -2,14 +2,14 @@ import collections
 from collections.abc import Iterable, Sequence
 from typing import Any, Callable, Generator, Literal, TypeVar, overload
 
-T = TypeVar('T')
-R = TypeVar('R')
+_T = TypeVar('_T')
+_R = TypeVar('_R')
 
 @overload
-def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: Literal[True]) -> collections.OrderedDict[R, list[T]]: ...
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: Literal[True]) -> collections.OrderedDict[_R, list[_T]]: ...
 @overload
-def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: Literal[False]) -> list[list[T]]: ...
-def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: bool = False) -> list[list[T]] | collections.OrderedDict[R, list[T]]:
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: Literal[False]) -> list[list[_T]]: ...
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: bool = False) -> list[list[_T]] | collections.OrderedDict[_R, list[_T]]:
     """partition(lst, f, save_keys = False) -> list
 
     Partitions an iterable into sublists using a function to specify which
@@ -31,7 +31,7 @@ def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: bool = False) ->
       >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True) == collections.OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
       True
     """
-    d: collections.OrderedDict[R, list[T]] = collections.OrderedDict()
+    d: collections.OrderedDict[_R, list[_T]] = collections.OrderedDict()
 
     for l in lst:
         c = f(l)
@@ -42,7 +42,7 @@ def partition(lst: Iterable[T], f: Callable[[T], R], save_keys: bool = False) ->
     else:
         return list(d.values())
 
-def group(n: int, lst: Sequence[T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: T | None = None) -> list[Sequence[T]]:
+def group(n: int, lst: Sequence[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[Sequence[_T]]:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be
@@ -163,7 +163,7 @@ def unordlist(cs: list[int]) -> str:
     """
     return ''.join(chr(c) for c in cs)
 
-def findall(haystack: Sequence[T], needle: T) -> Generator[int, None, None]:
+def findall(haystack: Sequence[_T], needle: _T) -> Generator[int, None, None]:
     """findall(l, e) -> l
 
     Generate all indices of needle in haystack, using the
@@ -183,7 +183,7 @@ def findall(haystack: Sequence[T], needle: T) -> Generator[int, None, None]:
       >>> list(findall("aaabaaabc", "aab"))
       [1, 5]
     """
-    def __kmp_table(W: Sequence[T]) -> list[int]:
+    def __kmp_table(W: Sequence[_T]) -> list[int]:
         pos = 1
         cnd = 0
         T: list[int] = []
@@ -201,7 +201,7 @@ def findall(haystack: Sequence[T], needle: T) -> Generator[int, None, None]:
                 T.append(0)
         return T
 
-    def __kmp_search(S: Sequence[T], W: Sequence[T]) -> Generator[int, None, None]:
+    def __kmp_search(S: Sequence[_T], W: Sequence[_T]) -> Generator[int, None, None]:
         m = 0
         i = 0
         T = __kmp_table(W)
@@ -216,7 +216,7 @@ def findall(haystack: Sequence[T], needle: T) -> Generator[int, None, None]:
                 m += i - T[i]
                 i = max(T[i], 0)
 
-    def __single_search(S: Sequence[T], w: T) -> Generator[int, None, None]:
+    def __single_search(S: Sequence[_T], w: _T) -> Generator[int, None, None]:
         for i, v in enumerate(S):
             if v == w:
                 yield i
