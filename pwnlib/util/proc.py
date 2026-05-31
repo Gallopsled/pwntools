@@ -2,7 +2,7 @@ import errno
 import socket
 import sys
 import time
-from typing import Any
+from typing import Any, TypeAlias
 
 import psutil
 
@@ -15,7 +15,7 @@ log = getLogger(__name__)
 
 all_pids = psutil.pids
 
-def pidof(target: tubes.ssh.ssh_channel | tubes.sock.sock | tuple | tubes.process.process) -> list[int]:
+def pidof(target: str | tubes.ssh.ssh_channel | tubes.sock.sock | tuple[str, int] | tubes.process.process) -> list[int]:
     """pidof(target) -> int list
 
     Get PID(s) of `target`.  The returned PID(s) depends on the type of `target`:
@@ -51,11 +51,11 @@ def pidof(target: tubes.ssh.ssh_channel | tubes.sock.sock | tuple | tubes.proces
         local  = target.sock.getsockname()
         remote = target.sock.getpeername()
         match = sock_match(remote, local, target.family, target.type)
-        return [c.pid for c in psutil.net_connections() if match(c)]
+        return [c.pid for c in psutil.net_connections() if match(c) and c.pid is not None]
 
     elif isinstance(target, tuple):
         match = sock_match(target, None)
-        return [c.pid for c in psutil.net_connections() if match(c)]
+        return [c.pid for c in psutil.net_connections() if match(c) and c.pid is not None]
 
     elif isinstance(target, tubes.process.process):
         return [target.proc.pid]
@@ -160,7 +160,8 @@ def ancestors(pid: int) -> list[int]:
          pid = parent(pid)
     return pids
 
-def descendants(pid: int) -> dict[int, dict[int, int]]: #TODO: verify
+DescendantsMap: TypeAlias = dict[int, 'DescendantsMap']
+def descendants(pid: int) -> DescendantsMap:
     """descendants(pid) -> dict
 
     Arguments:
@@ -177,14 +178,14 @@ def descendants(pid: int) -> dict[int, dict[int, int]]: #TODO: verify
     """
     this_pid = pid
     allpids = all_pids()
-    ppids = {}
-    def _parent(pid: int) -> dict[int, int]:
+    ppids: dict[int, int] = {}
+    def _parent(pid: int) -> int:
          if pid not in ppids:
              ppids[pid] = parent(pid)
          return ppids[pid]
     def _children(ppid: int) -> list[int]:
          return [pid for pid in allpids if _parent(pid) == ppid]
-    def _loop(ppid: int) -> dict[int, dict[int, int]]:
+    def _loop(ppid: int) -> DescendantsMap:
          return {pid: _loop(pid) for pid in _children(ppid)}
     return _loop(pid)
 
@@ -237,7 +238,8 @@ def cmdline(pid: int) -> list[str]:
     """
     return psutil.Process(pid).cmdline()
 
-def memory_maps(pid: int) -> list[tuple[str, str]]:
+# TODO: Update return type once psutil has better types
+def memory_maps(pid: int) -> list[Any]:
     """memory_maps(pid) -> list
     
     Arguments:
@@ -322,13 +324,14 @@ def status(pid: int) -> dict[str, str]:
     return out
 
 def _tracer_windows(pid: int) -> int:
+    assert sys.platform == 'win32'
     import ctypes
     from ctypes import wintypes
 
-    def _check_bool(result: Any, func: callable, args: list) -> list:
+    def _check_bool(result: Any, func: Any, args: tuple[Any, ...]) -> Any:
         if not result:
             raise ctypes.WinError(ctypes.get_last_error())
-        return args
+        return result
 
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     OpenProcess = kernel32.OpenProcess 
