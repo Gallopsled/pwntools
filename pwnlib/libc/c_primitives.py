@@ -72,6 +72,27 @@ class PwnType:
         return None
 
     @staticmethod
+    def calc_align(typ: type) -> int:
+        if issubclass(typ, CTYPE_BASE):
+            return PwnType.calc_size(typ)
+        align_attr = f'_{context.bits}_align_cache_'
+        if hasattr(typ, align_attr):
+            return getattr(typ, align_attr)
+        if issubclass(typ, (CStruct, CUnion)):
+            align = max(PwnType.calc_align(f[1]) for f in typ._fields_)
+        elif issubclass(typ, CArray):
+            if hasattr(typ, '_align_'):  # here _align_ is type-range
+                align = typ._align_
+            else:
+                align = PwnType.calc_align(typ._type_)
+        elif issubclass(typ, (CEnum, CFlag)):
+            align = PwnType.calc_align(typ._size_type_)
+        else:
+            raise NotImplementedError
+        setattr(typ, align_attr, align)
+        return align
+
+    @staticmethod
     def calc_size(typ: type | PwnType) -> int:
         if not isinstance(typ, type):
             typ = type(typ)
@@ -82,21 +103,31 @@ class PwnType:
             return getattr(typ, cache_attr)
         if issubclass(typ, CStruct):
             struct_len = 0
+            offset_table_attr = f'_offsets{context.bits}_'
+            offsets = {}
             is64b = context.bits == 64
+            maybe_packed = True
             for field in typ._fields_:
                 field_t = field[1]
-                offset = field[2] if is64b else field[3]
+                if len(field) == 4:
+                    offset = field[2] if is64b else field[3]
+                else: # offset need to be calculated
+                    maybe_packed = False
+                    f_align = PwnType.calc_align(field_t)
+                    # align up struct_len
+                    offset = ((struct_len + f_align - 1) // f_align) * f_align
+                offsets[field[0]] = offset
                 field_len = PwnType.calc_size(field_t)
                 struct_len = max(struct_len, offset + field_len)
+            setattr(typ, offset_table_attr, offsets)
+            if not maybe_packed:
+                align = PwnType.calc_align(typ)
+                struct_len = ((struct_len + align - 1) // align) * align
             size_cache = struct_len
         elif issubclass(typ, CArray):
             if typ._count_ == 0:
                 return 0
-            if hasattr(typ, '_align_'):  # here _align_ is type-range
-                field_len = typ._align_
-            else:
-                field_len = PwnType.calc_size(typ._type_)
-            size_cache = field_len * typ._count_
+            size_cache = PwnType.calc_align(typ) * typ._count_
         elif issubclass(typ, CUnion):
             size_cache = max(PwnType.calc_size(field[1]) for field in typ._fields_)
         elif issubclass(typ, (CEnum, CFlag)):
@@ -341,19 +372,22 @@ class CArray(PwnType):
 
 
 class CStruct(PwnType):
-    _fields_: list[tuple[str, type, int, int]]
+    _fields_: list[tuple[str, type, int, int] | tuple[str, type]]
     _components: OrderedDict[str, tuple[int | PwnType, int]]
     _len: int
+    _offsets32_: dict[str, int]
+    _offsets64_: dict[str, int]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
             raise NotImplementedError
         super().__init__(view)
 
+        offsets = getattr(self, f'_offsets{context.bits}_')
         self._components = OrderedDict()
         for field in self._fields_:
             field_t = field[1]
-            off = field[2] if context.bits == 64 else field[3]
+            off = offsets[field[0]]
             if issubclass(field_t, CTYPE_BASE):
                 self._components[field[0]] = (PwnType.calc_size(field[1]), off)
             else:
@@ -415,7 +449,7 @@ class CStruct(PwnType):
 
 
 class CUnion(PwnType):
-    _fields_: list[str, type]
+    _fields_: list[tuple[str, type]]
     _components: OrderedDict[str, PwnType | int]
 
     def __init__(self, view: memoryview | None) -> None:
