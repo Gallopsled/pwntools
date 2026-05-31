@@ -37,7 +37,7 @@ import warnings
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
-from pwnlib.internal.typing import ASCIIStr
+from pwnlib.internal.typing import ASCIIStr, BytesLike
 from pwnlib.log import getLogger
 
 from pwnlib.util import iters
@@ -161,7 +161,7 @@ def pack(number: int, word_size: Literal["all"] | int | None = None, endianness:
             return b''.join(reversed(out))
 
 @LocalNoarchContext
-def unpack(data: bytes, word_size: Literal["all"] | int | None = None) -> int:
+def unpack(data: BytesLike, word_size: Literal["all"] | int | None = None) -> int:
     r"""unpack(data, word_size = None, *, endianness = None, sign = None, **kwargs) -> int
 
     Unpacks arbitrary-sized integer.
@@ -1294,9 +1294,11 @@ def dd(dst: BinaryIO | Sequence, src: Iterable, count: int = 0, skip: int = 0, s
 
     return dst
 
-def _need_bytes(s: ASCIIStr, level: int = 1, min_wrong: int = 0) -> bytes:
-    if isinstance(s, (bytes, bytearray)):
+def _need_bytes(s: ASCIIStr | memoryview, level: int = 1, min_wrong: int = 0) -> bytes:
+    if isinstance(s, bytes):
         return s   # already bytes
+    if isinstance(s, (bytearray, memoryview)):
+        return bytes(s)
 
     encoding = context.encoding
     errors = 'strict'
@@ -1316,7 +1318,7 @@ def _need_bytes(s: ASCIIStr, level: int = 1, min_wrong: int = 0) -> bytes:
                       BytesWarning, level + 2)
     return s.encode(encoding, errors)
 
-def _need_text(s: str | bytes | bytearray | object, level: int = 1) -> str:
+def _need_text(s: ASCIIStr | object, level: int = 1) -> str:
     if isinstance(s, str):
         return s   # already text
 
@@ -1338,9 +1340,11 @@ def _need_text(s: str | bytes | bytearray | object, level: int = 1) -> str:
                   BytesWarning, level + 2)
     return s.decode(encoding, errors)
 
-def _encode(s: bytes | bytearray | str) -> bytes:
-    if isinstance(s, (bytes, bytearray)):
+def _encode(s: ASCIIStr | memoryview) -> bytes:
+    if isinstance(s, bytes):
         return s   # already bytes
+    if isinstance(s, (bytearray, memoryview)):
+        return bytes(s)
 
     if context.encoding == 'auto':
         try:
@@ -1349,7 +1353,7 @@ def _encode(s: bytes | bytearray | str) -> bytes:
             return s.encode('utf-8', 'surrogateescape')
     return s.encode(context.encoding)
 
-def _decode(b: str | bytes | bytearray) -> str:
+def _decode(b: ASCIIStr) -> str:
     if isinstance(b, str):
         return b   # already text
 

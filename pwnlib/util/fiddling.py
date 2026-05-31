@@ -7,11 +7,11 @@ import string
 
 from io import BytesIO
 from typing import Any, Generator, Iterable, BinaryIO, Literal, TypeAlias, TypeVar, overload
-from collections.abc import Buffer, Sequence
+from collections.abc import Sequence
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
-from pwnlib.internal.typing import ASCIIStr
+from pwnlib.internal.typing import ASCIIStr, BytesLike
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.util import iters
@@ -47,7 +47,7 @@ def unhex(s: ASCIIStr) -> bytes:
             s = '0' + s
     return binascii.unhexlify(s)
 
-def enhex(x: Buffer) -> str:
+def enhex(x: BytesLike) -> str:
     """enhex(x) -> str
 
     Hex-encodes a string.
@@ -303,7 +303,7 @@ def bitswap_int(n: int, width: int) -> int:
     return int(s, 2)
 
 
-def b64e(s: Buffer) -> str:
+def b64e(s: BytesLike) -> str:
     """b64e(s) -> str
 
     Base64 encodes a string
@@ -315,7 +315,7 @@ def b64e(s: Buffer) -> str:
        """
     return base64.b64encode(s).decode('ascii')
 
-def b64d(s: str | Buffer) -> bytes:
+def b64d(s: str | BytesLike) -> bytes:
     """b64d(s) -> bytes
 
     Base64 decodes a string
