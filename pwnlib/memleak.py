@@ -31,6 +31,7 @@ class MemLeak:
         f (function): The leaker function.
         search_range (int): How many bytes to search backwards in case an address does not work.
         reraise (bool): Whether to reraise call :func:`pwnlib.log.warning` in case the leaker function throws an exception.
+        cache_file (str): If set, persist the leak cache to this path and reload it on construction, so leaked bytes are reused across runs.
 
     Example:
 
@@ -77,6 +78,21 @@ class MemLeak:
         >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
         >>> leak[-1:2]
         b'zAB'
+
+        >>> import os, tempfile
+        >>> cache = tempfile.mktemp()
+        >>> def leaker(addr):
+        ...     print("leaking 0x%x" % addr)
+        ...     return binsh[addr:addr+4]
+        >>> hex(pwnlib.memleak.MemLeak(leaker, cache_file=cache).d(0))
+        leaking 0x0
+        '0x464c457f'
+        >>> def leaker_again(addr):
+        ...     print("leaking again 0x%x" % addr)
+        ...     return binsh[addr:addr+4]
+        >>> hex(pwnlib.memleak.MemLeak(leaker_again, cache_file=cache).d(0))
+        '0x464c457f'
+        >>> os.unlink(cache)
     """
     def __init__(self, f, search_range = 20, reraise = True, relative = False, cache_file = None):
         self.leak = f
