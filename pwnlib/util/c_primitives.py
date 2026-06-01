@@ -4,6 +4,7 @@ consider combine basic types in ``ctypes`` and ``CArray``, ``CStruct`` and ``CUn
 in this module to implement basically all C types.
 
 This module provides some features that ``ctypes`` can not:
+
 1. User may access composite variables with ``slice`` to fetch memory.
 2. User may set composite members with ``bytes`` object.
 3. Easy to layout arch-specific types or layout in packed form. e.g., layout pointer
