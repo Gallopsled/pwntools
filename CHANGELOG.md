@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
 - [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
 - [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
@@ -197,6 +198,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2730]: https://github.com/Gallopsled/pwntools/pull/2730
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
+[2740]: https://github.com/Gallopsled/pwntools/pull/2740
 
 ## 4.15.1
 
