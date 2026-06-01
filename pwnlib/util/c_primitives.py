@@ -1,4 +1,4 @@
-"""
+r"""
 A generic module to construct C data types with pure Python. Downstream data types may
 consider combine basic types in ``ctypes`` and ``CArray``, ``CStruct`` and ``CUnion``
 in this module to implement basically all C types.
@@ -10,6 +10,128 @@ This module provides some features that ``ctypes`` can not:
    for 32-bit types but on 64-bit Python.
 4. Directly return ``int`` on basic types.
 5. Print composite types in a pwner-friendly form.
+
+Examples:
+    >>> from pwnlib.util.c_primitives import *
+    >>> from ctypes import *
+    >>> from enum import IntEnum, IntFlag
+    >>> context.clear(arch='amd64')
+    >>> class Token(IntEnum):
+    ...     NONE = 0
+    ...     READ = 1
+    ...     WRITE = 2
+    ...
+    >>> class Perm(IntFlag):
+    ...     R = 1
+    ...     W = 2
+    ...     X = 4
+    ...
+    >>> class CToken(CEnum):
+    ...     _size_type_ = c_uint
+    ...     _enum_ = Token
+    ...
+    >>> class CPerm(CFlag):
+    ...     _size_type_ = c_ubyte
+    ...     _flag_ = Perm
+    ...
+    >>> class Name(CCharArray):
+    ...     _count_ = 8
+    ...
+    >>> class Raw(CCharArray):
+    ...     _count_ = 24
+    ...
+    >>> class Scores(CArray):
+    ...     _type_ = c_ushort
+    ...     _count_ = 3
+    ...
+    >>> Tokens = mk_anonymous_carray(CToken, 2)
+    >>> class AutoHeader(CStruct):
+    ...     _fields_ = [
+    ...         ('tag', c_char),
+    ...         ('perm', CPerm),
+    ...         ('cursor', c_void_p),
+    ...         ('kind', CToken),
+    ...         ('name', Name),
+    ...     ]
+    ...
+    >>> class ManualPair(CStruct):
+    ...     _fields_ = [
+    ...         ('lo', c_ushort, 0, 0),
+    ...         ('target', c_void_p, 2, 2),
+    ...         ('tail', c_uint, 10, 10),
+    ...     ]
+    ...
+    >>> class Payload(CUnion):
+    ...     _fields_ = [
+    ...         ('raw', Raw),
+    ...         ('scores', Scores),
+    ...         ('pair', ManualPair),
+    ...     ]
+    ...
+    >>> class Packet(CStruct):
+    ...     _fields_ = [
+    ...         ('header', AutoHeader),
+    ...         ('payload', Payload),
+    ...         ('tokens', Tokens),
+    ...         ('perm', CPerm),
+    ...         ('handler', c_void_p),
+    ...     ]
+    ...
+    >>> pkt = Packet()
+    >>> pkt.payload.pair.offsetof('tail')
+    10
+    >>> len(pkt.payload)
+    24
+    >>> len(pkt)
+    80
+    >>> pkt.header.tag = ord('M')
+    >>> pkt.header.perm = Perm.R
+    >>> pkt.header.cursor = 0x1122334455667788
+    >>> pkt.header.kind = Token.READ + 0xaa00
+    >>> pkt.header.name = b'payload!'
+    >>> pkt.payload.pair.lo = 0xbeef
+    >>> pkt.payload.pair.target = 0x4041424344454647
+    >>> pkt.payload.pair.tail = 0x21444150
+    >>> pkt.tokens[0] = Token.READ
+    >>> pkt.tokens[1] = 0x99
+    >>> pkt.perm = Perm.W | Perm.X
+    >>> pkt.handler = 0x7f0643fa3f60
+    >>> pkt.header[12:20] = b'PWN!\x02'
+    >>> pkt[0x30:0x38] = b'/bin/sh'
+    >>> pkt
+    {
+      +0x0  header = {
+        +0x0  tag = 0x4d,
+        +0x1  perm = 0x1 <Perm.R: 1>,
+        +0x8  cursor = 0x214e575055667788,
+        +0x10 kind = 0x2 <Token.WRITE: 2>,
+        +0x14 name = <70 61 79 6c 6f 61 64 21  |payload!|>,
+      },
+      +0x20 payload = {
+        raw = <
+          ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00  |..GFEDCBA@PAD!..|
+          2f 62 69 6e 2f 73 68 00                          |/bin/sh.|
+        >,
+        scores = [
+          0xbeef,
+          0x4647,
+          0x4445,
+        ],
+        pair = {
+          +0x0 lo = 0xbeef,
+          +0x2 target = 0x4041424344454647,
+          +0xa tail = 0x21444150,
+        },
+      },
+      +0x38 tokens = [
+        0x1 <Token.READ: 1>,
+        0x99,
+      ],
+      +0x40 perm = 0x6 <Perm.W|X: 6>,
+      +0x48 handler = 0x7f0643fa3f60,
+    }
+    >>> print(pkt)
+    {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 2f 62 69 6e 2f 73 68 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150}}, [0x1 <Token.READ>, 0x99], 0x6 <Perm.W|X>, 0x7f0643fa3f60}
 """
 
 from __future__ import annotations
@@ -73,7 +195,8 @@ def _verbose_separator(s: TextIOBase, v: bool) -> None:
 
 def _remove_non_verbose_tail(s: TextIOBase, v: bool) -> None:
     if not v:
-        s.truncate(s.tell() - 2)
+        s.seek(s.tell() - 2)
+        s.truncate()
 
 
 class PwnType:
@@ -331,6 +454,8 @@ class PwnType:
         return bytes(self._view)
 
     def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, (str, bytes, bytearray)):
+            return self._view == _need_bytes(value)
         if not isinstance(value, PwnType) or type(self) is not type(value):
             return False
         return self._view == value._view
@@ -407,10 +532,41 @@ class PwnType:
 
 
 class CArray(PwnType, Generic[ArrayItemT]):
-    """
+    r"""
     A generic array to implement statments like ``int arr[3];`` in C. An array can be
     accessed with ``int`` subscript. ``slice`` is used to access underlying memory not
     objects.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> class Int4(CArray):
+        ...     _type_ = c_int
+        ...     _count_ = 4
+        ...
+        >>> buf = bytearray(32)
+        >>> arr = Int4(memoryview(buf))
+        >>> arr[0] = 0x13371337
+        >>> arr[5:9] = b'\xde\xad\xbe\xef'
+        >>> buf[:20]
+        bytearray(b'7\x137\x13\x00\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+        >>> bytes(arr)[:len(arr)]
+        b'7\x137\x13\x00\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00'
+        >>> len(arr)
+        16
+        >>> arr
+        [
+          0x13371337,
+          0xbeadde00,
+          0xef,
+          0x0,
+        ]
+        >>> print(arr)
+        [0x13371337, 0xbeadde00, 0xef, 0x0]
+        >>> arr[2:6]
+        b'7\x13\x00\xde'
+        >>> arr[1]
+        3199065600
     """
 
     _type_: CType
@@ -532,9 +688,68 @@ class CCharArray(CArray[int]):
 
 
 class CStruct(PwnType):
-    """
+    r"""
     Base type of C structure. A structure can be accessed like member, or ``dict``.
     See examples below.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> class CString(CStruct):
+        ...     _fields_ = [
+        ...         ('size', c_uint),
+        ...         ('flag', c_char, 3, 3),
+        ...         ('string', c_char_p),
+        ...     ]
+        ...     # recommends adding type hints to enable LSP auto completion
+        ...     size: int
+        ...     flag: int
+        ...     string: int
+        ...
+        >>> context.clear(arch='amd64')
+        >>> cstr = CString()
+        >>> cstr.size = 0x12345678
+        >>> cstr.flag
+        18
+        >>> cstr.string = 0x7f9843040440
+        >>> cstr
+        {
+          +0x0 size = 0x12345678,
+          +0x3 flag = 0x12,
+          +0x8 string = 0x7f9843040440,
+        }
+        >>> bytes(cstr)
+        b'xV4\x12\x00\x00\x00\x00@\x04\x04C\x98\x7f\x00\x00'
+        >>> len(cstr)
+        16
+        >>> print(cstr)
+        {0x12345678, 0x12, 0x7f9843040440}
+        >>> cstr2 = CString(memoryview(b'xV4\x12\x00\x00\x00\x00@\x04\x04C\x98\x7f\x00\x00'))
+        >>> cstr == cstr2
+        True
+        >>> cstr == b'xV4\x12\x00\x00\x00\x00@\x04\x04C\x98\x7f\x00\x00'
+        True
+        >>> cstr['flag'] = 0xab
+        >>> cstr[3:4]
+        b'\xab'
+        >>> hex(cstr['size'])
+        '0xab345678'
+        >>> cstr.str
+        Traceback (most recent call last):
+        ...
+        AttributeError: 'CString' object has no attribute 'str'
+        >>> cstr['str']
+        Traceback (most recent call last):
+        ...
+        AttributeError: 'CString' object has no attribute 'str'
+        >>> cstr.offsetof('flag')
+        3
+        >>> cstr.offsetof('length')
+        Traceback (most recent call last):
+        ...
+        ValueError: 'length' is not exist in 'CString'
+        >>> cstr.struntil('string')
+        b'xV4\xab\x00\x00\x00\x00'
     """
 
     _fields_: list[tuple[str, CType] | tuple[str, CType, int, int]]
@@ -673,9 +888,57 @@ class CStruct(PwnType):
 
 
 class CUnion(PwnType):
-    """
+    r"""
     Base type of C union. Like struct, you can access members with dot or like
     ``dict``. See examples below.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> class XU(CUnion):
+        ...     _fields_ = [
+        ...         ('a', c_uint),
+        ...         ('b', c_char),
+        ...         ('c', c_longlong),
+        ...     ]
+        ...
+        >>> xu = XU()
+        >>> xu.c = 0x123456789abcdef0
+        >>> xu['b']
+        240
+        >>> xu.b = 0
+        >>> xu.a
+        2596068864
+        >>> xu
+        {
+          a = 0x9abcde00,
+          b = 0x0,
+          c = 0x123456789abcde00,
+        }
+        >>> print(xu)
+        {0x9abcde00, 0x0, 0x123456789abcde00}
+        >>> bytes(xu)
+        b'\x00\xde\xbc\x9axV4\x12'
+        >>> xu[:]
+        b'\x00\xde\xbc\x9axV4\x12'
+        >>> len(xu)
+        8
+        >>> xu[:1] = b'123'
+        Traceback (most recent call last):
+        ...
+        ValueError: Filling bytes larger than sliced memory
+        >>> xu[0] = b'123'
+        Traceback (most recent call last):
+        ...
+        ValueError: Can not access struct with 'int' subscript
+        >>> xu[-99:] = b'123'
+        Traceback (most recent call last):
+        ...
+        ValueError: Illegal index on memoryview
+        >>> xu.b = 9999
+        Traceback (most recent call last):
+        ...
+        ValueError: pack(): number does not fit within word_size [0, 9999, 256]
     """
 
     _fields_: list[tuple[str, CType]]
@@ -764,6 +1027,31 @@ class CUnion(PwnType):
 class CEnum(PwnType):
     """
     Base type of a C enum. This can be used to beautify struct output.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> from enum import IntEnum
+        >>> class XEnum(IntEnum):
+        ...     X1 = 1
+        ...     X2 = 2
+        ...
+        >>> class X(CEnum):
+        ...     _size_type_ = c_int
+        ...     _enum_ = XEnum
+        ...
+        >>> Xarr = mk_anonymous_carray(X, 1)
+        >>> e = Xarr()
+        >>> e[0] = 1
+        >>> e[0]
+        0x1 <XEnum.X1: 1>
+        >>> print(e[0])
+        0x1 <XEnum.X1>
+        >>> e[0] = 233
+        >>> e[0]
+        0xe9
+        >>> int(e[0])
+        233
     """
 
     _size_type_: CType
@@ -793,7 +1081,7 @@ class CEnum(PwnType):
             return
         raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def copy_from(self, value: Any) -> type[Any] | None:
+    def _copy_from(self, value: Any) -> type[Any] | None:
         typ = super()._copy_from(value)
         if typ is None:
             return typ
@@ -829,12 +1117,35 @@ class CEnum(PwnType):
 
 class CFlag(PwnType):
     """
-    Base type of a C enum. This can be used to beautify struct output.
+    Base type of a C flag. This can be used to beautify struct output.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> from enum import IntFlag
+        >>> class XFlag(IntFlag):
+        ...     X1 = 1
+        ...     X2 = 2
+        ...
+        >>> class X(CFlag):
+        ...     _size_type_ = c_int
+        ...     _flag_ = XFlag
+        ...
+        >>> Xarr = mk_anonymous_carray(X, 1)
+        >>> f = Xarr()
+        >>> f[0] = 1
+        >>> f[0]
+        0x1 <XFlag.X1: 1>
+        >>> f[0] = XFlag.X1 | XFlag.X2
+        >>> print(f[0])
+        0x3 <XFlag.X1|X2>
+        >>> int(f[0])
+        3
     """
 
     _size_type_: CType
     """
-    Defines how many bytes this enum takes.
+    Defines how many bytes this flag takes.
     """
     _flag_: type[IntFlag]
     """
@@ -859,7 +1170,7 @@ class CFlag(PwnType):
             return
         raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def copy_from(self, value: Any) -> type[Any] | None:
+    def _copy_from(self, value: Any) -> type[Any] | None:
         typ = super()._copy_from(value)
         if typ is None:
             return typ
@@ -892,6 +1203,15 @@ def mk_anonymous_carray(
 ) -> type[CArray[CompCValue]]:
     """
     Factory function to generate an anonymous ``CArray``.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> mk_anonymous_carray(c_int, 2)()
+        [
+          0x0,
+          0x0,
+        ]
     """
     fields: dict[str, Any] = {'_type_': elem_type, '_count_': count}
     if align:
@@ -902,6 +1222,12 @@ def mk_anonymous_carray(
 def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
     """
     Factory function to generate an anonymous ``CCharArray``.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> mk_anonymous_cchararray(5)(memoryview(b'hello'))
+        <68 65 6c 6c 6f  |hello|>
     """
     fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
     if align:
@@ -914,6 +1240,14 @@ def mk_anonymous_cstruct(
 ) -> type[CStruct]:
     """
     Factory function to generate an anonymous ``CStruct``.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> mk_anonymous_cstruct([('aaa', c_int)])()
+        {
+          +0x0 aaa = 0x0,
+        }
     """
     return type('', (CStruct,), {'_fields_': fields})
 
@@ -921,5 +1255,14 @@ def mk_anonymous_cstruct(
 def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
     """
     Factory function to generate an anonymous ``CUnion``.
+
+    Examples:
+        >>> from pwnlib.util.c_primitives import *
+        >>> from ctypes import *
+        >>> mk_anonymous_cunion([('x', c_int), ('y', c_char)])()
+        {
+          x = 0x0,
+          y = 0x0,
+        }
     """
     return type('', (CUnion,), {'_fields_': fields})
