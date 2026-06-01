@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from ctypes import (
+    c_char,
     c_char_p,
     c_long,
     c_size_t,
@@ -14,7 +15,7 @@ from io import StringIO, TextIOBase
 from typing import Any
 
 from pwnlib.context import context
-from pwnlib.util.packing import _need_bytes, unpack, pack
+from pwnlib.util.packing import _need_bytes, pack, unpack
 
 CTYPE_BASE = c_long.__base__
 VAR_TYPES = [c_void_p, c_char_p, c_wchar_p, c_size_t, c_ssize_t, c_ulong, c_long]
@@ -140,7 +141,32 @@ class PwnType:
     @staticmethod
     def print_to_stream(s: TextIOBase, v: bool, indent: int, o: PwnType) -> None:
         step = 2 if v else 0
-        if isinstance(o, CArray):
+        if isinstance(o, CCharArray):
+            s.write('<')
+            if not v:
+                s.write(bytes(o._view).hex(' '))
+            elif o._len > 16:
+                _verbose_separator(s, v)
+                indent += step
+                for i in range(0, o._int_count, 16):
+                    s.write(' ' * indent)
+                    b = bytes(o._view[i : i + 16])
+                    s.write(b.hex(' ').ljust(49))
+                    s.write('|')
+                    s.writelines(chr(e) if 0x20 <= e < 0x7F else '.' for e in b)
+                    s.write('|')
+                    _separator(s, v)
+                indent -= step
+                s.write(' ' * indent)
+            else:
+                b = bytes(o._view)
+                s.write(b.hex(' '))
+                s.write('  |')
+                s.writelines(chr(e) if 0x20 <= e < 0x7F else '.' for e in b)
+                s.write('|')
+            s.write('>,')
+            _separator(s, v)
+        elif isinstance(o, CArray):
             s.write('[')
             _verbose_separator(s, v)
             indent += step
@@ -162,7 +188,8 @@ class PwnType:
             s.write('],')
             _separator(s, v)
         elif isinstance(o, CStruct):
-            w = max(o._int_offsets.values()) + 1  # use max offset as width
+            # use max offset as width
+            w = max(len(hex(off)) for off in o._int_offsets.values()) + 1
             s.write('{')
             _verbose_separator(s, v)
             indent += step
@@ -300,7 +327,7 @@ class CArray(PwnType):
     _int_count: int
     _components: list[PwnType] | None
 
-    def __init__(self, view: memoryview | None) -> None:
+    def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_type_') or not hasattr(self, '_count_'):
             raise NotImplementedError
         super().__init__(view)
@@ -375,6 +402,10 @@ class CArray(PwnType):
             return
 
         raise ValueError(f"Can not access array with '{_type(subscript)}' subscript")
+
+
+class CCharArray(CArray):
+    _type_ = c_char
 
 
 class CStruct(PwnType):
@@ -468,7 +499,7 @@ class CUnion(PwnType):
     _fields_: list[tuple[str, type]]
     _components: OrderedDict[str, PwnType | int]
 
-    def __init__(self, view: memoryview | None) -> None:
+    def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
             raise NotImplementedError
         super().__init__(view)
@@ -535,7 +566,7 @@ class CEnum(PwnType):
     _size_type_: type
     _enum_: type[IntEnum]
 
-    def __init__(self, view: memoryview | None) -> None:
+    def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_enum_'):
             raise NotImplementedError
         super().__init__(view)
@@ -586,7 +617,7 @@ class CFlag(PwnType):
     _size_type_: type
     _flag_: type[IntFlag]
 
-    def __init__(self, view: memoryview | None) -> None:
+    def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_flag_'):
             raise NotImplementedError
         super().__init__(view)
@@ -631,9 +662,16 @@ class CFlag(PwnType):
 
 def mk_anonymous_carray(elem_type: type, count: int, align: int = 0) -> type[CArray]:
     fields = {'_type_': elem_type, '_count_': count}
-    if align is not None:
+    if align:
         fields['_align_'] = align
     return type('', (CArray,), fields)
+
+
+def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
+    fields = {'_type_': c_char, '_count_': count}
+    if align:
+        fields['_align_'] = align
+    return type('', (CCharArray,), fields)
 
 
 def mk_anonymous_cstruct(
