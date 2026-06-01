@@ -87,10 +87,7 @@ class MemLeak:
         >>> hex(pwnlib.memleak.MemLeak(leaker, cache_file=cache).d(0))
         leaking 0x0
         '0x464c457f'
-        >>> def leaker_again(addr):
-        ...     print("leaking again 0x%x" % addr)
-        ...     return binsh[addr:addr+4]
-        >>> hex(pwnlib.memleak.MemLeak(leaker_again, cache_file=cache).d(0))
+        >>> hex(pwnlib.memleak.MemLeak(leaker, cache_file=cache).d(0))
         '0x464c457f'
         >>> os.unlink(cache)
     """
