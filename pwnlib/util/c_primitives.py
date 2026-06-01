@@ -94,7 +94,7 @@ Examples:
     >>> pkt.payload.pair.tail = 0x21444150
     >>> pkt.tokens[0] = Token.READ
     >>> pkt.tokens[1] = 0x99
-    >>> pkt.perm = Perm.W | Perm.X
+    >>> pkt.perm = Perm.X
     >>> pkt.handler = 0x7f0643fa3f60
     >>> pkt.header[12:20] = b'PWN!\x02'
     >>> pkt[0x30:0x38] = b'/bin/sh'
@@ -127,11 +127,11 @@ Examples:
         0x1 <Token.READ: 1>,
         0x99,
       ],
-      +0x40 perm = 0x6 <Perm.W|X: 6>,
+      +0x40 perm = 0x4 <Perm.X: 4>,
       +0x48 handler = 0x7f0643fa3f60,
     }
     >>> print(pkt)
-    {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 2f 62 69 6e 2f 73 68 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150}}, [0x1 <Token.READ>, 0x99], 0x6 <Perm.W|X>, 0x7f0643fa3f60}
+    {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 2f 62 69 6e 2f 73 68 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150}}, [0x1 <Token.READ>, 0x99], 0x4 <Perm.X>, 0x7f0643fa3f60}
 """
 
 from __future__ import annotations
@@ -1136,11 +1136,11 @@ class CFlag(PwnType):
         >>> f[0] = 1
         >>> f[0]
         0x1 <XFlag.X1: 1>
-        >>> f[0] = XFlag.X1 | XFlag.X2
+        >>> f[0] = XFlag.X2
         >>> print(f[0])
-        0x3 <XFlag.X1|X2>
+        0x2 <XFlag.X2>
         >>> int(f[0])
-        3
+        2
     """
 
     _size_type_: CType
