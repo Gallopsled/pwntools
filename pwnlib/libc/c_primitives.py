@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 from ctypes import (
     c_char,
@@ -9,16 +11,32 @@ from ctypes import (
     c_void_p,
     c_wchar_p,
     sizeof,
+    _SimpleCData,
 )
 from enum import Enum, Flag, IntEnum, IntFlag
 from io import StringIO, TextIOBase
-from typing import Any
+from typing import Any, Generic, TypeAlias, TypeVar, cast, overload
 
 from pwnlib.context import context
 from pwnlib.util.packing import _need_bytes, pack, unpack
 
-CTYPE_BASE = c_long.__base__
-VAR_TYPES = [c_void_p, c_char_p, c_wchar_p, c_size_t, c_ssize_t, c_ulong, c_long]
+BaseCType: TypeAlias = type[_SimpleCData]
+CompCType: TypeAlias = type['PwnType']
+CType: TypeAlias = BaseCType | CompCType
+CompCValue: TypeAlias = 'int | PwnType'
+BytesLike: TypeAlias = str | bytes | bytearray
+ArrayItemT = TypeVar('ArrayItemT', bound='CompCValue')
+
+CTYPE_BASE = cast(BaseCType, c_long.__base__)
+VAR_TYPES: list[BaseCType] = [
+    c_void_p,
+    c_char_p,
+    c_wchar_p,
+    c_size_t,
+    c_ssize_t,
+    c_ulong,
+    c_long,
+]
 
 
 def _type(o: Any) -> str:
@@ -47,6 +65,8 @@ def _remove_non_verbose_tail(s: TextIOBase, v: bool) -> None:
 class PwnType:
     _32_size_cache_: int
     _64_size_cache_: int
+    _32_align_cache_: int
+    _64_align_cache_: int
     _buf: bytearray | None
     _view: memoryview
     _len: int
@@ -60,7 +80,7 @@ class PwnType:
             self._buf = None
             self._view = view
 
-    def copy_from(self, value: Any) -> None | type:
+    def copy_from(self, value: Any) -> type[Any] | None:
         if isinstance(value, (str, bytes, bytearray)):
             b = _need_bytes(value)
             if len(b) > self._len:
@@ -73,7 +93,7 @@ class PwnType:
         return None
 
     @staticmethod
-    def calc_align(typ: type) -> int:
+    def calc_align(typ: CType) -> int:
         if issubclass(typ, CTYPE_BASE):
             return PwnType.calc_size(typ)
         align_attr = f'_{context.bits}_align_cache_'
@@ -94,7 +114,7 @@ class PwnType:
         return align
 
     @staticmethod
-    def calc_size(typ: type | PwnType) -> int:
+    def calc_size(typ: CType | PwnType) -> int:
         if not isinstance(typ, type):
             typ = type(typ)
         if issubclass(typ, CTYPE_BASE):
@@ -105,7 +125,7 @@ class PwnType:
         if issubclass(typ, CStruct):
             struct_len = 0
             offset_table_attr = f'_offsets{context.bits}_'
-            offsets = {}
+            offsets: dict[str, int] = {}
             is64b = context.bits == 64
             maybe_packed = True
             for field in typ._fields_:
@@ -257,11 +277,11 @@ class PwnType:
         return bytes(self._view)
 
     def __eq__(self, value: object, /) -> bool:
-        if type(self) is not type(value):
+        if not isinstance(value, PwnType) or type(self) is not type(value):
             return False
         return self._view == value._view
 
-    def __getitem__(self, subscript: Any) -> None | bytes:
+    def _get_slice(self, subscript: Any) -> bytes | None:
         if isinstance(subscript, slice):
             if subscript.step is not None:
                 raise ValueError(f'Slice step is not supported')
@@ -286,7 +306,7 @@ class PwnType:
             return bytes(self._view[start:stop])
         return None
 
-    def __setitem__(self, subscript: Any, value: Any) -> bool:
+    def _set_slice(self, subscript: Any, value: Any) -> bool:
         if isinstance(subscript, slice):
             if subscript.step is not None:
                 raise ValueError(f'Slice step is not supported')
@@ -318,9 +338,15 @@ class PwnType:
             return True
         return False
 
+    def __getitem__(self, key: Any) -> bytes | CompCValue | None:
+        return self._get_slice(key)
 
-class CArray(PwnType):
-    _type_: type
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._set_slice(key, value)
+
+
+class CArray(PwnType, Generic[ArrayItemT]):
+    _type_: CType
     _count_: int
     _align_: int
     _int_size: int
@@ -350,17 +376,24 @@ class CArray(PwnType):
             self._components = None
         else:
             step = self._align_
+            assert issubclass(self._type_, PwnType)
             self._components = [
                 self._type_(self._view[i * step : i * step + self._int_size])
                 for i in range(self._int_count)
             ]
 
-    def __getitem__(self, subscript: int | slice) -> Any:
-        b = super().__getitem__(subscript)
+    @overload
+    def __getitem__(self, key: slice) -> bytes: ...
+
+    @overload
+    def __getitem__(self, key: int) -> ArrayItemT: ...
+
+    def __getitem__(self, key: Any) -> bytes | CompCValue:
+        b = self._get_slice(key)
         if b is not None:
             return b
-        if isinstance(subscript, int):
-            idx = subscript
+        if isinstance(key, int):
+            idx = key
             if idx < 0:
                 idx += self._int_count
             if idx >= self._int_count or idx < 0:
@@ -374,14 +407,20 @@ class CArray(PwnType):
                 )
             # isinstance(self._components, list)
             return self._components[idx]
-        raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
-    def __setitem__(self, subscript: int | slice, value: Any) -> None:
-        if super().__setitem__(subscript, value):
+    @overload
+    def __setitem__(self, key: slice, value: BytesLike) -> None: ...
+
+    @overload
+    def __setitem__(self, key: int, value: BytesLike | CompCValue) -> None: ...
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if self._set_slice(key, value):
             return
 
-        if isinstance(subscript, int):
-            idx = subscript
+        if isinstance(key, int):
+            idx = key
             if idx < 0:
                 idx += self._int_count
             if idx >= self._int_count or idx < 0:
@@ -401,16 +440,16 @@ class CArray(PwnType):
                     raise ValueError(f"Can't set {_type(expected)} with {_type(typ)}")
             return
 
-        raise ValueError(f"Can not access array with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access array with '{_type(key)}' subscript")
 
 
-class CCharArray(CArray):
+class CCharArray(CArray[int]):
     _type_ = c_char
 
 
 class CStruct(PwnType):
-    _fields_: list[tuple[str, type, int, int] | tuple[str, type]]
-    _components: OrderedDict[str, int | PwnType]
+    _fields_: list[tuple[str, CType] | tuple[str, CType, int, int]]
+    _components: OrderedDict[str, CompCValue]
     _len: int
     _offsets32_: dict[str, int]
     _offsets64_: dict[str, int]
@@ -430,6 +469,7 @@ class CStruct(PwnType):
                 self._components[field[0]] = PwnType.calc_size(field[1])
             else:
                 size = PwnType.calc_size(field_t)
+                assert issubclass(field_t, PwnType)
                 if issubclass(field_t, CArray) and size == 0:
                     self._components[field[0]] = field_t(self._view[off:])
                 else:
@@ -456,7 +496,7 @@ class CStruct(PwnType):
             if typ is not None:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(typ)}")
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> CompCValue:
         if '_components' not in self.__dict__ or name not in self._components:
             raise AttributeError(f"'{_type(self)}' object has no attribute '{name}'")
         rhs = self._components[name]
@@ -465,24 +505,36 @@ class CStruct(PwnType):
             return unpack(bytes(self._view[off : off + rhs]), rhs * 8)
         return self._components[name]  # PwnType
 
-    def __getitem__(self, subscript: str | slice) -> Any:
-        b = super().__getitem__(subscript)
-        if b:
+    @overload
+    def __getitem__(self, key: slice) -> bytes: ...
+
+    @overload
+    def __getitem__(self, key: str) -> CompCValue: ...
+
+    def __getitem__(self, key: Any) -> bytes | CompCValue:
+        b = self._get_slice(key)
+        if b is not None:
             return b
-        if isinstance(subscript, str):
-            return getattr(self, subscript)
+        if isinstance(key, str):
+            return getattr(self, key)
 
-        raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
-    def __setitem__(self, subscript: str | slice, value: Any) -> None:
-        if super().__setitem__(subscript, value):
+    @overload
+    def __setitem__(self, key: slice, value: BytesLike) -> None: ...
+
+    @overload
+    def __setitem__(self, key: str, value: BytesLike | CompCValue) -> None: ...
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if self._set_slice(key, value):
             return
 
-        if isinstance(subscript, str):
-            setattr(self, subscript, value)
+        if isinstance(key, str):
+            setattr(self, key, value)
             return
 
-        raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
     def offsetof(self, field_name: str) -> int:
         if field_name not in self._components:
@@ -496,8 +548,8 @@ class CStruct(PwnType):
 
 
 class CUnion(PwnType):
-    _fields_: list[tuple[str, type]]
-    _components: OrderedDict[str, PwnType | int]
+    _fields_: list[tuple[str, CType]]
+    _components: OrderedDict[str, CompCValue]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
@@ -511,9 +563,10 @@ class CUnion(PwnType):
                 self._components[field[0]] = PwnType.calc_size(field_t)
             else:
                 size = PwnType.calc_size(field_t)
+                assert issubclass(field_t, PwnType)
                 self._components[field[0]] = field_t(self._view[:size])
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name: str) -> CompCValue:
         if '_components' not in self.__dict__ or name not in self._components:
             raise AttributeError(f"'{_type(self)}' object has no attribute '{name}'")
         rhs = self._components[name]
@@ -531,59 +584,71 @@ class CUnion(PwnType):
                 self._view[:rhs] = pack(value, rhs * 8)
             elif isinstance(value, (str, bytes, bytearray)):
                 b = _need_bytes(value)
-                if len(b) > rhs[0]:
+                if len(b) > rhs:
                     raise ValueError(f'Setting bytes larger than {_type(self)}.{name}')
                 self._view[:rhs] = b.ljust(rhs, b'\x00')
             else:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
-        else:  # isinstance(rhs[0], PwnType)
+        else:  # isinstance(rhs, PwnType)
             typ = rhs.copy_from(value)
             if typ is not None:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(typ)}")
 
-    def __getitem__(self, subscript: Any) -> Any:
-        b = super().__getitem__(subscript)
+    @overload
+    def __getitem__(self, key: slice) -> bytes: ...
+
+    @overload
+    def __getitem__(self, key: str) -> CompCValue: ...
+
+    def __getitem__(self, key: Any) -> bytes | CompCValue:
+        b = self._get_slice(key)
         if b is not None:
             return b
 
-        if isinstance(subscript, str):
-            return getattr(self, subscript)
+        if isinstance(key, str):
+            return getattr(self, key)
 
-        raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
-    def __setitem__(self, subscript: Any, value: Any) -> None:
-        if super().__setitem__(subscript, value):
+    @overload
+    def __setitem__(self, key: slice, value: BytesLike) -> None: ...
+
+    @overload
+    def __setitem__(self, key: str, value: BytesLike | CompCValue) -> None: ...
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if self._set_slice(key, value):
             return
 
-        if isinstance(subscript, str):
-            setattr(self, subscript, value)
+        if isinstance(key, str):
+            setattr(self, key, value)
             return
 
-        raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+        raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
 
 class CEnum(PwnType):
-    _size_type_: type
+    _size_type_: CType
     _enum_: type[IntEnum]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_enum_'):
             raise NotImplementedError
         super().__init__(view)
-        self._enum_.__str__ = Enum.__str__
+        self._enum_.__str__ = Enum.__str__  # type: ignore[method-assign]
 
-    def __getitem__(self, subs: Any) -> None | bytes:
-        b = super().__getitem__(subs)
+    def __getitem__(self, key: slice) -> bytes:
+        b = self._get_slice(key)
         if b is not None:
             return b
-        raise ValueError(f"'{_type(subs)}' is not supported to access '{_type(self)}'")
+        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def __setitem__(self, subs: Any, value: Any) -> None:
-        if super().__setitem__(subs, value):
+    def __setitem__(self, key: slice, value: BytesLike) -> None:
+        if self._set_slice(key, value):
             return
-        raise ValueError(f"'{_type(subs)}' is not supported to access '{_type(self)}'")
+        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def copy_from(self, value: Any) -> None | type:
+    def copy_from(self, value: Any) -> type[Any] | None:
         typ = super().copy_from(value)
         if typ is None:
             return typ
@@ -602,39 +667,43 @@ class CEnum(PwnType):
 
     def __str__(self) -> str:
         val = int(self)
-        if val in self._enum_:
-            return f'{val:#x} <{self._enum_(val)!s}>'
-        return hex(val)
+        try:
+            member = self._enum_(val)
+        except ValueError:
+            return hex(val)
+        return f'{val:#x} <{member!s}>'
 
     def __repr__(self) -> str:
         val = int(self)
-        if val in self._enum_:
-            return f'{val:#x} {self._enum_(val)!r}'
-        return hex(val)
+        try:
+            member = self._enum_(val)
+        except ValueError:
+            return hex(val)
+        return f'{val:#x} {member!r}'
 
 
 class CFlag(PwnType):
-    _size_type_: type
+    _size_type_: CType
     _flag_: type[IntFlag]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_flag_'):
             raise NotImplementedError
         super().__init__(view)
-        self._flag_.__str__ = Flag.__str__
+        self._flag_.__str__ = Flag.__str__  # type: ignore[method-assign]
 
-    def __getitem__(self, subs: Any) -> None | bytes:
-        b = super().__getitem__(subs)
+    def __getitem__(self, key: slice) -> bytes:
+        b = self._get_slice(key)
         if b is not None:
             return b
-        raise ValueError(f"'{_type(subs)}' is not supported to access '{_type(self)}'")
+        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def __setitem__(self, subs: Any, value: Any) -> None:
-        if super().__setitem__(subs, value):
+    def __setitem__(self, key: slice, value: BytesLike) -> None:
+        if self._set_slice(key, value):
             return
-        raise ValueError(f"'{_type(subs)}' is not supported to access '{_type(self)}'")
+        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
-    def copy_from(self, value: Any) -> None | type:
+    def copy_from(self, value: Any) -> type[Any] | None:
         typ = super().copy_from(value)
         if typ is None:
             return typ
@@ -660,25 +729,29 @@ class CFlag(PwnType):
         return f'{val:#x} {self._flag_(val)!r}'
 
 
-def mk_anonymous_carray(elem_type: type, count: int, align: int = 0) -> type[CArray]:
-    fields = {'_type_': elem_type, '_count_': count}
+def mk_anonymous_carray(
+    elem_type: CType,
+    count: int,
+    align: int = 0,
+) -> type[CArray[CompCValue]]:
+    fields: dict[str, Any] = {'_type_': elem_type, '_count_': count}
     if align:
         fields['_align_'] = align
     return type('', (CArray,), fields)
 
 
 def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
-    fields = {'_type_': c_char, '_count_': count}
+    fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
     if align:
         fields['_align_'] = align
     return type('', (CCharArray,), fields)
 
 
 def mk_anonymous_cstruct(
-    fields: list[tuple[str, type] | tuple[str, type, int, int]],
+    fields: list[tuple[str, CType] | tuple[str, CType, int, int]],
 ) -> type[CStruct]:
-    return ('', (CStruct,), {'_fields_': fields})
+    return type('', (CStruct,), {'_fields_': fields})
 
 
-def mk_anonymous_cunion(fields: list[tuple[str, type]]) -> type[CUnion]:
-    return ('', (CUnion,), {'_fields_': fields})
+def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
+    return type('', (CUnion,), {'_fields_': fields})
