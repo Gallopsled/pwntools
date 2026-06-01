@@ -111,7 +111,7 @@ class PwnType:
                 field_t = field[1]
                 if len(field) == 4:
                     offset = field[2] if is64b else field[3]
-                else: # offset need to be calculated
+                else:  # offset need to be calculated
                     maybe_packed = False
                     f_align = PwnType.calc_align(field_t)
                     # align up struct_len
@@ -162,20 +162,21 @@ class PwnType:
             s.write('],')
             _separator(s, v)
         elif isinstance(o, CStruct):
-            w = len(hex(o._len)) + 1
+            w = max(o._int_offsets.values()) + 1  # use max offset as width
             s.write('{')
             _verbose_separator(s, v)
             indent += step
             for field, value in o._components.items():
+                off = o._int_offsets[field]
                 s.write(' ' * indent)
                 if v:
-                    s.write(f'{value[1]:<+#{w}x} {field} = ')
-                if isinstance(value[0], PwnType):
-                    PwnType.print_to_stream(s, v, indent, value[0])
+                    s.write(f'{off:<+#{w}x} {field} = ')
+                if isinstance(value, PwnType):
+                    PwnType.print_to_stream(s, v, indent, value)
                 else:  # isinstance(value[0], int)
                     unpacked = unpack(
-                        bytes(o._view[value[1] : value[1] + value[0]]),
-                        value[0] * 8,
+                        bytes(o._view[off : off + value]),
+                        value * 8,
                     )
                     s.write(f'{unpacked:#x},')
                     _separator(s, v)
@@ -227,6 +228,11 @@ class PwnType:
 
     def __bytes__(self) -> bytes:
         return bytes(self._view)
+
+    def __eq__(self, value: object, /) -> bool:
+        if type(self) is not type(value):
+            return False
+        return self._view == value._view
 
     def __getitem__(self, subscript: Any) -> None | bytes:
         if isinstance(subscript, slice):
@@ -373,50 +379,49 @@ class CArray(PwnType):
 
 class CStruct(PwnType):
     _fields_: list[tuple[str, type, int, int] | tuple[str, type]]
-    _components: OrderedDict[str, tuple[int | PwnType, int]]
+    _components: OrderedDict[str, int | PwnType]
     _len: int
     _offsets32_: dict[str, int]
     _offsets64_: dict[str, int]
+    _int_offsets: dict[str, int]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
             raise NotImplementedError
         super().__init__(view)
 
-        offsets = getattr(self, f'_offsets{context.bits}_')
+        self._int_offsets = getattr(self, f'_offsets{context.bits}_')
         self._components = OrderedDict()
         for field in self._fields_:
             field_t = field[1]
-            off = offsets[field[0]]
+            off = self._int_offsets[field[0]]
             if issubclass(field_t, CTYPE_BASE):
-                self._components[field[0]] = (PwnType.calc_size(field[1]), off)
+                self._components[field[0]] = PwnType.calc_size(field[1])
             else:
                 size = PwnType.calc_size(field_t)
                 if issubclass(field_t, CArray) and size == 0:
-                    self._components[field[0]] = (field_t(self._view[off:]), off)
+                    self._components[field[0]] = field_t(self._view[off:])
                 else:
-                    self._components[field[0]] = (
-                        field_t(self._view[off : off + size]),
-                        off,
-                    )
+                    self._components[field[0]] = field_t(self._view[off : off + size])
 
     def __setattr__(self, name: str, value: Any, /) -> None:
         if '_components' not in self.__dict__ or name not in self._components:
             object.__setattr__(self, name, value)
             return
         rhs = self._components[name]
-        if isinstance(rhs[0], int):
+        if isinstance(rhs, int):
+            off = self._int_offsets[name]
             if isinstance(value, int):
-                self._view[rhs[1] : rhs[1] + rhs[0]] = pack(value, rhs[0] * 8)
+                self._view[off : off + rhs] = pack(value, rhs * 8)
             elif isinstance(value, (str, bytes, bytearray)):
                 b = _need_bytes(value)
-                if len(b) > rhs[0]:
+                if len(b) > rhs:
                     raise ValueError(f'Setting bytes larger than {_type(self)}.{name}')
-                self._view[rhs[1] : rhs[1] + rhs[0]] = b.ljust(rhs[0], b'\x00')
+                self._view[off : off + rhs] = b.ljust(rhs, b'\x00')
             else:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
-        else:  # isinstance(rhs[0], PwnType)
-            typ = rhs[0].copy_from(value)
+        else:  # isinstance(rhs, PwnType)
+            typ = rhs.copy_from(value)
             if typ is not None:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(typ)}")
 
@@ -424,9 +429,10 @@ class CStruct(PwnType):
         if '_components' not in self.__dict__ or name not in self._components:
             raise AttributeError(f"'{_type(self)}' object has no attribute '{name}'")
         rhs = self._components[name]
-        if isinstance(rhs[0], int):
-            return unpack(bytes(self._view[rhs[1] : rhs[1] + rhs[0]]), rhs[0] * 8)
-        return self._components[name][0]  # PwnType
+        off = self._int_offsets[name]
+        if isinstance(rhs, int):
+            return unpack(bytes(self._view[off : off + rhs]), rhs * 8)
+        return self._components[name]  # PwnType
 
     def __getitem__(self, subscript: str | slice) -> Any:
         b = super().__getitem__(subscript)
@@ -446,6 +452,16 @@ class CStruct(PwnType):
             return
 
         raise ValueError(f"Can not access struct with '{_type(subscript)}' subscript")
+
+    def offsetof(self, field_name: str) -> int:
+        if field_name not in self._components:
+            raise ValueError(f"'{field_name}' is not exist in '{_type(self)}'")
+        return self._int_offsets[field_name]
+
+    def struntil(self, field_name: str) -> bytes:
+        if field_name not in self._components:
+            raise ValueError(f"'{field_name}' is not exist in '{_type(self)}'")
+        return bytes(self._view[: self._int_offsets[field_name]])
 
 
 class CUnion(PwnType):
@@ -548,6 +564,11 @@ class CEnum(PwnType):
     def __int__(self) -> int:
         return unpack(bytes(self._view), self._len * 8)
 
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, int):
+            return int(self) == value
+        return super().__eq__(value)
+
     def __str__(self) -> str:
         val = int(self)
         if val in self._enum_:
@@ -594,6 +615,11 @@ class CFlag(PwnType):
     def __int__(self) -> int:
         return unpack(bytes(self._view), self._len * 8)
 
+    def __eq__(self, value: object, /) -> bool:
+        if isinstance(value, int):
+            return int(self) == value
+        return super().__eq__(value)
+
     def __str__(self) -> str:
         val = int(self)
         return f'{val:#x} <{self._flag_(val)!s}>'
@@ -601,3 +627,20 @@ class CFlag(PwnType):
     def __repr__(self) -> str:
         val = int(self)
         return f'{val:#x} {self._flag_(val)!r}'
+
+
+def mk_anonymous_carray(elem_type: type, count: int, align: int = 0) -> type[CArray]:
+    fields = {'_type_': elem_type, '_count_': count}
+    if align is not None:
+        fields['_align_'] = align
+    return type('', (CArray,), fields)
+
+
+def mk_anonymous_cstruct(
+    fields: list[tuple[str, type] | tuple[str, type, int, int]],
+) -> type[CStruct]:
+    return ('', (CStruct,), {'_fields_': fields})
+
+
+def mk_anonymous_cunion(fields: list[tuple[str, type]]) -> type[CUnion]:
+    return ('', (CUnion,), {'_fields_': fields})
