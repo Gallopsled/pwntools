@@ -1,3 +1,17 @@
+"""
+A generic module to construct C data types with pure Python. Downstream data types may
+consider combine basic types in ``ctypes`` and ``CArray``, ``CStruct`` and ``CUnion``
+in this module to implement basically all C types.
+
+This module provides some features that ``ctypes`` can not:
+1. User may access composite variables with ``slice`` to fetch memory.
+2. User may set composite members with ``bytes`` object.
+3. Easy to layout arch-specific types or layout in packed form. e.g., layout pointer
+   for 32-bit types but on 64-bit Python.
+4. Directly return ``int`` on basic types.
+5. Print composite types in a pwner-friendly form.
+"""
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -63,6 +77,18 @@ def _remove_non_verbose_tail(s: TextIOBase, v: bool) -> None:
 
 
 class PwnType:
+    """
+    The base type of composite C types. DO NOT inherit this class when implementing
+    a specific C type. Use specific class down below.
+
+    All variables, including basic C types, are not stored with value directly. Instead,
+    the component offset and size is stored, and the actual value is fetched via memory.
+    Every composite type stores a ``memoryview`` object on initialization (or create a
+    buffer to construct a ``memoryview`` object) so later variables can be read
+    directly on memory. In this case, setting underlying memory buffer can affect
+    variable value, helping pwners write exploits painlessly.
+    """
+
     _32_size_cache_: int
     _64_size_cache_: int
     _32_align_cache_: int
@@ -72,7 +98,7 @@ class PwnType:
     _len: int
 
     def __init__(self, view: memoryview | None) -> None:
-        self._len = PwnType.calc_size(self)
+        self._len = PwnType._calc_size(self)
         if view is None:
             self._buf = bytearray(self._len)
             self._view = memoryview(self._buf)
@@ -80,7 +106,16 @@ class PwnType:
             self._buf = None
             self._view = view
 
-    def copy_from(self, value: Any) -> type[Any] | None:
+    def _copy_from(self, value: Any) -> type[Any] | None:
+        """
+        Sets a variable with a buffer, or an object of the same type.
+
+        Arguments:
+            value: The object to set up current object buffer.
+
+        Returns:
+            ``None`` if succeeded, or the type of ``value``.
+        """
         if isinstance(value, (str, bytes, bytearray)):
             b = _need_bytes(value)
             if len(b) > self._len:
@@ -93,28 +128,38 @@ class PwnType:
         return None
 
     @staticmethod
-    def calc_align(typ: CType) -> int:
+    def _calc_align(typ: CType) -> int:
+        """
+        Calculates the required align on C level of ``typ``. For basic C types, the
+        align is basically equal to the size of the type. As for composite types, the
+        align is the max align in members.
+        """
         if issubclass(typ, CTYPE_BASE):
-            return PwnType.calc_size(typ)
+            return PwnType._calc_size(typ)
         align_attr = f'_{context.bits}_align_cache_'
         if hasattr(typ, align_attr):
             return getattr(typ, align_attr)
         if issubclass(typ, (CStruct, CUnion)):
-            align = max(PwnType.calc_align(f[1]) for f in typ._fields_)
+            align = max(PwnType._calc_align(f[1]) for f in typ._fields_)
         elif issubclass(typ, CArray):
             if hasattr(typ, '_align_'):  # here _align_ is type-range
                 align = typ._align_
             else:
-                align = PwnType.calc_align(typ._type_)
+                align = PwnType._calc_align(typ._type_)
         elif issubclass(typ, (CEnum, CFlag)):
-            align = PwnType.calc_align(typ._size_type_)
+            align = PwnType._calc_align(typ._size_type_)
         else:
             raise NotImplementedError
         setattr(typ, align_attr, align)
         return align
 
     @staticmethod
-    def calc_size(typ: CType | PwnType) -> int:
+    def _calc_size(typ: CType | PwnType) -> int:
+        """
+        Calculate how many bytes does ``typ`` takes. For ``CStruct``, if coder manually
+        set all struct member offsets, it is considered that the struct is packed, or
+        else the struct size will align up. (The default not-packed bahavior.)
+        """
         if not isinstance(typ, type):
             typ = type(typ)
         if issubclass(typ, CTYPE_BASE):
@@ -134,32 +179,41 @@ class PwnType:
                     offset = field[2] if is64b else field[3]
                 else:  # offset need to be calculated
                     maybe_packed = False
-                    f_align = PwnType.calc_align(field_t)
+                    f_align = PwnType._calc_align(field_t)
                     # align up struct_len
                     offset = ((struct_len + f_align - 1) // f_align) * f_align
                 offsets[field[0]] = offset
-                field_len = PwnType.calc_size(field_t)
+                field_len = PwnType._calc_size(field_t)
                 struct_len = max(struct_len, offset + field_len)
             setattr(typ, offset_table_attr, offsets)
             if not maybe_packed:
-                align = PwnType.calc_align(typ)
+                align = PwnType._calc_align(typ)
                 struct_len = ((struct_len + align - 1) // align) * align
             size_cache = struct_len
         elif issubclass(typ, CArray):
             if typ._count_ == 0:
                 return 0
-            size_cache = PwnType.calc_align(typ) * typ._count_
+            size_cache = PwnType._calc_align(typ) * typ._count_
         elif issubclass(typ, CUnion):
-            size_cache = max(PwnType.calc_size(field[1]) for field in typ._fields_)
+            size_cache = max(PwnType._calc_size(field[1]) for field in typ._fields_)
         elif issubclass(typ, (CEnum, CFlag)):
-            size_cache = PwnType.calc_size(typ._size_type_)
+            size_cache = PwnType._calc_size(typ._size_type_)
         else:
             raise NotImplementedError
         setattr(typ, cache_attr, size_cache)
         return size_cache
 
     @staticmethod
-    def print_to_stream(s: TextIOBase, v: bool, indent: int, o: PwnType) -> None:
+    def _print_to_stream(s: TextIOBase, v: bool, indent: int, o: PwnType) -> None:
+        """
+        Recursively print composite into an IO stream.
+
+        Arguments:
+            s: The stream to write into.
+            v: ``True`` if writing for ``repr``, ``False`` if writing for ``str``.
+            indent: The current indentation.
+            o: The composite object to write.
+        """
         step = 2 if v else 0
         if isinstance(o, CCharArray):
             s.write('<')
@@ -193,7 +247,7 @@ class PwnType:
             for i in range(o._int_count):
                 s.write(' ' * indent)
                 if o._components:
-                    PwnType.print_to_stream(s, v, indent, o._components[i])
+                    PwnType._print_to_stream(s, v, indent, o._components[i])
                 else:
                     off = i * o._align_
                     unpacked = unpack(
@@ -219,7 +273,7 @@ class PwnType:
                 if v:
                     s.write(f'{off:<+#{w}x} {field} = ')
                 if isinstance(value, PwnType):
-                    PwnType.print_to_stream(s, v, indent, value)
+                    PwnType._print_to_stream(s, v, indent, value)
                 else:  # isinstance(value[0], int)
                     unpacked = unpack(
                         bytes(o._view[off : off + value]),
@@ -241,7 +295,7 @@ class PwnType:
                 if v:
                     s.write(f'{field} = ')
                 if isinstance(value, PwnType):
-                    PwnType.print_to_stream(s, v, indent, value)
+                    PwnType._print_to_stream(s, v, indent, value)
                 else:  # isinstance(value, int)
                     unpacked = unpack(bytes(o._view[:value]), value * 8)
                     s.write(f'{unpacked:#x},')
@@ -260,13 +314,13 @@ class PwnType:
 
     def __str__(self) -> str:
         with StringIO() as s:
-            PwnType.print_to_stream(s, False, 0, self)
+            PwnType._print_to_stream(s, False, 0, self)
             s.truncate(s.tell() - 2)  # strip comma and separator
             return s.getvalue()
 
     def __repr__(self) -> str:
         with StringIO() as s:
-            PwnType.print_to_stream(s, True, 0, self)
+            PwnType._print_to_stream(s, True, 0, self)
             s.truncate(s.tell() - 2)  # strip comma and separator
             return s.getvalue()
 
@@ -282,6 +336,9 @@ class PwnType:
         return self._view == value._view
 
     def _get_slice(self, subscript: Any) -> bytes | None:
+        """
+        A helper method to allow user to get object's underlying memory with ``slice``.
+        """
         if isinstance(subscript, slice):
             if subscript.step is not None:
                 raise ValueError(f'Slice step is not supported')
@@ -307,6 +364,10 @@ class PwnType:
         return None
 
     def _set_slice(self, subscript: Any, value: Any) -> bool:
+        """
+        A helper method to allow user to set object's underlying memory with ``slice``
+        and a buffer with the same size as the object.
+        """
         if isinstance(subscript, slice):
             if subscript.step is not None:
                 raise ValueError(f'Slice step is not supported')
@@ -346,9 +407,27 @@ class PwnType:
 
 
 class CArray(PwnType, Generic[ArrayItemT]):
+    """
+    A generic array to implement statments like ``int arr[3];`` in C. An array can be
+    accessed with ``int`` subscript. ``slice`` is used to access underlying memory not
+    objects.
+    """
+
     _type_: CType
+    """
+    The type of elements in array.
+    """
     _count_: int
+    """
+    The count of elements in array. This value can be ``0`` if and only if the array is
+    constructed with a ``memoryview``, and the length of that memoryview is not ``0``.
+    An internal count will be calculated in that case so user still have bound
+    restrictions when accessing elements.
+    """
     _align_: int
+    """
+    Optional special align for the array.
+    """
     _int_size: int
     _int_count: int
     _components: list[PwnType] | None
@@ -363,7 +442,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
             if len(self._view) == 0:
                 raise BufferError('Zero-length array has no writable memory')
 
-        self._int_size = PwnType.calc_size(self._type_)
+        self._int_size = PwnType._calc_size(self._type_)
         if not hasattr(self, '_align_'):
             self._align_ = self._int_size
         if self._len:
@@ -434,7 +513,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
             else:
                 # isinstance(self._components, list[PwnType])
                 # a.k.a. isinstance(self._type_, PwnType)
-                typ = self._components[idx].copy_from(value)
+                typ = self._components[idx]._copy_from(value)
                 if typ is not None:
                     expected = self._type_
                     raise ValueError(f"Can't set {_type(expected)} with {_type(typ)}")
@@ -444,11 +523,32 @@ class CArray(PwnType, Generic[ArrayItemT]):
 
 
 class CCharArray(CArray[int]):
+    """
+    A specific array type targeting char array. Set variable with this type will print
+    hexdump of elements.
+    """
+
     _type_ = c_char
 
 
 class CStruct(PwnType):
+    """
+    Base type of C structure. A structure can be accessed like member, or ``dict``.
+    See examples below.
+    """
+
     _fields_: list[tuple[str, CType] | tuple[str, CType, int, int]]
+    """
+    A ``list`` of struct members. If the struct is not packed, and you would like to
+    calculate offsets automatically, then fill out members with 2-element tuples,
+    member name and the member type.
+
+    If the struct is packed, you would need to fill out all members with 4-element
+    tuples, member name, member type, offset for 64-bit targets and offset for 32-bit
+    targets.
+
+    Please refer to ``CStruct`` for examples.
+    """
     _components: OrderedDict[str, CompCValue]
     _len: int
     _offsets32_: dict[str, int]
@@ -466,9 +566,9 @@ class CStruct(PwnType):
             field_t = field[1]
             off = self._int_offsets[field[0]]
             if issubclass(field_t, CTYPE_BASE):
-                self._components[field[0]] = PwnType.calc_size(field[1])
+                self._components[field[0]] = PwnType._calc_size(field[1])
             else:
-                size = PwnType.calc_size(field_t)
+                size = PwnType._calc_size(field_t)
                 assert issubclass(field_t, PwnType)
                 if issubclass(field_t, CArray) and size == 0:
                     self._components[field[0]] = field_t(self._view[off:])
@@ -492,7 +592,7 @@ class CStruct(PwnType):
             else:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
         else:  # isinstance(rhs, PwnType)
-            typ = rhs.copy_from(value)
+            typ = rhs._copy_from(value)
             if typ is not None:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(typ)}")
 
@@ -537,18 +637,52 @@ class CStruct(PwnType):
         raise ValueError(f"Can not access struct with '{_type(key)}' subscript")
 
     def offsetof(self, field_name: str) -> int:
+        """
+        Get the offset of some member from struct start.
+
+        Arguments:
+            field_name: The name of a member exists in the struct.
+
+        Returns:
+            The offset from start.
+
+        Raises:
+            ValueError: ``field_name`` is not exist in the struct.
+        """
         if field_name not in self._components:
             raise ValueError(f"'{field_name}' is not exist in '{_type(self)}'")
         return self._int_offsets[field_name]
 
     def struntil(self, field_name: str) -> bytes:
+        """
+        Get sealed buffer until the member.
+
+        Arguments:
+            field_name: The name of a member exists in the struct.
+
+        Returns:
+            A ``bytes`` slice starts from struct beginning and ends at the member. The
+            member is excluded.
+
+        Raises:
+            ValueError: ``field_name`` is not exist in the struct.
+        """
         if field_name not in self._components:
             raise ValueError(f"'{field_name}' is not exist in '{_type(self)}'")
         return bytes(self._view[: self._int_offsets[field_name]])
 
 
 class CUnion(PwnType):
+    """
+    Base type of C union. Like struct, you can access members with dot or like
+    ``dict``. See examples below.
+    """
+
     _fields_: list[tuple[str, CType]]
+    """
+    A ``list`` of types in the union. The type is described in a ``tuple``, the first
+    element is member name, and the secone one is member type.
+    """
     _components: OrderedDict[str, CompCValue]
 
     def __init__(self, view: memoryview | None = None) -> None:
@@ -560,9 +694,9 @@ class CUnion(PwnType):
         for field in self._fields_:
             field_t = field[1]
             if issubclass(field_t, CTYPE_BASE):
-                self._components[field[0]] = PwnType.calc_size(field_t)
+                self._components[field[0]] = PwnType._calc_size(field_t)
             else:
-                size = PwnType.calc_size(field_t)
+                size = PwnType._calc_size(field_t)
                 assert issubclass(field_t, PwnType)
                 self._components[field[0]] = field_t(self._view[:size])
 
@@ -590,7 +724,7 @@ class CUnion(PwnType):
             else:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
         else:  # isinstance(rhs, PwnType)
-            typ = rhs.copy_from(value)
+            typ = rhs._copy_from(value)
             if typ is not None:
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(typ)}")
 
@@ -628,8 +762,19 @@ class CUnion(PwnType):
 
 
 class CEnum(PwnType):
+    """
+    Base type of a C enum. This can be used to beautify struct output.
+    """
+
     _size_type_: CType
+    """
+    Defines how many bytes this enum takes.
+    """
     _enum_: type[IntEnum]
+    """
+    The internal ``IntEnum`` type. When accessing the ``CEnum``, a new ``IntEnum`` will
+    be initialized to resolve the value on the memory.
+    """
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_enum_'):
@@ -649,7 +794,7 @@ class CEnum(PwnType):
         raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
     def copy_from(self, value: Any) -> type[Any] | None:
-        typ = super().copy_from(value)
+        typ = super()._copy_from(value)
         if typ is None:
             return typ
         if isinstance(value, int):
@@ -683,8 +828,19 @@ class CEnum(PwnType):
 
 
 class CFlag(PwnType):
+    """
+    Base type of a C enum. This can be used to beautify struct output.
+    """
+
     _size_type_: CType
+    """
+    Defines how many bytes this enum takes.
+    """
     _flag_: type[IntFlag]
+    """
+    The internal ``IntFlag`` type. When accessing the ``CFlag``, a new ``IntFlag`` will
+    be initialized to resolve the value on the memory.
+    """
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_flag_'):
@@ -704,7 +860,7 @@ class CFlag(PwnType):
         raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
 
     def copy_from(self, value: Any) -> type[Any] | None:
-        typ = super().copy_from(value)
+        typ = super()._copy_from(value)
         if typ is None:
             return typ
         if isinstance(value, int):
@@ -734,6 +890,9 @@ def mk_anonymous_carray(
     count: int,
     align: int = 0,
 ) -> type[CArray[CompCValue]]:
+    """
+    Factory function to generate an anonymous ``CArray``.
+    """
     fields: dict[str, Any] = {'_type_': elem_type, '_count_': count}
     if align:
         fields['_align_'] = align
@@ -741,6 +900,9 @@ def mk_anonymous_carray(
 
 
 def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
+    """
+    Factory function to generate an anonymous ``CCharArray``.
+    """
     fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
     if align:
         fields['_align_'] = align
@@ -750,8 +912,14 @@ def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
 def mk_anonymous_cstruct(
     fields: list[tuple[str, CType] | tuple[str, CType, int, int]],
 ) -> type[CStruct]:
+    """
+    Factory function to generate an anonymous ``CStruct``.
+    """
     return type('', (CStruct,), {'_fields_': fields})
 
 
 def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
+    """
+    Factory function to generate an anonymous ``CUnion``.
+    """
     return type('', (CUnion,), {'_fields_': fields})
