@@ -59,6 +59,7 @@ import time
 
 from pwnlib import atexit
 from pwnlib import tubes
+from pwnlib.tubes.remote import remote
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.device import Device
