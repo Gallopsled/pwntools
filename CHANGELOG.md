@@ -198,6 +198,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2730]: https://github.com/Gallopsled/pwntools/pull/2730
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
+[2743]: https://github.com/Gallopsled/pwntools/pull/2743
 
 ## 4.15.1
 
@@ -1415,4 +1416,3 @@ are mentioned here.
 - Stuff we forgot
 - Lots of documentation fixes
 - Lots of bugfixes
-[2743]: https://github.com/Gallopsled/pwntools/pull/2743
