@@ -1277,7 +1277,6 @@ class CEnum(PwnType):
         if not hasattr(self, '_size_type_') or not hasattr(self, '_disp_type_'):
             raise NotImplementedError
         super().__init__(view)
-        self._disp_type_.__str__ = Enum.__str__  # type: ignore[method-assign]
 
     def __getitem__(self, key: slice) -> bytes:
         b = self._get_slice(key)
@@ -1313,7 +1312,7 @@ class CEnum(PwnType):
             member = self._disp_type_(val)
         except ValueError:
             return hex(val)
-        return f'{val:#x} <{member!s}>'
+        return f'{val:#x} <{Enum.__str__(member)}>'
 
     def __repr__(self) -> str:
         val = int(self)
@@ -1321,7 +1320,7 @@ class CEnum(PwnType):
             member = self._disp_type_(val)
         except ValueError:
             return hex(val)
-        return f'{val:#x} {member!r}'
+        return f'{val:#x} {Enum.__repr__(member)}'
 
 
 class CFlag(CEnum):
@@ -1368,15 +1367,14 @@ class CFlag(CEnum):
 
     def __init__(self, view: memoryview | None = None) -> None:
         super().__init__(view)
-        self._disp_type_.__str__ = Flag.__str__  # type: ignore[method-assign]
 
     def __str__(self) -> str:
         val = int(self)
-        return f'{val:#x} <{self._disp_type_(val)!s}>'
+        return f'{val:#x} <{Flag.__str__(self._disp_type_(val))}>'
 
     def __repr__(self) -> str:
         val = int(self)
-        return f'{val:#x} {self._disp_type_(val)!r}'
+        return f'{val:#x} {Flag.__repr__(self._disp_type_(val))}'
 
 
 def mk_anonymous_carray(
