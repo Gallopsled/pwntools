@@ -106,7 +106,7 @@ class MipsXorEncoder(Encoder):
     >>> p = run_shellcode(encoded)
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
-    b'hello\n'
+    b'hello'
     """
 
     arch = 'mips'

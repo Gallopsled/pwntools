@@ -13,7 +13,7 @@ Example:
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG\n')
     >>> run_assembly(shellcraft.arm.to_thumb()+shellcraft.thumb.linux.cat2(f)).recvline()
-    b'FLAG\n'
+    b'FLAG'
 
 </%docstring>
 

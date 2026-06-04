@@ -1004,17 +1004,17 @@ class ssh(Timeout, Logger):
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
             >>> io.recvline()
-            b'$ \n'
+            b'$ '
             >>> # Make sure that we have a shell
             >>> io.sendline(b'echo hello')
             >>> io.recvline()
-            b'$ hello\n'
+            b'$ hello'
 
             >>> # Testing that empty argv[0] works
             >>> io = s.process([''], executable='sh')
             >>> io.sendline(b'echo $0')
             >>> io.recvline()
-            b'$ \n'
+            b'$ '
 
         """
         cwd = cwd or self.cwd
@@ -1153,7 +1153,7 @@ class ssh(Timeout, Logger):
             >>> py.sendline(b'print(2+2)')
             >>> py.sendline(b'exit()')
             >>> print(repr(py.recvline()))
-            b'4\n'
+            b'4'
             >>> s.system('env | grep -a AAAA', env={'AAAA': b'\x90'}).recvall()
             b'AAAA=\x90\n'
             >>> io = s.system('pwd', cwd='/tmp')
@@ -1251,7 +1251,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
-            b'Hello\n'
+            b'Hello'
         """
 
         return ssh_connecter(self, host, port, timeout, level=self.level)
@@ -1275,7 +1275,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
             >>> print(repr(b.recvline()))
-            b'Hello\n'
+            b'Hello'
         """
 
         return ssh_listener(self, bind_address, port, timeout, level=self.level)
@@ -1975,12 +1975,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             with self.process('true', preexec_fn=preexec) as io:
 
                 self._platform_info = {
-                    'system': io.recvline().lower().strip().decode(),
-                    'node': io.recvline().lower().strip().decode(),
-                    'release': io.recvline().lower().strip().decode(),
-                    'version': io.recvline().lower().strip().decode(),
-                    'machine': io.recvline().lower().strip().decode(),
-                    'processor': io.recvline().lower().strip().decode(),
+                    'system': io.recvlineS().lower(),
+                    'node': io.recvlineS().lower(),
+                    'release': io.recvlineS().lower(),
+                    'version': io.recvlineS().lower(),
+                    'machine': io.recvlineS().lower(),
+                    'processor': io.recvlineS().lower(),
                     'distro': 'Unknown',
                     'distro_ver': ''
                 }

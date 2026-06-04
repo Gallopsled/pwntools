@@ -87,6 +87,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
+- [#2588][2588] Drop newline in `tube.recvline` by default
 - [#2507][2507] Add `+LINUX` and `+WINDOWS` doctest options and start proper testing on Windows
 - [#2522][2522] Support starting a kitty debugging window with the 'kitten' command
 - [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
@@ -146,6 +147,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
+[2588]: https://github.com/Gallopsled/pwntools/pull/2588
 [2507]: https://github.com/Gallopsled/pwntools/pull/2507
 [2522]: https://github.com/Gallopsled/pwntools/pull/2522
 [2524]: https://github.com/Gallopsled/pwntools/pull/2524

@@ -12,7 +12,7 @@ Example:
     >>> write(f, 'This is the flag\n')
     >>> shellcode = shellcraft.cat2(f) + shellcraft.exit(0)
     >>> run_assembly(shellcode).recvline()
-    b'This is the flag\n'
+    b'This is the flag'
 </%docstring>
 <%
 if fd == 'x0':

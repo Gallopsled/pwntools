@@ -11,7 +11,7 @@ Example:
     >>> f = tempfile.mktemp()
     >>> write(f, 'FLAG\n')
     >>> run_assembly(shellcraft.arm.linux.cat(f)).recvline()
-    b'FLAG\n'
+    b'FLAG'
 
 </%docstring>
     ${arm.pushstr(filename)}

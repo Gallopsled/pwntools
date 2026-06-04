@@ -31,7 +31,7 @@ class listen(sock):
         >>> _ = l.wait_for_connection()
         >>> l.sendline(b'Hello')
         >>> r.recvline()
-        b'Hello\n'
+        b'Hello'
         >>> l.close()
         >>> r.close()
 
@@ -44,7 +44,7 @@ class listen(sock):
             >>> r = remote('127.0.0.1', l.lport)
             >>> r.sendline(b'echo Goodbye')
             >>> r.recvline()
-            b'Goodbye\n'
+            b'Goodbye'
 
         >>> # and it works with ipv6 by defaut, too!
         >>> l = listen()
@@ -52,7 +52,7 @@ class listen(sock):
         >>> _ = l.wait_for_connection()
         >>> r.sendline(b'Bye-bye')
         >>> l.recvline()
-        b'Bye-bye\n'
+        b'Bye-bye'
     """
 
     #: Local port

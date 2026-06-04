@@ -34,19 +34,19 @@ class server(sock):
         >>> server_conn = s.next_connection()
         >>> client_conn.sendline(b'Hello')
         >>> server_conn.recvline()
-        b'Hello\n'
+        b'Hello'
         >>> client_conn.close()
         >>> s.close()
 
         >>> def cb(r):
-        ...     client_input = r.readline()
-        ...     r.send(client_input[::-1])
+        ...     client_input = r.recvline()
+        ...     r.sendline(client_input[::-1])
         ...
         >>> t = server(8888, callback=cb)
         >>> client_conn = remote('localhost', t.lport)
         >>> client_conn.sendline(b'callback')
-        >>> client_conn.recv()
-        b'\nkcabllac'
+        >>> client_conn.recvline()
+        b'kcabllac'
         >>> client_conn.close()
         >>> t.close()
     """

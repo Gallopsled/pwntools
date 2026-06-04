@@ -133,7 +133,7 @@ class process(tube):
         True
         >>> p.connected('send')
         False
-        >>> p.recvline(drop=True)
+        >>> p.recvline()
         b'Hello world'
         >>> p.recvuntil(b',')
         b'Wow,'
@@ -171,7 +171,7 @@ class process(tube):
         ...             preexec_fn = lambda: os.dup2(0,2))
         >>> p.sendline(b'hello')
         >>> p.recvline()
-        b'hello\n'
+        b'hello'
 
         >>> stack_smashing = ['python','-c','open("/dev/tty","wb").write(b"stack smashing detected")']
         >>> process(stack_smashing).recvall()
@@ -204,7 +204,7 @@ class process(tube):
         True
 
         >>> process(['sh','-c','ulimit -s'], aslr=0).recvline()
-        b'unlimited\n'
+        b'unlimited'
 
         >>> io = process(['sh','-c','sleep 10; exit 7'], alarm=2)
         >>> io.poll(block=True) == -signal.SIGALRM
@@ -971,7 +971,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b"meow")
             >>> p.recvline()
-            b'meow\n'
+            b'meow'
             >>> proc_maps = open("/proc/" + str(p.pid) + "/maps", "r").readlines()
             >>> pwn_maps = p.maps()
             >>> len(proc_maps) == len(pwn_maps)
@@ -1134,7 +1134,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\n'
+            b'meow'
             >>> mapping = p.heap_mapping()
             >>> mapping.path
             '[heap]'
@@ -1234,7 +1234,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\n'
+            b'meow'
             >>> mapping = p.libc_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...libc...'
@@ -1317,7 +1317,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\n'
+            b'meow'
             >>> mapping = p.elf_mapping()
             >>> mapping.path # doctest: +ELLIPSIS
             '...cat...'
@@ -1400,7 +1400,7 @@ class process(tube):
             >>> p = process(['cat'])
             >>> p.sendline(b'meow')
             >>> p.recvline()
-            b'meow\n'
+            b'meow'
             >>> libc = p.libc_mapping().address
             >>> heap = p.heap_mapping().address
             >>> elf = p.elf_mapping().address
