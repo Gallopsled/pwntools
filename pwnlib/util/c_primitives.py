@@ -1217,7 +1217,7 @@ def mk_anonymous_carray(
     fields: dict[str, Any] = {'_type_': elem_type, '_count_': count}
     if align:
         fields['_align_'] = align
-    return type('', (CArray,), fields)
+    return type(f'AnonymousCArray[{_type(elem_type)}]', (CArray,), fields)
 
 
 def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
@@ -1233,7 +1233,7 @@ def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
     fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
     if align:
         fields['_align_'] = align
-    return type('', (CCharArray,), fields)
+    return type('AnonymousCCharArray', (CCharArray,), fields)
 
 
 def mk_anonymous_cstruct(
@@ -1250,7 +1250,7 @@ def mk_anonymous_cstruct(
           +0x0 aaa = 0x0,
         }
     """
-    return type('', (CStruct,), {'_fields_': fields})
+    return type('AnonymousCStruct', (CStruct,), {'_fields_': fields})
 
 
 def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
@@ -1266,4 +1266,4 @@ def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
           y = 0x0,
         }
     """
-    return type('', (CUnion,), {'_fields_': fields})
+    return type('AnonymousCUnion', (CUnion,), {'_fields_': fields})
