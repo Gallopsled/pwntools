@@ -138,7 +138,9 @@ Examples:
 from __future__ import annotations
 
 from collections import OrderedDict
+from collections.abc import Iterator
 from ctypes import (
+    _SimpleCData,
     c_char,
     c_char_p,
     c_long,
@@ -148,7 +150,6 @@ from ctypes import (
     c_void_p,
     c_wchar_p,
     sizeof,
-    _SimpleCData,
 )
 from enum import Enum, Flag, IntEnum, IntFlag
 from io import StringIO, TextIOBase
@@ -317,7 +318,10 @@ class PwnType:
         elif issubclass(typ, CArray):
             if typ._count_ == 0:
                 return 0
-            size_cache = PwnType._calc_align(typ) * typ._count_
+            if hasattr(typ, '_align_'):
+                size_cache = typ._align_ * typ._count_
+            else:
+                size_cache = PwnType._calc_size(typ._type_) * typ._count_
         elif issubclass(typ, CUnion):
             size_cache = max(PwnType._calc_size(field[1]) for field in typ._fields_)
         elif issubclass(typ, (CEnum, CFlag)):
@@ -677,6 +681,29 @@ class CArray(PwnType, Generic[ArrayItemT]):
             return
 
         raise ValueError(f"Can not access array with '{_type(key)}' subscript")
+
+    def _int_iterator(self) -> Iterator[int]:
+        """
+        A generator function to support iterating ``BaseCType`` ``CArray``.
+
+        Returns:
+            An iterator to iterate over underlying ``int`` values.
+        """
+        for i in range(self._int_count):
+            off = i * self._align_
+            bits = self._int_size * 8
+            yield unpack(bytes(self._view[off : off + self._int_size]), bits)
+
+    @overload
+    def __iter__(self: CArray[int]) -> Iterator[int]: ...
+
+    @overload
+    def __iter__(self: CArray[ArrayItemT]) -> Iterator[ArrayItemT]: ...
+
+    def __iter__(self) -> Iterator[CompCValue]:
+        if self._components is None:
+            return self._int_iterator()
+        return iter(self._components)
 
 
 class CCharArray(CArray[int]):
