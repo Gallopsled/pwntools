@@ -237,6 +237,11 @@ class PwnType:
     buffer to construct a ``memoryview`` object) so later variables can be read
     directly on memory. In this case, setting underlying memory buffer can affect
     variable value, helping pwners write exploits painlessly.
+
+    Arguments:
+        view: Pass an existing memory view so that variables will be placed on that
+              region of memory later, or ``None`` to allocate a new region of memory
+              to place variables.
     """
 
     _32_size_cache_: int
@@ -491,6 +496,20 @@ class PwnType:
         return self._view == value._view
 
     def _normalize_slice(self, s: slice) -> slice:
+        """
+        Normalize ``start`` and ``stop`` in the slice and reject ``step`` if not
+        ``None`` so that the slice can be passed to access the underlying memory view.
+
+        Arguments:
+            s: A ``slice`` from user's code.
+
+        Returns:
+            A ``slice`` which fits in ``[0, self._len)``.
+
+        Raises:
+            ValueError: ``step`` is not ``None`` in user's slice.
+            IndexError: Index in slice is illegal against underlying memory view.
+        """
         if s.step is not None:
             raise ValueError(f'Slice step is not supported')
         start = s.start
@@ -508,24 +527,48 @@ class PwnType:
         elif stop > self._len:
             stop = self._len
         if start < 0 or stop < 0:
-            raise ValueError(f'Illegal index on memoryview')
+            raise IndexError(f'Illegal index on memoryview')
         if start >= stop:
-            raise ValueError(f'Illegal access range on memoryview')
+            raise IndexError(f'Illegal access range on memoryview')
         return slice(start, stop, None)
 
     def _get_slice(self, subscript: Any) -> bytes | None:
         """
         A helper method to allow user to get object's underlying memory with ``slice``.
+
+        Arguments:
+            subscript: The key within ``[]`` when user tries to access ``PwnType``
+                       instance.
+
+        Returns:
+            A ``bytes`` object if user is accessing ``PwnType`` with ``slice``, or else
+            the ``None``.
+
+        Raises:
+            IndexError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
+            ValueError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
         """
         if isinstance(subscript, slice):
-            s = self._normalize_slice(subscript)
-            return bytes(self._view[s.start:s.stop])
+            return bytes(self._view[self._normalize_slice(subscript)])
         return None
 
     def _set_slice(self, subscript: Any, value: Any) -> bool:
         """
         A helper method to allow user to set object's underlying memory with ``slice``
-        and a buffer with the same size as the object.
+        and a buffer.
+
+        Arguments:
+            subscript: The key within ``[]`` when user tries to access ``PwnType``
+                       instance.
+
+        Returns:
+            Whether the underlying memory view is set with ``value`` successfully.
+
+        Raises:
+            IndexError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
+            ValueError: See :func:`pwnlib.util.c_primitives._normalize_slice`. Setting
+                        memory view with ``value`` which is incompatible with ``bytes``,
+                        or ``value`` is larger than memory view.
         """
         if isinstance(subscript, slice):
             s = self._normalize_slice(subscript)
@@ -535,7 +578,7 @@ class PwnType:
             data = _need_bytes(value)
             if len(data) > s.stop - s.start:
                 raise ValueError(f'Filling bytes larger than sliced memory')
-            self._view[s.start:s.stop] = data.ljust(s.stop - s.start, b'\x00')
+            self._view[s] = data.ljust(s.stop - s.start, b'\x00')
             return True
         return False
 
@@ -667,7 +710,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
     _count_: int
     """
     The count of elements in array. This value can be ``0`` if and only if the array is
-    constructed with a ``memoryview``, and the length of that memoryview is not ``0``.
+    constructed with a ``memoryview``, and the length of that memoryview is not 0.
     An internal count will be calculated in that case so user still have bound
     restrictions when accessing elements.
     """
