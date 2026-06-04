@@ -1157,7 +1157,7 @@ class CEnum(PwnType):
     """
     Defines how many bytes this enum takes.
     """
-    _disp_type_: type[IntEnum]
+    _disp_type_: type[IntEnum] | type[IntFlag]
     """
     The internal ``IntEnum`` type for display. When accessing the ``CEnum``, a new
     ``IntEnum`` will be initialized to resolve the value on the memory.
