@@ -504,7 +504,7 @@ class PwnType:
             s: A ``slice`` from user's code.
 
         Returns:
-            A ``slice`` which fits in ``[0, self._len)``.
+            A ``slice`` within the range of ``[0, self._len)``.
 
         Raises:
             ValueError: ``step`` is not ``None`` in user's slice.
