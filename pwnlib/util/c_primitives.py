@@ -1217,7 +1217,7 @@ def mk_anonymous_carray(
     return type(f'AnonymousCArray[{_type(elem_type)}]', (CArray,), fields)
 
 
-def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
+def mk_anonymous_cchararray(count: int) -> type[CCharArray]:
     """
     Factory function to generate an anonymous ``CCharArray``.
 
@@ -1228,8 +1228,6 @@ def mk_anonymous_cchararray(count: int, align: int = 0) -> type[CCharArray]:
         <68 65 6c 6c 6f  |hello|>
     """
     fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
-    if align:
-        fields['_align_'] = align
     return type('AnonymousCCharArray', (CCharArray,), fields)
 
 
