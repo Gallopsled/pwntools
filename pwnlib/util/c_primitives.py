@@ -29,11 +29,11 @@ Examples:
     ...
     >>> class CToken(CEnum):
     ...     _size_type_ = c_uint
-    ...     _enum_ = Token
+    ...     _disp_type_ = Token
     ...
     >>> class CPerm(CFlag):
     ...     _size_type_ = c_ubyte
-    ...     _flag_ = Perm
+    ...     _disp_type_ = Perm
     ...
     >>> class Name(CCharArray):
     ...     _count_ = 8
@@ -271,7 +271,7 @@ class PwnType:
                 align = typ._align_
             else:
                 align = PwnType._calc_align(typ._type_)
-        elif issubclass(typ, (CEnum, CFlag)):
+        elif issubclass(typ, CEnum):
             align = PwnType._calc_align(typ._size_type_)
         else:
             raise NotImplementedError
@@ -324,7 +324,7 @@ class PwnType:
                 size_cache = PwnType._calc_size(typ._type_) * typ._count_
         elif issubclass(typ, CUnion):
             size_cache = max(PwnType._calc_size(field[1]) for field in typ._fields_)
-        elif issubclass(typ, (CEnum, CFlag)):
+        elif issubclass(typ, CEnum):
             size_cache = PwnType._calc_size(typ._size_type_)
         else:
             raise NotImplementedError
@@ -433,7 +433,7 @@ class PwnType:
             s.write(' ' * indent)
             s.write('},')
             _separator(s, v)
-        elif isinstance(o, (CFlag, CEnum)):
+        elif isinstance(o, CEnum):
             s.write(repr(o) if v else str(o))
             s.write(',')
             _separator(s, v)
@@ -1053,7 +1053,7 @@ class CUnion(PwnType):
 
 
 class CEnum(PwnType):
-    """
+    r"""
     Base type of a C enum. This can be used to beautify struct output.
 
     Examples:
@@ -1066,7 +1066,7 @@ class CEnum(PwnType):
         ...
         >>> class X(CEnum):
         ...     _size_type_ = c_int
-        ...     _enum_ = XEnum
+        ...     _disp_type_ = XEnum
         ...
         >>> Xarr = mk_anonymous_carray(X, 1)
         >>> e = Xarr()
@@ -1086,17 +1086,17 @@ class CEnum(PwnType):
     """
     Defines how many bytes this enum takes.
     """
-    _enum_: type[IntEnum]
+    _disp_type_: type[IntEnum]
     """
-    The internal ``IntEnum`` type. When accessing the ``CEnum``, a new ``IntEnum`` will
-    be initialized to resolve the value on the memory.
+    The internal ``IntEnum`` type for display. When accessing the ``CEnum``, a new
+    ``IntEnum`` will be initialized to resolve the value on the memory.
     """
 
     def __init__(self, view: memoryview | None = None) -> None:
-        if not hasattr(self, '_size_type_') or not hasattr(self, '_enum_'):
+        if not hasattr(self, '_size_type_') or not hasattr(self, '_disp_type_'):
             raise NotImplementedError
         super().__init__(view)
-        self._enum_.__str__ = Enum.__str__  # type: ignore[method-assign]
+        self._disp_type_.__str__ = Enum.__str__  # type: ignore[method-assign]
 
     def __getitem__(self, key: slice) -> bytes:
         b = self._get_slice(key)
@@ -1129,7 +1129,7 @@ class CEnum(PwnType):
     def __str__(self) -> str:
         val = int(self)
         try:
-            member = self._enum_(val)
+            member = self._disp_type_(val)
         except ValueError:
             return hex(val)
         return f'{val:#x} <{member!s}>'
@@ -1137,13 +1137,13 @@ class CEnum(PwnType):
     def __repr__(self) -> str:
         val = int(self)
         try:
-            member = self._enum_(val)
+            member = self._disp_type_(val)
         except ValueError:
             return hex(val)
         return f'{val:#x} {member!r}'
 
 
-class CFlag(PwnType):
+class CFlag(CEnum):
     """
     Base type of a C flag. This can be used to beautify struct output.
 
@@ -1157,7 +1157,7 @@ class CFlag(PwnType):
         ...
         >>> class X(CFlag):
         ...     _size_type_ = c_int
-        ...     _flag_ = XFlag
+        ...     _disp_type_ = XFlag
         ...
         >>> Xarr = mk_anonymous_carray(X, 1)
         >>> f = Xarr()
@@ -1175,53 +1175,23 @@ class CFlag(PwnType):
     """
     Defines how many bytes this flag takes.
     """
-    _flag_: type[IntFlag]
+    _disp_type_: type[IntFlag]
     """
-    The internal ``IntFlag`` type. When accessing the ``CFlag``, a new ``IntFlag`` will
-    be initialized to resolve the value on the memory.
+    The internal ``IntFlag`` type for display. When accessing the ``CFlag``, a new
+    ``IntFlag`` will be initialized to resolve the value on the memory.
     """
 
     def __init__(self, view: memoryview | None = None) -> None:
-        if not hasattr(self, '_size_type_') or not hasattr(self, '_flag_'):
-            raise NotImplementedError
         super().__init__(view)
-        self._flag_.__str__ = Flag.__str__  # type: ignore[method-assign]
-
-    def __getitem__(self, key: slice) -> bytes:
-        b = self._get_slice(key)
-        if b is not None:
-            return b
-        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
-
-    def __setitem__(self, key: slice, value: BytesLike) -> None:
-        if self._set_slice(key, value):
-            return
-        raise ValueError(f"'{_type(key)}' is not supported to access '{_type(self)}'")
-
-    def _copy_from(self, value: Any) -> type[Any] | None:
-        typ = super()._copy_from(value)
-        if typ is None:
-            return typ
-        if isinstance(value, int):
-            self._view[:] = pack(value, self._len * 8)
-            return None
-        return typ
-
-    def __int__(self) -> int:
-        return unpack(bytes(self._view), self._len * 8)
-
-    def __eq__(self, value: object, /) -> bool:
-        if isinstance(value, int):
-            return int(self) == value
-        return super().__eq__(value)
+        self._disp_type_.__str__ = Flag.__str__  # type: ignore[method-assign]
 
     def __str__(self) -> str:
         val = int(self)
-        return f'{val:#x} <{self._flag_(val)!s}>'
+        return f'{val:#x} <{self._disp_type_(val)!s}>'
 
     def __repr__(self) -> str:
         val = int(self)
-        return f'{val:#x} {self._flag_(val)!r}'
+        return f'{val:#x} {self._disp_type_(val)!r}'
 
 
 def mk_anonymous_carray(
