@@ -1,7 +1,7 @@
 r"""
 A generic module to construct C data types with pure Python. Downstream data types may
-consider combine basic types in ``ctypes`` and ``CArray``, ``CStruct`` and ``CUnion``
-in this module to implement basically all C types.
+combine basic types in ``BaseCType`` and ``CArray``, ``CStruct`` and ``CUnion`` in
+this module to implement basically all C types.
 
 This module provides some features that ``ctypes`` can not:
 
@@ -62,7 +62,6 @@ Examples:
         };
 
     >>> from pwnlib.util.c_primitives import *
-    >>> from ctypes import *
     >>> from enum import IntEnum, IntFlag
     >>> context.clear(arch='amd64')
     >>> class Token(IntEnum):
@@ -76,11 +75,11 @@ Examples:
     ...     X = 4
     ...
     >>> class CToken(CEnum):
-    ...     _size_type_ = c_uint
+    ...     _size_type_ = BaseCType.uint
     ...     _disp_type_ = Token
     ...
     >>> class CPerm(CFlag):
-    ...     _size_type_ = c_ubyte
+    ...     _size_type_ = BaseCType.uchar
     ...     _disp_type_ = Perm
     ...
     >>> class Name(CCharArray):
@@ -90,24 +89,24 @@ Examples:
     ...     _count_ = 24
     ...
     >>> class Scores(CArray):
-    ...     _type_ = c_ushort
+    ...     _type_ = BaseCType.ushort
     ...     _count_ = 3
     ...
     >>> Tokens = mk_anonymous_carray(CToken, 2)
     >>> class AutoHeader(CStruct):
     ...     _fields_ = [
-    ...         ('tag', c_char),
+    ...         ('tag', BaseCType.char),
     ...         ('perm', CPerm),
-    ...         ('cursor', c_void_p),
+    ...         ('cursor', BaseCType.void_p),
     ...         ('kind', CToken),
     ...         ('name', Name),
     ...     ]
     ...
     >>> class ManualPair(CStruct):
     ...     _fields_ = [
-    ...         ('lo', c_ushort, 0, 0),
-    ...         ('target', c_void_p, 2, 2),
-    ...         ('tail', c_uint, 10, 10),
+    ...         ('lo', BaseCType.ushort, 0, 0),
+    ...         ('target', BaseCType.void_p, 2, 2),
+    ...         ('tail', BaseCType.uint, 10, 10),
     ...     ]
     ...
     >>> class Payload(CUnion):
@@ -123,7 +122,7 @@ Examples:
     ...         ('payload', Payload),
     ...         ('tokens', Tokens),
     ...         ('perm', CPerm),
-    ...         ('handler', c_void_p),
+    ...         ('handler', BaseCType.void_p),
     ...     ]
     ...
     >>> pkt = Packet()
@@ -193,44 +192,21 @@ Examples:
 
 from __future__ import annotations
 
+import builtins
 from collections import OrderedDict
 from collections.abc import Iterator
-from ctypes import (
-    _SimpleCData,
-    c_char,
-    c_char_p,
-    c_long,
-    c_size_t,
-    c_ssize_t,
-    c_ulong,
-    c_void_p,
-    c_wchar_p,
-    sizeof,
-)
 from enum import Enum, Flag, IntEnum, IntFlag
 from io import StringIO, TextIOBase
-from typing import Any, Generic, TypeAlias, TypeVar, cast, overload
+from typing import Any, Generic, TypeAlias, TypeVar, overload
 
 from pwnlib.context import context
 from pwnlib.util.packing import _need_bytes, pack, unpack
 
-BaseCType: TypeAlias = type[_SimpleCData]
 CompCType: TypeAlias = type['PwnType']
-CType: TypeAlias = BaseCType | CompCType
+CType: TypeAlias = 'BaseCType | CompCType'
 CompCValue: TypeAlias = 'int | PwnType'
 BytesLike: TypeAlias = str | bytes | bytearray
 ArrayItemT = TypeVar('ArrayItemT', bound='CompCValue')
-
-CTYPE_BASE = cast(BaseCType, c_long.__base__)
-VAR_TYPES: list[BaseCType] = [
-    c_void_p,
-    c_char_p,
-    c_wchar_p,
-    c_size_t,
-    c_ssize_t,
-    c_ulong,
-    c_long,
-]
 
 
 def _type(o: Any) -> str:
@@ -272,6 +248,107 @@ def _remove_non_verbose_tail(s: TextIOBase, v: bool) -> None:
     if not v:
         s.seek(s.tell() - 2)
         s.truncate()
+
+
+class BaseCType(Enum):
+    """
+    Basic C types presented in enum. Types from ``ctypes`` is not reliable because on
+    x86_64, ``c_longlong is c_long``, which means we have no way to distinguish it to
+    calculate correct size when crossing architecture. This enum implement functions
+    to provide correct type size and alignment on each platform in a hacky way.
+    """
+
+    char = 0
+    byte = 1
+    schar = 2
+    uchar = 3
+    int8_t = 4
+    uint8_t = 5
+
+    short = 0x10
+    word = 0x11
+    ushort = 0x12
+    int16_t = 0x13
+    uint16_t = 0x14
+
+    int = 0x20
+    dword = 0x21
+    uint = 0x22
+    int32_t = 0x23
+    uint32_t = 0x24
+    float = 0x25
+
+    long = 0x30
+    ulong = 0x31
+
+    void_p = 0x40
+    size_t = 0x41
+    ssize_t = 0x42
+    ptrdiff_t = 0x43
+
+    longlong = 0x50
+    qword = 0x51
+    ulonglong = 0x52
+    int64_t = 0x53
+    uint64_t = 0x54
+    double = 0x55
+
+    wchar_t = 0x60
+
+    long_double = 0x70
+
+    @staticmethod
+    def sizeof(e: BaseCType) -> builtins.int:
+        """
+        Returns ``sizeof(type)``.
+
+        Arguments:
+            e: One of ``BaseCType`` enums.
+
+        Returns:
+            The C-level size of ``e``.
+        """
+        enum_type = BaseCType(e.value & 0xF0)
+        match enum_type:
+            case BaseCType.char:
+                return 1
+            case BaseCType.short:
+                return 2
+            case BaseCType.int:
+                return 4
+            case BaseCType.longlong:
+                return 8
+            case BaseCType.void_p:
+                return context.bytes
+            case BaseCType.wchar_t:
+                return 4 if context.os == 'linux' else 2  # Windows use UTF-16
+            case BaseCType.long_double:
+                if context.arch == 'i386' and context.os == 'linux':
+                    return 3
+                return context.bytes * 2
+            case BaseCType.long:
+                if context.os == 'linux':
+                    return context.bytes
+                return 4  # Windows
+            case _:
+                raise NotImplementedError
+
+    @staticmethod
+    def alignof(e: BaseCType) -> builtins.int:
+        """
+        Returns ``alignof(type)``.
+
+        Arguments:
+            e: One of ``BaseCType`` enums.
+
+        Returns:
+            The C-level alignment requirement of ``e``.
+        """
+        if context.arch == 'i386' and context.os == 'linux':
+            return min(4, BaseCType.sizeof(e))
+        if e is BaseCType.long_double and context.arch == 's390x':
+            return 8
+        return BaseCType.sizeof(e)
 
 
 class PwnType:
@@ -355,8 +432,8 @@ class PwnType:
         align is basically equal to the size of the type. As for composite types, the
         align is the max align in members.
         """
-        if issubclass(typ, CTYPE_BASE):
-            return PwnType._calc_size(typ)
+        if isinstance(typ, BaseCType):
+            return BaseCType.alignof(typ)
         align_attr = f'_{context.bits}_align_cache_'
         if hasattr(typ, align_attr):
             return getattr(typ, align_attr)
@@ -385,10 +462,10 @@ class PwnType:
         set all struct member offsets, it is considered that the struct is packed, or
         else the struct size will align up. (The default not-packed bahavior.)
         """
+        if isinstance(typ, BaseCType):
+            return BaseCType.sizeof(typ)
         if not isinstance(typ, type):
             typ = type(typ)
-        if issubclass(typ, CTYPE_BASE):
-            return context.bytes if typ in VAR_TYPES else sizeof(typ)
         cache_attr = f'_{context.bits}_size_cache_'
         if hasattr(typ, cache_attr):
             return getattr(typ, cache_attr)
@@ -687,9 +764,8 @@ class CArray(PwnType, Generic[ArrayItemT]):
         A named array with 4 ints:
 
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> class Int4(CArray):
-        ...     _type_ = c_int
+        ...     _type_ = BaseCType.int
         ...     _count_ = 4
         ...
         >>> buf = bytearray(32)
@@ -724,7 +800,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
 
         An anonymous array with 2 composite type elements and 8 as alignment:
 
-        >>> anon_struct = mk_anonymous_cstruct([('k', c_char), ('v', c_ushort)])
+        >>> anon_struct = mk_anonymous_cstruct([('k', BaseCType.char), ('v', BaseCType.ushort)])
         >>> anon_cls = mk_anonymous_carray(anon_struct, 2, 8)
         >>> anon = anon_cls()
         >>> len(anon)
@@ -739,7 +815,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
         >>> class DictLen(CStruct):
         ...     _fields_ = [
         ...         ('dict', anon_cls),
-        ...         ('capacity', c_int),
+        ...         ('capacity', BaseCType.int),
         ...     ]
         ...
         >>> DictLen().offsetof('capacity')
@@ -752,8 +828,8 @@ class CArray(PwnType, Generic[ArrayItemT]):
         >>> from pwnlib.util.packing import p64
         >>> class Chunk(CStruct):
         ...     _fields_ = [
-        ...         ('prev_size', c_ulong),
-        ...         ('size', c_long),
+        ...         ('prev_size', BaseCType.ulong),
+        ...         ('size', BaseCType.long),
         ...         ('chunk', mk_anonymous_cchararray(0)),
         ...     ]
         ...
@@ -808,7 +884,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
             self._len = len(self._view)
             self._int_count = self._len // self._align_
 
-        if issubclass(self._type_, CTYPE_BASE):
+        if isinstance(self._type_, BaseCType):
             self._components = None
         else:
             step = self._align_
@@ -905,7 +981,7 @@ class CCharArray(CArray[int]):
     hexdump of elements.
     """
 
-    _type_ = c_char
+    _type_ = BaseCType.char
 
 
 class CStruct(PwnType):
@@ -915,12 +991,11 @@ class CStruct(PwnType):
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> class CString(CStruct):
         ...     _fields_ = [
-        ...         ('size', c_uint),
-        ...         ('flag', c_char, 3, 3),
-        ...         ('string', c_char_p),
+        ...         ('size', BaseCType.uint),
+        ...         ('flag', BaseCType.char, 3, 3),
+        ...         ('string', BaseCType.void_p),
         ...     ]
         ...     # recommends adding type hints to enable LSP auto completion
         ...     size: int
@@ -1001,7 +1076,7 @@ class CStruct(PwnType):
         for field in self._fields_:
             field_t = field[1]
             off = self._int_offsets[field[0]]
-            if issubclass(field_t, CTYPE_BASE):
+            if isinstance(field_t, BaseCType):
                 self._components[field[0]] = PwnType._calc_size(field[1])
             else:
                 size = PwnType._calc_size(field_t)
@@ -1107,12 +1182,11 @@ class CUnion(PwnType):
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> class XU(CUnion):
         ...     _fields_ = [
-        ...         ('a', c_uint),
-        ...         ('b', c_char),
-        ...         ('c', c_longlong),
+        ...         ('a', BaseCType.uint),
+        ...         ('b', BaseCType.char),
+        ...         ('c', BaseCType.longlong),
         ...     ]
         ...
         >>> xu = XU()
@@ -1169,7 +1243,7 @@ class CUnion(PwnType):
         self._components = OrderedDict()
         for field in self._fields_:
             field_t = field[1]
-            if issubclass(field_t, CTYPE_BASE):
+            if isinstance(field_t, BaseCType):
                 self._components[field[0]] = PwnType._calc_size(field_t)
             else:
                 size = PwnType._calc_size(field_t)
@@ -1236,14 +1310,13 @@ class CEnum(PwnType):
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> from enum import IntEnum
         >>> class XEnum(IntEnum):
         ...     X1 = 1
         ...     X2 = 2
         ...
         >>> class X(CEnum):
-        ...     _size_type_ = c_int
+        ...     _size_type_ = BaseCType.int
         ...     _disp_type_ = XEnum
         ...
         >>> Xarr = mk_anonymous_carray(X, 1)
@@ -1329,14 +1402,13 @@ class CFlag(CEnum):
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> from enum import IntFlag
         >>> class XFlag(IntFlag):
         ...     X1 = 1
         ...     X2 = 2
         ...
         >>> class X(CFlag):
-        ...     _size_type_ = c_int
+        ...     _size_type_ = BaseCType.int
         ...     _disp_type_ = XFlag
         ...
         >>> Xarr = mk_anonymous_carray(X, 1)
@@ -1387,8 +1459,7 @@ def mk_anonymous_carray(
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
-        >>> mk_anonymous_carray(c_int, 2)()
+        >>> mk_anonymous_carray(BaseCType.int, 2)()
         [
           0x0,
           0x0,
@@ -1406,11 +1477,10 @@ def mk_anonymous_cchararray(count: int) -> type[CCharArray]:
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
         >>> mk_anonymous_cchararray(5)(memoryview(b'hello'))
         <68 65 6c 6c 6f  |hello|>
     """
-    fields: dict[str, Any] = {'_type_': c_char, '_count_': count}
+    fields: dict[str, Any] = {'_type_': BaseCType.char, '_count_': count}
     return type('AnonymousCCharArray', (CCharArray,), fields)
 
 
@@ -1422,8 +1492,7 @@ def mk_anonymous_cstruct(
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
-        >>> mk_anonymous_cstruct([('aaa', c_int)])()
+        >>> mk_anonymous_cstruct([('aaa', BaseCType.int)])()
         {
           +0x0 aaa = 0x0,
         }
@@ -1437,8 +1506,7 @@ def mk_anonymous_cunion(fields: list[tuple[str, CType]]) -> type[CUnion]:
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
-        >>> from ctypes import *
-        >>> mk_anonymous_cunion([('x', c_int), ('y', c_char)])()
+        >>> mk_anonymous_cunion([('x', BaseCType.int), ('y', BaseCType.char)])()
         {
           x = 0x0,
           y = 0x0,
