@@ -293,9 +293,27 @@ class PwnType:
     """
 
     _32_size_cache_: int
+    """
+    32-bit composite type size. This field is automatically assigned when initializing
+    a composite type instance.
+    """
     _64_size_cache_: int
+    """
+    64-bit composite type size. This field is automatically assigned when initializing
+    a composite type instance.
+    """
     _32_align_cache_: int
+    """
+    32-bit composite type align. This field is automatically assigned when initializing
+    a composite type instance, but if you want to override alignment, e.g., setting a
+    type as ``packed``, set it to ``1`` when implementing the class.
+    """
     _64_align_cache_: int
+    """
+    64-bit composite type align. This field is automatically assigned when initializing
+    a composite type instance, but if you want to override alignment, e.g., setting a
+    type as ``packed``, set it to ``1`` when implementing the class.
+    """
     _buf: bytearray | None
     _view: memoryview
     _len: int
@@ -343,7 +361,11 @@ class PwnType:
         if hasattr(typ, align_attr):
             return getattr(typ, align_attr)
         if issubclass(typ, (CStruct, CUnion)):
-            align = max(PwnType._calc_align(f[1]) for f in typ._fields_)
+            if all(len(field) == 4 for field in typ._fields_):
+                # this is a packed struct
+                align = 1
+            else:
+                align = max(PwnType._calc_align(f[1]) for f in typ._fields_)
         elif issubclass(typ, CArray):
             if hasattr(typ, '_align_'):  # here _align_ is type-range
                 align = typ._align_
@@ -375,13 +397,11 @@ class PwnType:
             offset_table_attr = f'_offsets{context.bits}_'
             offsets: dict[str, int] = {}
             is64b = context.bits == 64
-            maybe_packed = True
             for field in typ._fields_:
                 field_t = field[1]
                 if len(field) == 4:
                     offset = field[2] if is64b else field[3]
                 else:  # offset need to be calculated
-                    maybe_packed = False
                     f_align = PwnType._calc_align(field_t)
                     # align up struct_len
                     offset = ((struct_len + f_align - 1) // f_align) * f_align
@@ -389,9 +409,8 @@ class PwnType:
                 field_len = PwnType._calc_size(field_t)
                 struct_len = max(struct_len, offset + field_len)
             setattr(typ, offset_table_attr, offsets)
-            if not maybe_packed:
-                align = PwnType._calc_align(typ)
-                struct_len = ((struct_len + align - 1) // align) * align
+            align = PwnType._calc_align(typ)
+            struct_len = ((struct_len + align - 1) // align) * align
             size_cache = struct_len
         elif issubclass(typ, CArray):
             if typ._count_ == 0:
