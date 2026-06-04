@@ -6,7 +6,7 @@ _const_codes = [
     'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
     'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
     'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
-    'COPY', 'RESUME', 'RETURN_CONST'
+    'COPY', 'RESUME', 'RETURN_CONST', 'LOAD_SMALL_INT'
     ]
 
 _expr_codes = _const_codes + [
