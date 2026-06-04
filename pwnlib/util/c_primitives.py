@@ -15,7 +15,7 @@ This module provides some features that ``ctypes`` can not:
 Examples:
     Now let's try to emulate a complicated composite type with the following signature:
 
-.. code-block:: c
+    .. code-block:: c
 
         enum Token {
             NONE = 0,
