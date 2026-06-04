@@ -545,8 +545,8 @@ class PwnType:
             the ``None``.
 
         Raises:
-            IndexError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
-            ValueError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
+            IndexError: See :func:`pwnlib.util.c_primitives.PwnType._normalize_slice`.
+            ValueError: See :func:`pwnlib.util.c_primitives.PwnType._normalize_slice`.
         """
         if isinstance(subscript, slice):
             return bytes(self._view[self._normalize_slice(subscript)])
@@ -565,10 +565,10 @@ class PwnType:
             Whether the underlying memory view is set with ``value`` successfully.
 
         Raises:
-            IndexError: See :func:`pwnlib.util.c_primitives._normalize_slice`.
-            ValueError: See :func:`pwnlib.util.c_primitives._normalize_slice`. Setting
-                        memory view with ``value`` which is incompatible with ``bytes``,
-                        or ``value`` is larger than memory view.
+            IndexError: See :func:`pwnlib.util.c_primitives.PwnType._normalize_slice`.
+            ValueError: See :func:`pwnlib.util.c_primitives.PwnType._normalize_slice`.
+                        Setting memory view with ``value`` which is incompatible with
+                        ``bytes``, or ``value`` is larger than memory view.
         """
         if isinstance(subscript, slice):
             s = self._normalize_slice(subscript)
