@@ -85,13 +85,13 @@ Examples:
     24
     >>> len(pkt)
     80
-    >>> pkt.header.tag = ord('M')
+    >>> pkt.header.tag = b'M'
     >>> pkt.header.perm = Perm.R
     >>> pkt.header.cursor = 0x1122334455667788
     >>> pkt.header.kind = Token.READ + 0xaa00
     >>> pkt.header.name = b'payload!'
-    >>> pkt.payload.pair.lo = 0xbeef
-    >>> pkt.payload.pair.target = 0x4041424344454647
+    >>> pkt.payload[:2] = b'\xef\xbe'
+    >>> pkt.payload['pair'].target = 0x4041424344454647
     >>> pkt.payload.pair.tail = 0x21444150
     >>> pkt.tokens[0] = Token.READ
     >>> pkt.tokens[1] = 0x99
@@ -133,6 +133,14 @@ Examples:
     }
     >>> print(pkt)
     {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 2f 62 69 6e 2f 73 68 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150}}, [0x1 <Token.READ>, 0x99], 0x4 <Perm.X>, 0x7f0643fa3f60}
+    >>> pkt.header = b' ' * 0x100
+    Traceback (most recent call last):
+    ...
+    ValueError: Setting bytes larger than AutoHeader
+    >>> newraw = Raw()
+    >>> pkt.payload.raw = newraw
+    >>> print(pkt.payload.raw)
+    <00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>
 """
 
 from __future__ import annotations
@@ -178,6 +186,23 @@ VAR_TYPES: list[BaseCType] = [
 
 
 def _type(o: Any) -> str:
+    """
+    A helper function to get a simplified type name of an object.
+
+    Arguments:
+        o: An ``object`` or a ``type``. If ``o`` is ``object``, cast it to ``type``
+        first.
+
+    Returns:
+        The simplified type name of ``o``.
+
+    Examples:
+        >>> from pwnlib.util import c_primitives
+        >>> c_primitives._type('')
+        'str'
+        >>> c_primitives._type(str)
+        'str'
+    """
     if isinstance(o, type):
         return o.__name__
     return type(o).__name__
@@ -549,6 +574,8 @@ class CArray(PwnType, Generic[ArrayItemT]):
     objects.
 
     Examples:
+        A named array with 4 ints:
+
         >>> from pwnlib.util.c_primitives import *
         >>> from ctypes import *
         >>> class Int4(CArray):
@@ -557,7 +584,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
         ...
         >>> buf = bytearray(32)
         >>> arr = Int4(memoryview(buf))
-        >>> arr[0] = 0x13371337
+        >>> arr[-4] = 0x13371337
         >>> arr[5:9] = b'\xde\xad\xbe\xef'
         >>> buf[:20]
         bytearray(b'7\x137\x13\x00\xde\xad\xbe\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -572,12 +599,65 @@ class CArray(PwnType, Generic[ArrayItemT]):
           0xef,
           0x0,
         ]
-        >>> print(arr)
-        [0x13371337, 0xbeadde00, 0xef, 0x0]
+        >>> for e in arr:
+        ...     print(e)
+        322376503
+        3199065600
+        239
+        0
         >>> arr[2:6]
         b'7\x13\x00\xde'
         >>> arr[1]
         3199065600
+        >>> arr[1] == arr[-3]
+        True
+
+        An anonymous array with 2 composite type elements and 8 as alignment:
+
+        >>> anon_struct = mk_anonymous_cstruct([('k', c_char), ('v', c_ushort)])
+        >>> anon_cls = mk_anonymous_carray(anon_struct, 2, 8)
+        >>> anon = anon_cls()
+        >>> len(anon)
+        16
+        >>> anon[0] = None
+        Traceback (most recent call last):
+        ...
+        ValueError: Can't set AnonymousCStruct with NoneType
+        >>> anon[0] = b'KVPR'
+        >>> print(next(iter(anon)))
+        {0x4b, 0x5250}
+        >>> class DictLen(CStruct):
+        ...     _fields_ = [
+        ...         ('dict', anon_cls),
+        ...         ('capacity', c_int),
+        ...     ]
+        ...
+        >>> DictLen().offsetof('capacity')
+        16
+        >>> len(DictLen())
+        24
+
+        Array length can be 0, but the only way to use it is via ``CStruct``.
+
+        >>> from pwnlib.util.packing import p64
+        >>> class Chunk(CStruct):
+        ...     _fields_ = [
+        ...         ('prev_size', c_ulong),
+        ...         ('size', c_long),
+        ...         ('chunk', mk_anonymous_cchararray(0)),
+        ...     ]
+        ...
+        >>> context.clear(arch='amd64')
+        >>> buf = p64(0) + p64(0x21) + b''.ljust(0x10, b'A') + p64(0x20)
+        >>> Chunk(memoryview(buf))
+        {
+          +0x0  prev_size = 0x0,
+          +0x8  size = 0x21,
+          +0x10 chunk = <
+            41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41  |AAAAAAAAAAAAAAAA|
+            20 00 00 00 00 00 00 00                          | .......|
+          >,
+        }
     """
 
     _type_: CType
@@ -1068,6 +1148,9 @@ class CEnum(PwnType):
         0xe9
         >>> int(e[0])
         233
+        >>> e[0][:1] = b'\x02'
+        >>> e[0] == 2 and e[0] == X(b'\x02\x00\x00\x00')
+        True
     """
 
     _size_type_: CType
@@ -1157,6 +1240,10 @@ class CFlag(CEnum):
         0x2 <XFlag.X2>
         >>> int(f[0])
         2
+        >>> f[0] == 2
+        True
+        >>> f[0][:1].hex()
+        '02'
     """
 
     _size_type_: CType
