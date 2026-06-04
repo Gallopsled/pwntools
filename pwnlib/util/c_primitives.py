@@ -13,6 +13,54 @@ This module provides some features that ``ctypes`` can not:
 5. Print composite types in a pwner-friendly form.
 
 Examples:
+    Now let's try to emulate a complicated composite type with the following signature:
+
+.. code-block:: c
+
+        enum Token {
+            NONE = 0,
+            READ = 1,
+            WRITE = 2,
+        };
+
+        enum __attribute__((packed)) Perm {
+            R = 1,
+            W = 2,
+            X = 4,
+        };
+
+        typedef char Name[8];
+        typedef char Raw[24];
+        typedef unsigned short Scores[3];
+
+        struct AutoHeader {
+            char tag;
+            enum Perm perm;
+            void *cursor;
+            enum Token kind;
+            Name name;
+        };
+
+        struct __attribute__((packed)) ManualPair {
+            unsigned short lo;
+            void *target;
+            unsigned int tail;
+        };
+
+        union Payload {
+            Raw raw;
+            Scores scores;
+            struct ManualPair pair;
+        };
+
+        struct Packet {
+            struct AutoHeader header;
+            union Payload payload;
+            enum Token tokens[2];
+            enum Perm perm;
+            void *handler;
+        };
+
     >>> from pwnlib.util.c_primitives import *
     >>> from ctypes import *
     >>> from enum import IntEnum, IntFlag
@@ -138,7 +186,7 @@ Examples:
     ...
     ValueError: Setting bytes larger than AutoHeader
     >>> newraw = Raw()
-    >>> pkt.payload.raw = newraw
+    >>> pkt.payload['raw'] = newraw
     >>> print(pkt.payload.raw)
     <00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>
 """
@@ -1080,7 +1128,7 @@ class CUnion(PwnType):
         >>> xu[-99:] = b'123'
         Traceback (most recent call last):
         ...
-        ValueError: Illegal index on memoryview
+        IndexError: Illegal index on memoryview
         >>> xu.b = 9999
         Traceback (most recent call last):
         ...
