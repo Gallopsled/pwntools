@@ -465,32 +465,36 @@ class PwnType:
             return False
         return self._view == value._view
 
+    def _normalize_slice(self, s: slice) -> slice:
+        if s.step is not None:
+            raise ValueError(f'Slice step is not supported')
+        start = s.start
+        stop = s.stop
+        if start is None:
+            start = 0
+        elif start < 0:
+            start += self._len
+        elif start > self._len:
+            start = self._len
+        if stop is None:
+            stop = self._len
+        elif stop < 0:
+            stop += self._len
+        elif stop > self._len:
+            stop = self._len
+        if start < 0 or stop < 0:
+            raise ValueError(f'Illegal index on memoryview')
+        if start >= stop:
+            raise ValueError(f'Illegal access range on memoryview')
+        return slice(start, stop, None)
+
     def _get_slice(self, subscript: Any) -> bytes | None:
         """
         A helper method to allow user to get object's underlying memory with ``slice``.
         """
         if isinstance(subscript, slice):
-            if subscript.step is not None:
-                raise ValueError(f'Slice step is not supported')
-            start = subscript.start
-            stop = subscript.stop
-            if start is None:
-                start = 0
-            elif start < 0:
-                start += self._len
-            elif start > self._len:
-                start = self._len
-            if stop is None:
-                stop = self._len
-            elif stop < 0:
-                stop += self._len
-            elif stop > self._len:
-                stop = self._len
-            if start < 0 or stop < 0:
-                raise ValueError(f'Illegal index on memoryview')
-            if start >= stop:
-                raise ValueError(f'Illegal access range on memoryview')
-            return bytes(self._view[start:stop])
+            s = self._normalize_slice(subscript)
+            return bytes(self._view[s.start:s.stop])
         return None
 
     def _set_slice(self, subscript: Any, value: Any) -> bool:
@@ -499,41 +503,43 @@ class PwnType:
         and a buffer with the same size as the object.
         """
         if isinstance(subscript, slice):
-            if subscript.step is not None:
-                raise ValueError(f'Slice step is not supported')
-            start = subscript.start
-            stop = subscript.stop
-            if start is None:
-                start = 0
-            elif start < 0:
-                start += self._len
-            elif start > self._len:
-                start = self._len
-            if stop is None:
-                stop = self._len
-            elif stop < 0:
-                stop += self._len
-            elif stop > self._len:
-                stop = self._len
-            if start < 0 or stop < 0:
-                raise ValueError(f'Illegal index on memoryview')
-            if start >= stop:
-                raise ValueError(f'Illegal access range on memoryview')
+            s = self._normalize_slice(subscript)
 
             if not isinstance(value, (bytes, bytearray, str)):
                 raise ValueError(f"Can't fill memory with {_type(value)}")
             data = _need_bytes(value)
-            if len(data) > stop - start:
+            if len(data) > s.stop - s.start:
                 raise ValueError(f'Filling bytes larger than sliced memory')
-            self._view[start:stop] = data.ljust(stop - start, b'\x00')
+            self._view[s.start:s.stop] = data.ljust(s.stop - s.start, b'\x00')
             return True
         return False
 
-    def __getitem__(self, key: Any) -> bytes | CompCValue | None:
-        return self._get_slice(key)
+    def _set_int_from(self, offset: int, size: int, value: Any) -> bool:
+        """
+        Set ``int`` field with ``BytesLike`` or ``int``.
 
-    def __setitem__(self, key: Any, value: Any) -> None:
-        self._set_slice(key, value)
+        Arguments:
+            offset: The offset of the field from ``self._view``.
+            size: The size of the field.
+            value: The object to assign the field.
+
+        Returns:
+            ``True`` if the field is assigned with ``value`` successfully, or ``False``
+            if the type of ``value`` is incompatible.
+
+        Raises:
+            ValueError: ``value`` is larger than size of the field.
+        """
+        if isinstance(value, int):
+            self._view[offset : offset + size] = pack(value, size * 8)
+        elif isinstance(value, (str, bytes, bytearray)):
+            data = _need_bytes(value)
+            if len(data) > size:
+                raise ValueError(f'Filling bytes larger than the field')
+            self._view[offset : offset + size] = data.ljust(size, b'\x00')
+        else:
+            return False
+        return True
 
 
 class CArray(PwnType, Generic[ArrayItemT]):
@@ -666,11 +672,8 @@ class CArray(PwnType, Generic[ArrayItemT]):
             if idx >= self._int_count or idx < 0:
                 raise IndexError(f'Illegal index on elements')
             if self._components is None:
-                start = self._align_ * idx
-                end = start + self._int_size
-                if not isinstance(value, int):
+                if not self._set_int_from(self._align_ * idx, self._int_size, value):
                     raise ValueError(f"Can't set int with {_type(value)}")
-                self._view[start:end] = pack(value, self._int_size * 8)
             else:
                 # isinstance(self._components, list[PwnType])
                 # a.k.a. isinstance(self._type_, PwnType)
@@ -824,15 +827,7 @@ class CStruct(PwnType):
             return
         rhs = self._components[name]
         if isinstance(rhs, int):
-            off = self._int_offsets[name]
-            if isinstance(value, int):
-                self._view[off : off + rhs] = pack(value, rhs * 8)
-            elif isinstance(value, (str, bytes, bytearray)):
-                b = _need_bytes(value)
-                if len(b) > rhs:
-                    raise ValueError(f'Setting bytes larger than {_type(self)}.{name}')
-                self._view[off : off + rhs] = b.ljust(rhs, b'\x00')
-            else:
+            if not self._set_int_from(self._int_offsets[name], rhs, value):
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
         else:  # isinstance(rhs, PwnType)
             typ = rhs._copy_from(value)
@@ -1005,14 +1000,7 @@ class CUnion(PwnType):
             return
         rhs = self._components[name]
         if isinstance(rhs, int):
-            if isinstance(value, int):
-                self._view[:rhs] = pack(value, rhs * 8)
-            elif isinstance(value, (str, bytes, bytearray)):
-                b = _need_bytes(value)
-                if len(b) > rhs:
-                    raise ValueError(f'Setting bytes larger than {_type(self)}.{name}')
-                self._view[:rhs] = b.ljust(rhs, b'\x00')
-            else:
+            if not self._set_int_from(0, rhs, value):
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
         else:  # isinstance(rhs, PwnType)
             typ = rhs._copy_from(value)
