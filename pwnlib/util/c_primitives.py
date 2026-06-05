@@ -30,7 +30,6 @@ Examples:
         };
 
         typedef char Name[8];
-        typedef char Raw[24];
         typedef unsigned short Scores[3];
 
         struct AutoHeader {
@@ -45,10 +44,11 @@ Examples:
             unsigned short lo;
             void *target;
             unsigned int tail;
+            unsigned int extra;
         };
 
         union Payload {
-            Raw raw;
+            char raw[0];
             Scores scores;
             struct ManualPair pair;
         };
@@ -85,9 +85,6 @@ Examples:
     >>> class Name(CCharArray):
     ...     _count_ = 8
     ...
-    >>> class Raw(CCharArray):
-    ...     _count_ = 24
-    ...
     >>> class Scores(CArray):
     ...     _type_ = BaseCType.ushort
     ...     _count_ = 3
@@ -107,11 +104,12 @@ Examples:
     ...         ('lo', BaseCType.ushort, 0, 0),
     ...         ('target', BaseCType.void_p, 2, 2),
     ...         ('tail', BaseCType.uint, 10, 10),
+    ...         ('extra', BaseCType.uint, 14, 14),
     ...     ]
     ...
     >>> class Payload(CUnion):
     ...     _fields_ = [
-    ...         ('raw', Raw),
+    ...         ('raw', mk_anonymous_cchararray(0)),
     ...         ('scores', Scores),
     ...         ('pair', ManualPair),
     ...     ]
@@ -129,9 +127,9 @@ Examples:
     >>> pkt.payload.pair.offsetof('tail')
     10
     >>> len(pkt.payload)
-    24
+    18
     >>> len(pkt)
-    80
+    72
     >>> pkt.header.tag = b'M'
     >>> pkt.header.perm = Perm.R
     >>> pkt.header.cursor = 0x1122334455667788
@@ -145,7 +143,6 @@ Examples:
     >>> pkt.perm = Perm.X
     >>> pkt.handler = 0x7f0643fa3f60
     >>> pkt.header[12:20] = b'PWN!\x02'
-    >>> pkt[0x30:0x38] = b'/bin/sh'
     >>> pkt
     {
       +0x0  header = {
@@ -158,7 +155,7 @@ Examples:
       +0x20 payload = {
         raw = <
           ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00  |..GFEDCBA@PAD!..|
-          2f 62 69 6e 2f 73 68 00                          |/bin/sh.|
+          00 00                                            |..|
         >,
         scores = [
           0xbeef,
@@ -169,25 +166,26 @@ Examples:
           +0x0 lo = 0xbeef,
           +0x2 target = 0x4041424344454647,
           +0xa tail = 0x21444150,
+          +0xe extra = 0x0,
         },
       },
-      +0x38 tokens = [
+      +0x34 tokens = [
         0x1 <Token.READ: 1>,
         0x99,
       ],
-      +0x40 perm = 0x4 <Perm.X: 4>,
-      +0x48 handler = 0x7f0643fa3f60,
+      +0x3c perm = 0x4 <Perm.X: 4>,
+      +0x40 handler = 0x7f0643fa3f60,
     }
     >>> print(pkt)
-    {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 2f 62 69 6e 2f 73 68 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150}}, [0x1 <Token.READ>, 0x99], 0x4 <Perm.X>, 0x7f0643fa3f60}
+    {{0x4d, 0x1 <Perm.R>, 0x214e575055667788, 0x2 <Token.WRITE>, <70 61 79 6c 6f 61 64 21>}, {<ef be 47 46 45 44 43 42 41 40 50 41 44 21 00 00 00 00>, [0xbeef, 0x4647, 0x4445], {0xbeef, 0x4041424344454647, 0x21444150, 0x0}}, [0x1 <Token.READ>, 0x99], 0x4 <Perm.X>, 0x7f0643fa3f60}
     >>> pkt.header = b' ' * 0x100
     Traceback (most recent call last):
     ...
     ValueError: Setting bytes larger than AutoHeader
-    >>> newraw = Raw()
-    >>> pkt.payload['raw'] = newraw
+    >>> newscore = Scores()
+    >>> pkt.payload['scores'] = newscore
     >>> print(pkt.payload.raw)
-    <00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00>
+    <00 00 00 00 00 00 43 42 41 40 50 41 44 21 00 00 00 00>
 """
 
 from __future__ import annotations
@@ -256,14 +254,18 @@ class BaseCType(Enum):
     x86_64, ``c_longlong is c_long``, which means we have no way to distinguish it to
     calculate correct size when crossing architecture. This enum implement functions
     to provide correct type size and alignment on each platform in a hacky way.
+
+    The basic data types are gathered by looking up keywords and including ``stdint.h``
+    and ``stddef.h``.
     """
 
     char = 0
     byte = 1
     schar = 2
     uchar = 3
-    int8_t = 4
-    uint8_t = 5
+    bool = 4
+    int8_t = 5
+    uint8_t = 6
 
     short = 0x10
     word = 0x11
@@ -300,7 +302,8 @@ class BaseCType(Enum):
     @staticmethod
     def sizeof(e: BaseCType) -> builtins.int:
         """
-        Returns ``sizeof(type)``.
+        Returns ``sizeof(type)``. Some special sizes are confirmed via ``zig cc``
+        cross compiler.
 
         Arguments:
             e: One of ``BaseCType`` enums.
@@ -336,7 +339,8 @@ class BaseCType(Enum):
     @staticmethod
     def alignof(e: BaseCType) -> builtins.int:
         """
-        Returns ``alignof(type)``.
+        Returns ``alignof(type)``. Some special alignments are confirmed via ``zig cc``
+        cross compiler.
 
         Arguments:
             e: One of ``BaseCType`` enums.
@@ -358,7 +362,7 @@ class PwnType:
 
     All variables, including basic C types, are not stored with value directly. Instead,
     the component offset and size is stored, and the actual value is fetched via memory.
-    Every composite type stores a ``memoryview`` object on initialization (or create a
+    Every composite type stores a ``memoryview`` object on initialization (or creates a
     buffer to construct a ``memoryview`` object) so later variables can be read
     directly on memory. In this case, setting underlying memory buffer can affect
     variable value, helping pwners write exploits painlessly.
@@ -764,6 +768,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
         A named array with 4 ints:
 
         >>> from pwnlib.util.c_primitives import *
+        >>> context.clear(arch='i386')
         >>> class Int4(CArray):
         ...     _type_ = BaseCType.int
         ...     _count_ = 4
@@ -844,6 +849,18 @@ class CArray(PwnType, Generic[ArrayItemT]):
             20 00 00 00 00 00 00 00                          | .......|
           >,
         }
+
+        Initialize a 0-size array with ``None`` or 0-size ``memoryview`` is invalid.
+
+        >>> vararr = mk_anonymous_carray(BaseCType.int, 0)
+        >>> vararr()
+        Traceback (most recent call last):
+        ...
+        BufferError: Allocating zero-length array
+        >>> vararr(memoryview(b''))
+        Traceback (most recent call last):
+        ...
+        BufferError: Zero-length array has no writable memory
     """
 
     _type_: CType
@@ -1248,6 +1265,8 @@ class CUnion(PwnType):
             else:
                 size = PwnType._calc_size(field_t)
                 assert issubclass(field_t, PwnType)
+                if issubclass(field_t, CArray) and size == 0:
+                    size = self._len
                 self._components[field[0]] = field_t(self._view[:size])
 
     def __getattr__(self, name: str) -> CompCValue:
