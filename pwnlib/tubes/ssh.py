@@ -1548,7 +1548,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         if not local:
-            local = self._pathlib(remote).name
+            remote_str = remote.decode() if not hasattr(remote, 'encode') else remote
+            local = self._pathlib(remote_str).name
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1624,8 +1625,11 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             Hello, world
         """
         data = packing._need_bytes(data)
+        if not hasattr(remote, 'encode'):
+            remote = remote.decode('utf-8')
         # If a relative path was provided, prepend the cwd
-        if str(self._pathlib(remote)) == self._pathlib(remote).name:
+        remote_path = self._pathlib(remote)
+        if str(remote_path) == remote_path.name:
             remote = str(self._pathlib(self.cwd) / remote)
 
         if self.sftp:
