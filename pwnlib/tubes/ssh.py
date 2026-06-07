@@ -1479,8 +1479,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         fingerprint = fingerprint and self._get_fingerprint(remote) or None
         if fingerprint is None:
-            local = os.path.normpath(remote)
-            local = os.path.basename(local)
+            local = self._pathlib(remote).name
             local += time.strftime('-%Y-%m-%d-%H%M%S')
             local = os.path.join(self._cachedir, local)
 
@@ -1549,7 +1548,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         if not local:
-            local = os.path.basename(os.path.normpath(remote))
+            local = self._pathlib(remote).name
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1626,7 +1625,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         """
         data = packing._need_bytes(data)
         # If a relative path was provided, prepend the cwd
-        if os.path.normpath(remote) == os.path.basename(remote):
+        if str(self._pathlib(remote)) == self._pathlib(remote).name:
             remote = str(self._pathlib(self.cwd) / remote)
 
         if self.sftp:
