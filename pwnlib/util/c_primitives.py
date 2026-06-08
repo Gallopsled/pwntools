@@ -202,6 +202,7 @@ from pwnlib.util.packing import _need_bytes, pack, unpack
 
 CompCType: TypeAlias = type['PwnType']
 CType: TypeAlias = 'BaseCType | CompCType'
+BitFieldCType: TypeAlias = 'CType | tuple[BaseCType, int]'
 CompCValue: TypeAlias = 'int | PwnType'
 BytesLike: TypeAlias = str | bytes | bytearray
 ArrayItemT = TypeVar('ArrayItemT', bound='CompCValue')
@@ -354,6 +355,20 @@ class BaseCType(Enum):
             return 8
         return BaseCType.sizeof(e)
 
+    def __matmul__(self, bitlen: int) -> tuple[BaseCType, int]:
+        """
+        An alternative way to write bitfield. This shim converts ``BaseCType.int @ 24``
+        to ``(BaseCType.int, 24)``, which may help you write shorter field descriptor
+        in :class:`pwnlib.util.c_primitives.CStruct` definition.
+
+        Arguments:
+            bitlen: How many bits does the field takes.
+
+        Returns:
+            A tuple consists of the enum itself and the ``bitlen``.
+        """
+        return (self, bitlen)
+
 
 class PwnType:
     """
@@ -446,7 +461,10 @@ class PwnType:
                 # this is a packed struct
                 align = 1
             else:
-                align = max(PwnType._calc_align(f[1]) for f in typ._fields_)
+                align = max(
+                    PwnType._calc_align(f[1][0] if isinstance(f[1], tuple) else f[1])
+                    for f in typ._fields_
+                )
         elif issubclass(typ, CArray):
             if hasattr(typ, '_align_'):  # here _align_ is type-range
                 align = typ._align_
@@ -477,18 +495,55 @@ class PwnType:
             struct_len = 0
             offset_table_attr = f'_offsets{context.bits}_'
             offsets: dict[str, int] = {}
+            bitfield_attr = f'_bitfields{context.bits}_'
+            bitfields: dict[str, tuple[int, int]] = {}
+
+            bitstart = 0
             is64b = context.bits == 64
-            for field in typ._fields_:
+            for idx, field in enumerate(typ._fields_):
                 field_t = field[1]
+                bitlen = 0
+                if isinstance(field_t, tuple):
+                    bitlen = field_t[1]
+                    field_t = field_t[0]
+                    max_bitlen = PwnType._calc_size(field_t) * 8
+                    # fmt: off
+                    if bitlen == 0:
+                        raise ValueError('bitlen == 0 is unsupported,'
+                                         'use explicit offset instead')
+                    if field_t not in BaseCType:
+                        raise ValueError('Only BaseCType supports bitfield')
+                    if bitlen > max_bitlen or bitlen < 0:
+                        raise ValueError(f"Field '{field[0]}' takes bits"
+                                         f"more than it can hold ({bitlen} bits)")
+                    # fmt: on
+
+                    if bitstart + bitlen > max_bitlen or len(field) == 4:
+                        # the previous container can't hold current bitfield
+                        # or user set explicit offset
+                        bitstart = 0
+                    bitfields[field[0]] = (bitstart, bitlen)
+
                 if len(field) == 4:
                     offset = field[2] if is64b else field[3]
+                elif bitstart and bitlen:
+                    # adjacent bitfields and they are fit in one real field
+                    # bitstart != 0 ensures idx - 1 is accessible
+                    prev_field = typ._fields_[idx - 1][0]
+                    offset = offsets[prev_field]
                 else:  # offset need to be calculated
                     f_align = PwnType._calc_align(field_t)
                     # align up struct_len
                     offset = ((struct_len + f_align - 1) // f_align) * f_align
                 offsets[field[0]] = offset
+
+                if bitlen:
+                    bitstart += bitlen
+                else:
+                    bitstart = 0
                 field_len = PwnType._calc_size(field_t)
                 struct_len = max(struct_len, offset + field_len)
+            setattr(typ, bitfield_attr, bitfields)
             setattr(typ, offset_table_attr, offsets)
             align = PwnType._calc_align(typ)
             struct_len = ((struct_len + align - 1) // align) * align
@@ -584,10 +639,7 @@ class PwnType:
                 if isinstance(value, PwnType):
                     PwnType._print_to_stream(s, v, indent, value)
                 else:  # isinstance(value[0], int)
-                    unpacked = unpack(
-                        bytes(o._view[off : off + value]),
-                        value * 8,
-                    )
+                    unpacked = o._get_int(field)
                     s.write(f'{unpacked:#x},')
                     _separator(s, v)
             _remove_non_verbose_tail(s, v)
@@ -1071,7 +1123,7 @@ class CStruct(PwnType):
         b'xV4\xab\x00\x00\x00\x00'
     """
 
-    _fields_: list[tuple[str, CType] | tuple[str, CType, int, int]]
+    _fields_: list[tuple[str, BitFieldCType] | tuple[str, BitFieldCType, int, int]]
     """
     A ``list`` of struct members. If the struct is not packed, and you would like to
     calculate offsets automatically, then fill out members with 2-element tuples,
@@ -1081,13 +1133,39 @@ class CStruct(PwnType):
     tuples, member name, member type, offset for 64-bit targets and offset for 32-bit
     targets.
 
-    Please refer to ``CStruct`` for examples.
+    To support bitfield in C, the second element, member type, can be a tuple consisting
+    of a :class:`pwnlib.util.c_primitives.BaseCType` and an ``int`` to indicate how
+    many bits the member takes. Alternatively, you can use ``@`` on a ``BaseCType`` to
+    simplify bitfield representation like ``BaseCType.int @ 24``.
+
+    Please refer to :class:`pwnlib.util.c_primitives.CStruct` for examples.
     """
     _components: OrderedDict[str, CompCValue]
     _len: int
     _offsets32_: dict[str, int]
+    """
+    32-bit cache for member offsets in the struct. This dict is dynamically
+    constructed during ``_calc_size``.
+    """
     _offsets64_: dict[str, int]
+    """
+    64-bit cache for member offsets in the struct. This dict is dynamically
+    constructed during ``_calc_size``.
+    """
+    _bitfields32_: dict[str, tuple[int, int]]
+    """
+    32-bit cache for bitfields information. The key is member name, and value is a
+    tuple consisting of ``bit_start`` and ``bitlen``. This dict is dynamically
+    constructed during ``_calc_size``.
+    """
+    _bitfields64_: dict[str, tuple[int, int]]
+    """
+    64-bit cache for bitfields information. The key is member name, and value is a
+    tuple consisting of ``bit_start`` and ``bitlen``. This dict is dynamically
+    constructed during ``_calc_size``.
+    """
     _int_offsets: dict[str, int]
+    _int_bitfields: dict[str, tuple[int, int]]
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
@@ -1095,12 +1173,15 @@ class CStruct(PwnType):
         super().__init__(view)
 
         self._int_offsets = getattr(self, f'_offsets{context.bits}_')
+        self._int_bitfields = getattr(self, f'_bitfields{context.bits}_')
         self._components = OrderedDict()
         for field in self._fields_:
             field_t = field[1]
             off = self._int_offsets[field[0]]
+            if isinstance(field_t, tuple):  # bitfield
+                field_t = field_t[0]
             if isinstance(field_t, BaseCType):
-                self._components[field[0]] = PwnType._calc_size(field[1])
+                self._components[field[0]] = PwnType._calc_size(field_t)
             else:
                 size = PwnType._calc_size(field_t)
                 assert issubclass(field_t, PwnType)
@@ -1109,12 +1190,46 @@ class CStruct(PwnType):
                 else:
                     self._components[field[0]] = field_t(self._view[off : off + size])
 
+    def _get_int(self, field: str) -> int:
+        """
+        A specific getter for accessing BaseCType field in CStruct to support bitfield
+        and general number.
+
+        Arguments:
+            field: The field name in the struct. The field name must be checked that
+                   it's a member in the struct.
+
+        Returns:
+            The result read from underlying memory view.
+        """
+        bit_pair = self._int_bitfields.get(field)
+        off = self._int_offsets[field]
+        size = self._components[field]
+        raw_val = unpack(bytes(self._view[off : off + size]), size * 8)
+        if not bit_pair:
+            return raw_val
+        bitstart, bitlen = bit_pair
+        raw_val >>= bitstart
+        return raw_val & ((1 << bitlen) - 1)
+
     def __setattr__(self, name: str, value: Any, /) -> None:
         if '_components' not in self.__dict__ or name not in self._components:
             object.__setattr__(self, name, value)
             return
         rhs = self._components[name]
         if isinstance(rhs, int):
+            if isinstance(value, int) and (bit_pair := self._int_bitfields.get(name)):
+                bitstart, bitlen = bit_pair
+                if value < 0:
+                    # need positive value to make following logic work
+                    value += 1 << bitlen
+                if value.bit_length() > bitlen or value < 0:
+                    raise ValueError(f'value can not fit in bitfield {name}')
+                off = self._int_offsets[name]
+                old = unpack(bytes(self._view[off : off + rhs]), rhs * 8)
+                mask = ((1 << bitlen) - 1) << bitstart
+                value = (value << bitstart) | (old & ~mask)
+
             if not self._set_int_from(self._int_offsets[name], rhs, value):
                 raise ValueError(f"Can't set {_type(self)}.{name} with {_type(value)}")
         else:  # isinstance(rhs, PwnType)
@@ -1126,9 +1241,8 @@ class CStruct(PwnType):
         if '_components' not in self.__dict__ or name not in self._components:
             raise AttributeError(f"'{_type(self)}' object has no attribute '{name}'")
         rhs = self._components[name]
-        off = self._int_offsets[name]
         if isinstance(rhs, int):
-            return unpack(bytes(self._view[off : off + rhs]), rhs * 8)
+            return self._get_int(name)
         return self._components[name]  # PwnType
 
     @overload
