@@ -355,7 +355,7 @@ class BaseCType(Enum):
             return 8
         return BaseCType.sizeof(e)
 
-    def __matmul__(self, bitlen: int) -> tuple[BaseCType, int]:
+    def __matmul__(self, bitlen: builtins.int) -> tuple[BaseCType, builtins.int]:
         """
         An alternative way to write bitfield. This shim converts ``BaseCType.int @ 24``
         to ``(BaseCType.int, 24)``, which may help you write shorter field descriptor
@@ -511,7 +511,7 @@ class PwnType:
                     if bitlen == 0:
                         raise ValueError('bitlen == 0 is unsupported, '
                                          'use explicit offset instead')
-                    if field_t not in BaseCType:
+                    if not isinstance(field_t, BaseCType):
                         raise ValueError('Only BaseCType supports bitfield')
                     if bitlen > max_bitlen or bitlen < 0:
                         raise ValueError(f"Field '{field[0]}' takes bits"
@@ -1282,6 +1282,7 @@ class CStruct(PwnType):
         bit_pair = self._int_bitfields.get(field)
         off = self._int_offsets[field]
         size = self._components[field]
+        assert isinstance(size, int)
         raw_val = unpack(bytes(self._view[off : off + size]), size * 8)
         if not bit_pair:
             return raw_val
