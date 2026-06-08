@@ -334,7 +334,7 @@ class BaseCType(Enum):
                     return context.bytes
                 return 4  # Windows
             case _:
-                raise NotImplementedError
+                raise NotImplementedError(f"sizeof '{_type(e)}' is not supported")
 
     @staticmethod
     def alignof(e: BaseCType) -> builtins.int:
@@ -455,7 +455,7 @@ class PwnType:
         elif issubclass(typ, CEnum):
             align = PwnType._calc_align(typ._size_type_)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'Calc align on {_type(typ)} is not supported')
         setattr(typ, align_attr, align)
         return align
 
@@ -505,7 +505,7 @@ class PwnType:
         elif issubclass(typ, CEnum):
             size_cache = PwnType._calc_size(typ._size_type_)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'Calc size on {_type(typ)} is not supported')
         setattr(typ, cache_attr, size_cache)
         return size_cache
 
@@ -619,7 +619,7 @@ class PwnType:
             s.write(',')
             _separator(s, v)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'{_type(o)} is not a PwnType instance')
 
     def __str__(self) -> str:
         with StringIO() as s:
@@ -764,8 +764,9 @@ class PwnType:
 class CArray(PwnType, Generic[ArrayItemT]):
     r"""
     A generic array to implement statments like ``int arr[3];`` in C. An array can be
-    accessed with ``int`` subscript. ``slice`` is used to access underlying memory not
-    objects.
+    accessed with ``int`` subscript. ``slice`` is used to access underlying memory view
+    object. E.g., for the definition above, write ``arr[1]`` to access second element,
+    or write ``arr[4:8]`` to get bytes representation of second element.
 
     Examples:
         A named array with 4 ints:
@@ -887,7 +888,7 @@ class CArray(PwnType, Generic[ArrayItemT]):
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_type_') or not hasattr(self, '_count_'):
-            raise NotImplementedError
+            raise NotImplementedError('CArray subclass must define _type_ and _count_')
         super().__init__(view)
         if self._len == 0:
             if self._buf is not None:
@@ -1007,6 +1008,8 @@ class CCharArray(CArray[int]):
 class CStruct(PwnType):
     r"""
     Base type of C structure. A structure can be accessed like member, or ``dict``.
+    E.g., to access flags in a FILE struct instance one can write ``file._flags`` or
+    ``file['_flags']``. To get bytes representation of flags, write ``file[:4]``.
     See examples below.
 
     Examples:
@@ -1088,7 +1091,7 @@ class CStruct(PwnType):
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
-            raise NotImplementedError
+            raise NotImplementedError('CStruct subclass must define _fields_')
         super().__init__(view)
 
         self._int_offsets = getattr(self, f'_offsets{context.bits}_')
@@ -1198,7 +1201,9 @@ class CStruct(PwnType):
 class CUnion(PwnType):
     r"""
     Base type of C union. Like struct, you can access members with dot or like
-    ``dict``. See examples below.
+    ``dict``. E.g., to access ``sival_int`` in a ``sigval`` instance, one can write
+    ``val.sival_int`` or ``val['sival_int']``. To get bytes representation of
+    ``sival_int``, write ``val[:4]``. See examples below.
 
     Examples:
         >>> from pwnlib.util.c_primitives import *
@@ -1257,7 +1262,7 @@ class CUnion(PwnType):
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_fields_'):
-            raise NotImplementedError
+            raise NotImplementedError('CUnion subclass must define _fields_')
         super().__init__(view)
 
         self._components = OrderedDict()
@@ -1370,7 +1375,8 @@ class CEnum(PwnType):
 
     def __init__(self, view: memoryview | None = None) -> None:
         if not hasattr(self, '_size_type_') or not hasattr(self, '_disp_type_'):
-            raise NotImplementedError
+            msg = 'CEnum subclass must define _size_type_ and _disp_type_'
+            raise NotImplementedError(msg)
         super().__init__(view)
 
     def __getitem__(self, key: slice) -> bytes:
