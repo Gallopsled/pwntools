@@ -691,6 +691,9 @@ class PwnType:
     def __bytes__(self) -> bytes:
         return bytes(self._view)
 
+    def __flat__(self) -> bytes:
+        return bytes(self)
+
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, (str, bytes, bytearray)):
             return self._view == _need_bytes(value)
