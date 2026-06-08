@@ -158,9 +158,9 @@ Examples:
           00 00                                            |..|
         >,
         scores = [
-          0xbeef,
-          0x4647,
-          0x4445,
+          [0] = 0xbeef,
+          [1] = 0x4647,
+          [2] = 0x4445,
         ],
         pair = {
           +0x0 lo = 0xbeef,
@@ -170,8 +170,8 @@ Examples:
         },
       },
       +0x34 tokens = [
-        0x1 <Token.READ: 1>,
-        0x99,
+        [0] = 0x1 <Token.READ: 1>,
+        [1] = 0x99,
       ],
       +0x3c perm = 0x4 <Perm.X: 4>,
       +0x40 handler = 0x7f0643fa3f60,
@@ -550,8 +550,11 @@ class PwnType:
             s.write('[')
             _verbose_separator(s, v)
             indent += step
+            w = len(str(o._int_count))
             for i in range(o._int_count):
                 s.write(' ' * indent)
+                if v:
+                    s.write(f'[{i:<{w}}] = ')
                 if o._components:
                     PwnType._print_to_stream(s, v, indent, o._components[i])
                 else:
@@ -785,10 +788,10 @@ class CArray(PwnType, Generic[ArrayItemT]):
         16
         >>> arr
         [
-          0x13371337,
-          0xbeadde00,
-          0xef,
-          0x0,
+          [0] = 0x13371337,
+          [1] = 0xbeadde00,
+          [2] = 0xef,
+          [3] = 0x0,
         ]
         >>> for e in arr:
         ...     print(e)
@@ -1480,8 +1483,8 @@ def mk_anonymous_carray(
         >>> from pwnlib.util.c_primitives import *
         >>> mk_anonymous_carray(BaseCType.int, 2)()
         [
-          0x0,
-          0x0,
+          [0] = 0x0,
+          [1] = 0x0,
         ]
     """
     fields: dict[str, Any] = {'_type_': elem_type, '_count_': count}
