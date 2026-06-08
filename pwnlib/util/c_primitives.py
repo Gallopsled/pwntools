@@ -509,7 +509,7 @@ class PwnType:
                     max_bitlen = PwnType._calc_size(field_t) * 8
                     # fmt: off
                     if bitlen == 0:
-                        raise ValueError('bitlen == 0 is unsupported,'
+                        raise ValueError('bitlen == 0 is unsupported, '
                                          'use explicit offset instead')
                     if field_t not in BaseCType:
                         raise ValueError('Only BaseCType supports bitfield')
@@ -1065,6 +1065,9 @@ class CStruct(PwnType):
     See examples below.
 
     Examples:
+
+        Implement a basic C string struct with overlapped field:
+
         >>> from pwnlib.util.c_primitives import *
         >>> class CString(CStruct):
         ...     _fields_ = [
@@ -1100,11 +1103,13 @@ class CStruct(PwnType):
         True
         >>> cstr == b'xV4\x12\x00\x00\x00\x00@\x04\x04C\x98\x7f\x00\x00'
         True
-        >>> cstr['flag'] = 0xab
+        >>> cstr['flag'] = b'\xab'
         >>> cstr[3:4]
         b'\xab'
         >>> hex(cstr['size'])
         '0xab345678'
+        >>> cstr.struntil('string')
+        b'xV4\xab\x00\x00\x00\x00'
         >>> cstr.str
         Traceback (most recent call last):
         ...
@@ -1119,8 +1124,73 @@ class CStruct(PwnType):
         Traceback (most recent call last):
         ...
         ValueError: 'length' is not exist in 'CString'
-        >>> cstr.struntil('string')
-        b'xV4\xab\x00\x00\x00\x00'
+
+        Bitfield is also supported. Bitfield implementation has some known caveats,
+        please refer to :py:attr:`pwnlib.util.c_primitives.CStruct._fields_`.
+
+        >>> class StructA(CStruct):
+        ...     _fields_ = [
+        ...         ('f1', BaseCType.int @ 3),
+        ...         ('f2', BaseCType.int @ 5),
+        ...         ('f3', BaseCType.int @ 24, 4, 4),
+        ...         ('f4', BaseCType.char, 7, 7),
+        ...         ('f5', BaseCType.uint @ 20),
+        ...         ('f6', BaseCType.byte),
+        ...         ('f7', BaseCType.uint @ 10),
+        ...     ]
+        ...
+        >>> class StructB(CStruct):
+        ...     _fields_ = [
+        ...         ('fa', BaseCType.int @ 25),
+        ...         ('fb', BaseCType.ulonglong @ 32),
+        ...         ('fc', BaseCType.ulonglong @ 48),
+        ...     ]
+        ...
+        >>> a = StructA()
+        >>> a.offsetof('f1') == a.offsetof('f2') == 0
+        True
+        >>> a.f1 = 3
+        >>> a.f2 = 3
+        >>> a[4:8] = b'\xab\xcd\xef\x89'
+        >>> hex(a.f3)
+        '0xefcdab'
+        >>> hex(a.f4)
+        '0x89'
+        >>> a[:4]
+        b'\x1b\x00\x00\x00'
+        >>> a.offsetof('f5')
+        8
+        >>> b = StructB()
+        >>> len(b)
+        16
+        >>> b.fa = -1
+        >>> b.fb = 0x10101010
+        >>> hex(b.fa)
+        '0x1ffffff'
+        >>> hex(b.fb)
+        '0x10101010'
+        >>> b.fb = b''
+        >>> b[:8]
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        >>> b.offsetof('fa') == b.offsetof('fb') == 0 and b.offsetof('fc') == 8
+        True
+        >>> mk_anonymous_cstruct([('x', BaseCType.uchar @ 9)])()
+        Traceback (most recent call last):
+        ...
+        ValueError: Field 'x' takes bitsmore than it can hold (9 bits)
+        >>> mk_anonymous_cstruct([('x', (mk_anonymous_carray(BaseCType.int, 1), 1))])()
+        Traceback (most recent call last):
+        ...
+        ValueError: Only BaseCType supports bitfield
+        >>> mk_anonymous_cstruct([('x', BaseCType.uchar @ 0)])()
+        Traceback (most recent call last):
+        ...
+        ValueError: bitlen == 0 is unsupported, use explicit offset instead
+        >>> bad_value = mk_anonymous_cstruct([('x', BaseCType.uchar @ 3)])()
+        >>> bad_value.x = 8
+        Traceback (most recent call last):
+        ...
+        ValueError: value can not fit in bitfield 'x'
     """
 
     _fields_: list[tuple[str, BitFieldCType] | tuple[str, BitFieldCType, int, int]]
@@ -1137,6 +1207,13 @@ class CStruct(PwnType):
     of a :class:`pwnlib.util.c_primitives.BaseCType` and an ``int`` to indicate how
     many bits the member takes. Alternatively, you can use ``@`` on a ``BaseCType`` to
     simplify bitfield representation like ``BaseCType.int @ 24``.
+
+    .. note::
+        Bitfield size is inconsistent with compilers, e.g. ``int : 24``, which should
+        take only 3 bytes, is calculated as 4 bytes here. To emulate correct layout,
+        you may specify the element after bitfield explicitly. And writing bytes to
+        bitfield always fills the whole number container, instead of the bits that
+        bitfields holds.
 
     Please refer to :class:`pwnlib.util.c_primitives.CStruct` for examples.
     """
@@ -1224,7 +1301,7 @@ class CStruct(PwnType):
                     # need positive value to make following logic work
                     value += 1 << bitlen
                 if value.bit_length() > bitlen or value < 0:
-                    raise ValueError(f'value can not fit in bitfield {name}')
+                    raise ValueError(f"value can not fit in bitfield '{name}'")
                 off = self._int_offsets[name]
                 old = unpack(bytes(self._view[off : off + rhs]), rhs * 8)
                 mask = ((1 << bitlen) - 1) << bitstart
