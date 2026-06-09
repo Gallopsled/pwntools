@@ -325,10 +325,10 @@ class BaseCType(Enum):
             case BaseCType.void_p:
                 return context.bytes
             case BaseCType.wchar_t:
-                return 4 if context.os == 'linux' else 2  # Windows use UTF-16
+                return 2 if context.os == 'windows' else 4  # Windows use UTF-16
             case BaseCType.long_double:
                 if context.arch == 'i386' and context.os == 'linux':
-                    return 3
+                    return 12
                 return context.bytes * 2
             case BaseCType.long:
                 if context.os == 'linux':
@@ -456,7 +456,7 @@ class PwnType:
         align_attr = f'_{context.bits}_align_cache_'
         if hasattr(typ, align_attr):
             return getattr(typ, align_attr)
-        if issubclass(typ, (CStruct, CUnion)):
+        if issubclass(typ, CStruct):
             if all(len(field) == 4 for field in typ._fields_):
                 # this is a packed struct
                 align = 1
@@ -465,6 +465,8 @@ class PwnType:
                     PwnType._calc_align(f[1][0] if isinstance(f[1], tuple) else f[1])
                     for f in typ._fields_
                 )
+        elif issubclass(typ, CUnion):
+            align = max(PwnType._calc_align(f[1]) for f in typ._fields_)
         elif issubclass(typ, CArray):
             if hasattr(typ, '_align_'):  # here _align_ is type-range
                 align = typ._align_
@@ -546,8 +548,7 @@ class PwnType:
             setattr(typ, bitfield_attr, bitfields)
             setattr(typ, offset_table_attr, offsets)
             align = PwnType._calc_align(typ)
-            struct_len = ((struct_len + align - 1) // align) * align
-            size_cache = struct_len
+            size_cache = ((struct_len + align - 1) // align) * align
         elif issubclass(typ, CArray):
             if typ._count_ == 0:
                 return 0
@@ -556,7 +557,9 @@ class PwnType:
             else:
                 size_cache = PwnType._calc_size(typ._type_) * typ._count_
         elif issubclass(typ, CUnion):
-            size_cache = max(PwnType._calc_size(field[1]) for field in typ._fields_)
+            max_size = max(PwnType._calc_size(field[1]) for field in typ._fields_)
+            align = PwnType._calc_align(typ)
+            size_cache = ((max_size + align - 1) // align) * align
         elif issubclass(typ, CEnum):
             size_cache = PwnType._calc_size(typ._size_type_)
         else:
@@ -1429,6 +1432,8 @@ class CUnion(PwnType):
         >>> xu[:]
         b'\x00\xde\xbc\x9axV4\x12'
         >>> len(xu)
+        8
+        >>> len(mk_anonymous_cunion([('a', mk_anonymous_cchararray(5)), ('b', BaseCType.int)])())
         8
         >>> xu[:1] = b'123'
         Traceback (most recent call last):
