@@ -74,7 +74,7 @@ The table below shows which release corresponds to each branch, and what date th
 | [2.2.0](#220)    |          | Jan 5, 2015
 
 ## 5.0.0 (`dev`)
-
+- [#2747][2747] fix(ssh): preserve ANSI escape codes in interactive mode (closes #2703)
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
 - [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
 - [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
@@ -138,6 +138,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2730][2730] Fix atexception handlers in term mode
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
 
+[2747]: https://github.com/Gallopsled/pwntools/pull/2747
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
