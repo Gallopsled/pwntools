@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
@@ -103,6 +104,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
 
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
+[2746]: https://github.com/Gallopsled/pwntools/pull/2746
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
