@@ -194,14 +194,14 @@ class symboldict(dotdict):
             raise KeyError(
                 '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
                 'property to get the return address into __libc_start_main from main.' % name)
-        return super(symboldict, self).__missing__(name)
+        return super().__missing__(name)
 
     def __getattr__(self, name):
         if name in _libc_start_main_ret_aliases and name not in self:
             raise AttributeError(
                 '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
                 'property to get the return address into __libc_start_main from main.' % name)
-        return super(symboldict, self).__getattr__(name)
+        return super().__getattr__(name)
 
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
