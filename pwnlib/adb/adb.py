@@ -321,7 +321,7 @@ class AdbDevice(Device):
                     r.recvline() # Rest of the line
                     r.sendline('avd name')
                     self.avd = r.recvline().strip()
-            except (OSError, EOFError) as e:
+            except (OSError, EOFError, PwnlibException) as e:
                 # ADB device disconnected or not responding, skip AVD name lookup
                 pass
 
