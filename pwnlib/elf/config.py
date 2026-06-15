@@ -1,9 +1,7 @@
 """
 Kernel-specific ELF functionality
 """
-from __future__ import division
-
-class KernelConfig(object):
+class KernelConfig:
     def __init__(self, name, title, requires=[], excludes=[], minver=0, maxver=99):
 
         #: Name of the configuration option
@@ -21,8 +19,8 @@ class KernelConfig(object):
         self.excludes = set(excludes)
 
         #: Kernel version that this check should be enforced on
-        self.minver = list(map(int, str(minver).split('.')))
-        self.maxver = list(map(int, str(maxver).split('.')))
+        self.minver = tuple(map(int, str(minver).split('.')))
+        self.maxver = tuple(map(int, str(maxver).split('.')))
 
     def relevant(self, config):
 

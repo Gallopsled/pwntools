@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 # pwntools documentation build configuration file, created by
 # sphinx-quickstart on Wed May 28 15:00:52 2014.
 #
@@ -14,9 +12,9 @@
 import os
 import doctest
 import signal
-import six
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 build_dash = tags.has('dash')
 
@@ -71,7 +69,6 @@ doctest_global_setup = '''
 import sys, os
 os.environ['PWNLIB_NOTERM'] = '1'
 os.environ['PWNLIB_RANDOMIZE'] = '0'
-import six
 import pwnlib.update
 import pwnlib.util.fiddling
 import logging
@@ -88,7 +85,7 @@ pwnlib.log.rootlogger.setLevel(1)
 # Sphinx modifies sys.stdout, and context.log_terminal has
 # a reference to the original instance.  We need to update
 # it for logging to be captured.
-class stdout(object):
+class stdout:
     def __getattr__(self, name):
         return getattr(sys.stdout, name)
     def __setattr__(self, name, value):
@@ -99,7 +96,6 @@ github_actions = os.environ.get('USER') == 'runner'
 travis_ci = os.environ.get('USER') == 'travis'
 local_doctest = os.environ.get('USER') == 'pwntools'
 skip_android = True
-is_python2 = six.PY2
 '''
 
 autoclass_content = 'both'
@@ -121,7 +117,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pwntools'
-copyright = u'2016, Gallopsled et al.'
+copyright = u'2016-2026, Gallopsled et al.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -263,11 +259,11 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'pwntools.tex', u'pwntools Documentation',
-   u'2016, Gallopsled et al.', 'manual'),
+   u'2016-2026, Gallopsled et al.', 'manual'),
 ]
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
-                       'paramiko': ('https://docs.paramiko.org/en/2.1/', None)}
+                       'paramiko': ('https://docs.paramiko.org/en/stable/', None)}
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -296,7 +292,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'pwntools', u'pwntools Documentation',
-     [u'2016, Gallopsled et al.'], 1)
+     [u'2016-2026, Gallopsled et al.'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -363,7 +359,7 @@ def linkcode_resolve(domain, info):
         if isinstance(val, property):
             val = val.fget
 
-        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType) + six.class_types):
+        if isinstance(val, (types.ModuleType, types.MethodType, types.FunctionType, types.TracebackType, types.FrameType, types.CodeType, type)):
             try:
                 lines, first = inspect.getsourcelines(val)
                 filename += '#L%d-L%d' % (first, first + len(lines) - 1)
@@ -388,7 +384,6 @@ if build_dash:
 
 
 # -- Customization to Sphinx autodoc generation --------------------------------------------
-import sphinx.ext.autodoc
 
 # Test hidden members (e.g. def _foo(...))
 def dont_skip_any_doctests(app, what, name, obj, skip, options):
@@ -396,56 +391,110 @@ def dont_skip_any_doctests(app, what, name, obj, skip, options):
 
 autodoc_default_options = {'special-members': None, 'private-members': None}
 
-class _DummyClass(object): pass
+# doctest optionflags for platform-specific tests
+# they are skipped on other platforms
+WINDOWS = doctest.register_optionflag('WINDOWS')
+LINUX = doctest.register_optionflag('LINUX')
+POSIX = doctest.register_optionflag('POSIX')
 
-class Py2OutputChecker(_DummyClass, doctest.OutputChecker):
-    def check_output(self, want, got, optionflags):
-        sup = super(Py2OutputChecker, self).check_output
-        if sup(want, got, optionflags):
-            return True
-        try:
-            rly_want = pwnlib.util.safeeval.const(want)
-            if sup(repr(rly_want), got, optionflags):
-                return True
-            rly_got = pwnlib.util.safeeval.const(got)
-            if rly_want == rly_got:
-                return True
-        except ValueError:
-            pass
-        rly_want = ' '.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        if sup(rly_want, got, optionflags):
-            return True
-        rly_want = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in want.replace('\n','\n ').split(' ')).replace('\n ','\n')
-        if sup(rly_want, got, optionflags):
-            return True
-        for wantl, gotl in six.moves.zip_longest(want.splitlines(), got.splitlines(), fillvalue=''):
-            rly_want1 = '['.join(x[:2].replace('b"','"').replace("b'","'")+x[2:] for x in wantl.split('['))
-            rly_want2 = ' '.join(x[:2].replace('b"',' "').replace("b'"," '")+x[2:] for x in wantl.split(' '))
-            if not sup(rly_want1, gotl, optionflags) and not sup(rly_want2, gotl, optionflags):
+# doctest optionflag for tests that haven't been looked at yet
+TODO = doctest.register_optionflag('TODO')
+
+import sphinx.ext.doctest
+
+class PlatformDocTestRunner(sphinx.ext.doctest.SphinxDocTestRunner):
+    def run(self, test, compileflags=None, out=None, clear_globs=True):
+        original_optionflags = self.optionflags | test.globs.get('doctest_additional_flags', 0)
+        def filter_platform(example):
+            optionflags = original_optionflags
+            if example.options:
+                for (optionflag, val) in example.options.items():
+                    if val:
+                        optionflags |= optionflag
+                    else:
+                        optionflags &= ~optionflag
+
+            if (optionflags & WINDOWS) == WINDOWS and sys.platform != 'win32':
                 return False
-        return True
+            if (optionflags & LINUX) == LINUX and sys.platform != 'linux':
+                return False
+            if (optionflags & POSIX) == POSIX and os.name != 'posix':
+                return False
+            return True
+                
+        test.examples[:] = [example for example in test.examples if filter_platform(example)]
+            
+        return super(PlatformDocTestRunner, self).run(test, compileflags, out, clear_globs)
 
-def py2_doctest_init(self, checker=None, verbose=None, optionflags=0):
-    if checker is None:
-        checker = Py2OutputChecker()
-    doctest.DocTestRunner.__init__(self, checker, verbose, optionflags)
+class PlatformDocTestBuilder(sphinx.ext.doctest.DocTestBuilder):
+
+    def __init__(self, *args, **kwargs):
+        super(PlatformDocTestBuilder, self).__init__(*args, **kwargs)
+        self._test_runner = None
+        self._doctree_had_tests = False
+
+    @property
+    def test_runner(self):
+        return self._test_runner
+
+    @test_runner.setter
+    def test_runner(self, value):
+        self._test_runner = PlatformDocTestRunner(value._checker, value._verbose, value.optionflags)
+
+    def test_doc(self, docname, doctree):
+        start = datetime.now(timezone.utc).astimezone()
+        # self._out(f"[{start.isoformat(timespec='milliseconds')}] doctest start: {docname}\n")
+        self._doctree_had_tests = False
+        try:
+            return super(PlatformDocTestBuilder, self).test_doc(docname, doctree)
+        finally:
+            # Only print the timestamp if there were actually tests run.
+            if self._doctree_had_tests:
+                end = datetime.now(timezone.utc).astimezone()
+                duration = (end - start).total_seconds()
+                self._out(f"[{end.isoformat(timespec='milliseconds')} - {duration:.2f}s]\n")
+            self._doctree_had_tests = False
+
+    def test_group(self, group):
+        # Only called when there are tests to run in the current document.
+        self._doctree_had_tests = True
+        return super(PlatformDocTestBuilder, self).test_group(group)
 
 if 'doctest' in sys.argv:
     def setup(app):
-        pass # app.connect('autodoc-skip-member', dont_skip_any_doctests)
+        app.add_builder(PlatformDocTestBuilder, override=True)
+        # app.connect('autodoc-skip-member', dont_skip_any_doctests)
+    # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
+    import paramiko.client
+    import binascii
+    paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
+    paramiko.util.safe_string = lambda x: '' # function result never *actually used*
 
-    if sys.version_info[:1] < (3,):
-        import sphinx.ext.doctest
-        sphinx.ext.doctest.SphinxDocTestRunner.__init__ = py2_doctest_init
-    else:
-        # monkey patching paramiko due to https://github.com/paramiko/paramiko/pull/1661
-        import paramiko.client
-        import binascii
-        paramiko.client.hexlify = lambda x: binascii.hexlify(x).decode()
-        paramiko.util.safe_string = lambda x: '' # function result never *actually used*
     class EndlessLoop(Exception): pass
-    def alrm_handler(sig, frame):
-        signal.alarm(180) # three minutes
-        raise EndlessLoop()
-    signal.signal(signal.SIGALRM, alrm_handler)
-    signal.alarm(600) # ten minutes
+    if hasattr(signal, 'alarm'):
+        def alrm_handler(sig, frame):
+            signal.alarm(180) # three minutes
+            raise EndlessLoop()
+        signal.signal(signal.SIGALRM, alrm_handler)
+        signal.alarm(600) # ten minutes
+    else:
+        def sigabrt_handler(signum, frame):
+            raise EndlessLoop()
+        # thread.interrupt_main received the signum parameter in Python 3.10
+        if sys.version_info >= (3, 10):
+            signal.signal(signal.SIGABRT, sigabrt_handler)
+        def alrm_handler():
+            try:
+                import thread
+            except ImportError:
+                import _thread as thread
+            # pre Python 3.10 this raises a KeyboardInterrupt in the main thread.
+            # it might not show a traceback in that case, but it will stop the endless loop.
+            thread.interrupt_main(signal.SIGABRT)
+            timer = threading.Timer(interval=180, function=alrm_handler) # three minutes
+            timer.daemon = True
+            timer.start()
+        import threading
+        timer = threading.Timer(interval=600, function=alrm_handler) # ten minutes
+        timer.daemon = True
+        timer.start()

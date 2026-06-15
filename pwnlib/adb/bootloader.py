@@ -1,10 +1,6 @@
-from __future__ import unicode_literals
-from __future__ import division
-
 import ctypes
 import io
 import os
-import six
 import sys
 
 from pwnlib.log import getLogger
@@ -27,7 +23,7 @@ class bootloader_images_header(ctypes.Structure):
 
 BOOTLDR_MAGIC = b'BOOTLDR!'
 
-class BootloaderImage(object):
+class BootloaderImage:
     def __init__(self, data):
         """Android Bootloader image
 
@@ -65,7 +61,7 @@ class BootloaderImage(object):
         Returns:
             Contents of the image.
         """
-        if isinstance(index_or_name, six.integer_types):
+        if isinstance(index_or_name, int):
             index = index_or_name
         else:
             for i in range(len(self.img_info)):

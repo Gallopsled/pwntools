@@ -16,7 +16,7 @@ Creating a ROP object which looks up symbols in the binary is pretty straightfor
 
     >>> rop = ROP(binary)
 
-Once to ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.  
+Once the ROP object has been loaded, you can trivially find gadgets, by using magic properties on the ``ROP`` object.
 Each :class:`Gadget` has an ``address`` property which has the real address as well.
 
     >>> rop.eax
@@ -31,12 +31,12 @@ Other, more complicated gadgets also happen magically
 
 The easiest way to set up individual registers is to invoke the ``ROP`` object as a callable, with the registers as arguments.
 This has the benefit of using multi-pop gadgets to set multiple registers with one gadget.
-    
+
     >>> rop(eax=0x11111111, ecx=0x22222222)
 
 Setting register values this way accounts for padding and extra registers which are popped off the stack.
 Values which are filled with garbage (i.e. are not used) are filled with the :func:`cyclic` pattern
-which corresponds to their offset, which is useful when debuggging your exploit.
+which corresponds to their offset, which is useful when debugging your exploit.
 
     >>> print(rop.dump())
     0x0000:       0x10000006 pop ecx; pop ebx; ret
@@ -76,7 +76,7 @@ object by register name.
     0x0000:       0x10000004 pop eax; ret
     0x0004:       0x12345678
 
-Let's re-create our ROP object now to show for some other examples.:
+Let's re-create our ROP object now to show for some other examples.
 
     >>> rop = ROP(binary)
 
@@ -109,7 +109,7 @@ standard Linux ABIs.
     0x001c:              0x6 arg2
 
 You can also use a shorthand to invoke calls.
-The stack is automatically adjusted for the next frame
+The stack is automatically adjusted for the next frame.
 
     >>> rop.write(7,8,9)
     >>> rop.exit()
@@ -357,9 +357,6 @@ Let's try it out!
     >>> p.recvline()
     b'hello\n'
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import copy
 import hashlib
@@ -367,11 +364,12 @@ import itertools
 import os
 import re
 import shutil
-import six
 import string
 import struct
 import sys
 import tempfile
+
+from enum import Enum
 
 from pwnlib import abi
 from pwnlib import constants
@@ -390,22 +388,16 @@ from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util import safeeval
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
-from pwnlib.util.misc import python_2_bytes_compatible
 
 log = getLogger(__name__)
 __all__ = ['ROP']
 
-enums = Call, constants.Constant
-try:
-    from enum import Enum
-except ImportError:
-    pass
-else:
-    enums += Enum,
+enums = Call, constants.Constant, Enum
 
-class Padding(object):
+class Padding:
     """
     Placeholder for exactly one pointer-width of padding.
     """
@@ -413,7 +405,7 @@ class Padding(object):
         self.name = name
 
 def _slot_len(x):
-    if isinstance(x, six.integer_types+(Unresolved, Padding, Gadget)):
+    if isinstance(x, (int, Unresolved, Padding, Gadget)):
         return context.bytes
     else:
         return len(packing.flat(x))
@@ -456,7 +448,7 @@ class DescriptiveStack(list):
             line = '0x%04x:' % addr
             if isinstance(data, (str, bytes)):
                 line += ' %16r' % data
-            elif isinstance(data, six.integer_types):
+            elif isinstance(data, int):
                 line += ' %#16x' % data
                 if self.address != 0 and self.address < data < self.next:
                     off = data - addr
@@ -473,8 +465,7 @@ class DescriptiveStack(list):
         return '\n'.join(rv)
 
 
-@python_2_bytes_compatible
-class ROP(object):
+class ROP:
     r"""Class which simplifies the generation of ROP-chains.
 
     Example:
@@ -603,7 +594,7 @@ class ROP(object):
         # Permit singular ROP(elf) vs ROP([elf])
         if isinstance(elfs, ELF):
             elfs = [elfs]
-        elif isinstance(elfs, (bytes, six.text_type)):
+        elif isinstance(elfs, (bytes, str)):
             elfs = [ELF(elfs)]
 
         #: List of individual ROP gadgets, ROP calls, SROP frames, etc.
@@ -656,7 +647,7 @@ class ROP(object):
         regset = set(registers)
 
         bad_instructions = set(('syscall', 'sysenter', 'int 0x80'))
-        
+
         # Collect all gadgets which use these registers
         # Also collect the "best" gadget for each combination of registers
         gadgets = []
@@ -788,7 +779,7 @@ class ROP(object):
                 if resolvable in elf.symbols:
                     return elf.symbols[resolvable]
 
-        if isinstance(resolvable, six.integer_types):
+        if isinstance(resolvable, int):
             return resolvable
 
     def unresolve(self, value):
@@ -841,9 +832,9 @@ class ROP(object):
         """
         if isinstance(object, enums):
             return str(object)
-        if isinstance(object, six.integer_types) and object:
+        if isinstance(object, int) and object:
             return self.unresolve(object)
-        if isinstance(object, (bytes, six.text_type)):
+        if isinstance(object, (bytes, str)):
             return repr(object)
         if isinstance(object, Gadget):
             return '; '.join(object.insns)
@@ -886,14 +877,14 @@ class ROP(object):
 
             # Integers can just be added.
             # Do our best to find out what the address is.
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 stack.describe(self.describe(slot))
                 stack.append(slot)
 
 
             # Byte blobs can also be added, however they must be
             # broken down into pointer-width blobs.
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 stack.describe(self.describe(slot))
                 if not isinstance(slot, bytes):
                     slot = slot.encode()
@@ -1011,10 +1002,10 @@ class ROP(object):
         size  = (stack.next - base)
         slot_address = base
         for i, slot in enumerate(stack):
-            if isinstance(slot, six.integer_types):
+            if isinstance(slot, int):
                 pass
 
-            elif isinstance(slot, (bytes, six.text_type)):
+            elif isinstance(slot, (bytes, str)):
                 pass
 
             elif isinstance(slot, AppendedArgument):
@@ -1044,7 +1035,7 @@ class ROP(object):
 
     def chain(self, base=None):
         """Build the ROP chain
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1057,7 +1048,7 @@ class ROP(object):
 
     def dump(self, base=None):
         """Dump the ROP chain in an easy-to-read manner
-        
+
         Arguments:
             base(int):
                 The base address to build the rop-chain from. Defaults to
@@ -1136,7 +1127,7 @@ class ROP(object):
                 SYS_sigreturn  = constants.SYS_rt_sigreturn
 
             for register, value in zip(frame.arguments, arguments):
-                if not isinstance(value, six.integer_types + (Unresolved,)):
+                if not isinstance(value, (int, Unresolved)):
                     frame[register] = AppendedArgument(value)
                 else:
                     frame[register] = value
@@ -1248,8 +1239,7 @@ class ROP(object):
             return None
 
         cachedir = os.path.join(context.cache_dir, 'rop-cache')
-        if not os.path.exists(cachedir):
-            os.mkdir(cachedir)
+        os.makedirs(cachedir, exist_ok=True)
 
         if isinstance(files, ELF):
             files = [files]
@@ -1272,9 +1262,9 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = safeeval.const(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
-        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.file.name)
+        log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.path)
         return gadgets
 
     def __cache_save(self, elf, data):
@@ -1320,25 +1310,6 @@ class ROP(object):
         #
         valid = lambda insn: any(map(lambda pattern: pattern.match(insn), [pop,add,ret,leave,int80,syscall,sysenter]))
 
-        #
-        # Currently, ropgadget.args.Args() doesn't take any arguments, and pulls
-        # only from sys.argv.  Preserve it through this call.  We also
-        # monkey-patch sys.stdout to suppress output from ropgadget.
-        #
-        argv = sys.argv
-        stdout = sys.stdout
-
-        class Wrapper:
-
-            def __init__(self, fd):
-                self._fd = fd
-
-            def write(self, s):
-                pass
-
-            def __getattr__(self, k):
-                return getattr(self._fd, k)
-
         gadgets = {}
         for elf in self.elfs:
             cache = self.__cache_load(elf)
@@ -1346,17 +1317,12 @@ class ROP(object):
                 gadgets.update(cache)
                 continue
             log.info_once('Loading gadgets for %r' % elf.path)
-            try:
-                sys.stdout = Wrapper(sys.stdout)
-                import ropgadget
-                sys.argv = ['ropgadget', '--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
-                args = ropgadget.args.Args().getArgs()
-                core = ropgadget.core.Core(args)
-                core.do_binary(elf.path)
-                core.do_load(0)
-            finally:
-                sys.argv = argv
-                sys.stdout = stdout
+            import ropgadget
+            arguments = ['--binary', elf.path, '--only', 'sysenter|syscall|int|add|pop|leave|ret', '--nojop', '--multibr']
+            args = ropgadget.args.Args(arguments).getArgs()
+            core = ropgadget.core.Core(args)
+            core.do_binary(elf.path, silent=True)
+            core.do_load(0, silent=True)
 
             elf_gadgets = {}
             for gadget in core._Core__gadgets:
@@ -1391,6 +1357,8 @@ class ROP(object):
                 if pop.match(insn):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
+                    if 'sp' in insn:
+                        sp_move += 9999999
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
@@ -1418,7 +1386,7 @@ class ROP(object):
             if not set(['rsp', 'esp']) & set(regs):
                 self.pivots[sp_move] = addr
 
-        leave = self.search(regs=frame_regs, order='regs')
+        leave = self.search(regs=frame_regs, order='leav')
         if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
@@ -1451,7 +1419,7 @@ class ROP(object):
                 pointer is adjusted.
             regs(list): Minimum list of registers which are popped off the
                 stack.
-            order(str): Either the string 'size' or 'regs'. Decides how to
+            order(str): Either the string 'size', 'leav' or 'regs'. Decides how to
                 order multiple gadgets the fulfill the requirements.
 
         The search will try to minimize the number of bytes popped more than
@@ -1459,7 +1427,9 @@ class ROP(object):
         the address.
 
         If ``order == 'size'``, then gadgets are compared lexicographically
-        by ``(total_moves, total_regs, addr)``, otherwise by ``(total_regs, total_moves, addr)``.
+        by ``(total_moves, total_regs, addr)``, if ``order == 'regs'``,
+        then by ``(total_regs, total_moves, addr)``. ``order == 'leav'``
+        is specifically for ``leave`` insn.
 
         Returns:
             A :class:`.Gadget` object
@@ -1471,8 +1441,9 @@ class ROP(object):
         # Search for an exact match, save the closest match
         key = {
             'size': lambda g: (g.move, len(g.regs), g.address),
-            'regs': lambda g: (len(g.regs), g.move, g.address)
-        }[order]
+            'regs': lambda g: (len(g.regs), g.move, g.address),
+            'leav': lambda g: ('leave' not in g.insns, len(g.regs), g.address)
+        }[order]                # False is prior than True
 
         try:
             result = min(matches, key=key)
@@ -1566,7 +1537,6 @@ class ROP(object):
         log.debug("PLT_INIT: %#x", plt_init)
 
         reloc_index = dlresolve.reloc_index
-        real_args = dlresolve.real_args
         call = Call("[plt_init] " + dlresolve.symbol.decode(),
                     plt_init,
                     dlresolve.real_args,

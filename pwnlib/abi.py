@@ -1,35 +1,34 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import division
-
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 
 
-class ABI(object):
+class ABI:
     """
     Encapsulates information about a calling convention.
     """
+    #: Register which points to the top of the stack.
+    stack: str
+
     #: List or registers which should be filled with arguments before
     #: spilling onto the stack.
-    register_arguments = []
+    register_arguments: list[str]
 
     #: Minimum alignment of the stack.
     #: The value used is min(context.bytes, stack_alignment)
     #: This is necessary as Windows x64 frames must be 32-byte aligned.
     #: "Alignment" is considered with respect to the last argument on the stack.
-    arg_alignment    = 1
+    arg_alignment: int
 
     #: Minimum number of stack slots used by a function call
     #: This is necessary as Windows x64 requires using 4 slots on the stack
-    stack_minimum      = 0
+    stack_minimum: int
 
     #: Indicates that this ABI returns to the next address on the slot
-    returns            = True
+    returns: bool = True
 
-    def __init__(self, stack, regs, align, minimum):
+    def __init__(self, stack, arg_regs, align, minimum):
         self.stack              = stack
-        self.register_arguments = regs
+        self.register_arguments = arg_regs
         self.arg_alignment      = align
         self.stack_minimum      = minimum
 
@@ -50,6 +49,7 @@ class ABI(object):
         (64, 'powerpc', 'linux'): linux_ppc64,
         (32, 'riscv32', 'linux'): linux_riscv32,
         (64, 'riscv64', 'linux'): linux_riscv64,
+        (64, 'loongarch64', 'linux'): linux_loongarch64,
         (32, 'i386', 'freebsd'):  freebsd_i386,
         (64, 'aarch64', 'freebsd'): freebsd_aarch64,
         (64, 'amd64', 'freebsd'): freebsd_amd64,
@@ -77,18 +77,17 @@ class ABI(object):
         (32, 'arm', 'linux'):   linux_arm_syscall,
         (32, 'thumb', 'linux'):   linux_arm_syscall,
         (32, 'mips', 'linux'):   linux_mips_syscall,
-        (64, 'aarch64', 'linux'):   linux_aarch64_syscall,
         (32, 'powerpc', 'linux'): linux_ppc_syscall,
         (64, 'powerpc', 'linux'): linux_ppc64_syscall,
         (32, 'riscv32', 'linux'): linux_riscv32_syscall,
         (64, 'riscv64', 'linux'): linux_riscv64_syscall,
+        (64, 'loongarch64', 'linux'): linux_loongarch64_syscall,
         (32, 'i386', 'freebsd'):  freebsd_i386_syscall,
         (64, 'amd64', 'freebsd'): freebsd_amd64_syscall,
         (64, 'aarch64', 'freebsd'): freebsd_aarch64_syscall,
         (32, 'arm', 'freebsd'):   freebsd_arm_syscall,
         (32, 'thumb', 'freebsd'):   freebsd_arm_syscall,
         (32, 'mips', 'freebsd'):   freebsd_mips_syscall,
-        (64, 'aarch64', 'freebsd'):   freebsd_aarch64_syscall,
         (32, 'powerpc', 'freebsd'): freebsd_ppc_syscall,
         (64, 'powerpc', 'freebsd'): freebsd_ppc64_syscall,
         (64, 'amd64', 'darwin'): darwin_amd64_syscall,
@@ -109,6 +108,7 @@ class ABI(object):
         (64, 'aarch64', 'linux'):   linux_aarch64_sigreturn,
         (32, 'riscv32', 'linux'):   linux_riscv32_sigreturn,
         (64, 'riscv64', 'linux'):   linux_riscv64_sigreturn,
+        (64, 'loongarch64', 'linux'):   linux_loongarch64_sigreturn,
         (32, 'i386', 'freebsd'):  freebsd_i386_sigreturn,
         (64, 'amd64', 'freebsd'): freebsd_amd64_sigreturn,
         (32, 'arm', 'freebsd'):   freebsd_arm_sigreturn,
@@ -124,6 +124,10 @@ class SyscallABI(ABI):
     The syscall ABI treats the syscall number as the zeroth argument,
     which must be loaded into the specified register.
     """
+
+    #: Register which should be loaded with the syscall number.
+    syscall_register: str
+
     def __init__(self, *a, **kw):
         super(SyscallABI, self).__init__(*a, **kw)
         self.syscall_register = self.register_arguments[0]
@@ -142,12 +146,13 @@ class SigreturnABI(SyscallABI):
 linux_i386   = ABI('esp', [], 4, 0)
 linux_amd64  = ABI('rsp', ['rdi','rsi','rdx','rcx','r8','r9'], 8, 0)
 linux_arm    = ABI('sp', ['r0', 'r1', 'r2', 'r3'], 8, 0)
-linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3'], 16, 0)
+linux_aarch64 = ABI('sp', ['x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7'], 16, 0)
 linux_mips  = ABI('$sp', ['$a0','$a1','$a2','$a3'], 4, 0)
 linux_ppc = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 4, 0)
 linux_ppc64 = ABI('sp', ['r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10'], 8, 0)
 linux_riscv32 = ABI('sp', ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'], 8, 0)
 linux_riscv64 = ABI('sp', ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'], 8, 0)
+linux_loongarch64 = ABI('sp', ['a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7'], 8, 0)
 
 sysv_i386 = linux_i386
 sysv_amd64 = linux_amd64
@@ -158,6 +163,7 @@ sysv_ppc = linux_ppc
 sysv_ppc64 = linux_ppc64
 sysv_riscv32 = linux_riscv32
 sysv_riscv64 = linux_riscv64
+sysv_loongarch64 = linux_loongarch64
 
 # Docs: https://man7.org/linux/man-pages/man2/syscall.2.html
 linux_i386_syscall = SyscallABI('esp', ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'], 4, 0)
@@ -169,6 +175,7 @@ linux_ppc_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 
 linux_ppc64_syscall = SyscallABI('sp', ['r0', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8'], 8, 0)
 linux_riscv32_syscall = SyscallABI('sp', ['a7', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5'], 4, 0)
 linux_riscv64_syscall = SyscallABI('sp', ['a7', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5'], 8, 0)
+linux_loongarch64_syscall = SyscallABI('sp', ['a7', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 8, 0)
 
 linux_i386_sigreturn = SigreturnABI('esp', ['eax'], 4, 0)
 linux_amd64_sigreturn = SigreturnABI('rsp', ['rax'], 8, 0)
@@ -176,6 +183,7 @@ linux_arm_sigreturn = SigreturnABI('sp', ['r7'], 4, 0)
 linux_aarch64_sigreturn = SigreturnABI('sp', ['x8'], 16, 0)
 linux_riscv32_sigreturn = SigreturnABI('sp', ['a7'], 4, 0)
 linux_riscv64_sigreturn = SigreturnABI('sp', ['a7'], 8, 0)
+linux_loongarch64_sigreturn = SigreturnABI('sp', ['a7'], 8, 0)
 
 sysv_i386_sigreturn = linux_i386_sigreturn
 sysv_amd64_sigreturn = linux_amd64_sigreturn
@@ -183,6 +191,7 @@ sysv_arm_sigreturn = linux_arm_sigreturn
 sysv_aarch64_sigreturn = linux_aarch64_sigreturn
 sysv_riscv32_sigreturn = linux_riscv32_sigreturn
 sysv_riscv64_sigreturn = linux_riscv64_sigreturn
+sysv_loongarch64_sigreturn = linux_loongarch64_sigreturn
 
 freebsd_i386 = sysv_i386
 freebsd_amd64 = sysv_amd64

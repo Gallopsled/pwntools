@@ -1,10 +1,8 @@
-from __future__ import absolute_import
-from __future__ import division
-
+import importlib.abc
+import importlib.util
 import itertools
 import os
 import re
-import six
 import sys
 from types import ModuleType
 
@@ -15,7 +13,7 @@ from pwnlib.util import packing
 
 
 class module(ModuleType):
-    _templates = []
+    _templates: list[str] = []
 
     def __init__(self, name, directory):
         super(module, self).__init__(name)
@@ -137,7 +135,7 @@ class module(ModuleType):
         return templates
 
     def eval(self, item):
-        if isinstance(item, six.integer_types):
+        if isinstance(item, int):
             return item
         return constants.eval(item)
 
@@ -147,18 +145,19 @@ class module(ModuleType):
             if not comment:  # then it can be inside a comment!
                 r = r.replace('*/', r'\x2a/')
             return r
-        if not isinstance(n, six.integer_types):
+        if not isinstance(n, int):
             return n
         if isinstance(n, constants.Constant):
-            if comment: return '%s /* %s */' % (n,self.pretty(int(n)))
-            else:       return '%s (%s)'     % (n,self.pretty(int(n)))
+            pretty = self.pretty(int(n))
+            if comment: return f'{n} /* {pretty} */'
+            else:       return f'{n} ({pretty})'
         elif abs(n) < 10:
             return '%d' % n
         else:
             return '%#x' % n
 
     def okay(self, s, *a, **kw):
-        if isinstance(s, six.integer_types):
+        if isinstance(s, int):
             s = packing.pack(s, *a, **kw)
         return b'\0' not in s and b'\n' not in s
 
@@ -170,8 +169,8 @@ tether = sys.modules[__name__]
 # Create the module structure
 shellcraft = module(__name__, '')
 
-class LazyImporter:
-    def find_module(self, fullname, path=None):
+class LazyImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    def find_spec(self, fullname, path=None, target=None):
         if not fullname.startswith('pwnlib.shellcraft.'):
             return None
 
@@ -182,9 +181,15 @@ class LazyImporter:
             if not isinstance(cur, ModuleType):
                 return None
 
-        return self
+        return importlib.util.spec_from_loader(fullname, self)
 
-    def load_module(self, fullname):
-        return sys.modules[fullname]
+    def create_module(self, spec):
+        # The submodule was already built and registered in sys.modules by
+        # the getattr walk in find_spec, so hand that object back instead
+        # of letting the import system make a fresh empty module.
+        return sys.modules.get(spec.name)
+
+    def exec_module(self, module):
+        pass
 
 sys.meta_path.append(LazyImporter())

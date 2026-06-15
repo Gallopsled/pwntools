@@ -10,7 +10,7 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-stable)  | `stable` | Oct 12, 2025
+| [4.15.0](#4150-stable) | `stable` | Oct 12, 2025
 | [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
@@ -75,7 +75,14 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
+- [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
+- [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
+- [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
+- [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
+- [#2675][2675] feat(term): add zellij support
+- [#2652][2652] Make setting the context.terminal to kitty more user friendly
+- [#2638][2638] feat: add disable_corefiles context option
+- [#2627][2627] remove pwnlib.util.iters.lookahead (broken anyway)
 - [#2598][2598] aarch64: Fix ABI definition
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
@@ -98,13 +105,45 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2496][2496] Add linux ko file search support
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
 - [#2592][2592] pwnlib.config: Fix customization of `context.timeout`
+- [#2606][2606] Improve error of `process.maps()` after the process exited
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2610][2610] Fix `log.progress` ignoring `context.log_console`
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
+- [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
+- [#2630][2630] support `preexec_fn` in `debug()`
+- [#2641][2641] support preexec_args in process
+- [#2646][2646] fix(libcdb-cli): return early if no matched libc found
+- [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
+- [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
+- [#2647][2647] packing: Add `overlap` to overlap structures easily
+- [#2669][2669] asm: try native binutils before fallback architectures
+- [#2673][2673] Add libc module for libc-related functions
+- [#2680][2680] Cleanup Python 2 legacy
+- [#2683][2683] libc: add atexit functions for glibc exploits
+- [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
+- [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
+- [#2682][2682] Fix `server.close()` not closing the listen socket
+- [#2671][2671] ssh: support raw string input for 'key' argument as documented
+- [#2688][2688] Close SSH client connection when authentication failed
+- [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
+- [#2706][2706] doc: Update `run_in_new_terminal` docstring with new overrides
+- [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04
+- [#2655][2655] Add `context.debugger` to select which debugger to use
+- [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
+- [#2713][2713] Remove python-dateutil dependency
+- [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
+- [#2702][2702] ssh: Don't cache username in ssh checksec output
+- [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
+- [#2730][2730] Fix atexception handlers in term mode
+- [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 
+[2675]: https://github.com/Gallopsled/pwntools/pull/2675
+[2652]: https://github.com/Gallopsled/pwntools/pull/2652
+[2638]: https://github.com/Gallopsled/pwntools/pull/2638
+[2627]: https://github.com/Gallopsled/pwntools/pull/2627
 [2598]: https://github.com/Gallopsled/pwntools/pull/2598
-[2746]: https://github.com/Gallopsled/pwntools/pull/2746
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
@@ -126,10 +165,42 @@ The table below shows which release corresponds to each branch, and what date th
 [2496]: https://github.com/Gallopsled/pwntools/pull/2496
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
 [2592]: https://github.com/Gallopsled/pwntools/pull/2592
+[2606]: https://github.com/Gallopsled/pwntools/pull/2606
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2610]: https://github.com/Gallopsled/pwntools/pull/2610
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
+[2639]: https://github.com/Gallopsled/pwntools/pull/2639
+[2630]: https://github.com/Gallopsled/pwntools/pull/2630
+[2641]: https://github.com/Gallopsled/pwntools/pull/2641
+[2646]: https://github.com/Gallopsled/pwntools/pull/2646
+[2629]: https://github.com/Gallopsled/pwntools/pull/2629
+[2643]: https://github.com/Gallopsled/pwntools/pull/2643
+[2647]: https://github.com/Gallopsled/pwntools/pull/2647
+[2669]: https://github.com/Gallopsled/pwntools/pull/2669
+[2673]: https://github.com/Gallopsled/pwntools/pull/2673
+[2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2683]: https://github.com/Gallopsled/pwntools/pull/2683
+[2687]: https://github.com/Gallopsled/pwntools/pull/2687
+[2699]: https://github.com/Gallopsled/pwntools/pull/2699
+[2682]: https://github.com/Gallopsled/pwntools/pull/2682
+[2671]: https://github.com/Gallopsled/pwntools/pull/2671
+[2688]: https://github.com/Gallopsled/pwntools/pull/2688
+[2686]: https://github.com/Gallopsled/pwntools/pull/2686
+[2704]: https://github.com/Gallopsled/pwntools/pull/2704
+[2655]: https://github.com/Gallopsled/pwntools/pull/2655
+[2677]: https://github.com/Gallopsled/pwntools/pull/2677
+[2689]: https://github.com/Gallopsled/pwntools/pull/2689
+[2713]: https://github.com/Gallopsled/pwntools/pull/2713
+[2720]: https://github.com/Gallopsled/pwntools/pull/2720
+[2702]: https://github.com/Gallopsled/pwntools/pull/2702
+[2722]: https://github.com/Gallopsled/pwntools/pull/2722
+[2725]: https://github.com/Gallopsled/pwntools/pull/2725
+[2730]: https://github.com/Gallopsled/pwntools/pull/2730
+[2733]: https://github.com/Gallopsled/pwntools/pull/2733
+[2739]: https://github.com/Gallopsled/pwntools/pull/2739
+[2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2746]: https://github.com/Gallopsled/pwntools/pull/2746
 
 ## 4.15.1
 

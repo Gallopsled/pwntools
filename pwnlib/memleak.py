@@ -1,24 +1,17 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import ctypes
 import functools
 import string
 
-import six
-from six.moves import range
-
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.util.packing import pack, _p8lu
-from pwnlib.util.packing import unpack
+from pwnlib.util.packing import p8, pack, unpack
 
 log = getLogger(__name__)
 
 __all__ = ['MemLeak', 'RelativeMemLeak']
 
-class MemLeak(object):
-    """MemLeak is a caching and heuristic tool for exploiting memory leaks.
+class MemLeak:
+    r"""MemLeak is a caching and heuristic tool for exploiting memory leaks.
 
     It can be used as a decorator, around functions of the form:
 
@@ -39,6 +32,9 @@ class MemLeak(object):
 
     Example:
 
+    .. doctest::
+        :options: +POSIX +TODO
+
         >>> import pwnlib
         >>> binsh = pwnlib.util.misc.read('/bin/sh')
         >>> @pwnlib.memleak.MemLeak
@@ -48,9 +44,9 @@ class MemLeak(object):
         >>> leaker.s(0)[:4]
         leaking 0x0
         leaking 0x4
-        b'\\x7fELF'
+        b'\x7fELF'
         >>> leaker[:4]
-        b'\\x7fELF'
+        b'\x7fELF'
         >>> hex(leaker.d(0))
         '0x464c457f'
         >>> hex(leaker.clearb(1))
@@ -163,7 +159,7 @@ class MemLeak(object):
             the type of ``field``.
         """
 
-        if isinstance(expected, six.integer_types):
+        if isinstance(expected, int):
             expected = pack(expected, bytes=obj.size)
         elif not isinstance(expected, bytes):
             raise TypeError("Expected value must be an int or bytes")
@@ -200,7 +196,7 @@ class MemLeak(object):
 
             if data:
                 for i,byte in enumerate(bytearray(data)):
-                    self.cache[address+i] = _p8lu(byte)
+                    self.cache[address+i] = p8(byte, endian='little', signed=False)
 
             # We could not leak this particular byte, search backwards
             # to see if another request will satisfy it
@@ -463,7 +459,7 @@ class MemLeak(object):
     def _set(self, addr, val, ndx, size):
         addr += ndx * size
         for i,b in enumerate(bytearray(pack(val, size*8))):
-            self.cache[addr+i] = _p8lu(b)
+            self.cache[addr+i] = p8(b, endian='little', signed=False)
 
     def setb(self, addr, val, ndx = 0):
         """Sets byte at ``((uint8_t*)addr)[ndx]`` to `val` in the cache.
@@ -528,7 +524,7 @@ class MemLeak(object):
             val += b'\x00'
 
         for i,b in enumerate(bytearray(val)):
-            self.cache[addr+i] = _p8lu(b)
+            self.cache[addr+i] = p8(b, endian='little', signed=False)
 
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -545,7 +541,7 @@ class MemLeak(object):
 
     def compare(self, address, bts):
         for i, byte in enumerate(bytearray(bts)):
-            if self.n(address + i, 1) != _p8lu(byte):
+            if self.n(address + i, 1) != p8(byte, endian='little', signed=False):
                 return False
         return True
 

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
 #  mayhem/datatypes/elf.py
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -29,8 +27,6 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-from __future__ import division
-
 import ctypes
 
 Elf32_Addr = ctypes.c_uint32
@@ -288,6 +284,10 @@ class constants:
     DF_1_GLOBAUDIT          = 0x01000000
     DF_1_SINGLETON          = 0x02000000
 
+    # DynELF constants
+    DT_GNU_HASH = 0x6ffffef5
+    STN_UNDEF   = 0
+
 
 class Elf32_Ehdr(ctypes.Structure):
     _fields_ = [("e_ident", (ctypes.c_ubyte * 16)),
@@ -478,9 +478,6 @@ class Elf64_r_debug(ctypes.Structure):
     _fields_ = [('r_version', Elf32_Word),
                 ('r_map', Elf64_Addr)]
 
-constants.DT_GNU_HASH = 0x6ffffef5
-constants.STN_UNDEF   = 0
-
 pid_t = ctypes.c_uint32
 
 class elf_siginfo(ctypes.Structure):
@@ -640,17 +637,16 @@ class Elf64_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint64),
                 ('a_val', ctypes.c_uint64),]
 
-def generate_siginfo(int_t, long_t):
-    class siginfo_t(ctypes.Structure):
-        _fields_ = [('si_signo', int_t),
-                    ('si_errno', int_t),
-                    ('si_code', int_t),
-                    ('sigfault_addr', long_t),
-                    ('sigfault_trapno', int_t)]
-    return siginfo_t
+class elf_siginfo_32(ctypes.Structure):
+    _fields_ = [('si_signo', ctypes.c_uint32),
+                ('si_errno', ctypes.c_uint32),
+                ('si_code', ctypes.c_uint32),
+                ('sigfault_addr', ctypes.c_uint32),
+                ('sigfault_trapno', ctypes.c_uint32)]
 
-class elf_siginfo_32(generate_siginfo(ctypes.c_uint32, ctypes.c_uint32)):
-    pass
-
-class elf_siginfo_64(generate_siginfo(ctypes.c_uint32, ctypes.c_uint64)):
-    pass
+class elf_siginfo_64(ctypes.Structure):
+    _fields_ = [('si_signo', ctypes.c_uint32),
+                ('si_errno', ctypes.c_uint32),
+                ('si_code', ctypes.c_uint32),
+                ('sigfault_addr', ctypes.c_uint64),
+                ('sigfault_trapno', ctypes.c_uint32)]

@@ -30,22 +30,29 @@ You can even patch and save the files.
     >>> disasm(open('/tmp/quiet-cat','rb').read(1))
     '   0:   c3                      ret'
 
+An ELF can also be created from in-memory bytes.
+
+    >>> bytes = open('/bin/cat', 'rb').read()
+    >>> e = ELF(bytes)
+    >>> e.read(e.address+1, 3)
+    b'ELF'
+    >>> e.asm(e.address, 'ret')
+    >>> e.save('/tmp/quiet-cat')
+    >>> disasm(open('/tmp/quiet-cat','rb').read(1))
+    '   0:   c3                      ret'
+
 Module Members
 --------------
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import collections
 import gzip
 import mmap
 import os
 import re
-import six
 import subprocess
 import tempfile
 
-from six import BytesIO
+from io import BytesIO
 
 from collections import namedtuple, defaultdict
 
@@ -54,17 +61,11 @@ from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.dynamic import DynamicSection
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
+from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS, ENUM_P_TYPE_BASE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
-
-# See https://github.com/Gallopsled/pwntools/issues/1189
-try:
-    from elftools.elf.enums import ENUM_P_TYPE
-except ImportError:
-    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -97,7 +98,7 @@ def _iter_symbols(sec):
         sec._symbols = list(sec.iter_symbols())
     return iter(sec._symbols)
 
-class Function(object):
+class Function:
     """Encapsulates information about a function in an :class:`.ELF` binary.
 
     Arguments:
@@ -239,16 +240,21 @@ class ELF(ELFFile):
     _fill_gaps = True
 
 
-    def __init__(self, path, checksec=True):
+    def __init__(self, path_or_bytes, checksec=True):
         # elftools uses the backing file for all reads and writes
         # in order to permit writing without being able to write to disk,
         # mmap() the file.
 
-        #: :class:`file`: Open handle to the ELF file on disk
-        self.file = open(path,'rb')
-
-        #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
-        self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+        if isinstance(path_or_bytes, (bytes, bytearray)) and path_or_bytes.startswith(b'\x7FELF'):
+            self.file = self.mmap = mmap.mmap(-1, len(path_or_bytes))
+            self.mmap.write(path_or_bytes)
+            path = "<bytes>"
+        else:
+            #: :class:`file`: Open handle to the ELF file on disk
+            self.file = open(path_or_bytes,'rb')
+            #: :class:`mmap.mmap`: Memory-mapped copy of the ELF file on disk
+            self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_COPY)
+            path = path_or_bytes
 
         super(ELF,self).__init__(self.mmap)
 
@@ -293,7 +299,7 @@ class ELF(ELFFile):
         #:
         #: See: :attr:`.ContextType.arch`
         self.arch = self.get_machine_arch()
-        if isinstance(self.arch, (bytes, six.text_type)):
+        if isinstance(self.arch, (bytes, str)):
             self.arch = self.arch.lower()
 
         self._sections = None
@@ -511,6 +517,7 @@ class ELF(ELFFile):
             ('EM_IA_64', 64): 'ia64',
             ('EM_RISCV', 32): 'riscv32',
             ('EM_RISCV', 64): 'riscv64',
+            ('EM_LOONGARCH', 64): 'loongarch64',
         }.get((self['e_machine'], self.bits), self['e_machine'])
 
     @property
@@ -550,7 +557,7 @@ class ELF(ELFFile):
                 yield seg
 
     def iter_notes(self):
-        """ 
+        """
         Yields:
             All the notes in the PT_NOTE segments.  Each result is a dictionary-
             like object with ``n_name``, ``n_type``, and ``n_desc`` fields, amongst
@@ -571,7 +578,7 @@ class ELF(ELFFile):
                 continue
             for prop in note.n_desc:
                 yield prop
-                
+
     def get_segment_for_address(self, address, size=1):
         """get_segment_for_address(address, size=1) -> Segment
 
@@ -1164,20 +1171,17 @@ class ELF(ELFFile):
 
         banner = self.string(self.symbols.linux_banner)
 
-        # convert banner into a utf-8 string since re.search does not accept bytes anymore
-        banner = banner.decode('utf-8')
-
         # 'Linux version 3.18.31-gd0846ecc
-        regex = r'Linux version (\S+)'
+        regex = br'Linux version (\S+)'
         match = re.search(regex, banner)
 
         if match:
-            version = match.group(1)
+            version = match.group(1).decode('utf-8', 'surrogateescape')
 
             if '-' in version:
                 version, self.build = version.split('-', 1)
 
-            self.version = list(map(int, version.rstrip('+').split('.')))
+            self.version = tuple(map(int, version.rstrip('+').split('.')))
 
         self.config['version'] = self.version
 
@@ -1267,7 +1271,7 @@ class ELF(ELFFile):
         return 0
 
     def search(self, needle, writable = False, executable = False):
-        """search(needle, writable = False, executable = False) -> generator
+        r"""search(needle, writable = False, executable = False) -> generator
 
         Search the ELF's virtual address space for the specified string.
 
@@ -1287,7 +1291,7 @@ class ELF(ELFFile):
 
         Examples:
 
-            An ELF header starts with the bytes ``\\x7fELF``, so we
+            An ELF header starts with the bytes ``\x7fELF``, so we
             sould be able to find it easily.
 
             >>> bash = ELF('/bin/bash')
@@ -1330,6 +1334,58 @@ class ELF(ELFFile):
                     break
                 yield (addr + offset + load_address_fixup)
                 offset += 1
+        if not segments:
+            if writable:
+                ko_check_segments = [".data"]
+            elif executable:
+                ko_check_segments = [".text"]
+            else:
+                ko_check_segments = [".text",".note",".rodata",".data"]
+            pagesize = 4096
+            for section in super().iter_sections():
+                alignment = section['sh_addralign']
+                if alignment > pagesize:
+                    pagesize = alignment
+            if pagesize > 4096 and pagesize % 4096 > 0:
+                pagesize = (pagesize // 4096 + 1) * 4096
+                # I don't know how to test the pagesize; it might have issues
+            for section in super().iter_sections():
+                if section.name not in ko_check_segments and \
+                       not any(section.name.startswith(ko_check_segment) for ko_check_segment in ko_check_segments):
+                    continue
+                filesz = section['sh_size']
+                offset = section['sh_offset']
+                data = self.mmap[offset:offset + filesz]
+                data += b'\x00'
+                offset = 0
+                while True:
+                    offset = data.find(needle, offset)
+                    if offset == -1:
+                        break
+                    # ko_file: header->.note->.text->.rodata->.data
+                    # after insmod: text page(executable page), note and rodate page(read only page), data page(writable page)
+                    if section.name == ".text":
+                        addr = 0
+                    elif section.name.startswith(".note") :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                        addr = (text_filesz//pagesize + 1)*pagesize + section['sh_offset'] - self.header['e_ehsize']
+                    elif section.name.startswith(".rodata"):
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        text_offset=self.get_section_by_name(".text")['sh_offset']
+                        addr = (text_filesz//pagesize + 1)*pagesize + text_offset - self.header['e_ehsize']
+                    elif section.name == ".data" :
+                        text_filesz=self.get_section_by_name(".text")['sh_size']
+                        rodata_filesz=0
+                        note_filesz=0
+                        for section in super().iter_sections():
+                            if section.name.startswith(".rodata"):
+                                rodata_filesz += section['sh_size']
+                            elif section.name.startswith(".note"):
+                                note_filesz += section['sh_size']
+                        addr = (text_filesz // pagesize + 1 + (note_filesz + rodata_filesz) // pagesize + 1) * pagesize
+                    yield (addr + offset + load_address_fixup)
+                    offset += 1
 
     def offset_to_vaddr(self, offset):
         """offset_to_vaddr(offset) -> int
@@ -1796,7 +1852,7 @@ class ELF(ELFFile):
 
     @property
     def nx(self):
-        """:class:`bool`: Whether the current binary uses NX protections.
+        r""":class:`bool`: Whether the current binary uses NX protections.
 
         Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
         by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
@@ -1807,7 +1863,7 @@ class ELF(ELFFile):
         Unfortunately, :class:`ELF` is not context-aware, so it's not always possible
         to determine whether the process of a binary that's missing ``PT_GNU_STACK``
         will have NX or not.
-        
+
         The rules are as follows:
 
             +-----------+--------------+---------------------------+------------------------------------------------+----------+
@@ -1859,7 +1915,7 @@ class ELF(ELFFile):
             | the rest  | [#the_rest]_ | exec / non-exec / missing |                                                | enabled  |
             +-----------+--------------+---------------------------+------------------------------------------------+----------+
 
-            \\* Hardware limitations are ignored.
+            \* Hardware limitations are ignored.
 
         If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
 
@@ -1875,7 +1931,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (executable_stack != EXSTACK_DISABLE_X)
 
         .. [#x86_5.8]
@@ -1883,7 +1939,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
 
         `mmap_is_ia32()`__:
@@ -1964,7 +2020,7 @@ class ELF(ELFFile):
 
             #ifdef __powerpc64__
             /* stripped */
-            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
+            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \
                     (exec_stk == EXSTACK_DEFAULT) : 0)
             #else
             # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
@@ -1975,7 +2031,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)					\\
+            #define elf_read_implies_exec(ex, executable_stack)					\
                 ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
 
         EF_IA_64_LINUX_EXECUTABLE_STACK__:
@@ -1995,7 +2051,7 @@ class ELF(ELFFile):
         """
         if not self.executable:
             return True
-        
+
         exec_bit = None
         for seg in self.iter_segments_by_type('GNU_STACK'):
             exec_bit = bool(seg.header.p_flags & P_FLAGS.PF_X)
@@ -2072,7 +2128,7 @@ class ELF(ELFFile):
         # If the ``PT_GNU_STACK`` program header is preset, use it's premissions.
         for seg in self.iter_segments_by_type('GNU_STACK'):
             return bool(seg.header.p_flags & P_FLAGS.PF_X)
-        
+
         # If the ``PT_GNU_STACK`` program header is missing, then use the
         # default rules. Out of the supported architectures, only AArch64,
         # IA-64, and RISC-V get a non-executable stack by default.
@@ -2161,7 +2217,7 @@ class ELF(ELFFile):
             "NX:".ljust(12) + {
                 True:  green("NX enabled"),
                 False: red("NX disabled"),
-                None: yellow("NX unknown - GNU_STACK missing"),
+                None:  yellow("NX enabled on new kernels"),
             }[self.nx],
             "PIE:".ljust(12) + {
                 True: green("PIE enabled"),
@@ -2200,16 +2256,16 @@ class ELF(ELFFile):
 
         if self.ubsan:
             res.append("UBSAN:".ljust(12) + green("Enabled"))
-        
+
         if self.shadowstack:
             res.append("SHSTK:".ljust(12) + green("Enabled"))
-        
+
         if self.ibt:
             res.append("IBT:".ljust(12) + green("Enabled"))
-        
+
         if not self.stripped:
             res.append("Stripped:".ljust(12) + red("No"))
-        
+
         if self.debuginfo:
             res.append("Debuginfo:".ljust(12) + red("Yes"))
 
@@ -2229,7 +2285,7 @@ class ELF(ELFFile):
                 for name, message in sorted(values):
                     line = '{} = {}'.format(name, red(str(self.config.get(name, None))))
                     if message:
-                        line += ' ({})'.format(message)
+                        line += f' ({message})'
                     res.append('    ' + line)
 
             # res.extend(sorted(config_opts))
@@ -2269,10 +2325,10 @@ class ELF(ELFFile):
         """:class:`bool`: Whether the current binary was built with
         Undefined Behavior Sanitizer (``UBSAN``)."""
         return any(s.startswith('__ubsan_') for s in self.symbols)
-    
+
     @property
     def shadowstack(self):
-        """:class:`bool`: Whether the current binary was built with	
+        """:class:`bool`: Whether the current binary was built with
         Shadow Stack (``SHSTK``)"""
         if self.arch not in ['i386', 'amd64']:
             return False
@@ -2305,6 +2361,21 @@ class ELF(ELFFile):
         self._update_args(kw)
         return self.write(address, packing.p64(data, *a, **kw))
 
+    def p56(self,  address, data, *a, **kw):
+        """Writes a 56-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p56(data, *a, **kw))
+
+    def p48(self,  address, data, *a, **kw):
+        """Writes a 48-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p48(data, *a, **kw))
+
+    def p40(self,  address, data, *a, **kw):
+        """Writes a 40-bit integer ``data`` to the specified ``address``"""
+        self._update_args(kw)
+        return self.write(address, packing.p40(data, *a, **kw))
+
     def p32(self,  address, data, *a, **kw):
         """Writes a 32-bit integer ``data`` to the specified ``address``"""
         self._update_args(kw)
@@ -2329,6 +2400,21 @@ class ELF(ELFFile):
         """Unpacks an integer from the specified ``address``."""
         self._update_args(kw)
         return packing.u64(self.read(address, 8), *a, **kw)
+
+    def u56(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u56(self.read(address, 7), *a, **kw)
+
+    def u48(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u48(self.read(address, 6), *a, **kw)
+
+    def u40(self,    address, *a, **kw):
+        """Unpacks an integer from the specified ``address``."""
+        self._update_args(kw)
+        return packing.u40(self.read(address, 5), *a, **kw)
 
     def u32(self,    address, *a, **kw):
         """Unpacks an integer from the specified ``address``."""
@@ -2401,7 +2487,7 @@ class ELF(ELFFile):
 
         Zeroes out the ``PT_GNU_STACK`` program header ``p_type`` field.
         """
-        PT_GNU_STACK = packing.p32(ENUM_P_TYPE['PT_GNU_STACK'])
+        PT_GNU_STACK = packing.p32(ENUM_P_TYPE_BASE['PT_GNU_STACK'])
 
         if not self.executable:
             log.error("Can only make stack executable with executables")
@@ -2424,7 +2510,7 @@ class ELF(ELFFile):
                 return
 
         log.error("Could not find PT_GNU_STACK, stack should already be executable")
-    
+
     @staticmethod
     def set_runpath(exepath, runpath):
         r"""set_runpath(exepath, runpath) -> ELF
@@ -2526,7 +2612,7 @@ class ELF(ELFFile):
         if not which('patchelf'):
             log.error('"patchelf" tool not installed. See https://github.com/NixOS/patchelf')
             return None
-        
+
         # Create a copy of the ELF to patch instead of the original file.
         if create_copy:
             import shutil

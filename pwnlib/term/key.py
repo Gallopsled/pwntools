@@ -1,10 +1,6 @@
-from __future__ import absolute_import
-from __future__ import division
-
 import errno
 import os
 import select
-import six
 import string
 import sys
 
@@ -21,7 +17,7 @@ FLAG_CONVERTKP = True
 try:    _fd = sys.stdin.fileno()
 except Exception: _fd = os.open(os.devnull, os.O_RDONLY)
 
-def getch(timeout = 0):
+def getch(timeout: float | None = 0) -> int | None:
     term.setupterm()
     while True:
         try:
@@ -39,7 +35,7 @@ def getch(timeout = 0):
                 continue
             raise
 
-def getraw(timeout = None):
+def getraw(timeout: float | None = None) -> list[int]:
     '''Get list of raw key codes corresponding to zero or more key presses'''
     cs = []
     c = getch(timeout)
@@ -149,7 +145,7 @@ class Key:
         return self.__str__()
 
     def __eq__(self, other):
-        if   isinstance(other, (six.text_type, six.binary_type)):
+        if   isinstance(other, (bytes, str)):
             return Matcher(other)(self)
         elif isinstance(other, Matcher):
             return other(self)
@@ -161,17 +157,18 @@ class Key:
         else:
             return False
 
-_cbuf = []
-_kbuf = []
+_cbuf: list[int] = []
+_kbuf: list[Key] = []
 
-def _read(timeout = 0):
+def _read(timeout: float | None = 0):
     _cbuf.extend(getraw(timeout))
 
-def _peek():
+def _peek() -> Key | None:
     if _cbuf:
         return _peek_ti() or _peek_csi() or _peek_simple()
+    return None
 
-def get(timeout = None):
+def get(timeout: float | None = None) -> Key | None:
     if _kbuf:
         return _kbuf.pop(0)
     k = _peek()
@@ -180,11 +177,12 @@ def get(timeout = None):
     _read(timeout)
     return _peek()
 
-def unget(k):
+def unget(k: Key) -> None:
     _kbuf.append(k)
 
 # terminfo
-def _name_to_key(fname):
+def _name_to_key(fname: str) -> Key | None:
+    k: Key | None = None
     if   fname in kc.FUNCSYMS:
         k = Key(kc.TYPE_KEYSYM, *kc.FUNCSYMS[fname])
     elif fname[0] == 'f' and fname[1:].isdigit():
@@ -197,19 +195,21 @@ def _name_to_key(fname):
         return None
     return k
 
-_ti_table = None
+_ti_table: list[tuple[list[int], Key]] | None = None
 
-def _peek_ti():
+def _peek_ti() -> Key | None:
     global _cbuf
     if _ti_table is None:
         _init_ti_table()
+    assert _ti_table is not None
     # XXX: Faster lookup, plox
     for seq, key in _ti_table:
         if _cbuf[:len(seq)] == seq:
             _cbuf = _cbuf[len(seq):]
             return key
+    return None
 
-def _init_ti_table():
+def _init_ti_table() -> None:
     global _ti_table
     _ti_table = []
     for fname, name in zip(kc.STRFNAMES, kc.STRNAMES):
@@ -284,7 +284,7 @@ def _csi_ss3(cmd, args):
     return k
 
 def _csi_u(cmd, args):
-    k = Key(kc.TYPE_UNICODE, six.unichr(args[0]))
+    k = Key(kc.TYPE_UNICODE, chr(args[0]))
     if len(args) > 1 and args[1]:
         k.mods |= args[1] - 1
     return k
@@ -457,17 +457,17 @@ def _peek_simple():
                 if   c0 == 0:
                     k.code = u' '
                 elif chr(c0 + 0x40) in string.ascii_uppercase:
-                    k.code = six.unichr(c0 + 0x60)
+                    k.code = chr(c0 + 0x60)
                 else:
-                    k.code = six.unichr(c0 + 0x40)
+                    k.code = chr(c0 + 0x40)
                 k.mods |= kc.MOD_CTRL
         elif c0 == 0x7f:
             # print('del\r')
             k = Key(kc.TYPE_KEYSYM, kc.KEY_DEL)
         elif c0 >= 0x20 and c0 < 0x80:
-            k = Key(kc.TYPE_UNICODE, six.unichr(c0))
+            k = Key(kc.TYPE_UNICODE, chr(c0))
         else:
-            k = Key(kc.TYPE_UNICODE, six.unichr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
+            k = Key(kc.TYPE_UNICODE, chr(c0 - 0x40), kc.MOD_CTRL | kc.MOD_ALT)
     else: # utf8
         n = 0
         if   c0 & 0b11100000 == 0b11000000:

@@ -1,10 +1,7 @@
-from __future__ import absolute_import
-from __future__ import division
-
 from pwnlib.context import context
 
 
-class Buffer(object):
+class Buffer:
     """
     List of strings with some helper routines.
 

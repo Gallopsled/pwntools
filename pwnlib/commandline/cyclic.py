@@ -1,8 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
-import argparse
-import six
 import string
 import sys
 
@@ -43,15 +38,16 @@ parser.add_argument(
     help = 'The os/architecture/endianness/bits the shellcode will run in (default: linux/i386), choose from: %s' % common.choices,
 )
 
-group = parser.add_mutually_exclusive_group(required=False)
-group.add_argument(
+xgroup = parser.add_mutually_exclusive_group(required=False)
+xgroup.add_argument(
     '-l', '-o', '--offset', '--lookup',
     dest = 'lookup',
+    type = str.encode,
     metavar = 'lookup_value',
     help = 'Do a lookup instead printing the alphabet',
 )
 
-group.add_argument(
+xgroup.add_argument(
     'count',
     type=int,
     nargs='?',
@@ -65,9 +61,6 @@ def main(args):
 
     if args.lookup:
         pat = args.lookup
-
-        if six.PY3:
-            pat = bytes(pat, encoding='utf-8')
 
         try:
             pat = int(pat, 0)

@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-
 from pwnlib.encoders.i386.delta import i386DeltaEncoder
 
 

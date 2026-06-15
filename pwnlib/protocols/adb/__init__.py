@@ -5,14 +5,11 @@ Documentation is available here_.
 
 .. _here: https://android.googlesource.com/platform/system/core/+/master/adb/protocol.txt
 """
-from __future__ import absolute_import
-from __future__ import division
-
 import logging
 import functools
-import six
 import stat
 import time
+from typing import Callable, Concatenate, ParamSpec, TypeVar
 
 from pwnlib.context import context
 from pwnlib.log import Logger
@@ -37,7 +34,7 @@ def unpack(val):
 OKAY = b"OKAY"
 FAIL = b"FAIL"
 
-class Message(object):
+class Message:
     """An ADB hex-length-prefixed message"""
     def __init__(self, string):
         self.string = string
@@ -76,6 +73,9 @@ class Connection(remote):
 
 class Process(Connection):
     """Duck-typed ``tubes.remote`` object to add properties of a ``tubes.process``"""
+
+P = ParamSpec('P')
+R = TypeVar('R')
 
 class AdbClient(Logger):
     """ADB Client"""
@@ -117,11 +117,12 @@ class AdbClient(Logger):
             self._c = Connection(self.host, self.port, level=self.level)
         return self._c
 
-    def _autoclose(fn):
+    @staticmethod
+    def _autoclose(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which automatically closes the connection to the ADB server
         after calling the decorated function."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self: "AdbClient", *a: P.args, **kw: P.kwargs) -> R:
             rv = fn(self, *a, **kw)
             if self._c:
                 self._c.close()
@@ -129,11 +130,12 @@ class AdbClient(Logger):
             return rv
         return wrapper
 
-    def _with_transport(fn):
+    @staticmethod
+    def _with_transport(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which automatically selects a device transport before calling
         the decorated function, and closes the connection afterward."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self: "AdbClient", *a: P.args, **kw: P.kwargs) -> R:
             self.transport()
             rv = fn(self, *a, **kw)
             if self._c:
@@ -144,7 +146,7 @@ class AdbClient(Logger):
 
     def send(self, *a, **kw):
         """Sends data to the ADB server"""
-        if isinstance(a[0], six.text_type):
+        if isinstance(a[0], str):
             a = (a[0].encode('utf-8'),) + a[1:]
         return self.c.adb_send(*a, **kw)
 
@@ -370,11 +372,12 @@ class AdbClient(Logger):
                 response = self.recvl().decode('utf-8')
             self.error("An error occurred while waiting for device with serial %r (%r)" % (serial, response))
 
-    def _sync(fn):
+    @staticmethod
+    def _sync(fn: Callable[Concatenate["AdbClient", P], R]) -> Callable[Concatenate["AdbClient", P], R]:
         """Decorator which enters 'sync:' mode to the selected transport,
         then invokes the decorated funciton."""
         @functools.wraps(fn)
-        def wrapper(self, *a, **kw):
+        def wrapper(self, *a: P.args, **kw: P.kwargs) -> R:
             if self.send('sync:') == FAIL:
                 self.error("An error occurred while trying to use SYNC API (%r)" % self.recvl().decode('utf-8'))
             return fn(self, *a, **kw)
@@ -432,7 +435,7 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _list(self, path):
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.flat32(b'LIST', len(path), path)
         files = {}
@@ -486,7 +489,7 @@ class AdbClient(Logger):
             >>> pwnlib.protocols.adb.AdbClient().stat('/does/not/exist') is None
             True
         """
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.flat32(b'STAT', len(path), path)
         if self.c.recvn(4) != b'STAT':
@@ -530,7 +533,7 @@ class AdbClient(Logger):
     @_with_transport
     @_sync
     def _write(self, path, data, mode=0o755, timestamp=None, callback=None):
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         path += b',%d' % mode
 
@@ -576,7 +579,7 @@ class AdbClient(Logger):
         Return:
             The data received as a string.
         """
-        if isinstance(path, six.text_type):
+        if isinstance(path, str):
             path = path.encode('utf-8')
         self.c.send(b'RECV' + p32(len(path)) + path)
 

@@ -1,5 +1,4 @@
 <%
-  import six
   from pwnlib.shellcraft import pretty, common, arm, registers
   from pwnlib.shellcraft.registers import arm as regs
   from pwnlib.util.packing import pack, unpack
@@ -40,7 +39,7 @@ if not key in regs:
     key_str = key
     key_int = key
 
-    if isinstance(key, six.integer_types):
+    if isinstance(key, int):
         key_str = pack(key, bytes=4)
     else:
         key_int = unpack(key, 'all')

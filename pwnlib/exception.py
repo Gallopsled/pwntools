@@ -1,21 +1,27 @@
 __all__ = ['PwnlibException']
 import sys
 import traceback
+from types import TracebackType
 
+OptExcInfo = tuple[
+    type[BaseException],
+    BaseException,
+    TracebackType,
+] | tuple[None, None, None]
 
 class PwnlibException(Exception):
     '''Exception thrown by :func:`pwnlib.log.error`.
 
     Pwnlib functions that encounters unrecoverable errors should call the
     :func:`pwnlib.log.error` function instead of throwing this exception directly.'''
-    def __init__(self, msg, reason = None, exit_code = None):
+    def __init__(self, msg: str, reason: OptExcInfo | None = None, exit_code: int | None = None):
         '''bar'''
         Exception.__init__(self, msg)
         self.reason = reason
         self.exit_code = exit_code
         self.message = msg
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = 'PwnlibException: %s' % self.message
         if self.reason:
             s += '\nReason:\n'

@@ -2,11 +2,7 @@
 characters """
 # https://github.com/Gallopsled/pwntools/pull/1667
 
-from __future__ import absolute_import
-
 from itertools import product
-
-import six
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
@@ -43,10 +39,7 @@ class AsciiShellcodeEncoder(Encoder):
                 there are, the bigger the packed shellcode will be.
                 Defaults to 4.
         """
-        if six.PY2:
-            super(AsciiShellcodeEncoder, self).__init__()
-        elif six.PY3:
-            super().__init__()
+        super().__init__()
         self.slop = slop
         self.max_subs = max_subs
 
@@ -91,10 +84,9 @@ class AsciiShellcodeEncoder(Encoder):
             b'Hello world'
         """
         if not avoid:
-            vocab = bytearray(
-                b"!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
+            vocab = bytes(range(0x21, 0x7f))
         else:
-            required_chars = set('\\-%TXP')
+            required_chars = set(r'\-%TXP')
             allowed = set(all_chars)
             if avoid.intersection(required_chars):
                 raise RuntimeError(
@@ -132,7 +124,7 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+            >>> vocab = bytes(range(0x21, 0x7f))
             >>> encoders.i386.ascii_shellcode.encode._get_allocator(300, vocab)
             bytearray(b'TX-!!!!-!_``-t~~~P\\%!!!!%@@@@')
         """
@@ -178,7 +170,7 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+            >>> vocab = bytes(range(0x21, 0x7f))
             >>> a, b = encoders.i386.ascii_shellcode.encode._find_negatives(vocab)
             >>> a & b
             0
@@ -212,7 +204,7 @@ class AsciiShellcodeEncoder(Encoder):
 
             >>> context.update(arch='i386', os='linux')
             >>> sc = bytearray(b'ABCDEFGHIGKLMNOPQRSTUVXYZ')
-            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+            >>> vocab = bytes(range(0x21, 0x7f))
             >>> encoders.i386.ascii_shellcode.encode._get_subtractions(sc, vocab)
             bytearray(b'-(!!!-~NNNP-!=;:-f~~~-~~~~P-!!!!-edee-~~~~P-!!!!-eddd-~~~~P-!!!!-egdd-~~~~P-!!!!-eadd-~~~~P-!!!!-eddd-~~~~P')
         """
@@ -255,7 +247,7 @@ class AsciiShellcodeEncoder(Encoder):
         Examples:
 
             >>> context.update(arch='i386', os='linux')
-            >>> vocab = bytearray(b'!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~')
+            >>> vocab = bytes(range(0x21, 0x7f))
             >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(bytearray(b'\x10'*4), bytearray(b'\x11'*4), vocab))
             [bytearray(b'!!!!'), bytearray(b'`___'), bytearray(b'~~~~')]
             >>> print(encoders.i386.ascii_shellcode.encode._calc_subtractions(bytearray(b'\x11\x12\x13\x14'), bytearray(b'\x15\x16\x17\x18'), vocab))

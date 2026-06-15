@@ -1,19 +1,16 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
-from __future__ import absolute_import
-from __future__ import division
-
+from collections.abc import Generator
 import os
+import re
 import time
-import six
-import tempfile
 import struct
-import sys
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
+from pwnlib.internal.typing import BytesPath
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex, unhex
@@ -90,10 +87,10 @@ def provider_libcdb(hex_encoded_id, search_type):
 
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     # Build the URL using the requested hash type
-    url_base = "{}/libcdb/libcdb/raw/master/hashes/{}/".format(GITLAB_LIBCDB_URL, search_type)
+    url_base = f"{GITLAB_LIBCDB_URL}/libcdb/libcdb/raw/master/hashes/{search_type}/"
     url      = urllib.parse.urljoin(url_base, hex_encoded_id)
 
     data     = b""
@@ -118,7 +115,7 @@ def query_libc_rip(params):
     # Deferred import because it's slow
     import requests
 
-    url = "{}/api/find".format(LIBC_RIP_URL)
+    url = f"{LIBC_RIP_URL}/api/find"
     try:
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
@@ -382,7 +379,7 @@ def unstrip_libc(filename):
 
     # Deferred import because it's slow
     import requests
-    from six.moves import urllib
+    import urllib.parse
 
     hex_encoded_id = enhex(libc.buildid)
 
@@ -395,7 +392,7 @@ def unstrip_libc(filename):
         else:
             for server_url in DEBUGINFOD_SERVERS:
                 # Try to find separate debuginfo.
-                url  = '/buildid/{}/debuginfo'.format(hex_encoded_id)
+                url  = f'/buildid/{hex_encoded_id}/debuginfo'
                 url  = urllib.parse.urljoin(server_url, url)
                 data = b""
                 log.debug("Downloading data from debuginfod: %s", url)
@@ -429,7 +426,7 @@ def unstrip_libc(filename):
     return True
 
 def _extract_tarfile(cache_dir, data_filename, tarball):
-    from six import BytesIO
+    from io import BytesIO
     import tarfile
     # Handle zstandard compression, since tarfile only supports gz, bz2, and xz.
     if data_filename.endswith('.zst') or data_filename.endswith('.zstd'):
@@ -440,19 +437,6 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
         decompressed_tar.seek(0)
         tarball.close()
         tarball = decompressed_tar
-
-    if six.PY2 and data_filename.endswith('.xz'):
-        # Python 2's tarfile doesn't support xz, so we need to decompress it first.
-        # Shell out to xz, since the Python 2 pylzma module is broken.
-        # (https://github.com/fancycode/pylzma/issues/67)
-        if not which('xz'):
-            log.error('Couldn\'t find "xz" in PATH. Please install xz first.')
-        import subprocess
-        try:
-            uncompressed_tarball = subprocess.check_output(['xz', '--decompress', '--stdout', tarball.name])
-            tarball = BytesIO(uncompressed_tarball)
-        except subprocess.CalledProcessError:
-            log.error('Failed to decompress xz archive.')
 
     with tarfile.open(fileobj=tarball) as tar_file:
         # Find the library folder in the archive (e.g. /lib/x86_64-linux-gnu/)
@@ -487,67 +471,108 @@ def _extract_tarfile(cache_dir, data_filename, tarball):
 
 def _extract_debfile(cache_dir, package_filename, package):
     # Extract data.tar in the .deb archive.
-    if sys.version_info < (3, 6):
-        if not which('ar'):
-            log.error('Missing command line tool "ar" to extract .deb archive. Please install "ar" first.')
-
-        import atexit
-        import shutil
-        import subprocess
-
-        # Use mkdtemp instead of TemporaryDirectory because the latter is not available in Python 2.
-        tempdir = tempfile.mkdtemp(prefix=".pwntools-tmp")
-        atexit.register(shutil.rmtree, tempdir)
-        with tempfile.NamedTemporaryFile(mode='wb', dir=tempdir) as debfile:
-            debfile.write(package)
-            debfile.flush()
-            try:
-                files_in_deb = subprocess.check_output(['ar', 't', debfile.name]).split(b'\n')
-            except subprocess.CalledProcessError:
-                log.error('Failed to list files in .deb archive.')
-            [data_filename] = filter(lambda f: f.startswith(b'data.tar'), files_in_deb)
-
-            try:
-                subprocess.check_call(['ar', 'x', debfile.name, data_filename], cwd=tempdir)
-            except subprocess.CalledProcessError:
-                log.error('Failed to extract data.tar from .deb archive.')
-
-            with open(os.path.join(tempdir, data_filename), 'rb') as tarball:
-                return _extract_tarfile(cache_dir, data_filename, tarball)
-    else:
-        import unix_ar
-        from six import BytesIO
-        ar_file = unix_ar.open(BytesIO(package))
-        try:
-            data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
-            tarball = ar_file.open(data_filename)
-            return _extract_tarfile(cache_dir, data_filename, tarball)
-        finally:
-            ar_file.close()
+    import unix_ar
+    from io import BytesIO
+    ar_file = unix_ar.open(BytesIO(package))
+    try:
+        data_filename = next(filter(lambda f: f.name.startswith(b'data.tar'), ar_file.infolist())).name.decode()
+        tarball = ar_file.open(data_filename)
+        return _extract_tarfile(cache_dir, data_filename, tarball)
+    finally:
+        ar_file.close()
 
 def _extract_pkgfile(cache_dir, package_filename, package):
-    from six import BytesIO
+    from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
-def _find_libc_package_lib_url(libc):
+def _collect_extra_mirrors(extra_mirrors: str | list[str] | None) -> list[str]:
+    """Normalize the user-supplied ``extra_mirrors`` argument and merge it with
+    the comma- or whitespace-separated ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment
+    variable.
+
+    Returns a list of ``str`` URL prefixes (each with no trailing slash). Empty
+    entries are dropped.
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _collect_extra_mirrors
+        >>> _collect_extra_mirrors(None)
+        []
+        >>> _collect_extra_mirrors('https://example.com/m/')
+        ['https://example.com/m']
+        >>> _collect_extra_mirrors(['https://a/', 'https://b'])
+        ['https://a', 'https://b']
+    """
+    mirrors = []
+    if extra_mirrors:
+        if isinstance(extra_mirrors, str):
+            mirrors.append(extra_mirrors)
+        else:
+            mirrors.extend(extra_mirrors)
+    env_mirrors = os.environ.get('PWNLIB_EXTRA_LIBC_MIRRORS')
+    if env_mirrors:
+        # Allow either commas or whitespace as separators so URL schemes
+        # (https:) don't accidentally get split mid-URL.
+        mirrors.extend(re.split(r'[,\s]+', env_mirrors))
+    return [m.rstrip('/') for m in mirrors if m]
+
+
+def _mirror_variants(url: str, extra_mirrors: list[str] | None) -> Generator[str, None, None]:
+    """Yield ``url`` followed by mirror-swapped variants for each entry in
+    ``extra_mirrors``.
+
+    A mirror is applied by replacing everything before ``/pool/`` in the
+    candidate URL with the mirror prefix. URLs without a ``/pool/`` segment are
+    still yielded once but no mirror substitution is performed (for example,
+    Launchpad's ``+files`` archive URLs do not follow the Debian pool layout).
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _mirror_variants
+        >>> list(_mirror_variants('http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb', None))
+        ['http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb',
+        ...                      ['https://debian.sipwise.com/debian-security']))
+        ['http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb', 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb',
+        ...                      ['https://anywhere.example']))
+        ['https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb']
+    """
+    yield url
+    if not extra_mirrors:
+        return
+    match = re.search(r'/(pool/.+)$', url)
+    if not match:
+        return
+    suffix = match.group(1)
+    seen = {url}
+    for prefix in extra_mirrors:
+        candidate = '%s/%s' % (prefix, suffix)
+        if candidate not in seen:
+            seen.add(candidate)
+            yield candidate
+
+
+def _find_libc_package_lib_url(libc: ELF, extra_mirrors: list[str] | None = None) -> Generator[str, None, None]:
     # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
         for match in libc_match:
             # Allow to override url with a caching proxy in CI
             ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
-            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
-    
+            url = match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
+            for variant in _mirror_variants(url, extra_mirrors):
+                yield variant
+
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
-    import re
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
-        yield 'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{}_{}.deb'.format(libc_version, libc.arch)
+        yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
-def download_libraries(libc_path, unstrip=True):
-    """download_libraries(str, bool) -> str
+def download_libraries(libc_path: BytesPath, unstrip: bool = True, extra_mirrors: str | list[str] | None = None) -> str | None:
+    """download_libraries(str, bool, extra_mirrors=None) -> str
     Download the matching libraries for the given libc binary and cache
     them in a local directory. The libraries are looked up using `libc.rip <https://libc.rip>`_
     and fetched from the official package repositories if available.
@@ -563,6 +588,17 @@ def download_libraries(libc_path, unstrip=True):
             The path the libc binary.
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        extra_mirrors(str or list of str):
+            Optional additional Debian-style apt mirror prefix(es) to try
+            after the libc.rip URL. Useful when the official mirror has
+            dropped older vulnerable libc versions: each candidate URL is
+            re-tried with everything before ``/pool/`` swapped for the
+            mirror prefix. Mirrors can also be supplied via the
+            ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment variable as a
+            comma- or whitespace-separated list. Example: pass
+            ``"https://debian.sipwise.com/debian-security"`` to find
+            ``GLIBC 2.36-9+deb12u6`` after the official Debian mirrors
+            removed it.
 
     Returns:
         The path to the cached directory containing the downloaded libraries.
@@ -577,23 +613,32 @@ def download_libraries(libc_path, unstrip=True):
         True
         >>> os.path.exists(os.path.join(lib_path, 'ld-linux-x86-64.so.2'))
         True
+
+        Fetch libraries from a different mirror for a vulnerable libc version
+        ``libc6_2.36-9+deb12u6_amd64`` that was removed from the official Debian mirrors:
+        
+        >>> libc_path = libcdb.search_by_build_id("ee3145ecaaff87a133daea77fbc3eecd458fa0d1") # doctest: +SKIP
+        >>> libcdb.download_libraries(libc_path, extra_mirrors="https://debian.sipwise.com/debian-security") # doctest: +ELLIPSIS +SKIP
+        '.../libcdb_libs/ee3145ecaaff87a133daea77fbc3eecd458fa0d1'
     """
 
     libc = ELF(libc_path, checksec=False)
     if not libc.buildid:
         log.warn_once('Given libc does not have a buildid.')
         return None
-    
+
     # Handle caching and don't redownload if it already exists.
     cache_dir = os.path.join(context.cache_dir, 'libcdb_libs')
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
-    
+
     cache_dir = os.path.join(cache_dir, enhex(libc.buildid))
     if os.path.exists(cache_dir):
         return cache_dir
 
-    for package_url in _find_libc_package_lib_url(libc):
+    extra_mirrors = _collect_extra_mirrors(extra_mirrors)
+
+    for package_url in _find_libc_package_lib_url(libc, extra_mirrors=extra_mirrors):
         extension_handlers = {
             '.deb': _extract_debfile,
             '.pkg.tar.xz': _extract_pkgfile,
@@ -697,8 +742,8 @@ def search_by_symbol_offsets(symbols, select_index=None, unstrip=True, offline_o
         >>> matched_libcs = search_by_symbol_offsets({'__libc_start_main_ret': '7f89ad926550'}, return_as_list=True)
         >>> len(matched_libcs) > 1
         True
-        >>> for buildid in matched_libcs: # doctest +SKIP
-        ...     libc = ELF(search_by_build_id(buildid)) # doctest +SKIP
+        >>> for buildid in matched_libcs: # doctest: +SKIP
+        ...     libc = ELF(search_by_build_id(buildid)) # doctest: +SKIP
     """
     assert search_type in TYPES, search_type
 
