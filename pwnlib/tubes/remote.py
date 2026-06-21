@@ -98,7 +98,7 @@ class remote(sock):
                 ssl_args = ssl_args or {}
                 if "server_hostname" in ssl_args and sni:
                     log.error("sni and server_hostname cannot be set at the same time")
-                ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLSv1_2)
+                ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLS_CLIENT)
                 if isinstance(sni, str):
                     ssl_args["server_hostname"] = sni
                 elif sni:
