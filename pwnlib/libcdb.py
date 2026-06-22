@@ -120,6 +120,7 @@ def query_libc_rip(params):
 
     url = "{}/api/find".format(LIBC_RIP_URL)
     try:
+        log.debug("Querying libc.rip at %s with parameters: %s", url, params)
         result = requests.post(url, json=params, timeout=20)
         result.raise_for_status()
         if result.status_code != 200:
