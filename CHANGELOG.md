@@ -139,6 +139,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
+- [#2750][2750] fix: Fix DeprecationWarning when setting ssl=True in remote()
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -203,6 +204,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
 [2746]: https://github.com/Gallopsled/pwntools/pull/2746
+[2750]: https://github.com/Gallopsled/pwntools/pull/2750
 
 ## 4.15.1
 
