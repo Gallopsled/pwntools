@@ -386,6 +386,13 @@ class AdbDevice(Device):
         if name.startswith('_'):
             raise AttributeError(name)
 
+        # Avoid infinite recursion: if this attribute is defined as a
+        # property or descriptor on the class, raise AttributeError to
+        # let Python's normal attribute resolution handle it.
+        for cls in type(self).__mro__:
+            if name in cls.__dict__:
+                raise AttributeError(name)
+
         with context.local(device=self):
             g = globals()
 
