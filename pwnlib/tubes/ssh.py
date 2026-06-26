@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import re
 import shutil
 import string
@@ -592,6 +593,8 @@ class ssh(Timeout, Logger):
     pid = None
 
     _cwd = '.'
+    _sep = '/'
+    _pathlib = pathlib.PurePosixPath
     _tried_sftp = False
 
     def __init__(self, user=None, host=None, port=22, password=None, key=None,
@@ -695,6 +698,10 @@ class ssh(Timeout, Logger):
         self._ibt = None
 
         misc.mkdir_p(self._cachedir)
+
+        if context.os == 'windows':
+            self._sep = '\\'
+            self._pathlib = pathlib.PureWindowsPath    
 
         import paramiko
 
@@ -1122,14 +1129,15 @@ class ssh(Timeout, Logger):
         system which adds the current working directory to the end of ``$PATH``.
         """
         # If name is a path, do not attempt to resolve it.
-        if os.path.sep in program:
+        if self._sep in program:
             return program
 
         program = packing._encode(program)
+        pathsep = self._sep.encode()
 
         result = self.system(b'export PATH=$PATH:$PWD; command -v ' + program).recvall().strip()
 
-        if (b'/' + program) not in result:
+        if (pathsep + program) not in result:
             return None
 
         return packing._decode(result)
@@ -1471,8 +1479,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
         fingerprint = fingerprint and self._get_fingerprint(remote) or None
         if fingerprint is None:
-            local = os.path.normpath(remote)
-            local = os.path.basename(local)
+            local = self._pathlib(remote).name
             local += time.strftime('-%Y-%m-%d-%H%M%S')
             local = os.path.join(self._cachedir, local)
 
@@ -1541,7 +1548,8 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         if not local:
-            local = os.path.basename(os.path.normpath(remote))
+            remote_str = remote.decode() if not hasattr(remote, 'encode') else remote
+            local = self._pathlib(remote_str).name
 
         with self.progress('Downloading %r to %r' % (remote, local)) as p:
             local_tmp = self._download_to_cache(remote, p)
@@ -1617,9 +1625,12 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             Hello, world
         """
         data = packing._need_bytes(data)
+        if not hasattr(remote, 'encode'):
+            remote = remote.decode('utf-8')
         # If a relative path was provided, prepend the cwd
-        if os.path.normpath(remote) == os.path.basename(remote):
-            remote = os.path.join(self.cwd, remote)
+        remote_path = self._pathlib(remote)
+        if str(remote_path) == remote_path.name:
+            remote = str(self._pathlib(self.cwd) / remote)
 
         if self.sftp:
             flo = BytesIO(data)
@@ -1650,9 +1661,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
 
 
         if remote is None:
-            remote = os.path.normpath(filename)
-            remote = os.path.basename(remote)
-            remote = os.path.join(self.cwd, remote)
+            remote = str(self._pathlib(self.cwd) / self._pathlib(filename).name)
 
         with open(filename, 'rb') as fd:
             data = fd.read()
@@ -1909,7 +1918,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         status = 0
 
         if symlink and not isinstance(symlink, (bytes, str)):
-            symlink = os.path.join(self.pwd(), b'*')
+            symlink = str(self._pathlib(self.pwd().decode()) / '*')
         if not hasattr(symlink, 'encode') and hasattr(symlink, 'decode'):
             symlink = symlink.decode('utf-8')
             
