@@ -317,11 +317,11 @@ class AdbDevice(Device):
             port = int(port)
             try:
                 with remote('localhost', port, level='error') as r:
-                    r.recvuntil('OK')
+                    r.recvuntil(b'OK')
                     r.recvline() # Rest of the line
-                    r.sendline('avd name')
-                    self.avd = r.recvline().strip()
-            except (OSError, EOFError, PwnlibException) as e:
+                    r.sendline(b'avd name')
+                    self._avd = r.recvlineS().strip()
+            except (OSError, EOFError, PwnlibException):
                 # ADB device disconnected or not responding, skip AVD name lookup
                 pass
 
