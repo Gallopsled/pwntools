@@ -140,6 +140,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
 - [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
+- [#2734][2734] ROP: Add labels to reference addresses relative to your chain
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -205,6 +206,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
 [2743]: https://github.com/Gallopsled/pwntools/pull/2743
 [2746]: https://github.com/Gallopsled/pwntools/pull/2746
+[2734]: https://github.com/Gallopsled/pwntools/pull/2734
 
 ## 4.15.1
 
