@@ -154,7 +154,9 @@ def binary():
         str: Path to the appropriate ``windbg`` binary to use.
     """
     if context.debugger == 'auto':
-        for debugger in filter(lambda x: x != 'auto', context.debugger_choices):
+        for debugger in context.debugger_choices:
+            if debugger == 'auto':
+                continue
             with context.local(debugger=debugger, log_level='critical'):
                 try:
                     return binary()
