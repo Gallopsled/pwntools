@@ -75,6 +75,8 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
+- [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
 - [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
 - [#2677][2677] refactor: replace unsafe eval with safeeval.const in ROP cache loading
 - [#2675][2675] feat(term): add zellij support
@@ -134,6 +136,10 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2702][2702] ssh: Don't cache username in ssh checksec output
 - [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
 - [#2730][2730] Fix atexception handlers in term mode
+- [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
+- [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
+- [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -193,6 +199,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2722]: https://github.com/Gallopsled/pwntools/pull/2722
 [2725]: https://github.com/Gallopsled/pwntools/pull/2725
 [2730]: https://github.com/Gallopsled/pwntools/pull/2730
+[2732]: https://github.com/Gallopsled/pwntools/pull/2732
+[2733]: https://github.com/Gallopsled/pwntools/pull/2733
+[2739]: https://github.com/Gallopsled/pwntools/pull/2739
+[2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2743]: https://github.com/Gallopsled/pwntools/pull/2743
+[2746]: https://github.com/Gallopsled/pwntools/pull/2746
 
 ## 4.15.1
 

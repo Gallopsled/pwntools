@@ -4,13 +4,13 @@ class Gadget:
     """
 
     #: Address of the first instruction of the gadget
-    address = 0
+    address: int
 
     #: List of disassembled instruction mnemonics
     #:
     #: Examples:
     #:      ['pop eax', 'ret']
-    insns = []
+    insns: list[str]
 
     #: OrderedDict of register to:
     #:
@@ -26,16 +26,16 @@ class Gadget:
     #: pop ebx; pop eax; ret => {'ebx': 0, 'eax': 4}
     #: add esp, 0x10; pop ebx; ret => {'ebx': 16}
     #: mov eax, ebx; ret => {'eax': 'ebx'}
-    regs = {}
+    regs: dict[str, int | str]
 
     #: The total amount that the stack pointer is modified by
     #:
     #: Examples:
     #:      ret ==> 4
     #:      add esp, 0x10; ret ==> 0x14
-    move = 0
+    move: int
 
-    def __init__(self, address, insns, regs, move):
+    def __init__(self, address: int, insns: list[str], regs: dict[str, int | str], move: int):
         self.address = int(address)
         self.insns   = insns
         self.regs    = regs
@@ -43,20 +43,16 @@ class Gadget:
 
     __indices = ['address', 'details']
 
-    def __repr__(self):
-        return "%s(%#x, %r, %r, %#x)" % (self.__class__.__name__,
-                                         self.address,
-                                         self.insns,
-                                         self.regs,
-                                         self.move)
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.address:#x}, {self.insns!r}, {self.regs!r}, {self.move:#x})"
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str | int) -> object:
         # Backward compatibility
         if isinstance(key, int):
             key = self.__indices[key]
         return getattr(self, key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str | int, value: object) -> None:
         # Backward compatibility
         if isinstance(key, int):
             key = self.__indices[key]

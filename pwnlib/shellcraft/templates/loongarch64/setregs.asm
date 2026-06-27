@@ -16,10 +16,10 @@ Args:
 Example:
 
     >>> print(shellcraft.setregs({'t0':1, 'a3':'0'}).rstrip())
-        addi.d   $a3, $r0, 0
-        addi.d   $t0, $r0, 1
+        li.d     $a3, 0
+        li.d     $t0, 1
     >>> print(shellcraft.setregs({'a0':'a1', 'a1':'a0', 'a2':'a1'}).rstrip())
-        addi.d   $a2, $a1, 0
+        move     $a2, $a1
         xor      $a1, $a1, $a0 /* xchg a1, a0 */
         xor      $a0, $a0, $a1
         xor      $a1, $a1, $a0

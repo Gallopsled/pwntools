@@ -107,6 +107,7 @@ files = [
     "pwn/**/*.py",
     "pwnlib/**/*.py",
 ]
+allow_redefinition = true
 
 [[tool.mypy.overrides]]
 module = [
