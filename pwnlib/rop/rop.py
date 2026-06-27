@@ -365,7 +365,7 @@ This is especially common for gadgets which adjust the stack pointer, but can al
 You have to know the absolute address of the ROP chain in memory for this and pass it as ``base=`` into the :class:`ROP` constructor.
 
 You can use labels to reference other slots in the ROP chain, and the ROP module will resolve them to the correct addresses when the chain is finalized.
-Set a label at the current chain position using :meth:`ROP.setlabel`, and reference it using :meth:`ROP.uselabel` with an optional offset.
+Set a label at the current chain position using :meth:`ROP.label`, and reference it using :meth:`ROP.ref` with an optional offset.
 
 Imagine you want to use a `pop rdx; leave; ret` gadget to control rdx and continue your rop chain afterwards.
 You can use a label in front of your next gadget and reference it in `rbp` to achieve this.
@@ -375,10 +375,10 @@ You can use a label in front of your next gadget and reference it in `rbp` to ac
     >>> binary = ELF.from_assembly(assembly)
     >>> binary.symbols['funcname'] = binary.entry + 0x1000
     >>> rop = ROP(binary, base=0xdead0000)
-    >>> rop.rbp = rop.uselabel('step1', offset = -8)
+    >>> rop.rbp = rop.ref('step1', offset = -8)
     >>> rop.raw(binary.sym.special_gadget)
     >>> rop.raw(0xdeadbeef)     # control rdx
-    >>> rop.setlabel('step1')
+    >>> rop.label('step1')
     >>> rop.call("funcname", [b"hello", b"world"])
     >>> print(rop.dump())
     0xdead0000:       0x10000007 pop rbp; ret
@@ -657,7 +657,7 @@ class ROP:
     def __init__(self, elfs: ELF | str | bytes | list[ELF], base: int | None = None, badchars: bytes = b''):
         """
         Arguments:
-            elfs(list): List of :class:`.ELF` objects for mining
+            elfs(list): List of :class:`.ELF` objects or single :class:`.ELF` for mining gadgets. bytes or str are passed to :class:`.ELF`'s constructor.
             base(int): Stack address where the first byte of the ROP chain lies, if known.
             badchars(bytes): Characters which should not appear in ROP gadget addresses.
         """
@@ -1162,9 +1162,9 @@ class ROP:
             registers = {}
         registers.update(kw)
 
-    def setlabel(self, name: str) -> None:
+    def label(self, name: str) -> None:
         """Assign a label to the current position in the ROP chain.
-        The label can be used with :meth:`uselabel` to refer to this position
+        The label can be used with :meth:`ref` to refer to this position
         from elsewhere in the chain.
 
         Labels can only be set on non-migrated chains with a known base address.
@@ -1179,7 +1179,7 @@ class ROP:
         >>> e = ELF.from_assembly(assembly)
         >>> r = ROP(e, base = 0xcafe0000)
         >>> r.rax = 5
-        >>> r.setlabel('setrdi')
+        >>> r.label('setrdi')
         >>> r.rdi = 10
         >>> print(r.dump())
         0xcafe0000:       0x10000000 pop rax; ret
@@ -1191,7 +1191,7 @@ class ROP:
         The base address of your rop chain in memory has to be known:
 
         >>> r = ROP(e)
-        >>> r.setlabel('foo')  # doctest: +ELLIPSIS
+        >>> r.label('foo')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         pwnlib.exception.PwnlibException: Cannot set label on a ROP chain with unknown base address
@@ -1199,8 +1199,8 @@ class ROP:
         Labels have to be unique:
 
         >>> r = ROP(e, base = 0xcafe0000)
-        >>> r.setlabel('foo')
-        >>> r.setlabel('foo')  # doctest: +ELLIPSIS
+        >>> r.label('foo')
+        >>> r.label('foo')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         pwnlib.exception.PwnlibException: Label 'foo' already exists
@@ -1209,7 +1209,7 @@ class ROP:
 
         >>> r = ROP(e, base = 0xcafe0000)
         >>> r.migrate(0x1234)
-        >>> r.setlabel('foo')  # doctest: +ELLIPSIS
+        >>> r.label('foo')  # doctest: +ELLIPSIS
         Traceback (most recent call last):
         ...
         pwnlib.exception.PwnlibException: Cannot set label on a migrated chain
@@ -1224,15 +1224,15 @@ class ROP:
         self._labels[name] = label
         self.raw(label)
     
-    def uselabel(self, name: str, offset: int = 0) -> LabelUser:
-        """Insert a placeholder to the address of a label set by :meth:`setlabel`.
+    def ref(self, name: str, offset: int = 0) -> LabelUser:
+        """Insert a placeholder to the address of a label set by :meth:`label`.
 
         You can reference labels that are not defined yet. This placeholder will be
         replaced with the address of the label when building the chain.
         You can also specify an optional offset to add to the label address.
 
         Arguments:
-            name(str): Name of the label to refer to. Has to be defined by a previous call to :meth:`setlabel`.
+            name(str): Name of the label to refer to. Has to be defined by a previous call to :meth:`label`.
             offset(int): Optional offset to add to the label address. Defaults to 0.
         
         Returns:
@@ -1244,10 +1244,10 @@ class ROP:
         >>> assembly = 'pop rax; ret; pop rdi; ret; pop rsi; ret;'
         >>> e = ELF.from_assembly(assembly)
         >>> r = ROP(e, base = 0xcafe0000)
-        >>> r.setlabel('setrax')
-        >>> r.rax = r.uselabel('setrax')
-        >>> r.rsi = r.uselabel('setrdi', offset = -8)
-        >>> r.setlabel('setrdi')
+        >>> r.label('setrax')
+        >>> r.rax = r.ref('setrax')
+        >>> r.rsi = r.ref('setrdi', offset = -8)
+        >>> r.label('setrdi')
         >>> r.rdi = 10
         >>> print(r.dump())
         setrax:
