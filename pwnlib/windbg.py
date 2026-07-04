@@ -206,7 +206,6 @@ def binary():
         return context.debugger, _lookup_x64dbg()
 
     log.error('Invalid debugger selection: %s', context.debugger)
-    raise
 
 def _lookup_x64dbg():
     def _select_arch_binary(path):
