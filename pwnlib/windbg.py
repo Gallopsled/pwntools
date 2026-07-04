@@ -330,18 +330,17 @@ def attach(target, dbgscript=None, dbg_args=[]):
         dbgscript = dbgscript.split('\n')
     dbgscript_file = None
     if dbgscript:
-        tempdir = Path.cwd() if debugger == 'x64dbg' else None
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.dbg', dir=tempdir) as tmp:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.dbg') as tmp:
             tmp.write('\n'.join(script.strip() for script in dbgscript if script.strip()))
             tmp.flush()
-            dbgscript_file = Path(tmp.name)
+            dbgscript_file = tmp.name
     
         if debugger in ('windbg', 'windbgx'):
             cmd.extend(['-c', '$<{}'.format(dbgscript_file)])
         # x64dbg got support to run commands on startup in version 2025.08.19.
-        # But absolute paths fail at the moment https://github.com/x64dbg/x64dbg/issues/3865
+        # But absolute paths were not supported until version 2026.05.27.
         elif debugger == 'x64dbg':
-            cmd.extend(['-cf', dbgscript_file.name])
+            cmd.extend(['-cf', dbgscript_file])
         else:
             log.warn_once('dbgscript is not supported for %s', debugger)
     
