@@ -253,7 +253,7 @@ def which_binutils(util, check_version=False):
     # No dice!
     print_binutils_instructions(util, context)
 
-util_versions = defaultdict(tuple)
+util_versions: defaultdict[str, tuple[int, ...]] = defaultdict(tuple)
 
 def _assembler():
     gas, version = which_binutils('as', check_version=True)

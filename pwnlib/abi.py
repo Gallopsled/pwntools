@@ -6,22 +6,25 @@ class ABI:
     """
     Encapsulates information about a calling convention.
     """
+    #: Register which points to the top of the stack.
+    stack: str
+
     #: List or registers which should be filled with arguments before
     #: spilling onto the stack.
-    register_arguments = []
+    register_arguments: list[str]
 
     #: Minimum alignment of the stack.
     #: The value used is min(context.bytes, stack_alignment)
     #: This is necessary as Windows x64 frames must be 32-byte aligned.
     #: "Alignment" is considered with respect to the last argument on the stack.
-    arg_alignment    = 1
+    arg_alignment: int
 
     #: Minimum number of stack slots used by a function call
     #: This is necessary as Windows x64 requires using 4 slots on the stack
-    stack_minimum      = 0
+    stack_minimum: int
 
     #: Indicates that this ABI returns to the next address on the slot
-    returns            = True
+    returns: bool = True
 
     def __init__(self, stack, arg_regs, align, minimum):
         self.stack              = stack
@@ -74,7 +77,6 @@ class ABI:
         (32, 'arm', 'linux'):   linux_arm_syscall,
         (32, 'thumb', 'linux'):   linux_arm_syscall,
         (32, 'mips', 'linux'):   linux_mips_syscall,
-        (64, 'aarch64', 'linux'):   linux_aarch64_syscall,
         (32, 'powerpc', 'linux'): linux_ppc_syscall,
         (64, 'powerpc', 'linux'): linux_ppc64_syscall,
         (32, 'riscv32', 'linux'): linux_riscv32_syscall,
@@ -86,7 +88,6 @@ class ABI:
         (32, 'arm', 'freebsd'):   freebsd_arm_syscall,
         (32, 'thumb', 'freebsd'):   freebsd_arm_syscall,
         (32, 'mips', 'freebsd'):   freebsd_mips_syscall,
-        (64, 'aarch64', 'freebsd'):   freebsd_aarch64_syscall,
         (32, 'powerpc', 'freebsd'): freebsd_ppc_syscall,
         (64, 'powerpc', 'freebsd'): freebsd_ppc64_syscall,
         (64, 'amd64', 'darwin'): darwin_amd64_syscall,
@@ -123,6 +124,10 @@ class SyscallABI(ABI):
     The syscall ABI treats the syscall number as the zeroth argument,
     which must be loaded into the specified register.
     """
+
+    #: Register which should be loaded with the syscall number.
+    syscall_register: str
+
     def __init__(self, *a, **kw):
         super(SyscallABI, self).__init__(*a, **kw)
         self.syscall_register = self.register_arguments[0]

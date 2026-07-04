@@ -1,8 +1,8 @@
 from pwn import *
 from pwnlib.commandline import common
+from pwnlib.data import path as data_path
 from pwnlib.util.misc import which, parse_ldd_output, write
 
-from sys import stderr
 from mako.lookup import TemplateLookup, Template
 
 parser = common.parser_commands.add_parser(
@@ -15,7 +15,7 @@ parser = common.parser_commands.add_parser(
 )
 
 # change path to hardcoded one when building the documentation
-printable_data_path = "pwnlib/data" if 'sphinx' in sys.modules else pwnlib.data.path
+printable_data_path = "pwnlib/data" if 'sphinx' in sys.modules else data_path
 
 parser.add_argument('exe', nargs='?', help='Target binary. If not given, the current directory is searched for an executable binary.')
 parser.add_argument('--host', help='Remote host / SSH server')

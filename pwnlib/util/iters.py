@@ -339,28 +339,6 @@ def repeat_func(func, *args, **kwargs):
     else:
         return starmap(func, repeat(args))
 
-def pairwise(iterable):
-    """pairwise(iterable) -> iterator
-
-    Arguments:
-      iterable:  An iterable.
-
-    Returns:
-      An iterator whoose elements are pairs of neighbouring elements of
-      `iterable`.
-
-    Examples:
-
-      >>> list(pairwise([1, 2, 3, 4]))
-      [(1, 2), (2, 3), (3, 4)]
-      >>> i = starmap(operator.add, pairwise(count()))
-      >>> take(5, i)
-      [1, 3, 5, 7, 9]
-    """
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
 def group(n, iterable, fill_value = None):
     """group(n, iterable, fill_value = None) -> iterator
 
