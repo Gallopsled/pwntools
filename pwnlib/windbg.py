@@ -234,7 +234,7 @@ def _lookup_x64dbg():
 
     # See if the "Debug with x64dbg" shell extension is installed
     try:
-        import winreg
+        import winreg  # pylint: disable=import-error winreg is only available on Windows
         with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r'exefile\shell\Debug with x64dbg\Command') as key:
             regcmd = winreg.QueryValueEx(key, None)
             # ('"C:\\Users\\User\\Downloads\\x64dbg\\bin\\x96dbg.exe" "%1"', 2)
