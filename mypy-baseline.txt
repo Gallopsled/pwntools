@@ -16,6 +16,5 @@ pwnlib/filesystem/path.py:0: error: "type[Path]" has no attribute "mktemp"  [att
 pwnlib/rop/call.py:0: error: Name "address" already defined on line 0  [no-redef]
 pwnlib/rop/call.py:0: error: Need type annotation for "args" (hint: "args: list[<type>] = ...")  [var-annotated]
 pwnlib/rop/call.py:0: error: Need type annotation for "values" (hint: "values: list[<type>] = ...")  [var-annotated]
-pwnlib/rop/rop.py:0: error: Need type annotation for "descriptions" (hint: "descriptions: dict[<type>, <type>] = ...")  [var-annotated]
 pwnlib/rop/srop.py:0: error: Need type annotation for "_regs" (hint: "_regs: list[<type>] = ...")  [var-annotated]
 pwnlib/update.py:0: error: "Callable[[bool], Version]" has no attribute "cached"  [attr-defined]

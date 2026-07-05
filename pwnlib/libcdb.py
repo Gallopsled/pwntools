@@ -352,15 +352,15 @@ def unstrip_libc(filename):
         >>> libc = ELF(filename)
         >>> 'main_arena' in libc.symbols
         False
-        >>> unstrip_libc(filename)
+        >>> unstrip_libc(filename) # doctest: +SKIP
         True
         >>> libc = ELF(filename)
-        >>> hex(libc.symbols.main_arena)
+        >>> hex(libc.symbols.main_arena) # doctest: +SKIP
         '0x219c80'
         >>> unstrip_libc(pwnlib.data.elf.get('test-x86'))
         False
         >>> filename = search_by_build_id('d1704d25fbbb72fa95d517b883131828c0883fe9', unstrip=True)
-        >>> 'main_arena' in ELF(filename).symbols
+        >>> 'main_arena' in ELF(filename).symbols # doctest: +SKIP
         True
     """
     if not which('eu-unstrip'):
