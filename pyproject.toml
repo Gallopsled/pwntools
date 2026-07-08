@@ -53,6 +53,9 @@ dependencies = [
     "zstandard",
 ]
 
+[project.optional-dependencies]
+mcp = ["fastmcp>=2.3.0"]
+
 [project.urls]
 homepage = "https://pwntools.com"
 download = "https://github.com/Gallopsled/pwntools/releases"
