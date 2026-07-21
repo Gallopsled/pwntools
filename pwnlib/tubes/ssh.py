@@ -233,9 +233,8 @@ class ssh_channel(sock):
                     elif cur == b'\a':
                         # Ugly hack until term unstands bell characters
                         continue
-                    stdout = sys.stdout
-                    if not term.term_mode:
-                        stdout = getattr(stdout, 'buffer', stdout)
+
+                    stdout = getattr(sys.stdout, 'buffer', sys.stdout)
                     stdout.write(cur)
                     stdout.flush()
                 except EOFError:
