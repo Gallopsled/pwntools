@@ -155,7 +155,11 @@ def _validator(validator):
     of the classes here.
 
     This expects that the object has a ._tls property which
-    is of type _DictStack.
+    is of type _DictStack, and a ._tls_explicit property of
+    the same type used to track which attributes were set
+    directly by a user versus implicitly (e.g. ``bits`` and
+    ``endian`` being derived from ``arch``). See the ``arch``
+    setter for where this distinction is used.
     """
 
     name = validator.__name__
@@ -166,9 +170,11 @@ def _validator(validator):
 
     def fset(self, val):
         self._tls[name] = validator(self, val)
+        self._tls_explicit[name] = True
 
     def fdel(self):
         self._tls._current.pop(name,None)
+        self._tls_explicit._current.pop(name,None)
 
     return property(fget, fset, fdel, doc)
 
@@ -333,7 +339,7 @@ class ContextType:
     # Setting any properties on a ContextType object will throw an
     # exception.
     #
-    __slots__ = '_tls',
+    __slots__ = '_tls', '_tls_explicit'
 
     #: Default values for :class:`pwnlib.context.ContextType`
     defaults: dict[str, object] = {
@@ -460,6 +466,12 @@ class ContextType:
         All keyword arguments are passed to :func:`update`.
         """
         self._tls = _Tls_DictStack(_defaultdict(self.defaults))
+        # Tracks which attribute names were set directly by a user (via the
+        # property setters, i.e. going through _validator's fset) as opposed
+        # to being derived as a side effect of another attribute (e.g. `bits`
+        # and `endian` being filled in from `arch`'s defaults). Only
+        # directly-set values should survive a later change to `arch`/`os`.
+        self._tls_explicit = _Tls_DictStack(_defaultdict({}))
         self.update(**kwargs)
 
 
@@ -553,11 +565,13 @@ class ContextType:
         class LocalContext:
             def __enter__(a):
                 self._tls.push()
+                self._tls_explicit.push()
                 self.update(**{k:v for k,v in kwargs.items() if v is not None})
                 return self
 
             def __exit__(a, *b, **c):
                 self._tls.pop()
+                self._tls_explicit.pop()
 
             def __call__(self, function, *a, **kw):
                 @functools.wraps(function)
@@ -699,6 +713,7 @@ class ContextType:
             True
         """
         self._tls._current.clear()
+        self._tls_explicit._current.clear()
 
         if a or kw:
             self.update(*a, **kw)
@@ -781,6 +796,20 @@ class ContextType:
             >>> context.arch = 'powerpc64'
             >>> vars(context) == {'arch': 'powerpc64', 'bits': 64, 'endian': 'big'}
             True
+
+            Switching :attr:`arch` back and forth keeps applying each
+            new architecture's defaults for :attr:`bits`, as long as
+            :attr:`bits` was never expressly set by the user (i.e. the
+            value in place is only there because of a *previous*
+            :attr:`arch` assignment, not a real user choice)
+
+            >>> context.clear()
+            >>> context.arch = 'amd64'
+            >>> context.bits == 64
+            True
+            >>> context.arch = 'i386'
+            >>> context.bits == 32
+            True
         """
         # Lowercase
         arch = arch.lower()
@@ -811,7 +840,12 @@ class ContextType:
             raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
 
         for k,v in defaults.items():
-            if k not in self._tls:
+            # Only keep the existing value if the user set it directly
+            # (e.g. via `context.bits = ...`) rather than it having been
+            # filled in by a *previous* `arch` assignment - otherwise
+            # switching arch back and forth can leave stale, invalid
+            # combinations in place (see #2498).
+            if k not in self._tls_explicit:
                 self._tls[k] = v
 
         return arch
