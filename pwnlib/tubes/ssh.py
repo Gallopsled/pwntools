@@ -33,6 +33,50 @@ h = logging.StreamHandler(open(os.devnull,'w+'))
 h.setFormatter(logging.Formatter())
 paramiko_log.addHandler(h)
 
+
+def _sockname_to_endpoint(sockname):
+    """Split the result of ``socket.getsockname()`` into a ``(host, port)`` pair.
+
+    ``AF_INET``/``AF_INET6`` sockets report their address as a tuple, but
+    ``AF_UNIX`` sockets report a bare filesystem path instead: a ``str``
+    (``bytes`` for Linux's abstract namespace), and ``''`` when the socket is
+    unbound.  Indexing that path as though it were a tuple silently yields
+    single characters, or raises ``IndexError`` for the unbound case, so a
+    Unix socket reports its path as the host and ``None`` as the port.
+
+    Arguments:
+        sockname: Return value of :meth:`socket.socket.getsockname`.
+
+    Returns:
+        A ``(host, port)`` tuple.  ``port`` is ``None`` for ``AF_UNIX``.
+
+    Examples:
+
+        An ordinary TCP socket reports a host and a port.
+
+        >>> pwnlib.tubes.ssh._sockname_to_endpoint(('127.0.0.1', 1337))
+        ('127.0.0.1', 1337)
+
+        ``AF_INET6`` reports two extra fields, which are discarded.
+
+        >>> pwnlib.tubes.ssh._sockname_to_endpoint(('::1', 1337, 0, 0))
+        ('::1', 1337)
+
+        A Unix socket has a path rather than a host and port.
+
+        >>> pwnlib.tubes.ssh._sockname_to_endpoint('/tmp/example.sock')
+        ('/tmp/example.sock', None)
+
+        An unbound Unix socket reports an empty path.
+
+        >>> pwnlib.tubes.ssh._sockname_to_endpoint('')
+        ('', None)
+    """
+    if isinstance(sockname, tuple):
+        return sockname[0], sockname[1]
+    return sockname, None
+
+
 class ssh_channel(sock):
 
     #: Parent :class:`ssh` object
@@ -484,8 +528,7 @@ class ssh_connecter(sock):
                     curr = curr.get_transport().sock
 
                 sockname = curr.getsockname()
-                self.lhost = sockname[0]
-                self.lport = sockname[1]
+                self.lhost, self.lport = _sockname_to_endpoint(sockname)
             except Exception as e:
                 self.exception("Could not find base-level Socket object.")
                 raise e
