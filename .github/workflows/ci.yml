@@ -66,14 +66,14 @@ jobs:
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
 
     - name: Set up Python ${{ matrix.python_version }}
-      uses: actions/setup-python@v6
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: ${{ matrix.python_version }}
-        cache: 'pip'
-        cache-dependency-path: |
+        enable-cache: true
+        activate-environment: true
+        cache-dependency-glob: |
           **/pyproject.toml
           **/requirements*.txt
-
 
     - name: Verify tag against version
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
@@ -125,12 +125,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install --upgrade wheel build
-        pip install --upgrade flake8 appdirs
-        pip install --upgrade --editable .
+        uv pip install --upgrade --editable .
         # Pin to known working version until 2.1.5 is out. https://github.com/unicorn-engine/unicorn/issues/2134
-        pip install 'unicorn==2.1.2'
+        uv pip install 'unicorn==2.1.2' setuptools
 
     - name: Sanity checks
       run: |
@@ -138,7 +135,7 @@ jobs:
         python -c "import hashlib; assert hashlib.algorithms_guaranteed == {'sha256', 'blake2s', 'sha3_384', 'shake_256', 'sha1', 'md5', 'shake_128', 'sha224', 'sha512', 'blake2b', 'sha3_512', 'sha3_224', 'sha3_256', 'sha384'}"
 
     - name: Install documentation dependencies
-      run: pip install -r docs/requirements.txt
+      run: uv pip install -r docs/requirements.txt
 
     - name: Disable yama ptrace_scope
       run: |
@@ -226,7 +223,7 @@ jobs:
 
     - name: Build source and wheel distributions
       run: |
-        python -m build
+        uv build
 
     - uses: actions/upload-artifact@v7
       if: matrix.python_version == '3.10'
@@ -255,11 +252,12 @@ jobs:
     - uses: actions/checkout@v6
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.12'
-        cache: 'pip'
-        cache-dependency-path: |
+        enable-cache: true
+        activate-environment: true
+        cache-dependency-glob: |
           **/pyproject.toml
           **/requirements*.txt
 
@@ -295,21 +293,18 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install --upgrade wheel build
-        pip install --upgrade flake8 appdirs
-        pip install --upgrade --editable .
+        uv pip install --upgrade --editable .
 
     - name: Sanity checks
       run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
 
     - name: Install documentation dependencies
-      run:  pip install -r docs/requirements.txt
+      run:  uv pip install -r docs/requirements.txt
 
     - name: Coverage Doctests (Android Only)
       run: |
         source .android.env
-        PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
+        PWNLIB_NOTERM=1 python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
 
     - uses: actions/upload-artifact@v7
       with:
@@ -324,17 +319,21 @@ jobs:
     - uses: actions/checkout@v6
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: astral-sh/setup-uv@v7
       with:
         python-version: '3.12'
+        enable-cache: true
+        activate-environment: true
+        cache-dependency-glob: |
+          **/pyproject.toml
+          **/requirements*.txt
 
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install --upgrade --editable .
+        uv pip install --upgrade --editable .
 
     - name: Install documentation dependencies
-      run: pip install -r docs/requirements.txt
+      run: uv pip install -r docs/requirements.txt
 
     - name: Sanity checks
       run: |
@@ -366,7 +365,7 @@ jobs:
 
     - name: Install coveralls
       run: |
-        pip install --break-system-packages tomli coveralls || pip install tomli coveralls
+        uv pip install tomli coveralls || pip install tomli coveralls
 
     - name: Upload coverage to coveralls.io
       run: |
