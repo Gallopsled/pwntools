@@ -141,6 +141,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2699][2699] Fix `tty` and `raw` arguments in `ssh.process()`
 - [#2688][2688] Close SSH client connection when authentication failed
 - [#2704][2704] ssh: Fix distro lookup on Ubuntu 24.04+
+- [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -164,6 +165,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2699]: https://github.com/Gallopsled/pwntools/pull/2699
 [2688]: https://github.com/Gallopsled/pwntools/pull/2688
 [2704]: https://github.com/Gallopsled/pwntools/pull/2704
+[2762]: https://github.com/Gallopsled/pwntools/pull/2762
 
 ## 4.15.0 (`stable`)
 
