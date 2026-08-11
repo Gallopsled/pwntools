@@ -66,15 +66,18 @@ class _defaultdict(dict):
         ...
         KeyError: 'baz'
     """
-    def __init__(self, default=None):
+    def __init__(self, default=None, resolver=None):
         super(_defaultdict, self).__init__()
         if default is None:
             default = {}
 
         self.default = default
+        self.resolver = resolver
 
 
     def __missing__(self, key):
+        if self.resolver is not None:
+            return self.resolver(key)
         return self.default[key]
 
 class _DictStack:
@@ -111,6 +114,11 @@ class _DictStack:
     def pop(self):
         self._current.clear()
         self._current.update(self.__stack.pop())
+
+    def _scopes(self):
+        """Iterate over all scopes of the stack, innermost first."""
+        yield self._current
+        yield from reversed(self.__stack)
 
     def copy(self):
         return self._current.copy()
@@ -294,7 +302,7 @@ class ContextType:
         >>> context.os == 'linux'
         True
         >>> context.arch = 'arm'
-        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n'}
+        >>> vars(context) == {'arch': 'arm', 'os': 'linux'}
         True
         >>> context.endian
         'little'
@@ -459,8 +467,50 @@ class ContextType:
 
         All keyword arguments are passed to :func:`update`.
         """
-        self._tls = _Tls_DictStack(_defaultdict(self.defaults))
+        self._tls = _Tls_DictStack(_defaultdict(self.defaults, self._resolve_default))
         self.update(**kwargs)
+
+    def _resolve_default(self, key):
+        """Default value for ``key``, derived from the current context.
+
+        Some defaults depend on other context attributes:
+
+        - ``bits`` and ``endian`` follow :attr:`arch`
+        - ``newline`` follows :attr:`os`
+
+        An unset key therefore resolves to the value implied by the current
+        ``arch``/``os`` instead of a fixed default, so that e.g. setting
+        ``arch`` multiple times always updates ``bits`` and ``endian`` unless
+        the user explicitly set them.
+
+        The whole scope stack is considered: an explicitly set value anywhere
+        in the stack wins, otherwise the value implied by the innermost
+        ``arch``/``os`` that provides it is used.
+        """
+        scopes = list(self._tls._scopes())
+
+        # An explicitly set value in any scope wins
+        for scope in scopes:
+            if key in scope:
+                return scope[key]
+
+        # Otherwise, derive from the innermost arch that implies the key
+        for scope in scopes:
+            arch = scope.get('arch')
+            if arch is not None:
+                implied = self.architectures[arch]
+                if key in implied:
+                    return implied[key]
+
+        # Then from the innermost os that implies the key
+        for scope in scopes:
+            os = scope.get('os')
+            if os is not None:
+                implied = self.oses[os]
+                if key in implied:
+                    return implied[key]
+
+        return self.defaults[key]
 
 
     def copy(self):
@@ -471,7 +521,7 @@ class ContextType:
 
             >>> context.clear()
             >>> context.os   = 'linux'
-            >>> vars(context) == {'os': 'linux', 'newline': b'\n'}
+            >>> vars(context) == {'os': 'linux'}
             True
         """
         return self._tls.copy()
@@ -728,10 +778,10 @@ class ContextType:
 
             If an architecture is specified which also implies additional
             attributes (e.g. 'amd64' implies 64-bit words, 'powerpc' implies
-            big-endian), these attributes will be set on the context if a
-            user has not already set a value.
+            big-endian), the values of these attributes are derived from
+            :attr:`arch` unless the user has set them explicitly.
 
-            The following properties may be modified.
+            The following properties are affected.
 
             - :attr:`bits`
             - :attr:`endian`
@@ -765,12 +815,43 @@ class ContextType:
             >>> context.bits == 64 # New value
             True
 
+            Changing the architecture updates the derived values
+            even if the architecture was already set before
+
+            >>> context.clear()
+            >>> context.arch = 'amd64'
+            >>> context.arch = 'i386'
+            >>> context.bits == 32
+            True
+
+            This also applies to :attr:`endian`
+
+            >>> context.clear()
+            >>> context.arch = 'powerpc64'
+            >>> context.endian == 'big'
+            True
+            >>> context.arch = 'i386'
+            >>> context.endian == 'little'
+            True
+
             Note that expressly setting :attr:`bits` means that we use
-            that value instead of the default
+            that value instead of the derived one
 
             >>> context.clear()
             >>> context.bits = 32
             >>> context.arch = 'amd64'
+            >>> context.bits == 32
+            True
+
+            Deleting an explicitly set value restores the derived value
+
+            >>> context.clear()
+            >>> context.bits = 64
+            >>> context.arch = 'amd64'
+            >>> del context.bits
+            >>> context.bits == 64
+            True
+            >>> context.arch = 'i386'
             >>> context.bits == 32
             True
 
@@ -779,7 +860,7 @@ class ContextType:
 
             >>> context.clear()
             >>> context.arch = 'powerpc64'
-            >>> vars(context) == {'arch': 'powerpc64', 'bits': 64, 'endian': 'big'}
+            >>> vars(context) == {'arch': 'powerpc64'}
             True
         """
         # Lowercase
@@ -806,13 +887,9 @@ class ContextType:
                 break
 
         try:
-            defaults = self.architectures[arch]
+            self.architectures[arch]
         except KeyError:
             raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
-
-        for k,v in defaults.items():
-            if k not in self._tls:
-                self._tls[k] = v
 
         return arch
 
@@ -1138,10 +1215,10 @@ class ContextType:
 
         Side Effects:
 
-            If an os is specified some attributes will be set on the context
-            if a user has not already set a value.
+            If an os is specified some attributes will be derived from
+            :attr:`os` unless the user has set them explicitly.
 
-            The following property may be modified:
+            The following property is affected:
 
             - :attr:`newline`
 
@@ -1170,8 +1247,17 @@ class ContextType:
             >>> context.newline == b'\r\n' # New value
             True
 
+            Changing the os updates the derived value even if the
+            os was already set before
+
+            >>> context.clear()
+            >>> context.os = 'windows'
+            >>> context.os = 'linux'
+            >>> context.newline == b'\n'
+            True
+
             Note that expressly setting :attr:`newline` means that we use
-            that value instead of the default
+            that value instead of the derived one
 
             >>> context.clear()
             >>> context.newline = b'\n'
@@ -1183,19 +1269,15 @@ class ContextType:
 
             >>> context.clear()
             >>> context.os = 'windows'
-            >>> vars(context) == {'os': 'windows', 'newline': b'\r\n'}
+            >>> vars(context) == {'os': 'windows'}
             True
         """
         os = os.lower()
 
         try:
-            defaults = self.oses[os]
+            self.oses[os]
         except KeyError:
             raise AttributeError("os must be one of %r" % sorted(self.oses))
-
-        for k,v in defaults.items():
-            if k not in self._tls:
-                self._tls[k] = v
 
         return os
 

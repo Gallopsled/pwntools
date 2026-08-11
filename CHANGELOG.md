@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2766][2766] fix(context): derive `bits`/`endian`/`newline` lazily from `arch`/`os`
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
@@ -213,6 +214,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2735]: https://github.com/Gallopsled/pwntools/pull/2735
 [2753]: https://github.com/Gallopsled/pwntools/pull/2753
 [2762]: https://github.com/Gallopsled/pwntools/pull/2762
+[2766]: https://github.com/Gallopsled/pwntools/pull/2766
 
 ## 4.15.1
 
