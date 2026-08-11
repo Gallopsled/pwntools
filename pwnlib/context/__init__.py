@@ -115,6 +115,11 @@ class _DictStack:
         self._current.clear()
         self._current.update(self.__stack.pop())
 
+    def _scopes(self):
+        """Iterate over all scopes of the stack, innermost first."""
+        yield self._current
+        yield from reversed(self.__stack)
+
     def copy(self):
         return self._current.copy()
 
@@ -477,18 +482,33 @@ class ContextType:
         ``arch``/``os`` instead of a fixed default, so that e.g. setting
         ``arch`` multiple times always updates ``bits`` and ``endian`` unless
         the user explicitly set them.
+
+        The whole scope stack is considered: an explicitly set value anywhere
+        in the stack wins, otherwise the value implied by the innermost
+        ``arch``/``os`` that provides it is used.
         """
-        current = self._tls._current
+        scopes = list(self._tls._scopes())
 
-        arch = current.get('arch', self.defaults['arch'])
-        implied = self.architectures[arch]
-        if key in implied:
-            return implied[key]
+        # An explicitly set value in any scope wins
+        for scope in scopes:
+            if key in scope:
+                return scope[key]
 
-        os = current.get('os', self.defaults['os'])
-        implied = self.oses[os]
-        if key in implied:
-            return implied[key]
+        # Otherwise, derive from the innermost arch that implies the key
+        for scope in scopes:
+            arch = scope.get('arch')
+            if arch is not None:
+                implied = self.architectures[arch]
+                if key in implied:
+                    return implied[key]
+
+        # Then from the innermost os that implies the key
+        for scope in scopes:
+            os = scope.get('os')
+            if os is not None:
+                implied = self.oses[os]
+                if key in implied:
+                    return implied[key]
 
         return self.defaults[key]
 
