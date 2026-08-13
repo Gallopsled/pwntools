@@ -104,6 +104,8 @@ class GdbService(Service):
         """Terminate GDB."""
         gdb.post_event(lambda: gdb.execute('quit'))
 
+# Defined inline before including this script in GDB.
+socket_path: str
 
 spawn(ThreadedServer(
     service=GdbService(),

@@ -26,7 +26,7 @@ jobs:
       PWN_UBUNTU_ARCHIVE_URL: http://localhost:3002/
       PWN_GITLAB_LIBCDB_URL:  http://localhost:3003/
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 20
 
@@ -42,7 +42,7 @@ jobs:
         echo "date=$(/bin/date -u "+%Y%m%d%H%M%S")" >> $GITHUB_OUTPUT
 
     - name: Cache for libcdb requests
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/libcdb-cache
         key: libcdb-python${{ matrix.python_version }}-${{ steps.fix-perms.outputs.date }}
@@ -66,7 +66,7 @@ jobs:
         gdb --batch --quiet --nx --nh --ex 'py import rpyc; print(rpyc.version.version)'
 
     - name: Set up Python ${{ matrix.python_version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_version }}
         cache: 'pip'
@@ -129,9 +129,13 @@ jobs:
         pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
         pip install --upgrade --editable .[full]
+        # Pin to known working version until 2.1.5 is out. https://github.com/unicorn-engine/unicorn/issues/2134
+        pip install 'unicorn==2.1.2'
 
     - name: Sanity checks
-      run:  PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
+      run: |
+        PWNLIB_NOTERM=1 python -bb -c 'from pwn import *; print(pwnlib.term.term_mode)'
+        python -c "import hashlib; assert hashlib.algorithms_guaranteed == {'sha256', 'blake2s', 'sha3_384', 'shake_256', 'sha1', 'md5', 'shake_128', 'sha224', 'sha512', 'blake2b', 'sha3_512', 'sha3_224', 'sha3_256', 'sha384'}"
 
     - name: Install documentation dependencies
       run: pip install -r docs/requirements.txt
@@ -248,10 +252,10 @@ jobs:
     timeout-minutes: 30
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.12'
         cache: 'pip'
@@ -270,7 +274,7 @@ jobs:
           libc6-dbg
 
     - name: Cache for avd
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       id: cache-avd
       with:
         path: |
@@ -316,12 +320,11 @@ jobs:
   windows-test:
     runs-on: windows-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.12'
 
@@ -350,9 +353,9 @@ jobs:
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, android-test, windows-test]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 20
 
@@ -376,7 +379,7 @@ jobs:
     if: github.repository_owner == 'Gallopsled' && github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads/') && endsWith(github.event.ref, '-staging')
     needs: test
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 20
     - name: Push changes to protected branch

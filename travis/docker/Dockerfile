@@ -104,18 +104,19 @@ RUN echo "travis ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/travis
 
 # Set up SSH stuff so we can SSH into localhost
 USER pwntools
-RUN ssh-keygen -t rsa -f ~/.ssh/id_rsa -N '' && \
-    cp ~/.ssh/id_rsa.pub /tmp && \
+RUN ssh-keygen -t rsa -f ~/.ssh/travis -N '' && \
+    cp ~/.ssh/travis.pub /tmp && \
     echo \
 "Host *\n\
     User travis\n\
     HostName 127.0.0.1\n\
+    IdentityFile ~/.ssh/travis\n\
 "> ~/.ssh/config
 
 # Set up authorized_keys so we can login as travis with no creds
 USER travis
 RUN mkdir -m 0700 ~/.ssh && \
-    echo 'from="127.0.0.1"' $(cat /tmp/id_rsa.pub) > ~/.ssh/authorized_keys
+    echo 'from="127.0.0.1"' $(cat /tmp/travis.pub) > ~/.ssh/authorized_keys
 
 # Add the doctest entrypoint to /usr/bin so we don't have to supply the full path
 USER root

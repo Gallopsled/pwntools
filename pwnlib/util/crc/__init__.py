@@ -26,7 +26,7 @@ from pwnlib.util import safeeval
 from pwnlib.util.crc import known
 
 
-class BitPolynom(object):
+class BitPolynom:
     """Class for representing GF(2)[X], i.e. the field of polynomials over
     GF(2).
 

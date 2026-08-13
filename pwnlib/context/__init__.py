@@ -22,16 +22,13 @@ from pwnlib.config import register_config
 from pwnlib.device import Device
 from pwnlib.timeout import Timeout
 
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
+from collections.abc import Iterable
 
 __all__ = ['context', 'ContextType', 'Thread']
 
 _original_socket = socket.socket
 
-class _devnull(object):
+class _devnull:
     name = None
     def write(self, *a, **kw): pass
     def read(self, *a, **kw):  return ''
@@ -78,7 +75,7 @@ class _defaultdict(dict):
     def __missing__(self, key):
         return self.default[key]
 
-class _DictStack(object):
+class _DictStack:
     """
     Manages a dictionary-like object, permitting saving and restoring from
     a stack of states via :func:`push` and :func:`pop`.
@@ -267,7 +264,7 @@ def _longest(d):
     """
     return collections.OrderedDict((k,d[k]) for k in sorted(d, key=len, reverse=True))
 
-class ContextType(object):
+class ContextType:
     r"""
     Class for specifying information about the target machine.
     Intended for use as a pseudo-singleton through the global
@@ -337,7 +334,7 @@ class ContextType(object):
     __slots__ = '_tls',
 
     #: Default values for :class:`pwnlib.context.ContextType`
-    defaults = {
+    defaults: dict[str, object] = {
         'adb_host': 'localhost',
         'adb_port': 5037,
         'arch': 'i386',
@@ -358,6 +355,10 @@ class ContextType(object):
         'endian': 'little',
         'gdbinit': "",
         'gdb_binary': "",
+        'windbg_binary': "",
+        'windbgx_binary': "",
+        'x64dbg_binary': "",
+        'debugger': "auto",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
         'log_level': logging.INFO,
@@ -446,6 +447,9 @@ class ContextType(object):
     }
 
     valid_signed = sorted(signednesses)
+
+    #: Valid values for :attr:`debugger`
+    debugger_choices = ['auto', 'gdb', 'windbgx', 'windbg', 'x64dbg']
 
     def __init__(self, **kwargs):
         """
@@ -544,7 +548,7 @@ class ContextType(object):
             >>> print(context.timeout)
             1.0
         """
-        class LocalContext(object):
+        class LocalContext:
             def __enter__(a):
                 self._tls.push()
                 self.update(**{k:v for k,v in kwargs.items() if v is not None})
@@ -1254,6 +1258,12 @@ class ContextType(object):
         Default terminal used by :meth:`pwnlib.util.misc.run_in_new_terminal`.
         Can be a string or an iterable of strings.  In the latter case the first
         entry is the terminal and the rest are default arguments.
+        
+        Note:
+            :meth:`pwnlib.util.misc.run_in_new_terminal` has special handlers for
+            supported terminals with windowing capabilities, which might apply
+            to terminals set with this context option. See its documentation
+            for additional information on this behavior.
         """
         if isinstance(value, (bytes, str)):
             return [value]
@@ -1573,6 +1583,78 @@ class ContextType(object):
         return str(value)
 
     @_validator
+    def windbg_binary(self, value):
+        r"""Path to the binary that is used when running WinDbg locally.
+
+        This is useful when you have multiple versions of WinDbg installed or the WinDbg binary is
+        called something different.
+
+        Usually, it is installed to ``C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\windbg.exe``.
+        Adding the path to the Windows SDK to your PATH variable is recommended.
+
+        If set to an empty string, pwntools will try to search for a reasonable WinDbg binary from 
+        the path.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def windbgx_binary(self, value):
+        r"""Path to the binary that is used when running WinDbgX locally.
+
+        This is useful when you have multiple versions of WinDbgX installed or the WinDbgX binary is
+        called something different.
+
+        Usually, it is installed to ``%LocalAppData%\Microsoft\WindowsApps\WinDbgX.exe``.
+
+        If set to an empty string, pwntools will try to search for a reasonable WinDbgX binary from 
+        the path.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def x64dbg_binary(self, value):
+        r"""Path to the binary that is used when running x64dbg locally.
+
+        Should be set to the x96dbg.exe launcher binary to handle 32-bit and 64-bit binaries.
+
+        This is useful when you have multiple versions of x64dbg installed or the x64dbg binary is
+        called something different.
+
+        If set to an empty string, pwntools will try to search for a reasonable x64dbg binary from 
+        the path or based on the ``"Debug with x64dbg"`` shell extension if available.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
+    def debugger(self, value):
+        """Type of debugger to use when running locally.
+
+        Possible values are:
+
+        - ``auto``: Automatically select the available debugger.
+        - ``gdb``: Use GDB as the debugger.
+        - ``windbg``: Use WinDbg as the debugger.
+        - ``windbgx``: Use WinDbgX as the debugger.
+        - ``x64dbg``: Use x64dbg as the debugger.
+
+        Defaults to ``windbgx`` on Windows and ``gdb`` on other platforms.
+
+        ``auto``: Automatically select the available debugger based on the platform.
+        On Windows, it will prefer ``windbgx`` over ``windbg`` if both are available.
+        
+        Default value is ``"auto"``.
+        """
+        if value not in self.debugger_choices:
+            raise AttributeError("debugger must be one of %r" % sorted(self.debugger_choices))
+        return str(value)
+
+    @_validator
     def cyclic_alphabet(self, alphabet):
         """Cyclic alphabet.
 
@@ -1698,7 +1780,7 @@ if 'ANDROID_ADB_SERVER_HOST' in os.environ:
     context.adb_host = os.environ.get('ANDROID_ADB_SERVER_HOST')
 
 if 'ANDROID_ADB_SERVER_PORT' in os.environ:
-    context.adb_port = int(os.getenv('ANDROID_ADB_SERVER_PORT'))
+    context.adb_port = int(os.environ.get('ANDROID_ADB_SERVER_PORT', 5037))
 
 def LocalContext(function):
     """

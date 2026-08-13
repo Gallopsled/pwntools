@@ -12,17 +12,17 @@ cursor = text.reverse
 
 buffer_left, buffer_right = '', ''
 saved_buffer = None
-history = []
+history: list[str] = []
 history_idx = None
 prompt_handle = None
 buffer_handle = None
 suggest_handle = None
 search_idx = None
-search_results = []
+search_results: list[tuple[int, int, int]] = []
 startup_hook = None
 shutdown_hook = None
 
-delims = ' /;:.\\'
+delims = r' /;:\.'
 
 show_completion = True
 show_suggestions = False
@@ -375,7 +375,7 @@ def readline(_size=-1, prompt='', float=True, priority=10):
     from pwnlib.term import term_mode
     if not term_mode:
         print(prompt, end='', flush=True)
-        return getattr(sys.stdin, 'buffer', sys.stdin).readline(_size).rstrip(b'\n')
+        return force_to_bytes(getattr(sys.stdin, 'buffer', sys.stdin).readline(_size)).rstrip(b'\n')
     show_suggestions = False
     eof = False
     if prompt:

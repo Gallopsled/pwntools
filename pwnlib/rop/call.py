@@ -7,7 +7,7 @@ from pwnlib.util import packing
 from pwnlib.util.misc import align
 
 
-class Unresolved(object):
+class Unresolved:
     """
     Encapsulates logic for deferring evaluation of a value used
     in a ROP chain which is in some way self-referential.
@@ -142,7 +142,7 @@ class AppendedArgument(Unresolved):
     def local(self, address):
         original = self.address
 
-        class LocalAddress(object):
+        class LocalAddress:
 
             def __enter__(*a, **kw):
                 self.address = address
@@ -197,7 +197,7 @@ class AppendedArgument(Unresolved):
             return '%s(%r, %r)' % (self.__class__.__name__, self.values, self.address)
 
 
-class Call(object):
+class Call:
     """
     Encapsulates ABI-agnostic information about a function call, which is
     to be executed with ROP.

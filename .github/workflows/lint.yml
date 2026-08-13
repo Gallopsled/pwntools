@@ -10,10 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -36,3 +36,8 @@ jobs:
       run: |
         pip install vermin
         vermin -vvv --no-tips -t=3.10- --violations  ./pwnlib ./pwn
+
+    - name: MyPy type hint baseline
+      run: |
+        pip install -U . --group dev
+        mypy | mypy-baseline filter

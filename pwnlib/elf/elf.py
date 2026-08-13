@@ -61,17 +61,11 @@ from elftools.elf.constants import SHN_INDICES
 from elftools.elf.descriptions import describe_e_type
 from elftools.elf.dynamic import DynamicSection
 from elftools.elf.elffile import ELFFile
-from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS
+from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS, ENUM_P_TYPE_BASE
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.segments import InterpSegment
-
-# See https://github.com/Gallopsled/pwntools/issues/1189
-try:
-    from elftools.elf.enums import ENUM_P_TYPE
-except ImportError:
-    from elftools.elf.enums import ENUM_P_TYPE_BASE as ENUM_P_TYPE
 
 import intervaltree
 
@@ -104,7 +98,7 @@ def _iter_symbols(sec):
         sec._symbols = list(sec.iter_symbols())
     return iter(sec._symbols)
 
-class Function(object):
+class Function:
     """Encapsulates information about a function in an :class:`.ELF` binary.
 
     Arguments:
@@ -183,6 +177,33 @@ class dotdict(dict):
             return dotdict(subkeys)
         raise AttributeError(name)
 
+# Names people commonly reach for expecting the return address into
+# __libc_start_main from main. We don't compute these eagerly because it means
+# disassembling code that most callers never look at, so point them at the
+# property that does the work instead.
+_libc_start_main_ret_aliases = ('__libc_start_main_ret', '__libc_start_main_return')
+
+class symboldict(dotdict):
+    """dotdict used for :attr:`.ELF.symbols`.
+
+    Behaves like a normal :class:`dotdict` but gives a helpful error when
+    someone looks up ``__libc_start_main_ret``, which isn't a real symbol in
+    libc. See https://github.com/Gallopsled/pwntools/issues/2563.
+    """
+    def __missing__(self, name):
+        if name in _libc_start_main_ret_aliases:
+            raise KeyError(
+                '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
+                'property to get the return address into __libc_start_main from main.' % name)
+        return super().__missing__(name)
+
+    def __getattr__(self, name):
+        if name in _libc_start_main_ret_aliases and name not in self:
+            raise AttributeError(
+                '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
+                'property to get the return address into __libc_start_main from main.' % name)
+        return super().__getattr__(name)
+
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
 
@@ -241,7 +262,7 @@ class ELF(ELFFile):
         self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
-        self.symbols = dotdict()
+        self.symbols = symboldict()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all Global Offset Table (GOT) entries
         self.got = dotdict()
@@ -652,7 +673,7 @@ class ELF(ELFFile):
         delta     = new-self._address
         update    = lambda x: x+delta
 
-        self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
+        self.symbols = symboldict({k:update(v) for k,v in self.symbols.items()})
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
         for f in self.functions.values():
@@ -1173,6 +1194,17 @@ class ELF(ELFFile):
         >>> libc.libc_start_main_return > 0
         True
 
+        Looking it up as a symbol doesn't work, but points you here:
+
+        >>> libc.symbols['__libc_start_main_ret'] # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        KeyError: "'__libc_start_main_ret' is not a symbol in the ELF. Use the ELF.libc_start_main_return property to get the return address into __libc_start_main from main."
+        >>> libc.sym.__libc_start_main_ret # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        AttributeError: '__libc_start_main_ret' is not a symbol in the ELF. Use the ELF.libc_start_main_return property to get the return address into __libc_start_main from main.
+
         Try to find the return address from main into __libc_start_main.
         The heuristic to find the call to the function pointer of main is
         to list all calls inside __libc_start_main, find the call to exit
@@ -1239,7 +1271,7 @@ class ELF(ELFFile):
         return 0
 
     def search(self, needle, writable = False, executable = False):
-        """search(needle, writable = False, executable = False) -> generator
+        r"""search(needle, writable = False, executable = False) -> generator
 
         Search the ELF's virtual address space for the specified string.
 
@@ -1259,7 +1291,7 @@ class ELF(ELFFile):
 
         Examples:
 
-            An ELF header starts with the bytes ``\\x7fELF``, so we
+            An ELF header starts with the bytes ``\x7fELF``, so we
             sould be able to find it easily.
 
             >>> bash = ELF('/bin/bash')
@@ -1820,7 +1852,7 @@ class ELF(ELFFile):
 
     @property
     def nx(self):
-        """:class:`bool`: Whether the current binary uses NX protections.
+        r""":class:`bool`: Whether the current binary uses NX protections.
 
         Specifically, we are checking for ``READ_IMPLIES_EXEC`` being set
         by the kernel, as a result of honoring ``PT_GNU_STACK`` in the kernel.
@@ -1883,7 +1915,7 @@ class ELF(ELFFile):
             | the rest  | [#the_rest]_ | exec / non-exec / missing |                                                | enabled  |
             +-----------+--------------+---------------------------+------------------------------------------------+----------+
 
-            \\* Hardware limitations are ignored.
+            \* Hardware limitations are ignored.
 
         If ``READ_IMPLIES_EXEC`` is set, then `all readable pages are executable`__.
 
@@ -1899,7 +1931,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (executable_stack != EXSTACK_DISABLE_X)
 
         .. [#x86_5.8]
@@ -1907,7 +1939,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)	\\
+            #define elf_read_implies_exec(ex, executable_stack)	\
                 (mmap_is_ia32() && executable_stack == EXSTACK_DEFAULT)
 
         `mmap_is_ia32()`__:
@@ -1988,7 +2020,7 @@ class ELF(ELFFile):
 
             #ifdef __powerpc64__
             /* stripped */
-            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \\
+            # define elf_read_implies_exec(ex, exec_stk) (is_32bit_task() ? \
                     (exec_stk == EXSTACK_DEFAULT) : 0)
             #else
             # define elf_read_implies_exec(ex, exec_stk) (exec_stk == EXSTACK_DEFAULT)
@@ -1999,7 +2031,7 @@ class ELF(ELFFile):
 
         .. code-block:: c
 
-            #define elf_read_implies_exec(ex, executable_stack)					\\
+            #define elf_read_implies_exec(ex, executable_stack)					\
                 ((executable_stack!=EXSTACK_DISABLE_X) && ((ex).e_flags & EF_IA_64_LINUX_EXECUTABLE_STACK) != 0)
 
         EF_IA_64_LINUX_EXECUTABLE_STACK__:
@@ -2253,7 +2285,7 @@ class ELF(ELFFile):
                 for name, message in sorted(values):
                     line = '{} = {}'.format(name, red(str(self.config.get(name, None))))
                     if message:
-                        line += ' ({})'.format(message)
+                        line += f' ({message})'
                     res.append('    ' + line)
 
             # res.extend(sorted(config_opts))
@@ -2455,7 +2487,7 @@ class ELF(ELFFile):
 
         Zeroes out the ``PT_GNU_STACK`` program header ``p_type`` field.
         """
-        PT_GNU_STACK = packing.p32(ENUM_P_TYPE['PT_GNU_STACK'])
+        PT_GNU_STACK = packing.p32(ENUM_P_TYPE_BASE['PT_GNU_STACK'])
 
         if not self.executable:
             log.error("Can only make stack executable with executables")

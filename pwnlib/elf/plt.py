@@ -77,6 +77,13 @@ def __ensure_memory_to_run_unicorn():
 def prepare_unicorn_and_context(elf, got, address, data):
     import unicorn as U
 
+    if elf.arch in ('mips', 'mips64'):
+        # Unicorn 2.1.3 and 2.1.4 have a crashing bug when trying to emulate MIPS.
+        # https://github.com/unicorn-engine/unicorn/issues/2134
+        if U.UC_VERSION_MAJOR == 2 and U.UC_VERSION_MINOR == 1 and U.UC_VERSION_PATCH in (3, 4):
+            raise OSError("Unicorn Engine 2.1.3 and 2.1.4 have a crashing bug when emulating MIPS, please install an earlier or later version: https://github.com/unicorn-engine/unicorn/issues/2134")
+
+
     __ensure_memory_to_run_unicorn()
 
     # Instantiate the emulator with the correct arguments for the current

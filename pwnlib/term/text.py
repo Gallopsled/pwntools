@@ -2,9 +2,25 @@ import functools
 import os
 import sys
 import types
+from typing import Literal, Protocol, TextIO, TypeAlias, TYPE_CHECKING
 
 from pwnlib.term import termcap
 
+# Accept any module attribute for type checking purposes.
+# The actual implementation of __getattr__ is below, and
+# only accepts a defined text decorator pattern, but generating
+# all possible combinations of text decorators is not feasible.
+# No IDE auto-complete but at least no type errors.
+_WhenSetter: TypeAlias = Literal["always", "never", "auto"] | TextIO
+class _TextDecorator(Protocol):
+    def __call__(self, desc: str, when: _WhenSetter | None = None) -> str: ...
+
+if TYPE_CHECKING:
+    def __getattr__(name: str) -> _TextDecorator: ...
+    def get(desc: str) -> _TextDecorator: ...
+    when: bool | _WhenSetter
+    has_bright: bool
+    has_gray: bool
 
 def eval_when(when):
     if hasattr(when, 'isatty') or \
@@ -91,7 +107,7 @@ class Module(types.ModuleType):
         setattr(Module, desc, f)
         return functools.partial(f, self)
 
-    def __getattr__(self, desc):
+    def __getattr__(self, desc: str) -> _TextDecorator:
         if desc.startswith('_'):
             raise AttributeError(desc)
 
@@ -126,7 +142,7 @@ class Module(types.ModuleType):
         except (IndexError, KeyError):
             raise AttributeError("'module' object has no attribute %r" % desc)
 
-    def get(self, desc):
+    def get(self, desc: str) -> _TextDecorator:
         return self.__getattr__(desc)
 
 tether = sys.modules[__name__]

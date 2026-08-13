@@ -37,7 +37,6 @@ dependencies = [
     "pyelftools>=0.32",
     "ropgadget>=5.3",
     "pygments>=2.0",
-    "python-dateutil",
     "packaging",
     "psutil>=3.3.0",
     "intervaltree>=3.0",
@@ -61,6 +60,22 @@ full = [
 [project.urls]
 homepage = "https://pwntools.com"
 download = "https://github.com/Gallopsled/pwntools/releases"
+
+[dependency-groups]
+dev = [
+    "mypy-baseline",
+    "mypy",
+    "types-beautifulsoup4",
+    "types-docutils",
+    "types-gdb",
+    "types-paramiko",
+    "types-psutil",
+    "types-Pygments",
+    "types-pyserial",
+    "types-PySocks",
+    "types-python-dateutil",
+    "types-requests",
+]
 
 [tool.distutils.bdist_wheel]
 universal = 1
@@ -91,3 +106,23 @@ disable_warnings = ["module-not-imported"]
 [tool.coverage.paths]
 pwnlib = ["pwnlib", "*/pwntools/pwnlib", "*\\pwntools\\pwnlib"]
 pwn = ["pwn", "*/pwntools/pwn", "*\\pwntools\\pwn"]
+
+[tool.mypy]
+files = [
+    "pwn/**/*.py",
+    "pwnlib/**/*.py",
+]
+allow_redefinition = true
+
+[[tool.mypy.overrides]]
+module = [
+    "unix_ar.*",
+    "capstone.*",
+    "colored_traceback.*",
+    "intervaltree.*",
+    "mako.*",
+    "ropgadget.*",
+    "rpyc.*",
+    "sortedcontainers.*",
+]
+ignore_missing_imports = true

@@ -763,6 +763,9 @@ def binary():
         >>> gdb.binary() # doctest: +SKIP
         '/usr/bin/gdb'
     """
+    if context.debugger not in ('auto', 'gdb'):
+        log.error('Unsupported debugger: {}'.format(context.debugger))
+
     if context.gdb_binary:
         gdb = misc.which(context.gdb_binary)
         if not gdb:

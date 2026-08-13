@@ -1127,7 +1127,7 @@ class tube(Timeout, Logger):
             return cached_data + self.clean(timeout)
 
     def upload_manually(self, data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE'):
-        """upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
+        r"""upload_manually(data, target_path = './payload', prompt = b'$', chunk_size = 0x200, chmod_flags = 'u+x', compression='auto', end_marker = 'PWNTOOLS_DONE')
 
         Upload a file manually using base64 encoding and compression.
         This can be used when the tube is connected to a shell.
@@ -1165,21 +1165,21 @@ class tube(Timeout, Logger):
             >>> l = listen()
             >>> l.spawn_process('/bin/sh')
             >>> r = remote('127.0.0.1', l.lport)
-            >>> r.upload_manually(b'some\\xca\\xfedata\\n', prompt=b'', chmod_flags='')
+            >>> r.upload_manually(b'some\xca\xfedata\n', prompt=b'', chmod_flags='')
             >>> r.sendline(b'cat ./payload')
             >>> r.recvline()
-            b'some\\xca\\xfedata\\n'
+            b'some\xca\xfedata\n'
 
             >>> r.upload_manually(cyclic(0x1000), target_path='./cyclic_pattern', prompt=b'', chunk_size=0x10, compression='gzip')
             >>> r.sendline(b'sha256sum ./cyclic_pattern')
             >>> r.recvlineS(keepends=False).startswith(sha256sumhex(cyclic(0x1000)))
             True
 
-            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\\n') + shellcraft.exit(0))
+            >>> blob = ELF.from_assembly(shellcraft.echo('Hello world!\n') + shellcraft.exit(0))
             >>> r.upload_manually(blob.data, prompt=b'')
             >>> r.sendline(b'./payload')
             >>> r.recvline()
-            b'Hello world!\\n'
+            b'Hello world!\n'
             >>> r.close()
             >>> l.close()
         """
@@ -1672,6 +1672,7 @@ class tube(Timeout, Logger):
 
     # Dynamic functions
 
+    @staticmethod
     def make_wrapper(func):
         def wrapperb(self, *a, **kw):
             return bytearray(func(self, *a, **kw))
@@ -1700,7 +1701,8 @@ class tube(Timeout, Logger):
         for wrapper in make_wrapper(func):
             locals()[wrapper.__name__] = wrapper
 
-    def make_wrapper(func, alias):
+    @staticmethod
+    def make_alias_wrapper(func, alias):
         def wrapper(self, *a, **kw):
             return func(self, *a, **kw)
         wrapper.__doc__ = 'Alias for :meth:`{func.__name__}`'.format(func=func)
@@ -1714,7 +1716,7 @@ class tube(Timeout, Logger):
             _name2 = _name.replace('send', 'write')
         else:
             continue
-        locals()[_name2] = make_wrapper(locals()[_name], _name2)
+        locals()[_name2] = make_alias_wrapper(locals()[_name], _name2)
 
     # Clean up the scope
-    del wrapper, func, make_wrapper, _name, _name2
+    del wrapper, func, make_wrapper, make_alias_wrapper, _name, _name2

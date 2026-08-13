@@ -160,7 +160,7 @@ def normalize_writes(writes):
 # 00 00 05 00 00  -> %n%5c%n
 # 00 00 05 05 00 05  -> need overlapping writes if numbwritten > 5
 
-class AtomWrite(object):
+class AtomWrite:
     """
     This class represents a write action that can be carried out by a single format string specifier.
 
@@ -592,7 +592,7 @@ def overlapping_atoms(atoms):
         if atom.end > prev.end:
             prev = atom
 
-class AtomQueue(object):
+class AtomQueue:
     def __init__(self, numbwritten):
         self.queues = { sz: SortedList(key=lambda atom: atom.integer) for sz in SPECIFIER.keys() }
         self.positions = { sz: 0 for sz in SPECIFIER }
@@ -909,7 +909,7 @@ def fmtstr_payload(offset, writes, numbwritten=0, write_size='byte', write_size_
 
     return fmt + data
 
-class FmtStr(object):
+class FmtStr:
     """
     Provides an automated format string exploitation.
 
