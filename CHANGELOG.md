@@ -141,6 +141,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 4.15.0 (`stable`)
 
+- [#2710][2710] Fix `context.arch` not updating `bits`/`endian` (and `context.os` not updating `newline`) when set multiple times
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
 - [#2358][2358] Cache output of `asm()`
@@ -202,6 +203,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2609]: https://github.com/Gallopsled/pwntools/pull/2609
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
 [2624]: https://github.com/Gallopsled/pwntools/pull/2624
+[2710]: https://github.com/Gallopsled/pwntools/pull/2710
 
 ## 4.14.1
 
