@@ -4,6 +4,7 @@ import time
 
 from pwnlib import term
 from pwnlib.term import text
+from pwnlib.internal.typing import TextDecorator
 
 
 _banner = r'''
@@ -37,7 +38,7 @@ def splash() -> None:
             text.green  , text.bold_green  ,
             text.cyan   , text.bold_cyan   ,
         ]
-        def getcolor(n: int) -> text._TextDecorator:
+        def getcolor(n: int) -> TextDecorator:
             return colors[(n // 4) % len(colors)]
 
         lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]

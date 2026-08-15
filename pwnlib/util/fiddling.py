@@ -11,7 +11,7 @@ from collections.abc import Sequence
 
 from pwnlib.context import LocalNoarchContext
 from pwnlib.context import context
-from pwnlib.internal.typing import ASCIIStr, BytesLike
+from pwnlib.internal.typing import ASCIIStr, BytesLike, TextDecorator
 from pwnlib.log import getLogger
 from pwnlib.term import text
 from pwnlib.util import iters
@@ -640,7 +640,7 @@ def update_cyclic_pregenerated(size: int) -> None:
     while size > len(cyclic_pregen):
         cyclic_pregen += packing._p8lu(next(de_bruijn_gen))
 
-def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, text._TextDecorator] | None = None,
+def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, TextDecorator] | None = None,
                  highlight: Iterable[int | str] | str | None = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> Generator[str, None, None]:
     r"""hexdump_iter(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                     highlight = None, cyclic = False, groupsize=4, total = True) -> str generator
@@ -803,7 +803,7 @@ def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool =
         line = "%08x" % (begin + numb)
         yield line
 
-def hexdump(s: ASCIIStr, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, text._TextDecorator] | None = None,
+def hexdump(s: ASCIIStr, width: int = 16, skip: bool = True, hexii: bool = False, begin: int = 0, style: dict[str, TextDecorator] | None = None,
             highlight: Iterable[int | str] | str | None = None, cyclic: bool = False, groupsize: int = 4, total: bool = True) -> str:
     r"""hexdump(s, width = 16, skip = True, hexii = False, begin = 0, style = None,
                 highlight = None, cyclic = False, groupsize=4, total = True) -> str
