@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Callable, Literal, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
     import psutil
+    from socket import AddressFamily, SocketKind
 
 from pwnlib.log import getLogger
 from pwnlib.util.packing import p16
@@ -70,8 +71,8 @@ class sockaddr_fix(TypedDict, total=False):
     flowinfo: int | None
     scope_id: int | None
 
-def sockaddr_fixup(saptr: ctypes._Pointer[struct_sockaddr]) -> tuple[socket.AddressFamily, sockaddr_fix]:
-    family = socket.AddressFamily(saptr.contents.sa_family)
+def sockaddr_fixup(saptr: ctypes._Pointer[struct_sockaddr]) -> tuple[AddressFamily, sockaddr_fix]:
+    family: AddressFamily = saptr.contents.sa_family
     addr: sockaddr_fix = {}
     if   family == socket.AF_INET:
         sa = ctypes.cast(saptr, ctypes.POINTER(struct_sockaddr_in)).contents
@@ -88,7 +89,7 @@ def sockaddr_fixup(saptr: ctypes._Pointer[struct_sockaddr]) -> tuple[socket.Addr
 class ifaddrs(TypedDict, total=False):
     name: bytes
     flags: int
-    family: socket.AddressFamily | None
+    family: AddressFamily | None
     addr: sockaddr_fix | None
     netmask: sockaddr_fix | None
 
@@ -141,7 +142,7 @@ def getifaddrs() -> list[ifaddrs]:
     finally:
         freeifaddrs(ifaptr)
 
-def interfaces(all: bool = False) -> dict[bytes, list[tuple[socket.AddressFamily, str]]]:
+def interfaces(all: bool = False) -> dict[bytes, list[tuple[AddressFamily, str]]]:
     """interfaces(all = False) -> dict
 
     Arguments:
@@ -153,7 +154,7 @@ def interfaces(all: bool = False) -> dict[bytes, list[tuple[socket.AddressFamily
       addresses.  Each entry in the list is a tuple ``(family, addr)``, and
       `family` is either :const:`socket.AF_INET` or :const:`socket.AF_INET6`.
     """
-    out: dict[bytes, list[tuple[socket.AddressFamily, str]]] = {}
+    out: dict[bytes, list[tuple[AddressFamily, str]]] = {}
     for ifa in getifaddrs():
         name = ifa['name']
         if name not in out:
@@ -258,20 +259,21 @@ def sockaddr(host: str, port: int, network: str = 'ipv4') -> tuple[bytes, int, i
     return (sockaddr, length, getattr(address_family, "name", address_family))
 
 # IPv4, IPv6, and UNIX socket address tuples returned by socket.getaddrinfo
-AddrInfoTuples: TypeAlias = tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes]
-AddrInfo: TypeAlias = tuple[socket.AddressFamily, socket.SocketKind, int, str, AddrInfoTuples]
-def sock_match(local: psutil._ntp.addr, remote: psutil._ntp.addr | None, fam: socket.AddressFamily =socket.AF_UNSPEC, typ: socket.SocketKind | Literal[0] = 0) -> Callable[[psutil._ntp.sconn], bool]:
+if TYPE_CHECKING:
+    _AddrInfoTuples: TypeAlias = tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes]
+    _AddrInfo: TypeAlias = tuple[AddressFamily, SocketKind, int, str, _AddrInfoTuples]
+def sock_match(local: psutil._ntp.addr, remote: psutil._ntp.addr | None, fam: AddressFamily =socket.AF_UNSPEC, typ: SocketKind | Literal[0] = 0) -> Callable[[psutil._ntp.sconn], bool]:
     """
     Given two addresses, returns a function comparing address pairs from
     psutil library against these two.  Useful for filtering done in
     :func:`pwnlib.util.proc.pidof`.
     """
-    def sockinfos(addr: psutil._ntp.addr | tuple[()], f: socket.AddressFamily, t: socket.SocketKind | Literal[0]) -> set[AddrInfo] | set[psutil._ntp.addr]:
+    def sockinfos(addr: psutil._ntp.addr | tuple[()], f: AddressFamily, t: SocketKind | Literal[0]) -> set[_AddrInfo] | set[psutil._ntp.addr]:
         if not addr:
             return set()
         if f not in (socket.AF_UNSPEC, socket.AF_INET, socket.AF_INET6):
             return {addr}
-        infos: set[AddrInfo] = set(socket.getaddrinfo(addr[0], addr[1], f, t))
+        infos: set[_AddrInfo] = set(socket.getaddrinfo(addr[0], addr[1], f, t))
 
         # handle mixed IPv4-to-IPv6 and the other way round connections
         for f, t, proto, _canonname, sockaddr in tuple(infos):
