@@ -81,6 +81,3 @@ pwn/toplevel.py:0: error: Incompatible import of "size" (imported name has type 
 pwn/toplevel.py:0: error: Incompatible import of "size" (imported name has type "Callable[[Any, Any, Any], Any]", local name has type "str")  [assignment]
 pwn/__init__.py:0: error: Incompatible types in assignment (expression has type "PwnlibArgs", variable has type Module)  [assignment]
 pwn/__init__.py:0: error: Module has no attribute "update"  [attr-defined]
-pwnlib/shellcraft/testriscvalgo.py:0: error: Module "pwnlib.shellcraft" has no attribute "okay"  [attr-defined]
-pwnlib/shellcraft/testriscvalgo.py:0: error: Module "pwnlib.shellcraft" has no attribute "pretty"  [attr-defined]
-pwnlib/shellcraft/testriscvalgo.py:0: error: Module "pwnlib.shellcraft" has no attribute "riscv64"  [attr-defined]
