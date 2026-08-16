@@ -237,6 +237,7 @@ and should therefore be compatible with ``dash``.
 .. _OpenBSD Man Pages: https://man.openbsd.org/sh#SHELL_GRAMMAR
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
+import random
 import string
 from typing import Callable, overload
 
@@ -271,7 +272,7 @@ def test_all() -> None:
     everything_2 = b''.join(bytes([c,c]) for c in range(1,256)) ##
     test(everything_2)
 
-    test(fiddling.randoms(1000, everything_1))
+    test(b''.join(bytes([random.choice(everything_1)]) for _ in range(1000)))
 
 
 def test(original: bytes | str) -> None:
@@ -529,7 +530,7 @@ def sh_command_with(f: Callable[[str | bytes], str] | str, *args: ASCIIStr) -> s
 
     for n in range(len(args)):
         args[n] = sh_string(args[n])
-    if hasattr(f, '__call__'):
+    if callable(f):
         out.append(f(*args))
     else:
         out.append(f % tuple(args))
