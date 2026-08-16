@@ -42,7 +42,17 @@ def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: bool = False)
     else:
         return list(d.values())
 
-def group(n: int, lst: Sequence[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[Sequence[_T]]:
+
+
+@overload
+def group(n: int, lst: list[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[list[_T]]: ...
+@overload
+def group(n: int, lst: tuple[_T, ...], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[tuple[_T, ...]]: ...
+@overload
+def group(n: int, lst: str, underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: str | None = None) -> list[str]: ...
+@overload
+def group(n: int, lst: bytes, underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: bytes | None = None) -> list[bytes]: ...
+def group(n: int, lst: Sequence[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[Any]:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be
@@ -75,28 +85,29 @@ def group(n: int, lst: Sequence[_T], underfull_action: Literal['ignore', 'drop',
     if underfull_action not in ['ignore', 'drop', 'fill']:
         raise ValueError("group(): underfull_action must be either 'ignore', 'drop' or 'fill'")
 
+    fill: Any = fill_value
     if underfull_action == 'fill':
         if isinstance(lst, tuple):
-            fill_value = (fill_value,)
+            fill = (fill_value,)
         elif isinstance(lst, list):
-            fill_value = [fill_value]
+            fill = [fill_value]
         elif isinstance(lst, (bytes, str)):
             if not isinstance(fill_value, (bytes, str)):
                 raise ValueError("group(): cannot fill a string with a non-string")
         else:
             raise ValueError("group(): 'lst' must be either a tuple, list or string")
 
-    out = []
+    out: list[Any] = []
     for i in range(0, len(lst), n):
-        out.append(lst[i:i+n])
-
-    if out and len(out[-1]) < n:
-        if underfull_action == 'ignore':
-            pass
-        elif underfull_action == 'drop':
-            out.pop()
-        else:
-            out[-1] = out[-1] + fill_value * (n - len(out[-1]))
+        chunk: Any = lst[i:i+n]
+        if len(chunk) < n:
+            if underfull_action == 'ignore':
+                pass
+            elif underfull_action == 'drop':
+                continue
+            else:
+                chunk = chunk + fill * (n - len(chunk))
+        out.append(chunk)
 
     return out
 
@@ -163,7 +174,7 @@ def unordlist(cs: list[int]) -> str:
     """
     return ''.join(chr(c) for c in cs)
 
-def findall(haystack: Sequence[_T], needle: _T) -> Generator[int, None, None]:
+def findall(haystack: Sequence[_T], needle: _T | Sequence[_T]) -> Generator[int, None, None]:
     """findall(l, e) -> l
 
     Generate all indices of needle in haystack, using the
@@ -222,7 +233,7 @@ def findall(haystack: Sequence[_T], needle: _T) -> Generator[int, None, None]:
                 yield i
 
 
-    if type(haystack) != type(needle):
+    if isinstance(needle, (bytes, str)) or not isinstance(needle, Sequence):
         needle = [needle]
     if len(needle) == 1:
         return __single_search(haystack, needle[0])
