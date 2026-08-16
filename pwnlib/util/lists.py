@@ -233,7 +233,7 @@ def findall(haystack: Sequence[_T], needle: _T | Sequence[_T]) -> Generator[int,
                 yield i
 
 
-    if isinstance(needle, (bytes, str)) or not isinstance(needle, Sequence):
+    if not isinstance(needle, Sequence):
         needle = [needle]
     if len(needle) == 1:
         return __single_search(haystack, needle[0])
