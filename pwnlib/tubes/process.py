@@ -1648,6 +1648,8 @@ def _read_in_thread(recv_queue, proc_stdout):
                 recv_queue.put(b)
             else:
                 break
-    except:
-        # Ignore any errors during Python shutdown
+    except:  # pylint: disable=bare-except
+        # Ignore any errors during Python shutdown.
+        # Bare except is intentional: during interpreter shutdown,
+        # IO operations can raise non-Exception BaseException subclasses.
         pass

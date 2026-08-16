@@ -64,7 +64,7 @@ if not os.path.exists(PythonH):
 
 setup(
     version              = '5.0.0dev',
-    data_files           = [('pwntools-doc',
+    data_files           = [('share/doc/pwntools',
                              glob.glob('*.md') + glob.glob('*.txt')),
                             ],
     package_data         = {

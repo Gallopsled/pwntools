@@ -62,6 +62,7 @@ dev = [
     "mypy-baseline",
     "mypy",
     "types-beautifulsoup4",
+    "types-docutils",
     "types-gdb",
     "types-paramiko",
     "types-psutil",
