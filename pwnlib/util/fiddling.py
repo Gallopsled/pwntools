@@ -1019,7 +1019,7 @@ def bnot(value: int, width: int | None = None) -> int:
     return mask ^ value
 
 @LocalNoarchContext
-def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwargs: Any) -> bytes:
+def js_escape(data: bytes, padding: bytes = context.cyclic_alphabet[0:1], **kwargs: Any) -> str:
     r"""js_escape(data, padding=context.cyclic_alphabet[0:1], endian = None, **kwargs) -> str
 
     Pack data as an escaped Unicode string for use in JavaScript's `unescape()` function
