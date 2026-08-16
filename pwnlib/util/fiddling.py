@@ -694,7 +694,7 @@ def hexdump_iter(fd: BinaryIO, width: int = 16, skip: bool = True, hexii: bool =
     style.update(_style)
 
     skipping    = False
-    last_unique = ''
+    last_unique = b''
     byte_width  = len('00 ')
     spacer      = ' '
     marker      = (style.get('marker') or (lambda s:s))('│')

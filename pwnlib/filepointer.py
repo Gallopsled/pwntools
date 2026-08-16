@@ -21,6 +21,7 @@ Currently only 'amd64' and 'i386' architectures are supported
 """
 
 import ctypes
+from typing import TypedDict
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
@@ -28,48 +29,46 @@ from pwnlib.util.packing import pack, unpack
 
 log = getLogger(__name__)
 
-length=0
-size='size'
-name='name'
+class FileStructureMember(TypedDict):
+    name: str
+    size: int
 
-variables={
-    0:{name:'flags',size:length},
-    1:{name:'_IO_read_ptr',size:length},
-    2:{name:'_IO_read_end',size:length},
-    3:{name:'_IO_read_base',size:length},
-    4:{name:'_IO_write_base',size:length},
-    5:{name:'_IO_write_ptr',size:length},
-    6:{name:'_IO_write_end',size:length},
-    7:{name:'_IO_buf_base',size:length},
-    8:{name:'_IO_buf_end',size:length},
-    9:{name:'_IO_save_base',size:length},
-    10:{name:'_IO_backup_base',size:length},
-    11:{name:'_IO_save_end',size:length},
-    12:{name:'markers',size:length},
-    13:{name:'chain',size:length},
-    14:{name:'fileno',size:4},
-    15:{name:'_flags2',size:4},
-    16:{name:'_old_offset',size:length},
-    17:{name:'_cur_column',size:2},
-    18:{name:'_vtable_offset',size:1},
-    19:{name:'_shortbuf',size:1},
-    20:{name:'unknown1',size:-4},
-    21:{name:'_lock',size:length},
-    22:{name:'_offset',size:8},
-    23:{name:'_codecvt',size:length},
-    24:{name:'_wide_data',size:length},
-    25:{name:'_freeres_list',size:length},
-    26:{name:'_freeres_buf',size:length},
-    27:{name:'_pad5',size:length},
-    28:{name:'_mode',size:4},
-    29:{name:'_unused2',size:length},
-    30:{name:'vtable',size:length}
-}
-
-del name, size, length
+variables: tuple[FileStructureMember, ...] = (
+    {'name':'flags','size':0},
+    {'name':'_IO_read_ptr','size':0},
+    {'name':'_IO_read_end','size':0},
+    {'name':'_IO_read_base','size':0},
+    {'name':'_IO_write_base','size':0},
+    {'name':'_IO_write_ptr','size':0},
+    {'name':'_IO_write_end','size':0},
+    {'name':'_IO_buf_base','size':0},
+    {'name':'_IO_buf_end','size':0},
+    {'name':'_IO_save_base','size':0},
+    {'name':'_IO_backup_base','size':0},
+    {'name':'_IO_save_end','size':0},
+    {'name':'markers','size':0},
+    {'name':'chain','size':0},
+    {'name':'fileno','size':4},
+    {'name':'_flags2','size':4},
+    {'name':'_old_offset','size':0},
+    {'name':'_cur_column','size':2},
+    {'name':'_vtable_offset','size':1},
+    {'name':'_shortbuf','size':1},
+    {'name':'unknown1','size':-4},
+    {'name':'_lock','size':0},
+    {'name':'_offset','size':8},
+    {'name':'_codecvt','size':0},
+    {'name':'_wide_data','size':0},
+    {'name':'_freeres_list','size':0},
+    {'name':'_freeres_buf','size':0},
+    {'name':'_pad5','size':0},
+    {'name':'_mode','size':4},
+    {'name':'_unused2','size':0},
+    {'name':'vtable','size':0}
+)
 
 
-def _update_var(l):
+def _update_var(l: int) -> dict[str, int]:
     r"""
     Since different members of the file structure have different sizes, we need to keep track of the sizes. The following function is used by the FileStructure class to initialise the lengths of the various fields.
 
@@ -85,16 +84,16 @@ def _update_var(l):
         >>> _update_var(8)
         {'flags': 8, '_IO_read_ptr': 8, '_IO_read_end': 8, '_IO_read_base': 8, '_IO_write_base': 8, '_IO_write_ptr': 8, '_IO_write_end': 8, '_IO_buf_base': 8, '_IO_buf_end': 8, '_IO_save_base': 8, '_IO_backup_base': 8, '_IO_save_end': 8, 'markers': 8, 'chain': 8, 'fileno': 4, '_flags2': 4, '_old_offset': 8, '_cur_column': 2, '_vtable_offset': 1, '_shortbuf': 1, 'unknown1': 4, '_lock': 8, '_offset': 8, '_codecvt': 8, '_wide_data': 8, '_freeres_list': 8, '_freeres_buf': 8, '_pad5': 8, '_mode': 4, '_unused2': 20, 'vtable': 8}
     """
-    var={}
-    for i in variables:
-        var[variables[i]['name']]=variables[i]['size']
+    var = {}
+    for member_desc in variables:
+        var[member_desc['name']] = member_desc['size']
     for i in var:
-        if var[i]<=0:
-            var[i]+=l
+        if var[i] <= 0:
+            var[i] += l
     if l==4:
-        var['_unused2']=40
+        var['_unused2'] = 40
     else:
-        var['_unused2']=20
+        var['_unused2'] = 20
     return var
 
 class IO_flags:
@@ -278,7 +277,7 @@ class FileStructure:
     length: dict[str, int] = {}
 
     def __init__(self, null=0):
-            self.vars_ = [variables[i]['name'] for i in sorted(variables.keys())]
+            self.vars_ = [member_desc['name'] for member_desc in variables]
             self.setdefault(null)
             self.length = _update_var(context.bytes)
             self._old_offset = (1 << context.bits) - 1

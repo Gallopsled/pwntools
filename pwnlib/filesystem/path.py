@@ -10,5 +10,5 @@ def mktemp(cls):
 def mkdtemp(cls):
     return cls(tempfile.mkdtemp())
 
-Path.mktemp = mktemp
-Path.mkdtemp = mkdtemp
+setattr(Path, 'mktemp', mktemp)
+setattr(Path, 'mkdtemp', mkdtemp)
