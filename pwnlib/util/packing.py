@@ -29,9 +29,10 @@ Examples:
     >>> with context.local(endian='big'): print(repr(p(0x1ff)))
     b'\xff\x01'
 """
+import io
 import struct
 import sys
-from typing import Any, Callable, Literal, overload
+from typing import Any, Callable, Literal, Sequence, overload
 import warnings
 
 from pwnlib.context import LocalNoarchContext
@@ -656,8 +657,8 @@ def u64(data: bytes, endianness: str | None = None, **kwargs: Any) -> int:
     """
     return _do_packing('u', 64, data, endianness)
 
-def make_packer(word_size: Literal["all"] | int | None = None, sign: str | None = None, **kwargs: Any) -> Callable[[int], str]:
-    r"""make_packer(word_size = None, endianness = None, sign = None) -> number → str
+def make_packer(word_size: Literal["all"] | int | None = None, sign: str | None = None, **kwargs: Any) -> Callable[[int], bytes]:
+    r"""make_packer(word_size = None, endianness = None, sign = None) -> number → bytes
 
     Creates a packer by "freezing" the given arguments.
 
@@ -1122,17 +1123,17 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
     If `dst` is a mutable type it will be updated.  Otherwise, a new instance of
     the same type will be created.  In either case the result is returned.
 
-    `src` can be an iterable of characters or integers, a unicode string or a
+    `src` can be an iterable of characters or integers, a string or a
     file object.  If it is an iterable of integers, each integer must be in the
-    range [0;255].  If it is a unicode string, its UTF-8 encoding will be used.
+    range [0;255].  If it is a string, its UTF-8 encoding will be used.
 
     The seek offset of file objects will be preserved.
 
     Arguments:
         dst: Supported types are :class:`file`, :class:`list`, :class:`tuple`,
-             :class:`str`, :class:`bytearray` and :class:`unicode`.
-        src: An iterable of byte values (characters or integers), a unicode
-             string or a file object.
+             :class:`str` and :class:`bytearray`.
+        src: An iterable of byte values (characters or integers), a string or
+             a file object.
         count (int): How many bytes to copy.  If `count` is 0 or larger than
                      ``len(src[seek:])``, all bytes until the end of `src` are
                      copied.
@@ -1164,15 +1165,15 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
     """
 
     # Re-open file objects to make sure we have the mode right
-    if hasattr(src, 'name'):
+    if isinstance(src, io.FileIO):
         src = open(src.name, 'rb')
-    if hasattr(dst, 'name'):
+    if isinstance(dst, io.FileIO):
         real_dst = dst
         dst = open(dst.name, 'rb+')
 
     # Special case: both `src` and `dst` are files, so we don't need to hold
     # everything in memory
-    if hasattr(src, 'seek') and hasattr(dst, 'seek'):
+    if isinstance(src, io.IOBase) and isinstance(dst, io.IOBase):
         src.seek(seek)
         dst.seek(skip)
         n = 0
@@ -1208,7 +1209,7 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
         else:
             src = src.encode('utf8')[seek:]
 
-    elif hasattr(src, 'seek'):
+    elif isinstance(src, io.IOBase):
         src.seek(seek)
         src_ = b''
         if count:
@@ -1232,7 +1233,7 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
         else:
             src = src[seek:]
 
-    elif hasattr(src, '__iter__'):
+    elif isinstance(src, Sequence):
         src = src[seek:]
         src_ = b''
         for i, b in enumerate(src, seek):
@@ -1263,7 +1264,7 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
         utf8 = False
 
     # Match on the type of `dst`
-    if   hasattr(dst, 'seek'):
+    if isinstance(dst, io.IOBase):
         dst.seek(skip)
         dst.write(src)
         if truncate:
@@ -1292,7 +1293,7 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
     else:
         raise TypeError("dd(): Unsupported `dst` type: %r" % type(dst))
 
-    if utf8:
+    if utf8 and isinstance(dst, bytes):
         dst = dst.decode('utf8')
 
     return dst
@@ -1365,8 +1366,6 @@ def _decode(b: ASCIIStr) -> str:
             return b.decode('utf-8')
         except UnicodeDecodeError:
             return b.decode('latin1')
-        except AttributeError:
-            return b
     return b.decode(context.encoding)
 
 def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
