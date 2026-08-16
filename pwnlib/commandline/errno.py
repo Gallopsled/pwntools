@@ -1,4 +1,5 @@
-import argparse
+from argparse import Namespace
+from typing import Generator
 import os
 import errno
 
@@ -24,7 +25,7 @@ parser.add_argument(
 )
 
 
-def _iter_known_errnos():
+def _iter_known_errnos() -> Generator[tuple[int, str, str], None, None]:
     """Yield ``(value, name, message)`` tuples for every errno code visible to
     the standard library on this platform, sorted by numeric value.
     """
@@ -32,7 +33,7 @@ def _iter_known_errnos():
         yield value, name, os.strerror(value)
 
 
-def _print_errno(value, name=None, message=None):
+def _print_errno(value: int, name: str | None = None, message: str | None = None) -> None:
     if name is None:
         name = errno.errorcode.get(value, '')
     if message is None:
@@ -44,13 +45,13 @@ def _print_errno(value, name=None, message=None):
     print(message)
 
 
-def _search_errnos(needle):
+def _search_errnos(needle: str) -> list[tuple[int, str, str]]:
     """Return errnos whose ``strerror`` text contains ``needle`` (case-insensitive)."""
     needle = needle.lower()
     return [(v, n, m) for v, n, m in _iter_known_errnos() if needle in m.lower()]
 
 
-def main(args):
+def main(args: Namespace) -> None:
     if args.list:
         for value, name, message in _iter_known_errnos():
             print('%-3d %-10s %s' % (value, name, message))
