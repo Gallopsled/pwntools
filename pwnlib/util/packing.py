@@ -1165,9 +1165,9 @@ def dd(dst, src, count: int = 0, skip: int = 0, seek: int = 0, truncate: bool = 
     """
 
     # Re-open file objects to make sure we have the mode right
-    if isinstance(src, io.FileIO):
+    if hasattr(src, 'name'):
         src = open(src.name, 'rb')
-    if isinstance(dst, io.FileIO):
+    if hasattr(dst, 'name'):
         real_dst = dst
         dst = open(dst.name, 'rb+')
 
