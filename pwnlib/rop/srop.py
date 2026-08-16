@@ -181,7 +181,7 @@ registers = {
                   80: 'r13', 88: 'r14', 96: 'r15', 104: 'rdi', 112: 'rsi', 120: 'rbp', 128: 'rbx',
                   136: 'rdx', 144: 'rax', 152: 'rcx', 160: 'rsp', 168: 'rip', 176: 'eflags',
                   184: 'csgsfs', 192: 'err', 200: 'trapno', 208: 'oldmask', 216: 'cr2',
-                  224: '&fpstate', 232: '__reserved', 240: 'sigmask'},
+                  224: '&fpstate', 232: '__reserved', 296: 'sigmask'},
 # Reference : http://lxr.free-electrons.com/source/arch/arm/include/uapi/asm/sigcontext.h#L15
         'arm' : {0: 'uc_flags', 4: 'uc_link', 8: 'uc_stack.ss_sp', 12: 'uc_stack.ss_flags',
                  16: 'uc_stack.ss_size', 20: 'trap_no', 24: 'error_code', 28: 'oldmask', 32: 'r0',
@@ -266,15 +266,15 @@ class SigreturnFrame(dict):
         >>> context.clear(arch='amd64')
         >>> s = SigreturnFrame()
         >>> unpack_many(bytes(s))
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
-        >>> assert len(s) == 248
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        >>> assert len(s) == 304
         >>> s.rax = 0xa
         >>> s.rdi = 0x00601000
         >>> s.rsi = 0x1000
         >>> s.rdx = 0x7
-        >>> assert len(bytes(s)) == 248
+        >>> assert len(bytes(s)) == 304
         >>> unpack_many(bytes(s))
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0]
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6295552, 4096, 0, 0, 7, 10, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Crafting a SigreturnFrame that calls mprotect on i386
 

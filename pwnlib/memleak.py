@@ -4,8 +4,7 @@ import string
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
-from pwnlib.util.packing import pack, _p8lu
-from pwnlib.util.packing import unpack
+from pwnlib.util.packing import p8, pack, unpack
 
 log = getLogger(__name__)
 
@@ -197,7 +196,7 @@ class MemLeak:
 
             if data:
                 for i,byte in enumerate(bytearray(data)):
-                    self.cache[address+i] = _p8lu(byte)
+                    self.cache[address+i] = p8(byte, endian='little', signed=False)
 
             # We could not leak this particular byte, search backwards
             # to see if another request will satisfy it
@@ -460,7 +459,7 @@ class MemLeak:
     def _set(self, addr, val, ndx, size):
         addr += ndx * size
         for i,b in enumerate(bytearray(pack(val, size*8))):
-            self.cache[addr+i] = _p8lu(b)
+            self.cache[addr+i] = p8(b, endian='little', signed=False)
 
     def setb(self, addr, val, ndx = 0):
         """Sets byte at ``((uint8_t*)addr)[ndx]`` to `val` in the cache.
@@ -525,7 +524,7 @@ class MemLeak:
             val += b'\x00'
 
         for i,b in enumerate(bytearray(val)):
-            self.cache[addr+i] = _p8lu(b)
+            self.cache[addr+i] = p8(b, endian='little', signed=False)
 
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -542,7 +541,7 @@ class MemLeak:
 
     def compare(self, address, bts):
         for i, byte in enumerate(bytearray(bts)):
-            if self.n(address + i, 1) != _p8lu(byte):
+            if self.n(address + i, 1) != p8(byte, endian='little', signed=False):
                 return False
         return True
 

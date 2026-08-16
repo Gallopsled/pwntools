@@ -34,8 +34,8 @@ from pwnlib.util.packing import _decode
 
 log = getLogger(__name__)
 
-class PTY: pass
-PTY=PTY()
+class PTY_: pass
+PTY=PTY_()
 STDOUT = subprocess.STDOUT
 PIPE = subprocess.PIPE
 
@@ -1648,6 +1648,8 @@ def _read_in_thread(recv_queue, proc_stdout):
                 recv_queue.put(b)
             else:
                 break
-    except:
-        # Ignore any errors during Python shutdown
+    except:  # pylint: disable=bare-except
+        # Ignore any errors during Python shutdown.
+        # Bare except is intentional: during interpreter shutdown,
+        # IO operations can raise non-Exception BaseException subclasses.
         pass

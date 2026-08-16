@@ -1,7 +1,8 @@
-import collections
+from __future__ import annotations
 import random
 import re
 import string
+from collections import defaultdict
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
@@ -11,10 +12,10 @@ from pwnlib.util.fiddling import hexdump
 log = getLogger(__name__)
 
 class Encoder:
-    _encoders = collections.defaultdict(lambda: [])
+    _encoders: defaultdict[str, list[Encoder]] = defaultdict(lambda: [])
 
     #: Architecture which this encoder works on
-    arch = None
+    arch: str | None = None
 
     #: Blacklist of bytes which are known not to be supported
     blacklist = set()
@@ -24,7 +25,9 @@ class Encoder:
 
         Implements an architecture-specific shellcode encoder
         """
-        Encoder._encoders[self.arch].append(self)
+        # i386 ascii_shellcode encoder has special requirements and has to be used explicitly.
+        if self.arch is not None:
+            Encoder._encoders[self.arch].append(self)
 
     def __call__(self, raw_bytes, avoid, pcreg):
         """avoid(raw_bytes, avoid)

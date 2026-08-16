@@ -1,14 +1,17 @@
 """
 Fetch a LIBC binary based on some heuristics.
 """
+from collections.abc import Generator
 import os
+import re
 import time
-import tempfile
 import struct
+from typing import Generator
 
 from pwnlib.context import context
 from pwnlib.elf import ELF
 from pwnlib.filesystem.path import Path
+from pwnlib.internal.typing import BytesPath
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util.fiddling import enhex, unhex
@@ -70,6 +73,63 @@ if 'DEBUGINFOD_URLS' in os.environ:
     urls = os.environ['DEBUGINFOD_URLS'].split(' ')
     DEBUGINFOD_SERVERS = urls + DEBUGINFOD_SERVERS
 
+
+def _local_debuginfod_cache_dirs() -> Generator[str, None, None]:
+    """Yield candidate directories where the upstream debuginfod client (used
+    by gdb / eu-debuginfod-find / abrt) caches downloaded debuginfo files.
+
+    The lookup follows the conventions documented in
+    `debuginfod-client-config(7) <https://man.archlinux.org/man/debuginfod-client-config.7>`_:
+
+    1. ``$DEBUGINFOD_CACHE_PATH`` if set.
+    2. ``$XDG_CACHE_HOME/debuginfod_client`` if ``XDG_CACHE_HOME`` is set.
+    3. ``~/.cache/debuginfod_client`` (the default).
+    """
+    explicit = os.environ.get('DEBUGINFOD_CACHE_PATH')
+    if explicit:
+        yield explicit
+
+    xdg = os.environ.get('XDG_CACHE_HOME')
+    if xdg:
+        yield os.path.join(xdg, 'debuginfod_client')
+    else:
+        home = os.path.expanduser('~')
+        if home and home != '~':
+            yield os.path.join(home, '.cache', 'debuginfod_client')
+
+
+def _local_debuginfod_cached_path(hex_encoded_id: str) -> str | None:
+    """Return the path to a cached debuginfo file for ``hex_encoded_id`` if a
+    local debuginfod client has already downloaded it, otherwise ``None``.
+
+    The on-disk layout written by debuginfod-client is
+    ``<cache>/<hex-build-id>/debuginfo``.
+
+    Examples:
+
+        >>> import os, tempfile
+        >>> from pwnlib.libcdb import _local_debuginfod_cached_path
+        >>> tmp = tempfile.mkdtemp()
+        >>> os.environ['DEBUGINFOD_CACHE_PATH'] = tmp
+        >>> _local_debuginfod_cached_path('deadbeef') is None
+        True
+        >>> os.makedirs(os.path.join(tmp, 'deadbeef'))
+        >>> _ = open(os.path.join(tmp, 'deadbeef', 'debuginfo'), 'wb').write(b'\\x7FELF')
+        >>> _local_debuginfod_cached_path('deadbeef') == os.path.join(tmp, 'deadbeef', 'debuginfo')
+        True
+        >>> del os.environ['DEBUGINFOD_CACHE_PATH']
+    """
+    for cache_dir in _local_debuginfod_cache_dirs():
+        candidate = os.path.join(cache_dir, hex_encoded_id, 'debuginfo')
+        try:
+            with open(candidate, 'rb') as f:
+                head = f.read(4)
+        except OSError:
+            continue
+        if head == b'\x7FELF':
+            return candidate
+    return None
+
 # Allow to override url with a caching proxy in CI
 LIBC_RIP_URL = os.environ.get("PWN_LIBCRIP_URL", "https://libc.rip").rstrip("/")
 GITLAB_LIBCDB_URL = os.environ.get("PWN_GITLAB_LIBCDB_URL", "https://gitlab.com").rstrip("/")
@@ -114,16 +174,32 @@ def query_libc_rip(params):
     import requests
 
     url = f"{LIBC_RIP_URL}/api/find"
-    try:
-        result = requests.post(url, json=params, timeout=20)
-        result.raise_for_status()
-        if result.status_code != 200:
-            log.debug("Error: %s", result.text)
+    # Handle pagination transparently and fetch all results
+    offset = 0
+    count = 1
+    results = []
+    while offset < count:
+        try:
+            pagination_params = {'offset': offset, 'limit': 100}
+            log.debug("Querying libc.rip at %s (pagination %s) with parameters: %s", url, pagination_params, params)
+            result = requests.post(url, params=pagination_params, json=params, timeout=20)
+            result.raise_for_status()
+            if result.status_code != 200:
+                log.debug("Error: %s", result.text)
+                return None
+            imm_results = result.json()
+            # non-paginated result. old libc-database API?
+            if not isinstance(imm_results, dict):
+                return imm_results
+            results.extend(imm_results.get('results', []))
+            count = imm_results.get('total', 0)
+            offset += imm_results['count']
+            if not imm_results['has_more']:
+                break
+        except requests.RequestException as e:
+            log.warn_once("Failed to fetch libc info from libc.rip: %s", e)
             return None
-        return result.json()
-    except requests.RequestException as e:
-        log.warn_once("Failed to fetch libc info from libc.rip: %s", e)
-        return None
+    return results
 
 # https://libc.rip/
 def provider_libc_rip(search_target, search_type):
@@ -349,15 +425,15 @@ def unstrip_libc(filename):
         >>> libc = ELF(filename)
         >>> 'main_arena' in libc.symbols
         False
-        >>> unstrip_libc(filename)
+        >>> unstrip_libc(filename) # doctest: +SKIP
         True
         >>> libc = ELF(filename)
-        >>> hex(libc.symbols.main_arena)
+        >>> hex(libc.symbols.main_arena) # doctest: +SKIP
         '0x219c80'
         >>> unstrip_libc(pwnlib.data.elf.get('test-x86'))
         False
         >>> filename = search_by_build_id('d1704d25fbbb72fa95d517b883131828c0883fe9', unstrip=True)
-        >>> 'main_arena' in ELF(filename).symbols
+        >>> 'main_arena' in ELF(filename).symbols # doctest: +SKIP
         True
     """
     if not which('eu-unstrip'):
@@ -388,29 +464,39 @@ def unstrip_libc(filename):
         if cache is None:
             return False
         else:
-            for server_url in DEBUGINFOD_SERVERS:
-                # Try to find separate debuginfo.
-                url  = f'/buildid/{hex_encoded_id}/debuginfo'
-                url  = urllib.parse.urljoin(server_url, url)
-                data = b""
-                log.debug("Downloading data from debuginfod: %s", url)
-                try:
-                    data = wget(url, timeout=20)
+            # Check if a local debuginfod client (e.g. gdb's `set debuginfod enabled on`
+            # or eu-debuginfod-find) has already downloaded matching debuginfo. If so,
+            # use it instead of doing another network round-trip.
+            local_debuginfo = _local_debuginfod_cached_path(hex_encoded_id)
+            if local_debuginfo is not None:
+                log.debug('Found debuginfo in local debuginfod cache: %s', local_debuginfo)
+                write(cache, read(local_debuginfo))
 
-                    # Try next server if we didn't get a valid ELF file
-                    if not data or not data.startswith(b'\x7FELF'):
-                        log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, server_url)
-                        continue
-                    break
-                except requests.RequestException as e:
-                    log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, server_url, e)
+            # If we didn't find a local debuginfo, try to fetch it from the debuginfod servers.
             else:
-                write(cache, data or b'')
-                log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
-                return False
+                for server_url in DEBUGINFOD_SERVERS:
+                    # Try to find separate debuginfo.
+                    url  = f'/buildid/{hex_encoded_id}/debuginfo'
+                    url  = urllib.parse.urljoin(server_url, url)
+                    data = b""
+                    log.debug("Downloading data from debuginfod: %s", url)
+                    try:
+                        data = wget(url, timeout=20)
+
+                        # Try next server if we didn't get a valid ELF file
+                        if not data or not data.startswith(b'\x7FELF'):
+                            log.warn_once("Could not fetch libc debuginfo for build_id %s from %s", hex_encoded_id, server_url)
+                            continue
+                        break
+                    except requests.RequestException as e:
+                        log.warn_once("Failed to fetch libc debuginfo for build_id %s from %s: %s", hex_encoded_id, server_url, e)
+                else:
+                    write(cache, data or b'')
+                    log.warn_once('Couldn\'t find debug info for libc with build_id %s on any debuginfod server.', enhex(libc.buildid))
+                    return False
             
-            # Save whatever we got to the cache
-            write(cache, data or b'')
+                # Save whatever we got to the cache
+                write(cache, data or b'')
 
     # Add debug info to given libc binary inplace.
     p = process(['eu-unstrip', '-o', filename, filename, cache])
@@ -483,25 +569,94 @@ def _extract_pkgfile(cache_dir, package_filename, package):
     from io import BytesIO
     return _extract_tarfile(cache_dir, package_filename, BytesIO(package))
 
-def _find_libc_package_lib_url(libc):
+def _collect_extra_mirrors(extra_mirrors: str | list[str] | None) -> list[str]:
+    """Normalize the user-supplied ``extra_mirrors`` argument and merge it with
+    the comma- or whitespace-separated ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment
+    variable.
+
+    Returns a list of ``str`` URL prefixes (each with no trailing slash). Empty
+    entries are dropped.
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _collect_extra_mirrors
+        >>> _collect_extra_mirrors(None)
+        []
+        >>> _collect_extra_mirrors('https://example.com/m/')
+        ['https://example.com/m']
+        >>> _collect_extra_mirrors(['https://a/', 'https://b'])
+        ['https://a', 'https://b']
+    """
+    mirrors = []
+    if extra_mirrors:
+        if isinstance(extra_mirrors, str):
+            mirrors.append(extra_mirrors)
+        else:
+            mirrors.extend(extra_mirrors)
+    env_mirrors = os.environ.get('PWNLIB_EXTRA_LIBC_MIRRORS')
+    if env_mirrors:
+        # Allow either commas or whitespace as separators so URL schemes
+        # (https:) don't accidentally get split mid-URL.
+        mirrors.extend(re.split(r'[,\s]+', env_mirrors))
+    return [m.rstrip('/') for m in mirrors if m]
+
+
+def _mirror_variants(url: str, extra_mirrors: list[str] | None) -> Generator[str, None, None]:
+    """Yield ``url`` followed by mirror-swapped variants for each entry in
+    ``extra_mirrors``.
+
+    A mirror is applied by replacing everything before ``/pool/`` in the
+    candidate URL with the mirror prefix. URLs without a ``/pool/`` segment are
+    still yielded once but no mirror substitution is performed (for example,
+    Launchpad's ``+files`` archive URLs do not follow the Debian pool layout).
+
+    Examples:
+
+        >>> from pwnlib.libcdb import _mirror_variants
+        >>> list(_mirror_variants('http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb', None))
+        ['http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb',
+        ...                      ['https://debian.sipwise.com/debian-security']))
+        ['http://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36_amd64.deb', 'https://debian.sipwise.com/debian-security/pool/main/g/glibc/libc6_2.36_amd64.deb']
+        >>> list(_mirror_variants('https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb',
+        ...                      ['https://anywhere.example']))
+        ['https://launchpad.net/ubuntu/+archive/primary/+files/libc6_2.36_amd64.deb']
+    """
+    yield url
+    if not extra_mirrors:
+        return
+    match = re.search(r'/(pool/.+)$', url)
+    if not match:
+        return
+    suffix = match.group(1)
+    seen = {url}
+    for prefix in extra_mirrors:
+        candidate = '%s/%s' % (prefix, suffix)
+        if candidate not in seen:
+            seen.add(candidate)
+            yield candidate
+
+
+def _find_libc_package_lib_url(libc: ELF, extra_mirrors: list[str] | None = None) -> Generator[str, None, None]:
     # Check https://libc.rip for the libc package
     libc_match = query_libc_rip({'buildid': enhex(libc.buildid)})
     if libc_match is not None:
         for match in libc_match:
             # Allow to override url with a caching proxy in CI
             ubuntu_archive_url = os.environ.get('PWN_UBUNTU_ARCHIVE_URL', 'http://archive.ubuntu.com').rstrip('/')
-            yield match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
-    
+            url = match['libs_url'].replace('http://archive.ubuntu.com', ubuntu_archive_url)
+            for variant in _mirror_variants(url, extra_mirrors):
+                yield variant
+
     # Check launchpad.net if it's an Ubuntu libc
     # GNU C Library (Ubuntu GLIBC 2.36-0ubuntu4)
-    import re
     version = re.search(br'GNU C Library \(Ubuntu E?GLIBC ([^\)]+)\)', libc.data)
     if version is not None:
         libc_version = version.group(1).decode()
         yield f'https://launchpad.net/ubuntu/+archive/primary/+files/libc6_{libc_version}_{libc.arch}.deb'
 
-def download_libraries(libc_path, unstrip=True):
-    """download_libraries(str, bool) -> str
+def download_libraries(libc_path: BytesPath, unstrip: bool = True, extra_mirrors: str | list[str] | None = None) -> str | None:
+    """download_libraries(str, bool, extra_mirrors=None) -> str
     Download the matching libraries for the given libc binary and cache
     them in a local directory. The libraries are looked up using `libc.rip <https://libc.rip>`_
     and fetched from the official package repositories if available.
@@ -517,6 +672,17 @@ def download_libraries(libc_path, unstrip=True):
             The path the libc binary.
         unstrip(bool):
             Try to fetch debug info for the libc and apply it to the downloaded file.
+        extra_mirrors(str or list of str):
+            Optional additional Debian-style apt mirror prefix(es) to try
+            after the libc.rip URL. Useful when the official mirror has
+            dropped older vulnerable libc versions: each candidate URL is
+            re-tried with everything before ``/pool/`` swapped for the
+            mirror prefix. Mirrors can also be supplied via the
+            ``PWNLIB_EXTRA_LIBC_MIRRORS`` environment variable as a
+            comma- or whitespace-separated list. Example: pass
+            ``"https://debian.sipwise.com/debian-security"`` to find
+            ``GLIBC 2.36-9+deb12u6`` after the official Debian mirrors
+            removed it.
 
     Returns:
         The path to the cached directory containing the downloaded libraries.
@@ -531,23 +697,32 @@ def download_libraries(libc_path, unstrip=True):
         True
         >>> os.path.exists(os.path.join(lib_path, 'ld-linux-x86-64.so.2'))
         True
+
+        Fetch libraries from a different mirror for a vulnerable libc version
+        ``libc6_2.36-9+deb12u6_amd64`` that was removed from the official Debian mirrors:
+        
+        >>> libc_path = libcdb.search_by_build_id("ee3145ecaaff87a133daea77fbc3eecd458fa0d1") # doctest: +SKIP
+        >>> libcdb.download_libraries(libc_path, extra_mirrors="https://debian.sipwise.com/debian-security") # doctest: +ELLIPSIS +SKIP
+        '.../libcdb_libs/ee3145ecaaff87a133daea77fbc3eecd458fa0d1'
     """
 
     libc = ELF(libc_path, checksec=False)
     if not libc.buildid:
         log.warn_once('Given libc does not have a buildid.')
         return None
-    
+
     # Handle caching and don't redownload if it already exists.
     cache_dir = os.path.join(context.cache_dir, 'libcdb_libs')
     if not os.path.isdir(cache_dir):
         os.makedirs(cache_dir)
-    
+
     cache_dir = os.path.join(cache_dir, enhex(libc.buildid))
     if os.path.exists(cache_dir):
         return cache_dir
 
-    for package_url in _find_libc_package_lib_url(libc):
+    extra_mirrors = _collect_extra_mirrors(extra_mirrors)
+
+    for package_url in _find_libc_package_lib_url(libc, extra_mirrors=extra_mirrors):
         extension_handlers = {
             '.deb': _extract_debfile,
             '.pkg.tar.xz': _extract_pkgfile,

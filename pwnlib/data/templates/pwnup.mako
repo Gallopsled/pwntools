@@ -53,9 +53,12 @@ exe = ${binary_repr}
 %endif
 
 %if not quiet:
-# Many built-in settings can be controlled on the command-line and show up
-# in "args".  For example, to dump all data sent/received, and disable ASLR
-# for all created processes...
+# Many built-in settings can be controlled on the command-line.  Reserved
+# "magic arguments" such as DEBUG and NOASLR adjust pwntools' behavior via
+# "context" (e.g. context.log_level, context.aslr) and are NOT stored in
+# "args"; other arguments (HOST, PORT, EXE, ...) show up in "args".  For
+# example, to dump all data sent/received, and disable ASLR for all created
+# processes...
 # ./exploit.py DEBUG NOASLR
 %if host or port or user:
 # ./exploit.py GDB HOST=example.com PORT=4141 EXE=/tmp/executable
