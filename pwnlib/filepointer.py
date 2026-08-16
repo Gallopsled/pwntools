@@ -274,8 +274,8 @@ class FileStructure:
         True
     """
 
-    vars_=[]
-    length={}
+    vars_: list[str] = []
+    length: dict[str, int] = {}
 
     def __init__(self, null=0):
             self.vars_ = [variables[i]['name'] for i in sorted(variables.keys())]

@@ -1,3 +1,6 @@
+from types import CodeType
+from typing import Any
+
 _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
     'BUILD_LIST','BUILD_MAP', 'MAP_ADD', 'BUILD_TUPLE','BUILD_SET',
@@ -19,7 +22,7 @@ _expr_codes = _const_codes + [
 
 _values_codes = _expr_codes + ['LOAD_NAME']
 
-def _get_opcodes(codeobj):
+def _get_opcodes(codeobj: CodeType) -> list[int]:
     """_get_opcodes(codeobj) -> [opcodes]
 
     Extract the actual opcodes as a list from a code object
@@ -31,7 +34,7 @@ def _get_opcodes(codeobj):
     import dis
     return [ins.opcode for ins in dis.get_instructions(codeobj)]
 
-def test_expr(expr, allowed_codes):
+def test_expr(expr: str, allowed_codes: list[str]) -> CodeType:
     """test_expr(expr, allowed_codes) -> codeobj
 
     Test that the expression contains only the listed opcodes.
@@ -50,7 +53,7 @@ def test_expr(expr, allowed_codes):
             raise ValueError("opcode %s not allowed" % dis.opname[code])
     return c
 
-def const(expr):
+def const(expr: str) -> Any:
     """const(expression) -> value
 
     Safe Python constant evaluation
@@ -78,7 +81,7 @@ def const(expr):
     c = test_expr(expr, _const_codes)
     return eval(c)
 
-def expr(expr):
+def expr(expr: str) -> Any:
     """expr(expression) -> value
 
     Safe Python expression evaluation
@@ -102,7 +105,7 @@ def expr(expr):
     c = test_expr(expr, _expr_codes)
     return eval(c)
 
-def values(expr, env):
+def values(expr: str, env: dict[str, Any]) -> Any:
     """values(expression, dict) -> value
 
     Safe Python expression evaluation

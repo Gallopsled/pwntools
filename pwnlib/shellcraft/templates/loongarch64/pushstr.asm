@@ -15,39 +15,31 @@ Example:
     >>> print(shellcraft.loongarch64.pushstr('').rstrip())
         st.d     $r0, -8(sp)
     >>> print(shellcraft.loongarch64.pushstr('a').rstrip())
-        addi.d   $t8, $r0, 97
+        li.d     $t8, 97
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr('aa').rstrip())
-        addi.d   $t8, $r0, 6
-        lu52i.d  $t8, $t8, 353
+        li.d     $t8, 24929
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr('aaaa').rstrip())
-        addi.d   $t8, $r0, 97
-        lu52i.d  $t8, $t8, 1558
-        lu52i.d  $t8, $t8, 353
+        li.d     $t8, 1633771873
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr('aaaaa').rstrip())
-        addi.d   $t8, $r0, 6
-        lu52i.d  $t8, $t8, 353
-        lu52i.d  $t8, $t8, 1558
-        lu52i.d  $t8, $t8, 353
+        li.d     $t8, 418245599585
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr('aaaa', append_null = False).rstrip())
-        addi.d   $t8, $r0, 97
-        lu52i.d  $t8, $t8, 1558
-        lu52i.d  $t8, $t8, 353
+        li.d     $t8, 1633771873
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr(b'\xc3').rstrip())
-        addi.d   $t8, $r0, 195
+        li.d     $t8, 195
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
     >>> print(shellcraft.loongarch64.pushstr(b'\xc3', append_null = False).rstrip())
-        addi.d   $t8, $r0, 195
+        li.d     $t8, 195
         addi.d   $sp, $sp, -8
         st.d     $t8, $sp, 0
 

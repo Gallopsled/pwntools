@@ -13,7 +13,7 @@ when used in library mode (``import pwnlib``).  To read the configuration
 file in library mode, invoke :func:`.config.initialize`.
 
 The ``context`` section supports complex types, at least as far as is
-supported by ``pwnlib.util.safeeval.expr``.
+supported by :func:`pwnlib.util.safeeval.expr`.
 
 ::
 
@@ -33,10 +33,13 @@ supported by ``pwnlib.util.safeeval.expr``.
 """
 import configparser
 import os
+from typing import Any, Callable
 
-registered_configs = {}
+ConfigHandler = Callable[[dict[str, Any]], None]
 
-def register_config(section, function):
+registered_configs: dict[str, ConfigHandler] = {}
+
+def register_config(section: str, function: ConfigHandler) -> None:
     """Registers a configuration section.
 
     Arguments:
@@ -46,7 +49,7 @@ def register_config(section, function):
     """
     registered_configs[section] = function
 
-def initialize():
+def initialize() -> None:
     """Read the configuration files."""
     from pwnlib.log import getLogger
     log = getLogger(__name__)

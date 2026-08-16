@@ -15,8 +15,6 @@ If src is a string that is not a register, then it will locally set
 string. Note that this means that this shellcode can change behavior depending
 on the value of `context.os`.
 
-There is no effort done to avoid newlines and null bytes in the generated code.
-
 Args:
 
   dst (str): The destination register.
@@ -25,16 +23,13 @@ Args:
 Example:
 
     >>> print(shellcraft.loongarch64.mov('t0', 0).rstrip())
-        addi.d   $t0, $r0, 0
+        li.d     $t0, 0
     >>> print(shellcraft.loongarch64.mov('t0', 0x2000).rstrip())
-        addi.d   $t0, $r0, 2
-        lu52i.d  $t0, $t0, 0
+        li.d     $t0, 8192
     >>> print(shellcraft.loongarch64.mov('t0', 0xcafebabe).rstrip())
-        addi.d   $t0, $r0, 202
-        lu52i.d  $t0, $t0, -21
-        lu52i.d  $t0, $t0, -1346
+        li.d     $t0, 3405691582
     >>> print(shellcraft.loongarch64.mov('t1', 'sp').rstrip())
-        addi.d   $t1, $sp, 0
+        move     $t1, $sp
 
 </%docstring>
 <%
@@ -59,31 +54,12 @@ if src_reg == 0:
 %>
 
 % if dst_reg == 0 or dst_reg == src_reg:
-    /* ld ${dst}, ${src} is a noop */
+    /* mov ${dst}, ${src} is a noop */
 % elif src_reg is not None:
-    addi.d   $${dst}, $${src}, 0
+    move     $${dst}, $${src}
 % else:
 ## Source is an immediate, normalize to [0, 2**64)
-
 <% src = packing.unpack(packing.pack(src, word_size=64), word_size=64, sign=False) %>
 ## Immediates are always sign-extended to 64-bit
-
-% if src == 0:
-    addi.d   $${dst}, $r0, 0
-% else:
-<%
-parts = []
-fullsrc = src
-while src != 0:
-    parts.append(packing.unpack(packing.pack((src & 0xfff), word_size=12, sign=False), word_size=12, sign=True))
-    src = src >> 12
-%>
-% for idx, part in enumerate(reversed(parts)):
-    % if idx == 0:
-    addi.d   $${dst}, $r0, ${part}
-    % else:
-    lu52i.d  $${dst}, $${dst}, ${part}
-    % endif
-% endfor
-% endif
+    li.d     $${dst}, ${src}
 % endif

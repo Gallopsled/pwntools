@@ -4,13 +4,13 @@
 import time as __time
 
 
-def sleep(n):
+def sleep(n: float) -> None:
     """sleep(n)
 
     Replacement for :func:`time.sleep()`, which does not return if a signal is received.
 
     Arguments:
-      n (int):  Number of seconds to sleep.
+      n (float):  Number of seconds to sleep.
     """
     end = __time.time() + n
     while True:

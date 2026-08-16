@@ -16,6 +16,21 @@ import tempfile
 import threading
 import time
 
+try:
+    import colored_traceback
+except ImportError:
+    pass
+else:
+    try:
+        colored_traceback.add_hook()
+    except Exception:
+        # Exception: curses.error
+        # colored_traceback (curses.setupterm()) fails if TERM is unset.
+        # This is not critical, so we just ignore it.
+        # We cannot import `curses` for `curses.error` because it is not
+        # available on all platforms (e.g. Windows).
+        pass
+
 from pprint import pprint
 
 import pwnlib
@@ -84,21 +99,6 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
-
-try:
-    import colored_traceback
-except ImportError:
-    pass
-else:
-    try:
-        colored_traceback.add_hook()
-    except Exception:
-        # Exception: curses.error
-        # colored_traceback (curses.setupterm()) fails if TERM is unset.
-        # This is not critical, so we just ignore it.
-        # We cannot import `curses` for `curses.error` because it is not
-        # available on all platforms (e.g. Windows).
-        pass
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]
