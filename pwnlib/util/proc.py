@@ -15,7 +15,7 @@ log = getLogger(__name__)
 
 all_pids = psutil.pids
 
-def pidof(target: str | tubes.ssh.ssh_channel | tubes.sock.sock | tuple[str, int] | tubes.process.process) -> list[int]:
+def pidof(target: str | tubes.ssh.ssh_process | tubes.sock.sock | tuple[str, int] | tubes.process.process) -> list[int]:
     """pidof(target) -> int list
 
     Get PID(s) of `target`.  The returned PID(s) depends on the type of `target`:
@@ -25,7 +25,7 @@ def pidof(target: str | tubes.ssh.ssh_channel | tubes.sock.sock | tuple[str, int
     - :class:`pwnlib.tubes.sock.sock`: singleton list of the PID at the
       remote end of `target` if it is running on the host.  Otherwise an
       empty list.
-    - :class:`pwnlib.tubes.ssh.ssh_channel`: singleton list of the PID of
+    - :class:`pwnlib.tubes.ssh.ssh_process`: singleton list of the PID of
       `target` on the remote system.
     - :class:`tuple`: singleton list of the PID at the local end of the
         connection to `target` if it is running on the host.  Otherwise an
@@ -44,7 +44,9 @@ def pidof(target: str | tubes.ssh.ssh_channel | tubes.sock.sock | tuple[str, int
         >>> pidof(p) == pidof(l) == pidof(('127.0.0.1', l.rport))
         True
     """
-    if isinstance(target, tubes.ssh.ssh_channel):
+    if isinstance(target, tubes.ssh.ssh_process):
+        if target.pid is None:
+            raise ValueError("PID unknown for channel")
         return [target.pid]
 
     elif isinstance(target, tubes.sock.sock):
