@@ -1,5 +1,3 @@
-import contextlib
-import signal
 import socket
 import socks
 import threading
@@ -11,31 +9,43 @@ from pwnlib.tubes.sock import sock
 log = getLogger(__name__)
 
 
-@contextlib.contextmanager
-def _interruptible_block():
-    """Temporarily reset SIGINT to its default handler for the duration of the
-    block, then restore the previous handler.
+def _resolve_interruptible(host, port, fam, typ):
+    """Resolve *host*/*port* with :func:`socket.getaddrinfo` while keeping the
+    lookup abortable with Ctrl-C (#2540).
 
-    This lets a Ctrl-C interrupt blocking C-level calls such as
-    :func:`socket.getaddrinfo`, which on glibc hold the GIL and are otherwise
-    uninterruptible from Python (#2540).
+    ``getaddrinfo`` blocks inside glibc holding the GIL, so a pending SIGINT
+    isn't turned into a ``KeyboardInterrupt`` until the call returns. A stalled
+    DNS query is therefore uninterruptible on the main thread. We run the lookup
+    on a daemon thread and poll for it with a short timeout, so the main thread
+    keeps returning to the interpreter and can raise ``KeyboardInterrupt``. On
+    interrupt the daemon thread is just abandoned (being a daemon it won't hold
+    up exit), so the usual cleanup routines still run instead of the process
+    being torn down mid-flight.
 
-    Signal handlers can only be changed from the main thread, so on any other
-    thread (or in embedded interpreters that refuse the change) this is a
-    no-op and the caller's existing semantics are preserved.
+    Signals only reach the main thread, so anywhere else we resolve inline and
+    keep the previous blocking behaviour.
     """
     if threading.current_thread() is not threading.main_thread():
-        yield
-        return
-    try:
-        old = signal.signal(signal.SIGINT, signal.SIG_DFL)
-    except ValueError:
-        yield
-        return
-    try:
-        yield
-    finally:
-        signal.signal(signal.SIGINT, old)
+        return socket.getaddrinfo(host, port, fam, typ, 0, socket.AI_PASSIVE)
+
+    result = {}
+    done = threading.Event()
+
+    def resolve():
+        try:
+            result['addrinfos'] = socket.getaddrinfo(host, port, fam, typ, 0, socket.AI_PASSIVE)
+        except BaseException as e:
+            result['error'] = e
+        finally:
+            done.set()
+
+    threading.Thread(target=resolve, name='pwnlib-getaddrinfo', daemon=True).start()
+    while not done.wait(0.1):
+        pass
+
+    if 'error' in result:
+        raise result['error']
+    return result['addrinfos']
 
 class remote(sock):
     r"""Creates a TCP or UDP-connection to a remote host. It supports
@@ -137,8 +147,7 @@ class remote(sock):
         timeout = self.timeout
 
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
-            with _interruptible_block():
-                addrinfos = socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE)
+            addrinfos = _resolve_interruptible(self.rhost, self.rport, fam, typ)
             for res in addrinfos:
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
