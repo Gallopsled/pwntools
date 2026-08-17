@@ -22,6 +22,29 @@ Example:
     b'\x1b[H'
     >>> csi('5A')
     b'\x1b[5A'
+
+These byte strings can be sent straight down a tube. For example, ``Ctrl-A c``
+is the key combo that drops you into the QEMU monitor from a running guest:
+
+    >>> l = listen(0)
+    >>> r = remote('localhost', l.lport)
+    >>> c = l.wait_for_connection()
+    >>> r.send(ctrl('a') + b'c')      # switch QEMU to the monitor
+    >>> c.recvn(2)
+    b'\x01c'
+    >>> r.send(UP + ENTER)            # recall previous monitor command
+    >>> c.recvn(4)
+    b'\x1b[A\r'
+    >>> r.close(); c.close(); l.close()
+
+The values here follow the usual terminal standards:
+
+* C0 control codes (``NUL``..``US``, ``DEL``): ANSI X3.4 / ECMA-6.
+* ``ctrl()`` maps a letter to its C0 code by masking off the top bits, as
+  described in ECMA-48 section 5.3 and the ASCII table.
+* CSI / SS3 sequences (arrows, ``F1``..``F12``, ``HOME`` ...): ECMA-48 and the
+  xterm control sequences reference,
+  https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 """
 
 __all__ = [
