@@ -47,6 +47,8 @@ The values here follow the usual terminal standards:
   https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 """
 
+from pwnlib.util.packing import _need_bytes
+
 __all__ = [
     # Generators
     'ctrl', 'alt', 'csi',
@@ -107,7 +109,10 @@ def ctrl(char):
     if 0x40 <= code <= 0x5f:
         return bytes((code & 0x1f,))
     if char == '?':
-        # Ctrl-? is conventionally DEL (0x7f)
+        # Ctrl-? is conventionally DEL (0x7f) rather than the masked 0x1f;
+        # this is the same "rubout" convention terminals use for Backspace.
+        # See the xterm FAQ, "Backspace/Delete keys":
+        # https://invisible-island.net/xterm/xterm.faq.html#xterm_erase
         return b'\x7f'
     raise ValueError("ctrl(): %r has no Ctrl-form (use a letter or @[\\]^_?)" % char)
 
@@ -130,13 +135,9 @@ def alt(char):
         >>> alt('\r')
         b'\x1b\r'
     """
-    if isinstance(char, str):
-        char = char.encode('latin-1')
-    elif isinstance(char, (bytes, bytearray, memoryview)):
-        char = bytes(char)
-    else:
-        raise TypeError("alt(): char must be str or bytes-like")
-    return b'\x1b' + char
+    # min_wrong is bumped past the latin-1 range so the ordinary str call
+    # (alt('x')) doesn't trip _need_bytes' "text is not bytes" warning.
+    return b'\x1b' + _need_bytes(char, min_wrong=0x100)
 
 
 def csi(rest):
@@ -156,13 +157,7 @@ def csi(rest):
         >>> csi(b'5;10H')
         b'\x1b[5;10H'
     """
-    if isinstance(rest, str):
-        rest = rest.encode('latin-1')
-    elif isinstance(rest, (bytes, bytearray, memoryview)):
-        rest = bytes(rest)
-    else:
-        raise TypeError("csi(): rest must be str or bytes-like")
-    return b'\x1b[' + rest
+    return b'\x1b[' + _need_bytes(rest, min_wrong=0x100)
 
 
 # ---------------------------------------------------------------------------
