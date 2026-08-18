@@ -1,11 +1,51 @@
 import socket
 import socks
+import threading
 
 from pwnlib.log import getLogger
 from pwnlib.timeout import Timeout
 from pwnlib.tubes.sock import sock
 
 log = getLogger(__name__)
+
+
+def _resolve_interruptible(host, port, fam, typ):
+    """Resolve *host*/*port* with :func:`socket.getaddrinfo` while keeping the
+    lookup abortable with Ctrl-C (#2540).
+
+    ``getaddrinfo`` blocks inside glibc holding the GIL, so a pending SIGINT
+    isn't turned into a ``KeyboardInterrupt`` until the call returns. A stalled
+    DNS query is therefore uninterruptible on the main thread. We run the lookup
+    on a daemon thread and poll for it with a short timeout, so the main thread
+    keeps returning to the interpreter and can raise ``KeyboardInterrupt``. On
+    interrupt the daemon thread is just abandoned (being a daemon it won't hold
+    up exit), so the usual cleanup routines still run instead of the process
+    being torn down mid-flight.
+
+    Signals only reach the main thread, so anywhere else we resolve inline and
+    keep the previous blocking behaviour.
+    """
+    if threading.current_thread() is not threading.main_thread():
+        return socket.getaddrinfo(host, port, fam, typ, 0, socket.AI_PASSIVE)
+
+    result = {}
+    done = threading.Event()
+
+    def resolve():
+        try:
+            result['addrinfos'] = socket.getaddrinfo(host, port, fam, typ, 0, socket.AI_PASSIVE)
+        except BaseException as e:
+            result['error'] = e
+        finally:
+            done.set()
+
+    threading.Thread(target=resolve, name='pwnlib-getaddrinfo', daemon=True).start()
+    while not done.wait(0.1):
+        pass
+
+    if 'error' in result:
+        raise result['error']
+    return result['addrinfos']
 
 class remote(sock):
     r"""Creates a TCP or UDP-connection to a remote host. It supports
@@ -107,7 +147,8 @@ class remote(sock):
         timeout = self.timeout
 
         with self.waitfor('Opening connection to %s on port %s' % (self.rhost, self.rport)) as h:
-            for res in socket.getaddrinfo(self.rhost, self.rport, fam, typ, 0, socket.AI_PASSIVE):
+            addrinfos = _resolve_interruptible(self.rhost, self.rport, fam, typ)
+            for res in addrinfos:
                 self.family, self.type, self.proto, _canonname, sockaddr = res
 
                 if self.type not in [socket.SOCK_STREAM, socket.SOCK_DGRAM]:
