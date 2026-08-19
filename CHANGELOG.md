@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
@@ -219,6 +220,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2762]: https://github.com/Gallopsled/pwntools/pull/2762
 [2767]: https://github.com/Gallopsled/pwntools/pull/2767
 [2726]: https://github.com/Gallopsled/pwntools/pull/2726
+[2768]: https://github.com/Gallopsled/pwntools/pull/2768
 
 ## 4.15.1
 
