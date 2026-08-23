@@ -147,6 +147,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2735][2735] Add support for debugging with x64dbg on Windows
 - [#2767][2767] Support paginated libc.rip API requests to include all search results
 - [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
+- [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -219,6 +220,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2762]: https://github.com/Gallopsled/pwntools/pull/2762
 [2767]: https://github.com/Gallopsled/pwntools/pull/2767
 [2726]: https://github.com/Gallopsled/pwntools/pull/2726
+[2769]: https://github.com/Gallopsled/pwntools/pull/2769
 
 ## 4.15.1
 
