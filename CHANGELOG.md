@@ -75,7 +75,6 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
@@ -148,6 +147,8 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2735][2735] Add support for debugging with x64dbg on Windows
 - [#2767][2767] Support paginated libc.rip API requests to include all search results
 - [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
+- [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
+- [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -221,6 +222,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2767]: https://github.com/Gallopsled/pwntools/pull/2767
 [2726]: https://github.com/Gallopsled/pwntools/pull/2726
 [2768]: https://github.com/Gallopsled/pwntools/pull/2768
+[2769]: https://github.com/Gallopsled/pwntools/pull/2769
 
 ## 4.15.1
 
