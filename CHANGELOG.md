@@ -121,6 +121,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2673][2673] Add libc module for libc-related functions
+- [#2679][2679] Add type hints to parts of pwnlib.utils
 - [#2680][2680] Cleanup Python 2 legacy
 - [#2683][2683] libc: add atexit functions for glibc exploits
 - [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
@@ -144,6 +145,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 - [#2734][2734] ROP: Add labels to reference addresses relative to your chain
 - [#2735][2735] Add support for debugging with x64dbg on Windows
+- [#2767][2767] Support paginated libc.rip API requests to include all search results
+- [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
+- [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
 
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
@@ -185,6 +189,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
+[2679]: https://github.com/Gallopsled/pwntools/pull/2679
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
 [2683]: https://github.com/Gallopsled/pwntools/pull/2683
 [2687]: https://github.com/Gallopsled/pwntools/pull/2687
@@ -213,6 +218,9 @@ The table below shows which release corresponds to each branch, and what date th
 [2735]: https://github.com/Gallopsled/pwntools/pull/2735
 [2753]: https://github.com/Gallopsled/pwntools/pull/2753
 [2762]: https://github.com/Gallopsled/pwntools/pull/2762
+[2767]: https://github.com/Gallopsled/pwntools/pull/2767
+[2726]: https://github.com/Gallopsled/pwntools/pull/2726
+[2769]: https://github.com/Gallopsled/pwntools/pull/2769
 
 ## 4.15.1
 

@@ -65,7 +65,7 @@ class linux_dirent:
     d_type: Dtype
     d_name: str
 
-    def __init__(self, buf: bytes, is_dirent64: bool):
+    def __init__(self, buf: bytes, is_dirent64: bool) -> None:
         size_t = 8 if is_dirent64 else context.bytes
 
         self.d_ino = unpack(buf[0:size_t], size_t * 8)
@@ -82,13 +82,13 @@ class linux_dirent:
         self.d_name = d_name.split(b'\x00', 1)[0].decode('utf-8')
         self.d_type = Dtype(d_type)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.d_reclen
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.d_name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.d_type.name:<8}{self.d_name}'
 
 

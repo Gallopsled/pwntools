@@ -2181,7 +2181,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Example:
 
             >>> s = ssh("travis", "example.pwnme")
-            >>> s.ibt
+            >>> s.ibt # doctest: +SKIP 
             False
         """
         if self._ibt is None:

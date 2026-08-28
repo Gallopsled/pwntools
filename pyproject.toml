@@ -42,7 +42,6 @@ dependencies = [
     "intervaltree>=3.0",
     "sortedcontainers",
     "unix-ar",
-    "zstandard; python_version < '3.14'",
 ]
 
 [project.optional-dependencies]
@@ -55,6 +54,7 @@ full = [
     "requests>=2.0",
     "rpyc",
     "unicorn>=2.0.1",  # Bump to 2.1.5 when out: https://github.com/unicorn-engine/unicorn/issues/2134
+    "backports.zstd>=1.0.0 ; python_version<'3.14'",
 ]
 
 [project.urls]

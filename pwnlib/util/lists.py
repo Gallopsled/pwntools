@@ -1,7 +1,15 @@
 import collections
+from collections.abc import Iterable, Sequence
+from typing import Any, Callable, Generator, Literal, TypeVar, overload
 
+_T = TypeVar('_T')
+_R = TypeVar('_R')
 
-def partition(lst, f, save_keys = False):
+@overload
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: Literal[True]) -> collections.OrderedDict[_R, list[_T]]: ...
+@overload
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: Literal[False]) -> list[list[_T]]: ...
+def partition(lst: Iterable[_T], f: Callable[[_T], _R], save_keys: bool = False) -> list[list[_T]] | collections.OrderedDict[_R, list[_T]]:
     """partition(lst, f, save_keys = False) -> list
 
     Partitions an iterable into sublists using a function to specify which
@@ -23,7 +31,7 @@ def partition(lst, f, save_keys = False):
       >>> partition([1,2,3,4,5], lambda x: x%3, save_keys=True) == collections.OrderedDict([(1, [1, 4]), (2, [2, 5]), (0, [3])])
       True
     """
-    d = collections.OrderedDict()
+    d: collections.OrderedDict[_R, list[_T]] = collections.OrderedDict()
 
     for l in lst:
         c = f(l)
@@ -34,7 +42,17 @@ def partition(lst, f, save_keys = False):
     else:
         return list(d.values())
 
-def group(n, lst, underfull_action = 'ignore', fill_value = None):
+
+
+@overload
+def group(n: int, lst: list[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[list[_T]]: ...
+@overload
+def group(n: int, lst: tuple[_T, ...], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[tuple[_T, ...]]: ...
+@overload
+def group(n: int, lst: str, underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: str | None = None) -> list[str]: ...
+@overload
+def group(n: int, lst: bytes, underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: bytes | None = None) -> list[bytes]: ...
+def group(n: int, lst: Sequence[_T], underfull_action: Literal['ignore', 'drop', 'fill'] = 'ignore', fill_value: _T | None = None) -> list[Any]:
     """group(n, lst, underfull_action = 'ignore', fill_value = None) -> list
 
     Split sequence into subsequences of given size. If the values cannot be
@@ -67,32 +85,33 @@ def group(n, lst, underfull_action = 'ignore', fill_value = None):
     if underfull_action not in ['ignore', 'drop', 'fill']:
         raise ValueError("group(): underfull_action must be either 'ignore', 'drop' or 'fill'")
 
+    fill: Any = fill_value
     if underfull_action == 'fill':
         if isinstance(lst, tuple):
-            fill_value = (fill_value,)
+            fill = (fill_value,)
         elif isinstance(lst, list):
-            fill_value = [fill_value]
+            fill = [fill_value]
         elif isinstance(lst, (bytes, str)):
             if not isinstance(fill_value, (bytes, str)):
                 raise ValueError("group(): cannot fill a string with a non-string")
         else:
             raise ValueError("group(): 'lst' must be either a tuple, list or string")
 
-    out = []
+    out: list[Any] = []
     for i in range(0, len(lst), n):
-        out.append(lst[i:i+n])
-
-    if out and len(out[-1]) < n:
-        if underfull_action == 'ignore':
-            pass
-        elif underfull_action == 'drop':
-            out.pop()
-        else:
-            out[-1] = out[-1] + fill_value * (n - len(out[-1]))
+        chunk: Any = lst[i:i+n]
+        if len(chunk) < n:
+            if underfull_action == 'ignore':
+                pass
+            elif underfull_action == 'drop':
+                continue
+            else:
+                chunk = chunk + fill * (n - len(chunk))
+        out.append(chunk)
 
     return out
 
-def concat(l):
+def concat(l: list[list[Any]]) -> list[Any]:
     """concat(l) -> list
 
     Concats a list of lists into a list.
@@ -110,7 +129,7 @@ def concat(l):
 
     return res
 
-def concat_all(*args):
+def concat_all(*args: Any) -> list[Any]:
     """concat_all(*args) -> list
 
     Concats all the arguments together.
@@ -121,7 +140,7 @@ def concat_all(*args):
        [0, 1, 2, 3, 4, 5, 6]
     """
 
-    def go(arg, output):
+    def go(arg: Any, output: list[Any]) -> list[Any]:
         if isinstance(arg, (tuple, list)):
             for e in arg:
                 go(e, output)
@@ -131,7 +150,7 @@ def concat_all(*args):
 
     return go(args, [])
 
-def ordlist(s):
+def ordlist(s: str) -> list[int]:
     """ordlist(s) -> list
 
     Turns a string into a list of the corresponding ascii values.
@@ -143,7 +162,7 @@ def ordlist(s):
     """
     return list(map(ord, s))
 
-def unordlist(cs):
+def unordlist(cs: list[int]) -> str:
     """unordlist(cs) -> str
 
     Takes a list of ascii values and returns the corresponding string.
@@ -155,7 +174,7 @@ def unordlist(cs):
     """
     return ''.join(chr(c) for c in cs)
 
-def findall(haystack, needle):
+def findall(haystack: Sequence[_T], needle: _T | Sequence[_T]) -> Generator[int, None, None]:
     """findall(l, e) -> l
 
     Generate all indices of needle in haystack, using the
@@ -175,10 +194,10 @@ def findall(haystack, needle):
       >>> list(findall("aaabaaabc", "aab"))
       [1, 5]
     """
-    def __kmp_table(W):
+    def __kmp_table(W: Sequence[_T]) -> list[int]:
         pos = 1
         cnd = 0
-        T = []
+        T: list[int] = []
         T.append(-1)
         T.append(0)
         while pos < len(W):
@@ -193,7 +212,7 @@ def findall(haystack, needle):
                 T.append(0)
         return T
 
-    def __kmp_search(S, W):
+    def __kmp_search(S: Sequence[_T], W: Sequence[_T]) -> Generator[int, None, None]:
         m = 0
         i = 0
         T = __kmp_table(W)
@@ -208,13 +227,13 @@ def findall(haystack, needle):
                 m += i - T[i]
                 i = max(T[i], 0)
 
-    def __single_search(S, w):
+    def __single_search(S: Sequence[_T], w: _T) -> Generator[int, None, None]:
         for i, v in enumerate(S):
             if v == w:
                 yield i
 
 
-    if type(haystack) != type(needle):
+    if not isinstance(needle, Sequence):
         needle = [needle]
     if len(needle) == 1:
         return __single_search(haystack, needle[0])
