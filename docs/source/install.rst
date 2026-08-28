@@ -17,7 +17,10 @@ following system libraries installed.
 
 
 Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-config ``brew install pkg-config`` installed.
-Note: The pwntools/pwntools Homebrew tap is undergoing migration, hence for Mac OS you will have to set ``HOMEBREW_DEVELOPER="true"`` before installing the dependencies. The exact workaround is as follows. The actual resolution of the tap migration is still pending.
+Note: The pwntools/pwntools Homebrew tap is currently (August 2026) undergoing migration.
+If you encounter issues on Mac OS, try setting ``HOMEBREW_DEVELOPER="true"`` before installing the dependencies.
+The exact workaround is as follows. The actual resolution of the tap migration is still pending.
+If everything goes well, you can omit this variable.
 
 .. code-block:: bash
 
