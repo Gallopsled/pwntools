@@ -101,21 +101,6 @@ success = log.success
 
 # optional deps
 try:
-    import colored_traceback
-except ImportError:
-    pass
-else:
-    try:
-        colored_traceback.add_hook()
-    except Exception:
-        # Exception: curses.error
-        # colored_traceback (curses.setupterm()) fails if TERM is unset.
-        # This is not critical, so we just ignore it.
-        # We cannot import `curses` for `curses.error` because it is not
-        # available on all platforms (e.g. Windows).
-        pass
-
-try:
     import socks
 except ImportError:
     pass
