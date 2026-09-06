@@ -988,6 +988,11 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         ('H', 'e', 'l', 'l', 'o', b'?')
         >>> dd(list('Hello!'), (63,), skip = 5)
         ['H', 'e', 'l', 'l', 'o', b'?']
+        >>> buf = bytearray(b'Hello!')
+        >>> dd(buf, b'?', skip = 5)
+        bytearray(b'Hello?')
+        >>> buf
+        bytearray(b'Hello?')
         >>> _ = open('/tmp/foo', 'w').write('A' * 10)
         >>> dd(open('/tmp/foo'), open('/dev/zero'), skip = 3, count = 4).read()
         'AAA\\x00\\x00\\x00\\x00AAA'
@@ -1105,7 +1110,12 @@ def dd(dst, src, count = 0, skip = 0, seek = 0, truncate = False):
         dst = real_dst
 
     elif isinstance(dst, (list, bytearray)):
-        dst[skip : skip + len(src)] = list(map(p8, bytearray(src)))
+        # A bytearray slice takes a byte string, while a list slice takes the
+        # single-byte bytes objects that p8() returns.
+        if isinstance(dst, bytearray):
+            dst[skip : skip + len(src)] = src
+        else:
+            dst[skip : skip + len(src)] = list(map(p8, bytearray(src)))
         if truncate:
             while len(dst) > truncate:
                 dst.pop()
