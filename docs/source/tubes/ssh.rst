@@ -27,3 +27,5 @@
 
    .. autoclass:: pwnlib.tubes.ssh.ssh_listener()
       :show-inheritance:
+
+   .. autofunction:: pwnlib.tubes.ssh._sockname_to_endpoint
