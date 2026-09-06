@@ -134,10 +134,12 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
 - [#2721][2721] Allow running with Unicorn 2.1.[34] but throw when emulating MIPS
+- [#2773][2773] Disable debuginfod doctests in libcdb.unstrip_libc
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
 [2721]: https://github.com/Gallopsled/pwntools/pull/2721
+[2773]: https://github.com/Gallopsled/pwntools/pull/2773
 
 ## 4.15.0 (`stable`)
 
