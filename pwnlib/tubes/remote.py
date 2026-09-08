@@ -57,6 +57,17 @@ class remote(sock):
         >>> r = remote.fromsocket(s) #doctest: +SKIP
         >>> r.recvn(4) #doctest: +SKIP
         b'HTTP'
+        
+        To disable certificate verification, pass in a custom ssl_context:
+
+        >>> import ssl
+        >>> ssl_context = ssl.create_default_context()
+        >>> ssl_context.check_hostname = False
+        >>> ssl_context.verify_mode = ssl.CERT_NONE
+        >>> r = remote('self-signed.badssl.com', 443, ssl=True, ssl_context=ssl_context)
+        >>> r.send(b"GET / HTTP/1.1\r\nHost: self-signed.badssl.com\r\n\r\n")
+        >>> r.recvn(4)
+        b'HTTP'
     """
 
     def __init__(self, host, port,
@@ -95,7 +106,7 @@ class remote(sock):
                 ssl_args = ssl_args or {}
                 if "server_hostname" in ssl_args and sni:
                     log.error("sni and server_hostname cannot be set at the same time")
-                ssl_context = ssl_context or _ssl.SSLContext(_ssl.PROTOCOL_TLS_CLIENT)
+                ssl_context = ssl_context or _ssl.create_default_context()
                 if isinstance(sni, str):
                     ssl_args["server_hostname"] = sni
                 elif sni:
