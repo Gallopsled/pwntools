@@ -18,6 +18,10 @@ following system libraries installed.
 
 Note: For Mac OS X you will need to have cmake ``brew install cmake`` and pkg-config ``brew install pkg-config`` installed.
 
+.. code-block:: bash
+
+    brew install pwntools
+
 Released Version
 -----------------
 

@@ -177,6 +177,33 @@ class dotdict(dict):
             return dotdict(subkeys)
         raise AttributeError(name)
 
+# Names people commonly reach for expecting the return address into
+# __libc_start_main from main. We don't compute these eagerly because it means
+# disassembling code that most callers never look at, so point them at the
+# property that does the work instead.
+_libc_start_main_ret_aliases = ('__libc_start_main_ret', '__libc_start_main_return')
+
+class symboldict(dotdict):
+    """dotdict used for :attr:`.ELF.symbols`.
+
+    Behaves like a normal :class:`dotdict` but gives a helpful error when
+    someone looks up ``__libc_start_main_ret``, which isn't a real symbol in
+    libc. See https://github.com/Gallopsled/pwntools/issues/2563.
+    """
+    def __missing__(self, name):
+        if name in _libc_start_main_ret_aliases:
+            raise KeyError(
+                '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
+                'property to get the return address into __libc_start_main from main.' % name)
+        return super().__missing__(name)
+
+    def __getattr__(self, name):
+        if name in _libc_start_main_ret_aliases and name not in self:
+            raise AttributeError(
+                '%r is not a symbol in the ELF. Use the ELF.libc_start_main_return '
+                'property to get the return address into __libc_start_main from main.' % name)
+        return super().__getattr__(name)
+
 class ELF(ELFFile):
     """Encapsulates information about an ELF file.
 
@@ -235,7 +262,7 @@ class ELF(ELFFile):
         self.path = packing._need_text(os.path.abspath(path))
 
         #: :class:`dotdict` of ``name`` to ``address`` for all symbols in the ELF
-        self.symbols = dotdict()
+        self.symbols = symboldict()
 
         #: :class:`dotdict` of ``name`` to ``address`` for all Global Offset Table (GOT) entries
         self.got = dotdict()
@@ -646,7 +673,7 @@ class ELF(ELFFile):
         delta     = new-self._address
         update    = lambda x: x+delta
 
-        self.symbols = dotdict({k:update(v) for k,v in self.symbols.items()})
+        self.symbols = symboldict({k:update(v) for k,v in self.symbols.items()})
         self.plt     = dotdict({k:update(v) for k,v in self.plt.items()})
         self.got     = dotdict({k:update(v) for k,v in self.got.items()})
         for f in self.functions.values():
@@ -1166,6 +1193,17 @@ class ELF(ELFFile):
         >>> libc = bash.libc
         >>> libc.libc_start_main_return > 0
         True
+
+        Looking it up as a symbol doesn't work, but points you here:
+
+        >>> libc.symbols['__libc_start_main_ret'] # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        KeyError: "'__libc_start_main_ret' is not a symbol in the ELF. Use the ELF.libc_start_main_return property to get the return address into __libc_start_main from main."
+        >>> libc.sym.__libc_start_main_ret # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        AttributeError: '__libc_start_main_ret' is not a symbol in the ELF. Use the ELF.libc_start_main_return property to get the return address into __libc_start_main from main.
 
         Try to find the return address from main into __libc_start_main.
         The heuristic to find the call to the function pointer of main is

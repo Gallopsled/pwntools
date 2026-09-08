@@ -60,6 +60,7 @@ def read_update_config(settings: dict[str, Any]) -> None:
 
 register_config('update', read_update_config)
 
+__versions_cache: list[str] | None = None
 def available_on_pypi(prerelease: bool = current_version.is_prerelease) -> packaging.version.Version:
     """Return True if an update is available on PyPI.
 
@@ -70,15 +71,16 @@ def available_on_pypi(prerelease: bool = current_version.is_prerelease) -> packa
     """
     # Deferred import to save startup time
     import requests
+    global __versions_cache
 
-    versions = getattr(available_on_pypi, 'cached', None)
+    versions = __versions_cache
     if versions is None:
         response = requests.get("https://pypi.org/simple/pwntools/",
                                 headers={"Accept": "application/vnd.pypi.simple.v1+json"},
                                 timeout=5)
         response.raise_for_status()
         versions = response.json()["versions"]
-        available_on_pypi.cached = versions
+        __versions_cache = versions
 
     versions = map(packaging.version.Version, versions)
 

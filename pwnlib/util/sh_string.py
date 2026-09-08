@@ -237,10 +237,12 @@ and should therefore be compatible with ``dash``.
 .. _OpenBSD Man Pages: https://man.openbsd.org/sh#SHELL_GRAMMAR
 .. _BusyBox's Wikipedia page: https://en.wikipedia.org/wiki/BusyBox#Features
 """
+import random
 import string
-import subprocess
+from typing import Callable, overload
 
 from pwnlib.context import context
+from pwnlib.internal.typing import ASCIIStr
 from pwnlib.log import getLogger
 from pwnlib.tubes.process import process
 from pwnlib.util import fiddling
@@ -248,13 +250,14 @@ from pwnlib.util.misc import which, normalize_argv_env
 
 log = getLogger(__name__)
 
-def test_all():
+def test_all() -> None:
     test('a') ##
     test('ab') ##
     test('a b') ##
     test(r"a\'b") ##
     everything_1 = bytes(range(1,256))
     for s in everything_1:
+        s = bytes([s])
         test(s)
         test(s*4)
         test(s * 2 + b'X')
@@ -269,10 +272,10 @@ def test_all():
     everything_2 = b''.join(bytes([c,c]) for c in range(1,256)) ##
     test(everything_2)
 
-    test(randoms(1000, everything_1))
+    test(b''.join(bytes([random.choice(everything_1)]) for _ in range(1000)))
 
 
-def test(original):
+def test(original: bytes | str) -> None:
     r"""Tests the output provided by a shell interpreting a string
 
     .. doctest::
@@ -358,7 +361,11 @@ ESCAPED = {
     # '\\': '"\\\\\\\\"'
 }
 
-def sh_string(s):
+@overload
+def sh_string(s: bytes | bytearray) -> bytes: ...
+@overload
+def sh_string(s: str) -> str: ...
+def sh_string(s: ASCIIStr) -> ASCIIStr:
     r"""Outputs a string in a format that will be understood by /bin/sh.
 
     If the string does not contain any bad characters, it will simply be
@@ -387,6 +394,8 @@ def sh_string(s):
         "'foo\\\\'\\''bar'"
         >>> sh_string("foo\\x01'bar")
         "'foo\\x01'\\''bar'"
+        >>> sh_string(b"foo\\x01'bar")
+        b"'foo\\x01'\\''bar'"
     """
     orig_s = s
     if isinstance(s, (bytes, bytearray)):
@@ -397,7 +406,7 @@ def sh_string(s):
     if not s:
         quoted_string = "''" ##
         if isinstance(orig_s, (bytes, bytearray)):
-            quoted_string = quoted_string.encode('latin1')
+            return quoted_string.encode('latin1')
         return quoted_string
 
     chars = set(s)
@@ -411,7 +420,7 @@ def sh_string(s):
     if not (chars & set(ESCAPED)):
         quoted_string = "'%s'" % s ##
         if isinstance(orig_s, (bytes, bytearray)):
-            quoted_string = quoted_string.encode('latin1')
+            return quoted_string.encode('latin1')
         return quoted_string
 
     # If there are single-quotes, we can single-quote around them, and simply
@@ -434,10 +443,10 @@ def sh_string(s):
         quoted_string += SINGLE_QUOTE
 
     if isinstance(orig_s, (bytes, bytearray)):
-        quoted_string = quoted_string.encode('latin1')
+        return quoted_string.encode('latin1')
     return quoted_string
 
-def sh_prepare(variables, export = False):
+def sh_prepare(variables: dict[str, ASCIIStr], export: bool = False) -> bytes:
     r"""Outputs a posix compliant shell command that will put the data specified
     by the dictionary into the environment.
 
@@ -488,7 +497,7 @@ def sh_prepare(variables, export = False):
 
     return b';'.join(out)
 
-def sh_command_with(f, *args):
+def sh_command_with(f: Callable[[str | bytes], str] | str, *args: ASCIIStr) -> str:
     r"""sh_command_with(f, arg0, ..., argN) -> command
 
     Returns a command create by evaluating `f(new_arg0, ..., new_argN)`
@@ -521,7 +530,7 @@ def sh_command_with(f, *args):
 
     for n in range(len(args)):
         args[n] = sh_string(args[n])
-    if hasattr(f, '__call__'):
+    if callable(f):
         out.append(f(*args))
     else:
         out.append(f % tuple(args))

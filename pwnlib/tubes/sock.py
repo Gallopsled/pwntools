@@ -10,6 +10,8 @@ log = getLogger(__name__)
 class sock(tube):
     """Base type used for :class:`.tubes.remote` and :class:`.tubes.listen` classes"""
 
+    sock: socket.socket
+
     def __init__(self, *args, **kwargs):
         super(sock, self).__init__(*args, **kwargs)
         self.closed = {"recv": False, "send": False}
