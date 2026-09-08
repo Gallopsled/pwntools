@@ -1,9 +1,11 @@
 import ctypes
 import functools
+import os
 import string
 
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util import safeeval
 from pwnlib.util.packing import p8, pack, unpack
 
 log = getLogger(__name__)
@@ -29,6 +31,7 @@ class MemLeak:
         f (function): The leaker function.
         search_range (int): How many bytes to search backwards in case an address does not work.
         reraise (bool): Whether to reraise call :func:`pwnlib.log.warning` in case the leaker function throws an exception.
+        cache_file (str): If set, persist the leak cache to this path and reload it on construction, so leaked bytes are reused across runs.
 
     Example:
 
@@ -75,15 +78,34 @@ class MemLeak:
         >>> leak = pwnlib.memleak.MemLeak(relative_leak, relative = True)
         >>> leak[-1:2]
         b'zAB'
+
+        >>> import os, tempfile
+        >>> cache = tempfile.mktemp()
+        >>> def leaker(addr):
+        ...     print("leaking 0x%x" % addr)
+        ...     return binsh[addr:addr+4]
+        >>> hex(pwnlib.memleak.MemLeak(leaker, cache_file=cache).d(0))
+        leaking 0x0
+        '0x464c457f'
+        >>> hex(pwnlib.memleak.MemLeak(leaker, cache_file=cache).d(0))
+        '0x464c457f'
+        >>> os.unlink(cache)
     """
-    def __init__(self, f, search_range = 20, reraise = True, relative = False):
+    def __init__(self, f, search_range = 20, reraise = True, relative = False, cache_file = None):
         self.leak = f
         self.search_range = search_range
         self.reraise = reraise
         self.relative = relative
+        self.cache_file = cache_file
 
         # Map of address: byte for all bytes received
         self.cache = {}
+        if cache_file and os.path.exists(cache_file):
+            try:
+                self.cache = safeeval.const(open(cache_file).read())
+            except ValueError:
+                # A corrupt cache (e.g. a crash mid-write) shouldn't brick, just start fresh
+                self.cache = {}
 
         functools.update_wrapper(self, f)
 
@@ -98,6 +120,12 @@ class MemLeak:
 
     def __call__(self, *a, **kw):
         return self.leak(*a, **kw)
+
+    def _save_cache(self):
+        if not self.cache_file:
+            return
+        with open(self.cache_file, 'w') as fp:
+            fp.write(repr(self.cache))
 
     def struct(self, address, struct):
         """struct(address, struct) => structure object
@@ -180,6 +208,7 @@ class MemLeak:
             return None
 
         addresses = [addr+i for i in range(n)]
+        cache_size = len(self.cache)
 
         for address in addresses:
             # Cache hit
@@ -211,6 +240,11 @@ class MemLeak:
         # Ensure everything is in the cache
         if not all(a in self.cache for a in addresses):
             return None
+
+        # Persist newly-leaked bytes for future runs. recurse limits writes to
+        # the outer call (not each backward-search step) when something changed.
+        if recurse and len(self.cache) != cache_size:
+            self._save_cache()
 
         # Cache is filled, satisfy the request
         return b''.join(self.cache[addr+i] for i in range(n))
@@ -373,6 +407,8 @@ class MemLeak:
     def _clear(self, addr, ndx, size):
         addr += ndx * size
         data = [self.cache.pop(x, None) for x in range(addr, addr+size)]
+        if any(d is not None for d in data):
+            self._save_cache()
 
         if not all(data):
             return None
@@ -460,6 +496,7 @@ class MemLeak:
         addr += ndx * size
         for i,b in enumerate(bytearray(pack(val, size*8))):
             self.cache[addr+i] = p8(b, endian='little', signed=False)
+        self._save_cache()
 
     def setb(self, addr, val, ndx = 0):
         """Sets byte at ``((uint8_t*)addr)[ndx]`` to `val` in the cache.
@@ -525,6 +562,7 @@ class MemLeak:
 
         for i,b in enumerate(bytearray(val)):
             self.cache[addr+i] = p8(b, endian='little', signed=False)
+        self._save_cache()
 
     def __getitem__(self, item):
         if isinstance(item, slice):

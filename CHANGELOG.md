@@ -141,6 +141,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2730][2730] Fix atexception handlers in term mode
 - [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2741][2741] memleak: add opt-in persistent leak cache
 - [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 - [#2734][2734] ROP: Add labels to reference addresses relative to your chain
@@ -213,6 +214,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2741]: https://github.com/Gallopsled/pwntools/pull/2741
 [2743]: https://github.com/Gallopsled/pwntools/pull/2743
 [2746]: https://github.com/Gallopsled/pwntools/pull/2746
 [2734]: https://github.com/Gallopsled/pwntools/pull/2734
