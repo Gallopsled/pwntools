@@ -40,7 +40,7 @@ Pwntools supports Python 3.10+ since version 5.0.0.  Use Pwntools 4.x for older 
 sudo apt-get update
 sudo apt-get install python3 python3-pip python3-dev git libssl-dev libffi-dev build-essential
 python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade pwntools
+python3 -m pip install --upgrade pwntools[full]
 ```
 
 

@@ -128,7 +128,7 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        pip install --upgrade --editable .
+        pip install --upgrade --editable .[full]
         # Pin to known working version until 2.1.5 is out. https://github.com/unicorn-engine/unicorn/issues/2134
         pip install 'unicorn==2.1.2'
 
@@ -298,7 +298,7 @@ jobs:
         pip install --upgrade pip
         pip install --upgrade wheel build
         pip install --upgrade flake8 appdirs
-        pip install --upgrade --editable .
+        pip install --upgrade --editable .[full]
 
     - name: Sanity checks
       run:  PWNLIB_NOTERM=1 python -c 'from pwn import *; print(pwnlib.term.term_mode)'
@@ -331,7 +331,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade --editable .
+        pip install --upgrade --editable .[full]
 
     - name: Install documentation dependencies
       run: pip install -r docs/requirements.txt

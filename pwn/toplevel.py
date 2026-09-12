@@ -6,7 +6,6 @@ import operator as operator
 import os as os
 import platform as platform
 import re as re
-import socks as socks
 import signal as signal
 import string as string
 import struct as struct
@@ -99,6 +98,12 @@ warn    = log.warning
 info    = log.info
 debug   = log.debug
 success = log.success
+
+# optional deps
+try:
+    import socks as socks
+except ImportError:
+    pass
 
 # Equivalence with the default behavior of "from import *"
 # __all__ = [x for x in tuple(globals()) if not x.startswith('_')]

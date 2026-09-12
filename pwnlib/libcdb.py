@@ -374,7 +374,7 @@ def _check_elf_cache(cache_type, search_target, search_type):
     >>> cache, _ = _check_elf_cache('libcdb', '2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', 'build_id')
     >>> os.unlink(cache) if os.path.exists(cache)
     >>> filename = search_by_hash('2d1c5e0b85cb06ff47fa6fa088ec22cb6e06074e', 'build_id', unstrip=False)
-    >>> hex(ELF(filename).symbols.read)
+    >>> hex(ELF(filename).symbols.read)  # 2d1c5e...
     '0xe56c0'
     >>> filename == cache
     True
@@ -903,7 +903,7 @@ def search_by_libs_id(libs_id, unstrip=True, offline_only=False):
         >>> None == search_by_libs_id('XX')
         True
         >>> filename = search_by_libs_id('libc6_2.31-3_amd64')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # libc6_2.31-3_amd64
         '0xeef40'
     """
     return search_by_hash(libs_id, 'libs_id', unstrip, offline_only)
@@ -927,12 +927,12 @@ def search_by_build_id(hex_encoded_id, unstrip=True, offline_only=False):
     Examples:
 
         >>> filename = search_by_build_id('fe136e485814fee2268cf19e5c124ed0f73f4400')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # fe136e...
         '0xda260'
         >>> None == search_by_build_id('XX')
         True
         >>> filename = search_by_build_id('a5a3c3f65fd94f4c7f323a175707c3a79cbbd614')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # a5a3c3...
         '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'build_id', unstrip, offline_only)
@@ -956,12 +956,12 @@ def search_by_md5(hex_encoded_id, unstrip=True, offline_only=False):
     Examples:
 
         >>> filename = search_by_md5('7a71dafb87606f360043dcd638e411bd')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 7a71dafb...
         '0xda260'
         >>> None == search_by_md5('XX')
         True
         >>> filename = search_by_md5('74f2d3062180572fc8bcd964b587eeae')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 74f2d306...
         '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'md5', unstrip, offline_only)
@@ -985,12 +985,12 @@ def search_by_sha1(hex_encoded_id, unstrip=True, offline_only=False):
     Examples:
 
         >>> filename = search_by_sha1('34471e355a5e71400b9d65e78d2cd6ce7fc49de5')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 34471e35...
         '0xda260'
         >>> None == search_by_sha1('XX')
         True
         >>> filename = search_by_sha1('0041d2f397bc2498f62aeb4134d522c5b2635e87')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 0041d2f3...
         '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha1', unstrip, offline_only)
@@ -1014,12 +1014,12 @@ def search_by_sha256(hex_encoded_id, unstrip=True, offline_only=False):
     Examples:
 
         >>> filename = search_by_sha256('5e877a8272da934812d2d1f9ee94f73c77c790cbc5d8251f5322389fc9667f21')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 5e877a82...
         '0xda260'
         >>> None == search_by_sha256('XX')
         True
         >>> filename = search_by_sha256('5d78fc60054df18df20480c71f3379218790751090f452baffb62ac6b2aff7ee')
-        >>> hex(ELF(filename).symbols.read)
+        >>> hex(ELF(filename).symbols.read)  # 5d78fc60...
         '0xeef40'
     """
     return search_by_hash(hex_encoded_id, 'sha256', unstrip, offline_only)
