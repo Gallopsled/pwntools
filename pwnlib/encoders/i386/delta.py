@@ -6,6 +6,7 @@ from pwnlib.asm import asm
 from pwnlib.asm import disasm
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder import EncoderError
 from pwnlib.util.fiddling import hexdump
 
 
@@ -42,14 +43,23 @@ class i386DeltaEncoder(Encoder):
         >>> e  = ELF.from_bytes(sc)
         >>> e.process().poll(True)
         -5
+        >>> pwnlib.encoders.i386.delta.encode(b'A', bytes(range(256)))
+        Traceback (most recent call last):
+          ...
+        pwnlib.encoders.encoder.EncoderError: No delta encoding for byte 41
     """
 
     arch       = 'i386'
+    architectures = frozenset(('i386',))
+    priority = 110
+    supported_constraints = frozenset()
+    is_deterministic = False
     stub       = None
     terminator = 0xac
     raw        = b'\xd9\xd0\xfc\xd9t$\xf4^\x83\xc6\x18\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
 
-    blacklist  = set(raw)
+    unavoidable_bytes = frozenset(raw)
+    blacklist = set(map(chr, unavoidable_bytes))
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
         table = collections.defaultdict(lambda: [])
@@ -68,8 +78,7 @@ class i386DeltaEncoder(Encoder):
         for c in bytearray(raw_bytes):
             l = len(table[c])
             if l == 0:
-                print('No encodings for character %02x' % c)
-                return None
+                raise EncoderError('No delta encoding for byte %02x' % c)
 
             res += table[c][randint(0, l - 1)]
 
