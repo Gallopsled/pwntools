@@ -66,5 +66,4 @@ pwnlib/elf/elf.py:0: error: Need type annotation for "got" (hint: "got: dict[<ty
 pwnlib/elf/elf.py:0: error: Need type annotation for "plt" (hint: "plt: dict[<type>, <type>] = ...")  [var-annotated]
 pwnlib/elf/elf.py:0: error: Need type annotation for "functions" (hint: "functions: dict[<type>, <type>] = ...")  [var-annotated]
 pwnlib/elf/elf.py:0: error: Name "address" already defined on line 0  [no-redef]
-pwnlib/encoders/encoder.py:0: error: Need type annotation for "blacklist" (hint: "blacklist: set[<type>] = ...")  [var-annotated]
 pwnlib/rop/call.py:0: error: Need type annotation for "args" (hint: "args: list[<type>] = ...")  [var-annotated]
