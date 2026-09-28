@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2785][2785] ci: upload coverage with the Coveralls GitHub Action in parallel mode
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
@@ -150,6 +151,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
 - [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
 
+[2785]: https://github.com/Gallopsled/pwntools/pull/2785
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
