@@ -298,7 +298,10 @@ def run_in_new_terminal(command, terminal=None, args=None, kill_at_exit=True, pr
         preexec_fn (callable): Callable to invoke before exec().
 
     Note:
-        The command is opened with ``/dev/null`` for stdin, stdout, stderr.
+        The command is opened with ``/dev/null`` for stdin, stdout, stderr,
+        except that qdbus stdout and stderr are captured for Konsole error reporting.
+        Newer Konsole versions may restrict security-sensitive D-Bus operations;
+        tmux is an alternative.
 
     Returns:
       PID of the new terminal process
@@ -450,8 +453,10 @@ end tell
     log.debug("Launching a new terminal: %r" % argv)
 
     stdin = stdout = stderr = open(os.devnull, 'r+b')
-    if terminal == 'tmux' or terminal == 'kitty':
+    if terminal == 'tmux' or terminal == 'kitty' or terminal == 'qdbus':
         stdout = subprocess.PIPE
+    if terminal == 'qdbus':
+        stderr = subprocess.PIPE
 
     p = subprocess.Popen(argv, stdin=stdin, stdout=stdout, stderr=stderr, preexec_fn=preexec_fn)
 
@@ -466,6 +471,27 @@ end tell
         if pid is None:
             log.error("Could not parse PID from tmux output (%r). Start tmux first.", out)
     elif terminal == 'qdbus':
+        out, err = p.communicate()
+        if p.returncode:
+            output = out + err
+            access_denied = b"org.freedesktop.DBus.Error.AccessDenied" in output
+            security_api_disabled = b"Security sensitive DBus API is disabled" in output
+            if access_denied and security_api_disabled:
+                log.error(
+                    "Konsole's security-sensitive D-Bus API is disabled. "
+                    "In Konsole, open Settings -> Configure Konsole... -> General and check "
+                    "\"Enable the security sensitive parts of the DBus API\". Enabling this allows "
+                    "other processes to control Konsole sessions. Alternatively, use tmux."
+                )
+            errors = []
+            if out.strip():
+                errors.append("stdout: %s" % out.decode(errors='replace').strip())
+            if err.strip():
+                errors.append("stderr: %s" % err.decode(errors='replace').strip())
+            error = "; ".join(errors) or "no output"
+            log.error("Konsole qdbus runCommand failed with exit code %d: %s",
+                      p.returncode, error)
+
         with subprocess.Popen((qdbus, konsole_dbus_service, '/Sessions/{}'.format(last_konsole_session),
                                'org.kde.konsole.Session.processId'), stdout=subprocess.PIPE) as proc:
             pid = int(proc.communicate()[0].decode())
