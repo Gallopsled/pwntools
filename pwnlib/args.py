@@ -17,7 +17,10 @@ The easiest example is to enable more verbose debugging.  Just set ``DEBUG``.
 These arguments are automatically extracted, regardless of their name, and
 exposed via :mod:`pwnlib.args.args`, which is exposed as the global variable
 :data:`args`.  Arguments which ``pwntools`` reserves internally are not exposed
-this way.
+this way.  These reserved arguments (such as ``DEBUG`` and ``NOASLR``) instead
+adjust :data:`pwnlib.context.context`, so their effect is read from ``context``
+(e.g. ``context.log_level``, ``context.aslr``) rather than from ``args`` --
+``args.NOASLR`` is always the empty string.
 
 .. code-block:: bash
 

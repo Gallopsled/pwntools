@@ -46,13 +46,13 @@ You can also use ``Ret2dlresolve`` on AMD64:
     >>> rop.ret2dlresolve(dlresolve)
     >>> raw_rop = rop.chain()
     >>> print(rop.dump())
-    0x0000:         0x400593 pop rdi; ret
+    0x0000:         0x400593 read(0, 0x601e00), pop rdi; ret
     0x0008:              0x0 [arg0] rdi = 0
     0x0010:         0x400591 pop rsi; pop r15; ret
     0x0018:         0x601e00 [arg1] rsi = 6299136
-    0x0020:      b'iaaajaaa' <pad r15>
+    0x0020:      b'iaaajaaa' r15, <pad r15>
     0x0028:         0x4003f0 read
-    0x0030:         0x400593 pop rdi; ret
+    0x0030:         0x400593 [plt_init] system(0x601e48), pop rdi; ret
     0x0038:         0x601e48 [arg0] rdi = 6299208
     0x0040:         0x4003e0 [plt_init] system
     0x0048:          0x15670 [dlresolve index]

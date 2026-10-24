@@ -359,6 +359,7 @@ class ContextType:
         'gdb_binary': "",
         'windbg_binary': "",
         'windbgx_binary': "",
+        'x64dbg_binary': "",
         'debugger': "auto",
         'kernel': None,
         'local_libcdb': "/var/lib/libc-database",
@@ -450,7 +451,7 @@ class ContextType:
     valid_signed = sorted(signednesses)
 
     #: Valid values for :attr:`debugger`
-    debugger_choices = ['auto', 'gdb', 'windbgx', 'windbg']
+    debugger_choices = ['auto', 'gdb', 'windbgx', 'windbg', 'x64dbg']
 
     def __init__(self, **kwargs):
         """
@@ -1615,14 +1616,32 @@ class ContextType:
         return str(value)
 
     @_validator
+    def x64dbg_binary(self, value):
+        r"""Path to the binary that is used when running x64dbg locally.
+
+        Should be set to the x96dbg.exe launcher binary to handle 32-bit and 64-bit binaries.
+
+        This is useful when you have multiple versions of x64dbg installed or the x64dbg binary is
+        called something different.
+
+        If set to an empty string, pwntools will try to search for a reasonable x64dbg binary from 
+        the path or based on the ``"Debug with x64dbg"`` shell extension if available.
+
+        Default value is ``""``.
+        """
+        return str(value)
+
+    @_validator
     def debugger(self, value):
         """Type of debugger to use when running locally.
 
         Possible values are:
 
+        - ``auto``: Automatically select the available debugger.
         - ``gdb``: Use GDB as the debugger.
         - ``windbg``: Use WinDbg as the debugger.
         - ``windbgx``: Use WinDbgX as the debugger.
+        - ``x64dbg``: Use x64dbg as the debugger.
 
         Defaults to ``windbgx`` on Windows and ``gdb`` on other platforms.
 

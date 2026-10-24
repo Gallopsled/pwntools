@@ -1,11 +1,13 @@
 # Promote useful stuff to toplevel
 from pwn.toplevel import *
+import pwnlib.update
 
 pwnlib.args.initialize()
 pwnlib.log.install_default_handler()
 pwnlib.config.initialize()
 
-args = pwnlib.args.args
+# Replace the module with the actual args object so that `from pwn import args` works as expected.
+args = pwnlib.args.args  # type: ignore[assignment]
 
 if not platform.architecture()[0].startswith('64'):
     """Determines if the current Python interpreter is supported by Pwntools.

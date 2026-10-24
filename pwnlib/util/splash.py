@@ -4,6 +4,7 @@ import time
 
 from pwnlib import term
 from pwnlib.term import text
+from pwnlib.internal.typing import TextDecorator
 
 
 _banner = r'''
@@ -23,11 +24,11 @@ _banner = r'''
   .:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:._.:*~*:.
 '''
 
-def splash():
+def splash() -> None:
     """Put this at the beginning of your exploit to create the illusion that
     your sploit is enterprisey and top notch quality"""
 
-    def updater():
+    def updater() -> None:
 
         colors = [
             text.blue   , text.bold_blue   ,
@@ -37,7 +38,7 @@ def splash():
             text.green  , text.bold_green  ,
             text.cyan   , text.bold_cyan   ,
         ]
-        def getcolor(n):
+        def getcolor(n: int) -> TextDecorator:
             return colors[(n // 4) % len(colors)]
 
         lines = ['    ' + line + '\n' for line in _banner.strip('\n').split('\n')]
