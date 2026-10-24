@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
 - [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
@@ -155,6 +156,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
 - [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
 
+[2789]: https://github.com/Gallopsled/pwntools/pull/2789
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
