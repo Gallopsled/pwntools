@@ -150,6 +150,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
 - [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
 - [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
+- [#2750][2750] Fix DeprecationWarning with remote(ssl=True), checking remote certificates now
 
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -225,6 +226,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2726]: https://github.com/Gallopsled/pwntools/pull/2726
 [2768]: https://github.com/Gallopsled/pwntools/pull/2768
 [2769]: https://github.com/Gallopsled/pwntools/pull/2769
+[2750]: https://github.com/Gallopsled/pwntools/pull/2750
 
 ## 4.15.1
 
