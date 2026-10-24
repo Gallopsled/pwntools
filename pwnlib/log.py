@@ -204,7 +204,7 @@ class Progress:
         If the progress logger is animated the status line will be updated in
         place.
 
-        Status updates are throttled at one update per 100ms.
+        Status updates can be throttled at one update per `rate` seconds.
         """
         now = time.time()
         if (now - self.last_status) > self.rate:
@@ -302,7 +302,12 @@ class Logger:
         """progress(message, status = '', *args, level = logging.INFO, **kwargs) -> Progress
 
         Creates a new progress logger which creates log records with log level
-        `level`.
+        ``level``.
+
+        An optional ``rate`` parameter can be specified to control the frequency of status updates.
+        Calls to :meth:`Progress.status` will be throttled to at most one update per `rate` seconds.
+        Throtteled status updates will not be emitted at all, so they will not show up in log files.
+        Use this to avoid generating too many log records in tight loops.
 
         Progress status can be updated using :meth:`Progress.status` and stopped
         using :meth:`Progress.success` or :meth:`Progress.failure`.

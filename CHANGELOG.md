@@ -75,7 +75,8 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
+- [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
+- [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
 - [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
 - [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
@@ -121,6 +122,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2647][2647] packing: Add `overlap` to overlap structures easily
 - [#2669][2669] asm: try native binutils before fallback architectures
 - [#2673][2673] Add libc module for libc-related functions
+- [#2679][2679] Add type hints to parts of pwnlib.utils
 - [#2680][2680] Cleanup Python 2 legacy
 - [#2683][2683] libc: add atexit functions for glibc exploits
 - [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
@@ -140,11 +142,19 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2730][2730] Fix atexception handlers in term mode
 - [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2741][2741] memleak: add opt-in persistent leak cache
 - [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 - [#2734][2734] ROP: Add labels to reference addresses relative to your chain
 - [#2735][2735] Add support for debugging with x64dbg on Windows
+- [#2767][2767] Support paginated libc.rip API requests to include all search results
+- [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
+- [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
+- [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
+- [#2750][2750] Fix DeprecationWarning with remote(ssl=True), checking remote certificates now
+- [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
 
+[2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
 [2638]: https://github.com/Gallopsled/pwntools/pull/2638
@@ -185,6 +195,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2647]: https://github.com/Gallopsled/pwntools/pull/2647
 [2669]: https://github.com/Gallopsled/pwntools/pull/2669
 [2673]: https://github.com/Gallopsled/pwntools/pull/2673
+[2679]: https://github.com/Gallopsled/pwntools/pull/2679
 [2680]: https://github.com/Gallopsled/pwntools/pull/2680
 [2683]: https://github.com/Gallopsled/pwntools/pull/2683
 [2687]: https://github.com/Gallopsled/pwntools/pull/2687
@@ -207,11 +218,18 @@ The table below shows which release corresponds to each branch, and what date th
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2741]: https://github.com/Gallopsled/pwntools/pull/2741
 [2743]: https://github.com/Gallopsled/pwntools/pull/2743
 [2746]: https://github.com/Gallopsled/pwntools/pull/2746
 [2734]: https://github.com/Gallopsled/pwntools/pull/2734
 [2735]: https://github.com/Gallopsled/pwntools/pull/2735
 [2753]: https://github.com/Gallopsled/pwntools/pull/2753
+[2762]: https://github.com/Gallopsled/pwntools/pull/2762
+[2767]: https://github.com/Gallopsled/pwntools/pull/2767
+[2726]: https://github.com/Gallopsled/pwntools/pull/2726
+[2768]: https://github.com/Gallopsled/pwntools/pull/2768
+[2769]: https://github.com/Gallopsled/pwntools/pull/2769
+[2750]: https://github.com/Gallopsled/pwntools/pull/2750
 [2761]: https://github.com/Gallopsled/pwntools/pull/2761
 
 ## 4.15.1

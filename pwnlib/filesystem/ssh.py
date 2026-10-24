@@ -774,7 +774,7 @@ class SSHPath(PosixPath):
 
     @classmethod
     def mkdtemp(self):
-        temp = _decode(context.ssh_session.mkdtemp())
+        temp = _decode(context.ssh_session.mktemp('-d'))
         return SSHPath(temp, ssh=context.ssh_session)
 
 __all__ = ['SSHPath']

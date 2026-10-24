@@ -979,7 +979,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         :class:`.sock`
             Connected socket. The executable on the other end of the connection is attached to.
             Can be any socket type, including :class:`.listen` or :class:`.remote`.
-        :class:`.ssh_channel`
+        :class:`.ssh_process`
             Remote process spawned via :meth:`.ssh.process`.
             **This will use the GDB installed on the remote machine.**
             If a password is required to connect, the ``sshpass`` program must be installed.
@@ -1167,7 +1167,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         pid = pids[0]
         log.info('Attaching to youngest process "%s" (PID = %d)' %
                  (target, pid))
-    elif isinstance(target, tubes.ssh.ssh_channel):
+    elif isinstance(target, tubes.ssh.ssh_process):
         if not target.pid:
             log.error("PID unknown for channel")
 

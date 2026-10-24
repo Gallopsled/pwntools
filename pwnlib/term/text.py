@@ -2,23 +2,21 @@ import functools
 import os
 import sys
 import types
-from typing import Literal, Protocol, TextIO, TypeAlias, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from pwnlib.term import termcap
+from pwnlib.internal.typing import WhenSetter, TextDecorator
 
-# Accept any module attribute for type checking purposes.
-# The actual implementation of __getattr__ is below, and
-# only accepts a defined text decorator pattern, but generating
-# all possible combinations of text decorators is not feasible.
-# No IDE auto-complete but at least no type errors.
-_WhenSetter: TypeAlias = Literal["always", "never", "auto"] | TextIO
-class _TextDecorator(Protocol):
-    def __call__(self, desc: str, when: _WhenSetter | None = None) -> str: ...
 
 if TYPE_CHECKING:
-    def __getattr__(name: str) -> _TextDecorator: ...
-    def get(desc: str) -> _TextDecorator: ...
-    when: bool | _WhenSetter
+    # Accept any module attribute for type checking purposes.
+    # The actual implementation of __getattr__ is below, and
+    # only accepts a defined text decorator pattern, but generating
+    # all possible combinations of text decorators is not feasible.
+    # No IDE auto-complete but at least no type errors.
+    def __getattr__(name: str) -> TextDecorator: ...
+    def get(desc: str) -> TextDecorator: ...
+    when: bool | WhenSetter
     has_bright: bool
     has_gray: bool
 
@@ -107,7 +105,7 @@ class Module(types.ModuleType):
         setattr(Module, desc, f)
         return functools.partial(f, self)
 
-    def __getattr__(self, desc: str) -> _TextDecorator:
+    def __getattr__(self, desc: str) -> TextDecorator:
         if desc.startswith('_'):
             raise AttributeError(desc)
 
@@ -142,7 +140,7 @@ class Module(types.ModuleType):
         except (IndexError, KeyError):
             raise AttributeError("'module' object has no attribute %r" % desc)
 
-    def get(self, desc: str) -> _TextDecorator:
+    def get(self, desc: str) -> TextDecorator:
         return self.__getattr__(desc)
 
 tether = sys.modules[__name__]

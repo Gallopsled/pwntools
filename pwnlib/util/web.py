@@ -1,5 +1,6 @@
 import os
 import tempfile
+from typing import Any
 
 from pwnlib.log import getLogger
 from pwnlib.tubes.buffer import Buffer
@@ -7,7 +8,7 @@ from pwnlib.util.misc import size
 
 log = getLogger(__name__)
 
-def wget(url, save=None, timeout=5, **kwargs):
+def wget(url: str | bytes, save: str | bytes | bool = False, timeout: float | tuple[float, float] | None = 5.0, **kwargs: Any) -> bytes | None:
     r"""wget(url, save=None, timeout=5) -> str
 
     Downloads a file via HTTP/HTTPS.
@@ -16,7 +17,8 @@ def wget(url, save=None, timeout=5, **kwargs):
       url (str): URL to download
       save (str or bool): Name to save as.  Any truthy value
             will auto-generate a name based on the URL.
-      timeout (int): Timeout, in seconds
+      timeout (float, tuple): Timeout, in seconds. Can be a single value for both connect and read, 
+              or a tuple of (connect, read). Set to None to disable timeouts.
 
     Example:
 
@@ -39,7 +41,7 @@ def wget(url, save=None, timeout=5, **kwargs):
 
         if not response.ok:
             w.failure("Got code %s" % response.status_code)
-            return
+            return None
 
         total_size = int(response.headers.get('content-length',0))
 
