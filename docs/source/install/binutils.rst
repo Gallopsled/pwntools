@@ -42,6 +42,11 @@ repo <https://github.com/Gallopsled/pwntools-binutils/>`__.
     $ wget https://raw.githubusercontent.com/Gallopsled/pwntools-binutils/master/macos/binutils-$ARCH.rb
     $ brew install ./binutils-$ARCH.rb
 
+Note: The pwntools/pwntools Homebrew tap is currently (August 2026) undergoing migration.
+If you encounter issues on Mac OS, try running ``export HOMEBREW_DEVELOPER="true"`` before ``brew install ...``.
+The actual resolution of the tap migration is still pending.
+
+
 Windows
 ^^^^^^^^^^^^^^^^
 

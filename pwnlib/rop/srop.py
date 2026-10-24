@@ -249,7 +249,7 @@ syscall_instructions = {
     'mips': ['syscall']
 }
 
-class SigreturnFrame(dict):
+class SigreturnFrame(dict[str, int]):
     r"""
     Crafts a sigreturn frame with values that are loaded up into
     registers.
@@ -350,11 +350,10 @@ class SigreturnFrame(dict):
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16384, 0, 4096, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 226, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1179680769, 528]
     """
 
-    arch = None
-    frame = None
-    size  = 0
-    _regs = []
-    endian = None
+    arch: str = ""
+    size: int = 0
+    _regs: list[str] = []
+    endian: str = ""
 
     @LocalContext
     def __init__(self):

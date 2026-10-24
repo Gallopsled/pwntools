@@ -2,6 +2,7 @@
 """
 from pwnlib.abi import ABI
 from pwnlib.context import context
+from pwnlib.internal.typing import ASCIIStr
 from pwnlib.util import packing
 
 from pwnlib.util.misc import align
@@ -82,28 +83,22 @@ class AppendedArgument(Unresolved):
         >>> u.resolve()
         [1008, 1016, 1024, 1032, 1040, 1048, 1056, 1064, b'pointers!\x00$$$$$$']
     """
-    #: Symbolic name of the value.
-    name = None
-
     #: The values to be placed at a known location
     #:
     #: A list of any of the following types:
     #: - int
     #: - str
     #: - UnresolvedArgument (allows nesting)
-    values = []
+    values: list[int | ASCIIStr | Unresolved]
 
     #: The size of the fully-resolved argument, in bytes
-    size = 0
-
-    #: Absolute address of the target data in memory.
-    #: When modified, updates recursively.
-    address = 0
+    size: int
 
     def __init__(self, value, address = 0):
         if not isinstance(value, (list, tuple)):
             value = [value]
         self.values = []
+        self.size = 0
         self.address = address
         for v in value:
             if isinstance(v, (list, tuple)):
@@ -125,6 +120,10 @@ class AppendedArgument(Unresolved):
 
     @property
     def address(self):
+        """
+        Absolute address of the target data in memory.
+        When modified, updates recursively.
+        """
         return self._address
 
     @address.setter

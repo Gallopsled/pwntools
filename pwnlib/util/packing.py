@@ -42,7 +42,6 @@ from pwnlib.log import getLogger
 
 from pwnlib.util import iters
 
-mod = sys.modules[__name__]
 log = getLogger(__name__)
 
 def pack(number: int, word_size: Literal["all"] | int | None = None, endianness: str | None = None, sign: bool | None = None, **kwargs: Any) -> bytes:
@@ -287,57 +286,59 @@ def unpack_many(data: bytes, word_size: Literal["all"] | int | None = None) -> l
 #
 # Make individual packers, e.g. _p8lu
 #
-ops   = ['p','u']
-sizes = {8:'b', 16:'h', 32:'i', 40: '', 48: '', 56: '', 64:'q'}
-ends  = ['b','l']
-signs = ['s','u']
+def __setup_internal_packers():
+    ops   = ['p','u']
+    sizes = {8:'b', 16:'h', 32:'i', 40: '', 48: '', 56: '', 64:'q'}
+    ends  = ['b','l']
+    signs = ['s','u']
 
-op_verbs         = {'p': 'pack', 'u': 'unpack'}
+    op_verbs         = {'p': 'pack', 'u': 'unpack'}
 
 
-def make_single(op: str, size: int, end: str, sign: str) -> tuple[str, Callable[[bytes | bytearray | str, int], int] | Callable[[int, int], bytes]]:
-    name = '_%s%s%s%s' % (op, size, end, sign)
-    fmt  = sizes[size]
+    def make_single(op: str, size: int, end: str, sign: str) -> tuple[str, Callable[[bytes | bytearray | str, int], int] | Callable[[int, int], bytes]]:
+        name = '_%s%s%s%s' % (op, size, end, sign)
+        fmt  = sizes[size]
 
-    # Handle non-standard sizes without the struct module.
-    if fmt == '':
-        endianess = 'big' if end == 'b' else 'little'
+        # Handle non-standard sizes without the struct module.
+        if fmt == '':
+            endianess = 'big' if end == 'b' else 'little'
+            if op == 'u':
+                def routine_unpack_irregular(data: bytes | bytearray | str, stacklevel: int = 1) -> int:
+                    data = _need_bytes(data, stacklevel)
+                    return unpack(data, size, endianness=endianess, sign=sign == 's')
+                routine_unpack_irregular.__name__ = routine_unpack_irregular.__qualname__ = name
+                return name, routine_unpack_irregular
+            else:
+                def routine_pack_irregular(data: int, stacklevel: int | None = None) -> bytes:
+                    return pack(data, size, endianness=endianess, sign=sign == 's')
+                routine_pack_irregular.__name__ = routine_pack_irregular.__qualname__ = name
+                return name, routine_pack_irregular
+
+        end = '>' if end == 'b' else '<'
+
+        if sign == 'u':
+            fmt = fmt.upper()
+        fmt = end+fmt
+
+        struct_op = getattr(struct.Struct(fmt), op_verbs[op])
         if op == 'u':
-            def routine_unpack_irregular(data: bytes | bytearray | str, stacklevel: int = 1) -> int:
+            def routine_unpack(data: ASCIIStr, stacklevel: int = 1) -> int:
                 data = _need_bytes(data, stacklevel)
-                return unpack(data, size, endianness=endianess, sign=sign == 's')
-            routine_unpack_irregular.__name__ = routine_unpack_irregular.__qualname__ = name
-            return name, routine_unpack_irregular
+                return struct_op(data)[0]
+            routine_unpack.__name__ = routine_unpack.__qualname__ = name
+            return name, routine_unpack
         else:
-            def routine_pack_irregular(data: int, stacklevel: int | None = None) -> bytes:
-                return pack(data, size, endianness=endianess, sign=sign == 's')
-            routine_pack_irregular.__name__ = routine_pack_irregular.__qualname__ = name
-            return name, routine_pack_irregular
+            def routine_pack(data: int, stacklevel: int | None = None) -> bytes:
+                return struct_op(data)
+            routine_pack.__name__ = routine_pack.__qualname__ = name
+            return name, routine_pack
 
-    end = '>' if end == 'b' else '<'
+    mod = sys.modules[__name__]
+    for op,size,end,sign in iters.product(ops, sizes, ends, signs):
+        name, routine = make_single(op,size,end,sign)
+        setattr(mod, name, routine)
 
-    if sign == 'u':
-        fmt = fmt.upper()
-    fmt = end+fmt
-
-    struct_op = getattr(struct.Struct(fmt), op_verbs[op])
-    if op == 'u':
-        def routine_unpack(data: ASCIIStr, stacklevel: int = 1) -> int:
-            data = _need_bytes(data, stacklevel)
-            return struct_op(data)[0]
-        routine_unpack.__name__ = routine_unpack.__qualname__ = name
-        return name, routine_unpack
-    else:
-        def routine_pack(data: int, stacklevel: int | None = None) -> bytes:
-            return struct_op(data)
-        routine_pack.__name__ = routine_pack.__qualname__ = name
-        return name, routine_pack
-
-
-for op,size,end,sign in iters.product(ops, sizes, ends, signs):
-    name, routine = make_single(op,size,end,sign)
-    setattr(mod, name, routine)
-
+__setup_internal_packers()
 
 #
 # Make normal user-oriented packers, e.g. p8
@@ -1458,6 +1459,3 @@ def overlap(*structs: bytes | tuple[bytes, int]) -> bytes:
                     )
 
     return bytes(output)
-
-del op, size, end, sign
-del name, routine, mod
