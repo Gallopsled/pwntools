@@ -13,9 +13,9 @@ from pwnlib import shellcraft
 from pwnlib.asm import asm
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
+from pwnlib.exception import PwnlibException
 from pwnlib.util.fiddling import xor_pair
 from pwnlib.util.lists import group
-
 
 # Note shellcode assumes it's based at ecx
 
@@ -33,6 +33,10 @@ class i386XorEncoder(Encoder):
     b'hello\n'
     >>> encoders.i386.xor.encode(asm(shellcraft.execve('/bin/sh')), avoid=bytearray([0x31]))
     b'\xd9\xd0\xd9t$\xf4^\xfcj\x07Y\x83\xc6\x19\x89\xf7\xad\x93\xad1\xd8\xabIu\xf7\x00\x00\x00\x00h\x01\x01\x01\x00\x00\x00\x00\x01\x814$\x00\x00\x00\x00.ri\x01\x00\x00\x00\x00h/bi\x00\x00\x00\x01n\x89\xe30\x00\x01\x00\x00\xc90\xd2j\x00\x00\x00\x00\x0bX\xcd\x80'
+    >>> encoders.i386.xor.encode(b'ABCD', bytes(range(256)))
+    Traceback (most recent call last):
+      ...
+    pwnlib.exception.PwnlibException: Could not find XOR pair
     """
 
     arch = 'i386'
@@ -66,7 +70,10 @@ end:
         while len(raw_bytes) % context.bytes:
             raw_bytes += b'\x00'
 
-        a, b = xor_pair(raw_bytes, avoid)
+        pair = xor_pair(raw_bytes, avoid)
+        if pair is None:
+            raise PwnlibException('Could not find XOR pair')
+        a, b = pair
 
         mov_ecx = shellcraft.i386.mov('ecx', len(raw_bytes) // context.bytes)
         decoder = self.decoder % mov_ecx

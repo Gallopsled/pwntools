@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import random
 import re
 import string
@@ -6,6 +7,7 @@ from collections import defaultdict
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
+from pwnlib.exception import PwnlibException
 from pwnlib.log import getLogger
 from pwnlib.util.fiddling import hexdump
 
@@ -58,15 +60,35 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         expr(str):      Regular expression which matches bad characters.
         force(bool):    Force re-encoding of the shellcode, even if it
                         doesn't contain any bytes in ``avoid``.
+
+    An encoder failure does not prevent trying the next candidate.
+
+        >>> from unittest import mock
+        >>> class FailingEncoder:
+        ...     blacklist = set()
+        ...     def __call__(self, raw_bytes, avoid, pcreg):
+        ...         raise PwnlibException('cannot encode')
+        >>> class FallbackEncoder:
+        ...     blacklist = set()
+        ...     def __call__(self, raw_bytes, avoid, pcreg):
+        ...         return b'A'
+        >>> candidates = [FailingEncoder(), FallbackEncoder()]
+        >>> with (
+        ...     context.local(arch='i386'),
+        ...     mock.patch.object(random, 'shuffle', lambda _: None),
+        ...     mock.patch.dict(Encoder._encoders, {'i386': candidates}),
+        ... ):
+        ...     encode(b'\\x00', avoid=b'\\x00')
+        b'A'
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or '')
+    avoid = set(avoid or b'')
 
     if expr:
         for char in all_chars:
             if re.search(expr, char):
-                avoid.add(char)
+                avoid.add(ord(char))
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
@@ -75,12 +97,12 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     random.shuffle(encoders)
 
     for encoder in encoders:
-        if encoder.blacklist & avoid:
+        if encoder.blacklist & set(map(chr, avoid)):
             continue
 
         try:
             v = encoder(raw_bytes, bytes(avoid), pcreg)
-        except NotImplementedError:
+        except (NotImplementedError, PwnlibException):
             continue
 
         if avoid & set(v):
@@ -151,6 +173,7 @@ def printable(raw_bytes, *a, **kw):
     non-space printable bytes.
 
     Accepts the same arguments as :func:`encode`.
+
     """
     return encode(raw_bytes, expr=re_printable, *a, **kw)
 
