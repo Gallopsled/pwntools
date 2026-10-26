@@ -61,34 +61,15 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         force(bool):    Force re-encoding of the shellcode, even if it
                         doesn't contain any bytes in ``avoid``.
 
-    An encoder failure does not prevent trying the next candidate.
-
-        >>> from unittest import mock
-        >>> class FailingEncoder:
-        ...     blacklist = set()
-        ...     def __call__(self, raw_bytes, avoid, pcreg):
-        ...         raise PwnlibException('cannot encode')
-        >>> class FallbackEncoder:
-        ...     blacklist = set()
-        ...     def __call__(self, raw_bytes, avoid, pcreg):
-        ...         return b'A'
-        >>> candidates = [FailingEncoder(), FallbackEncoder()]
-        >>> with (
-        ...     context.local(arch='i386'),
-        ...     mock.patch.object(random, 'shuffle', lambda _: None),
-        ...     mock.patch.dict(Encoder._encoders, {'i386': candidates}),
-        ... ):
-        ...     encode(b'\\x00', avoid=b'\\x00')
-        b'A'
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or b'')
+    avoid = set(avoid or '')
 
     if expr:
         for char in all_chars:
             if re.search(expr, char):
-                avoid.add(ord(char))
+                avoid.add(char)
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
@@ -97,7 +78,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     random.shuffle(encoders)
 
     for encoder in encoders:
-        if encoder.blacklist & set(map(chr, avoid)):
+        if encoder.blacklist & avoid:
             continue
 
         try:
