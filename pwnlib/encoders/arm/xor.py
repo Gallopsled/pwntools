@@ -2,6 +2,7 @@ from pwnlib import shellcraft
 from pwnlib.asm import asm
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
+from pwnlib.exception import PwnlibException
 from pwnlib.util.fiddling import xor_key
 from pwnlib.util.lists import group
 from pwnlib.util.packing import u8
@@ -19,6 +20,10 @@ class ArmXorEncoder(Encoder):
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
     b'hello\n'
+    >>> encoders.arm.xor.encode(b'ABCD', bytes(range(256)))
+    Traceback (most recent call last):
+      ...
+    pwnlib.exception.PwnlibException: Could not find XOR key
     """
 
     arch = 'arm'
@@ -45,7 +50,10 @@ payload:
     blacklist = set("\x01\x80\x03\x85\x04\x07\x87\x0c\x8f\x0f\x16\x1c\x9f\x84\xa0%$'-/\xb0\xbd\x81A@\xc2DG\xc6\xc8OPT\xd8_\xe1`\xe3\xe2\xe5\xe7\xe9\xe8\xea\xe0p\xf7")
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
-        key, xordata = xor_key(raw_bytes, avoid, size=1)
+        pair = xor_key(raw_bytes, avoid, size=1)
+        if pair is None:
+            raise PwnlibException('Could not find XOR key')
+        key, xordata = pair
         key          = u8(key)
         maximum      = 256
         length       = len(raw_bytes)

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import random
 import re
 import string
@@ -6,6 +7,7 @@ from collections import defaultdict
 
 from pwnlib.context import LocalContext
 from pwnlib.context import context
+from pwnlib.exception import PwnlibException
 from pwnlib.log import getLogger
 from pwnlib.util.fiddling import hexdump
 
@@ -58,6 +60,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         expr(str):      Regular expression which matches bad characters.
         force(bool):    Force re-encoding of the shellcode, even if it
                         doesn't contain any bytes in ``avoid``.
+
     """
     orig_avoid = avoid
 
@@ -80,7 +83,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
 
         try:
             v = encoder(raw_bytes, bytes(avoid), pcreg)
-        except NotImplementedError:
+        except (NotImplementedError, PwnlibException):
             continue
 
         if avoid & set(v):
@@ -151,6 +154,7 @@ def printable(raw_bytes, *a, **kw):
     non-space printable bytes.
 
     Accepts the same arguments as :func:`encode`.
+
     """
     return encode(raw_bytes, expr=re_printable, *a, **kw)
 
