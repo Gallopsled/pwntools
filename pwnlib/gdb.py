@@ -143,7 +143,6 @@ from __future__ import division
 
 import os
 import platform
-import psutil
 import random
 import re
 import six
@@ -1522,28 +1521,33 @@ def corefile(process):
                       'contain all of the data in the process.\n'
                       'Upgrade to GDB >= 7.11 for better core-dumps.' % binary())
 
-    # This is effectively the same as what the 'gcore' binary does
-    gdb_args = ['-batch',
-                '-q',
-                '-nx',
-                '-ex', 'set pagination off',
-                '-ex', 'set height 0',
-                '-ex', 'set width 0',
-                '-ex', 'set use-coredump-filter on',
-                '-ex', 'generate-core-file %s' % corefile_path,
-                '-ex', 'detach']
+    # This is effectively the same as what the 'gcore' binary does.
+    # Run GDB directly instead of going through attach(), which has to
+    # race GDB to observe the tracer before it already detached again.
+    cmd = [binary(),
+           '-batch',
+           '-q',
+           '-nx',
+           '-ex', 'set pagination off',
+           '-ex', 'set height 0',
+           '-ex', 'set width 0',
+           '-ex', 'set use-coredump-filter on',
+           '-ex', 'attach %d' % process.pid,
+           '-ex', 'generate-core-file %s' % corefile_path,
+           '-ex', 'detach']
 
-    with context.local(terminal = ['sh', '-c']):
-        with context.quiet:
-            pid = attach(process, gdb_args=gdb_args)
-            log.debug("Got GDB pid %d", pid)
-            try:
-                psutil.Process(pid).wait()
-            except psutil.Error:
-                pass
+    with context.quiet:
+        gdb = tubes.process.process(cmd, stdout=tubes.process.PIPE)
+        gdb.wait_for_close(timeout=60)
+        timed_out = gdb.poll() is None
+        output = gdb.recvallS(timeout=0)
+
+    if timed_out:
+        log.error("GDB did not finish dumping process %d within 60 seconds", process.pid)
 
     if not os.path.exists(corefile_path):
-        log.error("Could not generate a corefile for process %d", process.pid)
+        log.error("Could not generate a corefile for process %d (maybe check /proc/sys/kernel/yama/ptrace_scope)\n%s",
+                  process.pid, output)
 
     return elf.corefile.Core(corefile_path)
 
