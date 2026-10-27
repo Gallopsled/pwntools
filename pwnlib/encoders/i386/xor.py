@@ -17,7 +17,6 @@ from pwnlib.encoders.encoder import EncoderError
 from pwnlib.util.fiddling import xor_pair
 from pwnlib.util.lists import group
 
-
 # Note shellcode assumes it's based at ecx
 
 class i386XorEncoder(Encoder):

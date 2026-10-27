@@ -76,6 +76,7 @@ The table below shows which release corresponds to each branch, and what date th
 ## 5.0.0 (`dev`)
 
 - [#2783][2783] feat(encoders): add capability-aware deterministic selection
+- [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
 - [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
 - [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
@@ -143,6 +144,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2730][2730] Fix atexception handlers in term mode
 - [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
 - [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2741][2741] memleak: add opt-in persistent leak cache
 - [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
 - [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
 - [#2734][2734] ROP: Add labels to reference addresses relative to your chain
@@ -151,6 +153,9 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
 - [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
 - [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
+- [#2750][2750] Fix DeprecationWarning with remote(ssl=True), checking remote certificates now
+- [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
+- [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
 
 [2783]: https://github.com/Gallopsled/pwntools/pull/2783
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
@@ -217,6 +222,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2733]: https://github.com/Gallopsled/pwntools/pull/2733
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2741]: https://github.com/Gallopsled/pwntools/pull/2741
 [2743]: https://github.com/Gallopsled/pwntools/pull/2743
 [2746]: https://github.com/Gallopsled/pwntools/pull/2746
 [2734]: https://github.com/Gallopsled/pwntools/pull/2734
@@ -227,16 +233,26 @@ The table below shows which release corresponds to each branch, and what date th
 [2726]: https://github.com/Gallopsled/pwntools/pull/2726
 [2768]: https://github.com/Gallopsled/pwntools/pull/2768
 [2769]: https://github.com/Gallopsled/pwntools/pull/2769
+[2780]: https://github.com/Gallopsled/pwntools/pull/2780
+[2750]: https://github.com/Gallopsled/pwntools/pull/2750
+[2761]: https://github.com/Gallopsled/pwntools/pull/2761
+[2727]: https://github.com/Gallopsled/pwntools/pull/2727
 
 ## 4.15.1
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
 - [#2721][2721] Allow running with Unicorn 2.1.[34] but throw when emulating MIPS
+- [#2773][2773] Disable debuginfod doctests in libcdb.unstrip_libc
+- [#2772][2772] fix(packing): `dd()` no longer crashes on a `bytearray` destination
+- [#2787][2787] gdb.corefile: Run gdb directly to prevent detach race
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
 [2721]: https://github.com/Gallopsled/pwntools/pull/2721
+[2773]: https://github.com/Gallopsled/pwntools/pull/2773
+[2772]: https://github.com/Gallopsled/pwntools/pull/2772
+[2787]: https://github.com/Gallopsled/pwntools/pull/2787
 
 ## 4.15.0 (`stable`)
 
