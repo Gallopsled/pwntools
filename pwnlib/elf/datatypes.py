@@ -630,6 +630,174 @@ class elf_prstatus_arm(ctypes.Structure):
 class elf_prstatus_aarch64(ctypes.Structure):
     _fields_ = generate_prstatus_common(64, user_regs_struct_aarch64)
 
+# See Linux arch/mips/include/asm/elf.h and the MIPS gregset used by
+# GDB: 32 general-purpose registers, then lo, hi, the exception program
+# counter, the faulting address, and the CP0 status and cause registers.
+# The numeric r0..r31 field names follow the arm/aarch64 structs above;
+# the usual MIPS ABI names are exposed as properties below, so both
+# core.r29 and core.sp (or core.ra) work.
+class user_regs_struct_mips(ctypes.Structure):
+    _fields_ = [('r%i' % i, ctypes.c_uint32) for i in range(32)] \
+             + [('lo', ctypes.c_uint32),
+                ('hi', ctypes.c_uint32),
+                ('pc', ctypes.c_uint32),
+                ('badvaddr', ctypes.c_uint32),
+                ('status', ctypes.c_uint32),
+                ('cause', ctypes.c_uint32)]
+
+    @property
+    def zero(self): return self.r0
+    @property
+    def at(self): return self.r1
+    @property
+    def v0(self): return self.r2
+    @property
+    def v1(self): return self.r3
+    @property
+    def a0(self): return self.r4
+    @property
+    def a1(self): return self.r5
+    @property
+    def a2(self): return self.r6
+    @property
+    def a3(self): return self.r7
+    @property
+    def t0(self): return self.r8
+    @property
+    def t1(self): return self.r9
+    @property
+    def t2(self): return self.r10
+    @property
+    def t3(self): return self.r11
+    @property
+    def t4(self): return self.r12
+    @property
+    def t5(self): return self.r13
+    @property
+    def t6(self): return self.r14
+    @property
+    def t7(self): return self.r15
+    @property
+    def s0(self): return self.r16
+    @property
+    def s1(self): return self.r17
+    @property
+    def s2(self): return self.r18
+    @property
+    def s3(self): return self.r19
+    @property
+    def s4(self): return self.r20
+    @property
+    def s5(self): return self.r21
+    @property
+    def s6(self): return self.r22
+    @property
+    def s7(self): return self.r23
+    @property
+    def t8(self): return self.r24
+    @property
+    def t9(self): return self.r25
+    @property
+    def k0(self): return self.r26
+    @property
+    def k1(self): return self.r27
+    @property
+    def gp(self): return self.r28
+    @property
+    def sp(self): return self.r29
+    @property
+    def fp(self): return self.r30
+    @property
+    def ra(self): return self.r31
+
+
+class user_regs_struct_mips64(ctypes.Structure):
+    _fields_ = [('r%i' % i, ctypes.c_uint64) for i in range(32)] \
+             + [('lo', ctypes.c_uint64),
+                ('hi', ctypes.c_uint64),
+                ('pc', ctypes.c_uint64),
+                ('badvaddr', ctypes.c_uint64),
+                ('status', ctypes.c_uint64),
+                ('cause', ctypes.c_uint64)]
+
+    @property
+    def zero(self): return self.r0
+    @property
+    def at(self): return self.r1
+    @property
+    def v0(self): return self.r2
+    @property
+    def v1(self): return self.r3
+    @property
+    def a0(self): return self.r4
+    @property
+    def a1(self): return self.r5
+    @property
+    def a2(self): return self.r6
+    @property
+    def a3(self): return self.r7
+    @property
+    def t0(self): return self.r8
+    @property
+    def t1(self): return self.r9
+    @property
+    def t2(self): return self.r10
+    @property
+    def t3(self): return self.r11
+    @property
+    def t4(self): return self.r12
+    @property
+    def t5(self): return self.r13
+    @property
+    def t6(self): return self.r14
+    @property
+    def t7(self): return self.r15
+    @property
+    def s0(self): return self.r16
+    @property
+    def s1(self): return self.r17
+    @property
+    def s2(self): return self.r18
+    @property
+    def s3(self): return self.r19
+    @property
+    def s4(self): return self.r20
+    @property
+    def s5(self): return self.r21
+    @property
+    def s6(self): return self.r22
+    @property
+    def s7(self): return self.r23
+    @property
+    def t8(self): return self.r24
+    @property
+    def t9(self): return self.r25
+    @property
+    def k0(self): return self.r26
+    @property
+    def k1(self): return self.r27
+    @property
+    def gp(self): return self.r28
+    @property
+    def sp(self): return self.r29
+    @property
+    def fp(self): return self.r30
+    @property
+    def ra(self): return self.r31
+
+
+class elf_prstatus_mips(ctypes.Structure):
+    _fields_ = generate_prstatus_common(32, user_regs_struct_mips)
+
+assert ctypes.sizeof(user_regs_struct_mips) == 0x98
+assert ctypes.sizeof(elf_prstatus_mips) == 0xe4
+
+class elf_prstatus_mips64(ctypes.Structure):
+    _fields_ = generate_prstatus_common(64, user_regs_struct_mips64)
+
+assert ctypes.sizeof(user_regs_struct_mips64) == 0x130
+assert ctypes.sizeof(elf_prstatus_mips64) == 0x1a8
+
 class Elf32_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint32),
                 ('a_val', ctypes.c_uint32),]
