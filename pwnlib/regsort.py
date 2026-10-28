@@ -162,7 +162,7 @@ def regsort(in_out, all_regs, mapping = None, tmp = None, xchg = True, randomize
             Indicates the existence of an instruction which can swap the
             contents of two registers without use of a third register.
             If ``bool(xchg)==False``, this mode is disabled.
-        random(bool):
+        randomize(bool):
             Randomize as much as possible about the order or registers.
 
     Returns:

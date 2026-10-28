@@ -1377,7 +1377,7 @@ class ROP:
         flattened before adding every item to the chain.
 
         Arguments:
-            data(int/bytes/list): The raw value to put onto the rop chain.
+            value(int/bytes/list): The raw value to put onto the rop chain.
 
         >>> context.clear(arch='i386')
         >>> rop = ROP([])
