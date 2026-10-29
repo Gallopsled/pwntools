@@ -22,7 +22,7 @@ class SSHPath(PosixPath):
     properties this object has.
 
     Arguments:
-        name(str): Name of the file
+        path(str): Name of the file
         ssh(ssh): :class:`.ssh` object for manipulating remote files
 
     Note:
