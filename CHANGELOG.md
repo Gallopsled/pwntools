@@ -75,7 +75,6 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
-- [#2793][2793] docs: fix argument names in `regsort`, `ROP.raw` and `SSHPath` docstrings
 - [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
 - [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
@@ -157,7 +156,6 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
 - [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
 
-[2793]: https://github.com/Gallopsled/pwntools/pull/2793
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
