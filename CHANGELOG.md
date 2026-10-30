@@ -137,6 +137,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2773][2773] Disable debuginfod doctests in libcdb.unstrip_libc
 - [#2772][2772] fix(packing): `dd()` no longer crashes on a `bytearray` destination
 - [#2787][2787] gdb.corefile: Run gdb directly to prevent detach race
+- [#2795][2795] regsort: Fix self-assignment detection through register aliases
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -144,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2773]: https://github.com/Gallopsled/pwntools/pull/2773
 [2772]: https://github.com/Gallopsled/pwntools/pull/2772
 [2787]: https://github.com/Gallopsled/pwntools/pull/2787
+[2795]: https://github.com/Gallopsled/pwntools/pull/2795
 
 ## 4.15.0 (`stable`)
 

@@ -190,6 +190,15 @@ def regsort(in_out, all_regs, mapping = None, tmp = None, xchg = True, randomize
 
         >>> regsort({'a': 1, 'b': 2}, R)
         [('mov', 'a', 1), ('mov', 'b', 2)]
+        >>> M = {'ax': 'eax', 'eax': 'eax', 'ebx': 'ebx'}
+
+        Registers which are assigned one of their own aliases
+        are dropped, like same-name self-assignments.
+
+        >>> regsort({'ax': 'eax'}, M)
+        []
+        >>> regsort({'ax': 'eax'}, M, xchg=False)
+        []
         >>> regsort({'a': 'b', 'b': 'a'}, R)
         [('xchg', 'a', 'b')]
         >>> regsort({'a': 'b', 'b': 'a'}, R, tmp='X') #doctest: +NORMALIZE_WHITESPACE
@@ -253,7 +262,9 @@ def regsort(in_out, all_regs, mapping = None, tmp = None, xchg = True, randomize
     # Drop all registers which will be set to themselves.
     #
     # For example, {'eax': 'eax'}
-    in_out = {k:v for k,v in in_out.items() if k != v}
+    # This must go through the mapping, so that {'ax': 'eax'} is
+    # recognized as a self-assignment as well.
+    in_out = {k:v for k,v in in_out.items() if mapping.get(k, k) != mapping.get(v, v)}
 
     # Collapse constant values
     #
