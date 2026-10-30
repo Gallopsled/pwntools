@@ -5,7 +5,8 @@
 
 .. testcleanup:: *
 
-    context.defaults.copy = old
+    context.defaults.clear()
+    context.defaults.update(old)
 
 Command Line Tools
 ========================
@@ -18,3 +19,7 @@ If these tools do not appear to be installed, make sure that you have added ``~/
 
 .. autoprogram:: pwnlib.commandline.main:parser
    :prog: pwn
+
+.. only:: doctest
+
+   .. automodule:: pwnlib.commandline.errno
