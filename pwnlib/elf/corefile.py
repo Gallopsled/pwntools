@@ -554,6 +554,7 @@ class Corefile(ELF):
         11
         >>> import os
         >>> os.unlink('mips-core-test')
+        >>> context.clear(arch='i386')
     """
 
     _fill_gaps = False
