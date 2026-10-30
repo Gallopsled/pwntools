@@ -16,6 +16,8 @@ class amd64DeltaEncoder(i386DeltaEncoder):
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
     b'hello\n'
+    >>> pwnlib.encoders.amd64.delta.encode.architectures
+    frozenset({'amd64'})
     """
     assembly = '''
 base:
@@ -37,8 +39,10 @@ next:
 data:
 '''
     arch      = 'amd64'
+    architectures = frozenset(('amd64',))
     raw       = b'H\x8d5\xf9\xff\xff\xffH\x83\xc6\x1a\xfcH\x89\xf7\xac\x93\xac(\xd8\xaa\x80\xeb\xacu\xf5'
-    blacklist = set(raw)
+    unavoidable_bytes = frozenset(raw)
+    blacklist = set(map(chr, unavoidable_bytes))
 
 encode = amd64DeltaEncoder()
 __all__ = ['encode']

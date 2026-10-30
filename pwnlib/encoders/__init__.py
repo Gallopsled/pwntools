@@ -6,6 +6,8 @@ from pwnlib.encoders import arm
 from pwnlib.encoders import i386
 from pwnlib.encoders import mips
 from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder import EncoderConstraint
+from pwnlib.encoders.encoder import EncoderError
 from pwnlib.encoders.encoder import alphanumeric
 from pwnlib.encoders.encoder import encode
 from pwnlib.encoders.encoder import line

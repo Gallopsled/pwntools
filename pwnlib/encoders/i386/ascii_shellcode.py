@@ -7,7 +7,8 @@ from itertools import product
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
-from pwnlib.encoders.encoder import all_chars
+from pwnlib.encoders.encoder import EncoderConstraint
+from pwnlib.encoders.encoder import EncoderError
 from pwnlib.util.iters import group
 from pwnlib.util.packing import *
 
@@ -22,6 +23,18 @@ class AsciiShellcodeEncoder(Encoder):
     A more visual explanation as well as an implementation in C:
     https://vincentdary.github.io/blog-posts/polyasciishellgen-caezar-ascii-shellcode-generator/index.html#22-mechanism
     """
+
+    arch = 'i386'
+    architectures = frozenset(('i386',))
+    priority = 20
+    unavoidable_bytes = frozenset(b'\\-%TXP')
+    supported_constraints = frozenset((
+        EncoderConstraint.ASCII,
+        EncoderConstraint.UTF8MB3,
+        EncoderConstraint.UTF8,
+    ))
+    is_deterministic = True
+    enabled_by_default = False
 
     def __init__(self, slop=20, max_subs=4):
         """ Init
@@ -55,15 +68,15 @@ class AsciiShellcodeEncoder(Encoder):
             pcreg (NoneType, optional): Ignored
 
         Raises:
-            RuntimeError: A required character is in ``avoid`` (required
+            EncoderError: A required character is in ``avoid`` (required
                 characters are characters which assemble into assembly
                 instructions and are used to unpack the shellcode onto the
                 stack, more details in the paper linked above ``\ - % T X P``).
-            RuntimeError: Not supported architecture
-            ArithmeticError: The allowed character set does not contain
+            EncoderError: Not supported architecture
+            EncoderError: The allowed character set does not contain
                 two characters that when they are bitwise-anded with eachother
                 their result is 0
-            ArithmeticError: Could not find a correct subtraction sequence
+            EncoderError: Could not find a correct subtraction sequence
                 to get to the the desired target value with the given ``avoid``
                 parameter
 
@@ -76,6 +89,12 @@ class AsciiShellcodeEncoder(Encoder):
             >>> sc = b"\x83\xc4\x181\xc01\xdb\xb0\x06\xcd\x80Sh/ttyh/dev\x89\xe31\xc9f\xb9\x12'\xb0\x05\xcd\x80j\x17X1\xdb\xcd\x80j.XS\xcd\x801\xc0Ph//shh/bin\x89\xe3PS\x89\xe1\x99\xb0\x0b\xcd\x80"
             >>> encoders.i386.ascii_shellcode.encode(sc)
             b'TX-!!!!-"_``-~~~~P\\%!!!!%@@@@-!6!!-V~!!-~~<-P-!mha-a~~~P-!!L`-a^~~-~~~~P-!!if-9`~~P-!!!!-aOaf-~~~~P-!&!<-!~`~--~~~P-!!!!-!!H^-+A~~P-U!![-~A1~P-,<V!-~~~!-~~~GP-!2!8-j~O~P-!]!!-!~!r-y~w~P-c!!!-~<(+P-N!_W-~1~~P-!!]!-Mn~!-~~~<P-!<!!-r~!P-~~x~P-fe!$-~~S~-~~~~P-!!\'$-%z~~P-A!!!-~!#!-~*~=P-!7!!-T~!!-~~E^PPPPPPPPPPPPPPPPPPPPP'
+            >>> constrained = pwnlib.encoders.encode(sc, force=True, constraint='ascii')
+            >>> all(0x21 <= byte <= 0x7e for byte in constrained)
+            True
+            >>> utf8_encoded = pwnlib.encoders.encode(sc, force=True, constraint='utf8mb3')
+            >>> utf8_encoded.decode('utf-8') == utf8_encoded.decode('ascii')
+            True
             >>> avoid = {'\x00', '\x83', '\x04', '\x87', '\x08', '\x8b', '\x0c', '\x8f', '\x10', '\x93', '\x14', '\x97', '\x18', '\x9b', '\x1c', '\x9f', ' ', '\xa3', '\xa7', '\xab', '\xaf', '\xb3', '\xb7', '\xbb', '\xbf', '\xc3', '\xc7', '\xcb', '\xcf', '\xd3', '\xd7', '\xdb', '\xdf', '\xe3', '\xe7', '\xeb', '\xef', '\xf3', '\xf7', '\xfb', '\xff', '\x80', '\x03', '\x84', '\x07', '\x88', '\x0b', '\x8c', '\x0f', '\x90', '\x13', '\x94', '\x17', '\x98', '\x1b', '\x9c', '\x1f', '\xa0', '\xa4', '\xa8', '\xac', '\xb0', '\xb4', '\xb8', '\xbc', '\xc0', '\xc4', '\xc8', '\xcc', '\xd0', '\xd4', '\xd8', '\xdc', '\xe0', '\xe4', '\xe8', '\xec', '\xf0', '\xf4', '\xf8', '\xfc', '\x7f', '\x81', '\x02', '\x85', '\x06', '\x89', '\n', '\x8d', '\x0e', '\x91', '\x12', '\x95', '\x16', '\x99', '\x1a', '\x9d', '\x1e', '\xa1', '\xa5', '\xa9', '\xad', '\xb1', '\xb5', '\xb9', '\xbd', '\xc1', '\xc5', '\xc9', '\xcd', '\xd1', '\xd5', '\xd9', '\xdd', '\xe1', '\xe5', '\xe9', '\xed', '\xf1', '\xf5', '\xf9', '\xfd', '\x01', '\x82', '\x05', '\x86', '\t', '\x8a', '\r', '\x8e', '\x11', '\x92', '\x15', '\x96', '\x19', '\x9a', '\x1d', '\x9e', '\xa2', '\xa6', '\xaa', '\xae', '\xb2', '\xb6', '\xba', '\xbe', '\xc2', '\xc6', '\xca', '\xce', '\xd2', '\xd6', '\xda', '\xde', '\xe2', '\xe6', '\xea', '\xee', '\xf2', '\xf6', '\xfa', '\xfe'}
             >>> sc = shellcraft.echo("Hello world") + shellcraft.exit()
             >>> ascii = encoders.i386.ascii_shellcode.encode(asm(sc), avoid)
@@ -83,21 +102,19 @@ class AsciiShellcodeEncoder(Encoder):
             >>> ELF.from_bytes(ascii).process().recvall()
             b'Hello world'
         """
-        if not avoid:
-            vocab = bytes(range(0x21, 0x7f))
-        else:
-            required_chars = set(r'\-%TXP')
-            allowed = set(all_chars)
-            if avoid.intersection(required_chars):
-                raise RuntimeError(
-                    '''These characters ({}) are required because they assemble
-                    into instructions used to unpack the shellcode'''.format(
-                        str(required_chars, 'ascii')))
-            allowed.difference_update(avoid)
-            vocab = bytearray(map(ord, allowed))
+        avoid = {
+            ord(value) if isinstance(value, str) else value
+            for value in (avoid or ())
+        }
+        required = self.unavoidable_bytes & avoid
+        if required:
+            raise EncoderError(
+                'Required decoder bytes are unavailable: %r' % bytes(sorted(required))
+            )
+        vocab = bytes(value for value in range(0x21, 0x7f) if value not in avoid)
 
         if context.arch != 'i386' or context.bits != 32:
-            raise RuntimeError('Only 32-bit i386 is currently supported')
+            raise EncoderError('Only 32-bit i386 is currently supported')
 
         int_size = context.bytes
 
@@ -163,7 +180,7 @@ class AsciiShellcodeEncoder(Encoder):
             Tuple[int, int]: value A, value B
 
         Raises:
-            ArithmeticError: The allowed character set does not contain
+            EncoderError: The allowed character set does not contain
                 two characters that when they are bitwise-and-ed with eachother
                 the result is 0
 
@@ -184,7 +201,7 @@ class AsciiShellcodeEncoder(Encoder):
                     for x in bytearray(products)
                 )
         else:
-            raise ArithmeticError(
+            raise EncoderError(
                 'Could not find two bitwise negatives in the provided vocab')
 
     @LocalContext
@@ -238,7 +255,7 @@ class AsciiShellcodeEncoder(Encoder):
             vocab (bytearray): Allowed characters
 
         Raises:
-            ArithmeticError: If a sequence of subtractions could not be found
+            EncoderError: If a sequence of subtractions could not be found
 
         Returns:
             List[bytearray]: List of numbers that would need to be subtracted
@@ -282,7 +299,7 @@ class AsciiShellcodeEncoder(Encoder):
             else:
                 subtractions.append(bytearray(int_size))
         else:
-            raise ArithmeticError(
+            raise EncoderError(
                 str.format(
                     '''Could not find the correct subtraction sequence
                 to get the the desired target ({}) from ({})''',

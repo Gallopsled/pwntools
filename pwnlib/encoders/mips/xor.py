@@ -26,6 +26,7 @@ from pwnlib import asm
 from pwnlib import shellcraft
 from pwnlib.context import context
 from pwnlib.encoders.encoder import Encoder
+from pwnlib.encoders.encoder import EncoderError
 from pwnlib.util.fiddling import xor_key
 
 decoders = {
@@ -107,17 +108,31 @@ class MipsXorEncoder(Encoder):
     >>> p.sendline(b'echo hello; exit')
     >>> p.recvline()
     b'hello\n'
+    >>> pwnlib.encoders.mips.xor.encode(b'A', b'')
+    Traceback (most recent call last):
+      ...
+    pwnlib.encoders.encoder.EncoderError: Payload is not aligned
     """
 
     arch = 'mips'
-    blacklist = cannot_avoid = set(b''.join(v for v in decoders.values()))
+    architectures = frozenset(('mips',))
+    priority = 100
+    supported_constraints = frozenset()
+    is_deterministic = True
+    unavoidable_bytes = frozenset.intersection(*(
+        frozenset(value.replace(b'SIZ1', b'').replace(b'SIZ2', b''))
+        for value in decoders.values()
+    ))
+    blacklist = cannot_avoid = set(map(chr, unavoidable_bytes))
 
     def __call__(self, raw_bytes, avoid, pcreg=''):
 
-        assert 0 == len(raw_bytes) % context.bytes, "Payload is not aligned"
+        if len(raw_bytes) % context.bytes:
+            raise EncoderError('Payload is not aligned')
 
         size = (len(raw_bytes) // 4) + 1
-        assert size < 0x10000, "Payload is too long"
+        if size >= 0x10000:
+            raise EncoderError('Payload is too long')
 
         size   = size ^ 0xffff
         sizelo = size & 0xff
@@ -127,7 +142,10 @@ class MipsXorEncoder(Encoder):
         decoder = decoder.replace(b'SIZ1', bytes([sizehi]))
         decoder = decoder.replace(b'SIZ2', bytes([sizelo]))
 
-        key, data = xor_key(raw_bytes, avoid=avoid)
+        pair = xor_key(raw_bytes, avoid=avoid)
+        if pair is None:
+            raise EncoderError('Could not find XOR key')
+        key, data = pair
 
         return decoder + key + data
 
