@@ -99,7 +99,9 @@ prstatus_types = {
     'i386': elf_prstatus_i386,
     'amd64': elf_prstatus_amd64,
     'arm': elf_prstatus_arm,
-    'aarch64': elf_prstatus_aarch64
+    'aarch64': elf_prstatus_aarch64,
+    'mips': elf_prstatus_mips,
+    'mips64': elf_prstatus_mips64
 }
 
 siginfo_types = {
@@ -516,6 +518,43 @@ class Corefile(ELF):
         True
         >>> core.fault_addr == core.sp
         True
+
+        MIPS corefiles are supported too. Building a real MIPS binary
+        needs a MIPS toolchain, so this example builds a synthetic
+        little-endian MIPS corefile instead: one PT_LOAD mapping plus an
+        NT_PRSTATUS note whose register block is laid out in the kernel
+        gregset order (r0..r31, lo, hi, pc, badvaddr, status, cause).
+
+        >>> context.clear(arch='mips')
+        >>> import struct
+        >>> regs = [0x1000 + i for i in range(32)]
+        >>> regs += [0x11111111, 0x22222222, 0x400100, 0x33333333, 0x44444444, 0x55555555]
+        >>> prstatus = struct.pack('<iii h 2x 6I 8i', 11, 0, 0, 11, 0, 0, 1234, 1234, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+        >>> prstatus += struct.pack('<38I', *regs) + struct.pack('<I', 0)
+        >>> note = struct.pack('<III', 5, len(prstatus), 1) + b'CORE\x00\x00\x00\x00' + prstatus
+        >>> ident = b'\x7fELF' + bytes([1, 1, 1, 0]) + bytes(8)
+        >>> header = struct.pack('<16s HHIIIIIHHHHHH', ident, 4, 8, 1, 0, 52, 0, 0, 52, 32, 2, 0, 0, 0)
+        >>> load = struct.pack('<IIIIIIII', 1, 116, 0x400000, 0, 0x1000, 0x1000, 6, 0x1000)
+        >>> note_phdr = struct.pack('<IIIIIIII', 4, 116 + 0x1000, 0, 0, len(note), len(note), 0, 4)
+        >>> data = header + load + note_phdr + b'\x00' * 0x1000 + note
+        >>> with open('mips-core-test', 'wb') as f:
+        ...     _ = f.write(data)
+        >>> core = Corefile('mips-core-test')
+        >>> core.pid
+        1234
+        >>> hex(core.pc)
+        '0x400100'
+        >>> core.sp == 0x1000 + 29
+        True
+        >>> core.v0 == 0x1002 and core.ra == 0x1000 + 31
+        True
+        >>> core.lo == 0x11111111 and core.hi == 0x22222222
+        True
+        >>> core.signal
+        11
+        >>> import os
+        >>> os.unlink('mips-core-test')
+        >>> context.clear(arch='i386')
     """
 
     _fill_gaps = False
