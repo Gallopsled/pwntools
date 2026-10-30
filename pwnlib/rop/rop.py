@@ -390,6 +390,7 @@ from pwnlib.rop.call import Unresolved
 from pwnlib.rop.gadgets import Gadget
 from pwnlib.util import lists
 from pwnlib.util import packing
+from pwnlib.util import safeeval
 from pwnlib.util.cyclic import cyclic
 from pwnlib.util.packing import pack
 from pwnlib.util.misc import python_2_bytes_compatible
@@ -1272,7 +1273,7 @@ class ROP(object):
         filename = self.__get_cachefile_name(elf)
         if filename is None or not os.path.exists(filename):
             return None
-        gadgets = eval(open(filename).read())
+        gadgets = safeeval.const(open(filename).read())
         gadgets = {k - elf.load_addr + elf.address:v for k, v in gadgets.items()}
         log.info_once('Loaded %s cached gadgets for %r', len(gadgets), elf.file.name)
         return gadgets
@@ -1391,6 +1392,8 @@ class ROP(object):
                 if pop.match(insn):
                     regs.append(pop.match(insn).group(1))
                     sp_move += context.bytes
+                    if 'sp' in insn:
+                        sp_move += 9999999
                 elif add.match(insn):
                     arg = int(add.match(insn).group(1), 16)
                     sp_move += arg
@@ -1418,7 +1421,7 @@ class ROP(object):
             if not set(['rsp', 'esp']) & set(regs):
                 self.pivots[sp_move] = addr
 
-        leave = self.search(regs=frame_regs, order='regs')
+        leave = self.search(regs=frame_regs, order='leav')
         if leave and leave.regs != frame_regs:
             leave = None
         self.leave = leave
@@ -1451,7 +1454,7 @@ class ROP(object):
                 pointer is adjusted.
             regs(list): Minimum list of registers which are popped off the
                 stack.
-            order(str): Either the string 'size' or 'regs'. Decides how to
+            order(str): Either the string 'size', 'leav' or 'regs'. Decides how to
                 order multiple gadgets the fulfill the requirements.
 
         The search will try to minimize the number of bytes popped more than
@@ -1459,7 +1462,9 @@ class ROP(object):
         the address.
 
         If ``order == 'size'``, then gadgets are compared lexicographically
-        by ``(total_moves, total_regs, addr)``, otherwise by ``(total_regs, total_moves, addr)``.
+        by ``(total_moves, total_regs, addr)``, if ``order == 'regs'``,
+        then by ``(total_regs, total_moves, addr)``. ``order == 'leav'``
+        is specifically for ``leave`` insn.
 
         Returns:
             A :class:`.Gadget` object
@@ -1471,8 +1476,9 @@ class ROP(object):
         # Search for an exact match, save the closest match
         key = {
             'size': lambda g: (g.move, len(g.regs), g.address),
-            'regs': lambda g: (len(g.regs), g.move, g.address)
-        }[order]
+            'regs': lambda g: (len(g.regs), g.move, g.address),
+            'leav': lambda g: ('leave' not in g.insns, len(g.regs), g.address)
+        }[order]                # False is prior than True
 
         try:
             result = min(matches, key=key)
