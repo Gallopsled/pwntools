@@ -887,7 +887,7 @@ if not %(aslr)r:
         ADDR_NO_RANDOMIZE = 0x0040000
         ctypes.CDLL('libc.so.6').personality(ADDR_NO_RANDOMIZE)
 
-    resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+    resource.setrlimit(resource.RLIMIT_STACK, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 # Attempt to dump ALL core file regions
 try:
@@ -898,7 +898,7 @@ except Exception:
 
 # Assume that the user would prefer to have core dumps.
 try:
-    resource.setrlimit(resource.RLIMIT_CORE, (-1, -1))
+    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 except Exception:
     pass
 
