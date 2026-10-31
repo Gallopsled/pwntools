@@ -314,7 +314,7 @@ class tube(Timeout, Logger):
     def recvuntil(self, delims, drop=False, timeout=default):
         """recvuntil(delims, drop=False, timeout=default) -> bytes
 
-        Receive data until one of `delims` is encountered.
+        Receive data until one of ``delims`` is encountered.
 
         If the request is not satisfied before ``timeout`` seconds pass,
         all data is buffered and an empty string (``''``) is returned.
@@ -572,6 +572,55 @@ class tube(Timeout, Logger):
                     self.warn_once('EOFError during recvline. Returning buffered data without trailing newline.')
                 return self.buffer.get()
             raise
+
+    def recvlineafter(self, delims, drop=None, timeout=default):
+        r"""recvlineafter(delims, drop=False, timeout=default) -> bytes
+
+        Receive data until one of ``delims`` is encountered using :meth:`recvuntil`.
+        Then receive a single line from the tube using :meth:`recvline` and return that line.
+
+        If the request is not satisfied before ``timeout`` seconds pass,
+        all data is buffered and an empty byte string (``b''``) is returned.
+
+        Arguments:
+            delims(bytes,tuple): Byte-string of delimiters characters, or list of delimiter byte-strings.
+            drop(bool): Drop the line ending.  If :const:`True` it is removed from the end of the return value.
+            timeout(int): Timeout, in seconds.
+
+        Returns:
+            All bytes received over the tube after ``delims`` was seen until the first
+            newline is received. Does not include the deliminator.
+
+        Examples:
+
+            >>> t = tube()
+            >>> t.recv_raw = lambda n: b'garbageyou won!\n'
+            >>> t.recvlineafter(b'garbage')
+            b'you won!\n'
+
+            The timeout value is the total time for both the :meth:`recvuntil` and :meth:`recvline` calls combined.
+
+            >>> class delayed_tube(tube):
+            ...     first = True
+            ...     def recv_raw(self, n):
+            ...         if self.timeout < 1.0:
+            ...             return None
+            ...         time.sleep(1.0)
+            ...         if self.first:
+            ...             self.first = False
+            ...             return b'garbage'
+            ...         else:
+            ...             return b'you won!\n'
+            >>> t = delayed_tube()
+            >>> t.recvlineafter(b'garbage', timeout=3.0)
+            b'you won!\n'
+            >>> t.first = True
+            >>> t.recvlineafter(b'garbage', timeout=1.5)
+            b''
+        """
+        with self.countdown(timeout):
+            self.recvuntil(delims, timeout=self.timeout)
+            return self.recvline(drop=drop, timeout=self.timeout)
 
     def recvline_pred(self, pred, keepends=None, drop=None, timeout=default):
         r"""recvline_pred(pred, drop=True, timeout=default) -> bytes
@@ -1694,6 +1743,7 @@ class tube(Timeout, Logger):
                  recvpred,
                  recvregex,
                  recvline,
+                 recvlineafter,
                  recvline_contains,
                  recvline_startswith,
                  recvline_endswith,
