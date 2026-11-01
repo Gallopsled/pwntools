@@ -1192,7 +1192,7 @@ class Kernel:
             'Nexus 7': 'oem uart-on',
         }
 
-        with log.waitfor('Enabling kernel UART'):
+        with log.waitfor('Enabling kernel UART') as w:
 
             if model not in known_commands:
                 log.error("Device UART is unsupported.")
