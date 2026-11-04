@@ -16,7 +16,29 @@ log = getLogger(__name__)
 
 
 class EncoderConstraint(str, Enum):
-    """Output constraints understood by :func:`encode`."""
+    """Output constraints understood by :func:`encode`.
+
+    A constraint name is accepted wherever a member is, and each member has
+    a fixed check that encoder output must pass:
+
+        >>> EncoderConstraint('ascii') is EncoderConstraint.ASCII
+        True
+        >>> check = pwnlib.encoders.encoder._satisfies_constraint
+        >>> check(b'Az09', EncoderConstraint.ALPHANUMERIC)
+        True
+        >>> check(b'A_', EncoderConstraint.ALPHANUMERIC)
+        False
+        >>> check(b'Az', EncoderConstraint.ALPHABETIC)
+        True
+        >>> check(b'A9', EncoderConstraint.ALPHABETIC)
+        False
+        >>> check('snowman: \N{SNOWMAN}'.encode(), EncoderConstraint.UTF8MB3)
+        True
+        >>> check('\N{GRINNING FACE}'.encode(), EncoderConstraint.UTF8MB3)
+        False
+        >>> check('\N{GRINNING FACE}'.encode(), EncoderConstraint.UTF8)
+        True
+    """
 
     ALPHABETIC = 'alphabetic'
     ALPHANUMERIC = 'alphanumeric'
@@ -113,6 +135,57 @@ def _satisfies_constraint(value, constraint):
 
 
 class Encoder:
+    """Base class of the encoders :func:`encode` selects from.
+
+    An encoder declares the architectures it handles, the byte values its
+    decoder cannot avoid, the output constraints it can satisfy, and a
+    priority. Instantiating it registers it for its architectures.
+    :func:`encode` orders the compatible candidates by constraint quality,
+    priority, module and class name, and tries them in that order.
+
+    ``__call__`` returns the encoded bytes. It raises :class:`EncoderError`
+    when the request cannot be met with the given ``avoid`` set; that moves
+    selection on to the next candidate. Any other exception is a bug in the
+    encoder and propagates to the caller:
+
+        >>> from unittest import mock
+        >>> attempts = []
+        >>> class RejectingEncoder(Encoder):
+        ...     priority = 10
+        ...     def __call__(self, raw_bytes, avoid, pcreg):
+        ...         attempts.append('reject')
+        ...         raise EncoderError('not representable')
+        >>> class FallbackEncoder(Encoder):
+        ...     priority = 20
+        ...     def __call__(self, raw_bytes, avoid, pcreg):
+        ...         attempts.append('fallback')
+        ...         return b'A'
+        >>> candidates = [FallbackEncoder(), RejectingEncoder()]
+        >>> with context.local(arch='i386'), mock.patch.dict(Encoder._encoders, {'i386': candidates}):
+        ...     encode(b'\\x00', avoid=b'\\x00')
+        b'A'
+        >>> attempts
+        ['reject', 'fallback']
+        >>> class BrokenEncoder(Encoder):
+        ...     def __call__(self, raw_bytes, avoid, pcreg):
+        ...         raise ValueError('internal bug')
+        >>> with context.local(arch='i386'), mock.patch.dict(Encoder._encoders, {'i386': [BrokenEncoder()]}):
+        ...     encode(b'\\x00', avoid=b'\\x00')
+        Traceback (most recent call last):
+          ...
+        ValueError: internal bug
+
+    The legacy ``blacklist`` of characters is still honoured through
+    :meth:`required_bytes`, which normalises it to byte values:
+
+        >>> class LegacyEncoder(Encoder):
+        ...     blacklist = {'A', '\xff'}
+        >>> LegacyEncoder().required_bytes() == frozenset((0x41, 0xff))
+        True
+        >>> pwnlib.encoders.encoder._byte_values({'A', b'B', 0x43}, 'avoid') == frozenset(b'ABC')
+        True
+    """
+
     _encoders: defaultdict[str, list[Encoder]] = defaultdict(lambda: [])
 
     #: Architecture retained for compatibility with third-party encoders.
@@ -239,56 +312,39 @@ def encode(raw_bytes, avoid=None, expr=None, force=False, pcreg='', constraint=N
     Candidates are tried in a stable best-to-worst order. Only expected
     :class:`EncoderError` rejections trigger fallback.
 
-    ``avoid`` accepts bytes-like values and byte-valued strings.
+    ``avoid`` accepts bytes-like values, byte-valued strings and iterables
+    of byte values; ``expr`` is a regular expression matched against each
+    single byte. The input is returned unchanged when it already satisfies
+    the request, unless ``force`` is set.
 
-        >>> pwnlib.encoders.encoder._byte_values('A\xff', 'avoid') == frozenset((0x41, 0xff))
-        True
-        >>> pwnlib.encoders.encoder._byte_values({'A', b'B', 0x43}, 'avoid') == frozenset(b'ABC')
-        True
-        >>> pwnlib.encoders.encoder._normalize_constraint('ascii') is EncoderConstraint.ASCII
-        True
-        >>> pwnlib.encoders.encoder._satisfies_constraint(b'Az09', EncoderConstraint.ALPHANUMERIC)
-        True
-        >>> pwnlib.encoders.encoder._satisfies_constraint(b'A_', EncoderConstraint.ALPHANUMERIC)
+    Candidates are tried in a stable best-to-worst order, so the same input
+    under the same context encodes to the same bytes. Only an expected
+    :class:`EncoderError` moves selection on to the next candidate; any
+    other exception propagates. See :class:`Encoder` for the contract.
+
+    Examples:
+
+        >>> context.clear(arch='i386', os='linux')
+        >>> encode(b'\\x01\\x02\\x03\\x04', avoid=b'\\x00')
+        b'\\x01\\x02\\x03\\x04'
+        >>> encoded = encode(b'\\x00\\x01\\x02\\x03', avoid=b'\\x00')
+        >>> b'\\x00' in encoded
         False
-        >>> pwnlib.encoders.encoder._satisfies_constraint(b'Az', EncoderConstraint.ALPHABETIC)
+        >>> encode(b'\\x00\\x01\\x02\\x03', avoid=b'\\x00') == encoded
         True
-        >>> pwnlib.encoders.encoder._satisfies_constraint(b'A9', EncoderConstraint.ALPHABETIC)
-        False
-        >>> pwnlib.encoders.encoder._satisfies_constraint('snowman: \N{SNOWMAN}'.encode(), EncoderConstraint.UTF8MB3)
+        >>> encode(b'\\x00\\x01\\x02\\x03', avoid='\\x00') == encoded
         True
-        >>> pwnlib.encoders.encoder._satisfies_constraint('\N{GRINNING FACE}'.encode(), EncoderConstraint.UTF8MB3)
-        False
-        >>> pwnlib.encoders.encoder._satisfies_constraint('\N{GRINNING FACE}'.encode(), EncoderConstraint.UTF8)
+        >>> encode(b'\\x00\\x01\\x02\\x03', expr=r'\\x00') == encoded
+        True
+
+        A constraint selects the encoders that advertise it, including
+        opt-in ones such as the i386 ASCII encoder:
+
+        >>> printable = encode(b'\\x00\\x01\\x02\\x03', constraint='ascii')
+        >>> all(0x21 <= byte <= 0x7e for byte in printable)
         True
         >>> encode(b'', constraint='ascii')
         b''
-        >>> from unittest import mock
-        >>> attempts = []
-        >>> class RejectingEncoder(Encoder):
-        ...     priority = 10
-        ...     def __call__(self, raw_bytes, avoid, pcreg):
-        ...         attempts.append('reject')
-        ...         raise EncoderError('not representable')
-        >>> class FallbackEncoder(Encoder):
-        ...     priority = 20
-        ...     def __call__(self, raw_bytes, avoid, pcreg):
-        ...         attempts.append('fallback')
-        ...         return b'A'
-        >>> candidates = [FallbackEncoder(), RejectingEncoder()]
-        >>> with context.local(arch='i386'), mock.patch.dict(Encoder._encoders, {'i386': candidates}):
-        ...     encode(b'\\x00', avoid=b'\\x00')
-        b'A'
-        >>> attempts
-        ['reject', 'fallback']
-        >>> class BrokenEncoder(Encoder):
-        ...     def __call__(self, raw_bytes, avoid, pcreg):
-        ...         raise ValueError('internal bug')
-        >>> with context.local(arch='i386'), mock.patch.dict(Encoder._encoders, {'i386': [BrokenEncoder()]}):
-        ...     encode(b'\\x00', avoid=b'\\x00')
-        Traceback (most recent call last):
-          ...
-        ValueError: internal bug
     """
     return _encode(raw_bytes, avoid, expr, force, pcreg, constraint)
 
@@ -297,8 +353,8 @@ all_chars = list(chr(i) for i in range(256))
 re_alphanumeric = r'[^A-Za-z0-9]'
 re_printable = r'[^\x21-\x7e]'
 re_whitespace = r'\s'
-re_null = r'\x00'
-re_line = r'[\s\x00]'
+re_null = r'\\x00'
+re_line = r'[\s\\x00]'
 
 
 @LocalContext
