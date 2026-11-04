@@ -104,6 +104,17 @@ prstatus_types = {
     'mips64': elf_prstatus_mips64
 }
 
+# Prstatus structs parsed with the corefile's own byte order instead of
+# the host's, keyed by (arch, endian). A plain ctypes Structure follows
+# the host, which byte-swaps the registers of e.g. a big-endian MIPS
+# core read on a little-endian machine.
+prstatus_types_endian = {
+    ('mips', 'little'): elf_prstatus_mips_le,
+    ('mips', 'big'): elf_prstatus_mips_be,
+    ('mips64', 'little'): elf_prstatus_mips64_le,
+    ('mips64', 'big'): elf_prstatus_mips64_be
+}
+
 siginfo_types = {
     32: elf_siginfo_32,
     64: elf_siginfo_64
@@ -519,42 +530,42 @@ class Corefile(ELF):
         >>> core.fault_addr == core.sp
         True
 
-        MIPS corefiles are supported too. Building a real MIPS binary
-        needs a MIPS toolchain, so this example builds a synthetic
-        little-endian MIPS corefile instead: one PT_LOAD mapping plus an
-        NT_PRSTATUS note whose register block is laid out in the kernel
-        gregset order (r0..r31, lo, hi, pc, badvaddr, status, cause).
+        MIPS corefiles are supported too, in both byte orders. The
+        checked-in corefiles in ``pwnlib/data/elf`` carry pid 1234,
+        signal 11, and registers 0x1000..0x101f in the kernel gregset
+        order (r0..r31, lo, hi, pc, badvaddr, status, cause). They are
+        synthetic files with one PT_LOAD mapping plus an NT_PRSTATUS
+        note: producing a real one takes a MIPS machine (or qemu-system)
+        to dump core on. The big-endian file must read back with the
+        same values: the register block is parsed with the corefile's
+        own byte order, not the host's.
 
-        >>> context.clear(arch='mips')
-        >>> import struct
-        >>> regs = [0x1000 + i for i in range(32)]
-        >>> regs += [0x11111111, 0x22222222, 0x400100, 0x33333333, 0x44444444, 0x55555555]
-        >>> prstatus = struct.pack('<iii h 2x 6I 8i', 11, 0, 0, 11, 0, 0, 1234, 1234, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0)
-        >>> prstatus += struct.pack('<38I', *regs) + struct.pack('<I', 0)
-        >>> note = struct.pack('<III', 5, len(prstatus), 1) + b'CORE\x00\x00\x00\x00' + prstatus
-        >>> ident = b'\x7fELF' + bytes([1, 1, 1, 0]) + bytes(8)
-        >>> header = struct.pack('<16s HHIIIIIHHHHHH', ident, 4, 8, 1, 0, 52, 0, 0, 52, 32, 2, 0, 0, 0)
-        >>> load = struct.pack('<IIIIIIII', 1, 116, 0x400000, 0, 0x1000, 0x1000, 6, 0x1000)
-        >>> note_phdr = struct.pack('<IIIIIIII', 4, 116 + 0x1000, 0, 0, len(note), len(note), 0, 4)
-        >>> data = header + load + note_phdr + b'\x00' * 0x1000 + note
-        >>> with open('mips-core-test', 'wb') as f:
-        ...     _ = f.write(data)
-        >>> core = Corefile('mips-core-test')
-        >>> core.pid
-        1234
-        >>> hex(core.pc)
-        '0x400100'
-        >>> core.sp == 0x1000 + 29
+        >>> import pwnlib.data.elf
+        >>> for name in ('test-mips-core', 'test-mips-big-core', 'test-mips64-core'):
+        ...     core = Corefile(pwnlib.data.elf.get(name))
+        ...     assert core.pid == 1234, name
+        ...     assert hex(core.pc) == '0x400100', name
+        ...     assert core.sp == 0x1000 + 29, name
+        ...     assert core.v0 == 0x1002 and core.ra == 0x1000 + 31, name
+        ...     assert core.lo == 0x11111111 and core.hi == 0x22222222, name
+        ...     assert core.signal == 11, name
+        >>> assembly = '''
+        ... LOOP:
+        ...   mov dword ptr [esp], 0x41414141
+        ...   pop eax
+        ...   jmp LOOP
+        ... '''
+        >>> elf = ELF.from_assembly(assembly)
+        >>> io = elf.process()
+        >>> io.wait(2)
+        >>> core = io.corefile
+        >>> core.argc, core.argv, core.env
+        (0, [], {})
+        >>> core.stack.data.endswith(b'AAAA')
         True
-        >>> core.v0 == 0x1002 and core.ra == 0x1000 + 31
+        >>> core.fault_addr == core.sp
         True
-        >>> core.lo == 0x11111111 and core.hi == 0x22222222
-        True
-        >>> core.signal
-        11
-        >>> import os
-        >>> os.unlink('mips-core-test')
-        >>> context.clear(arch='i386')
+
     """
 
     _fill_gaps = False
@@ -625,7 +636,7 @@ class Corefile(ELF):
         if self.arch not in prstatus_types:
             log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.path)
 
-        prstatus_type = prstatus_types.get(self.arch)
+        prstatus_type = prstatus_types_endian.get((self.arch, self.endian), prstatus_types.get(self.arch))
         siginfo_type = siginfo_types.get(self.bits)
 
         with log.waitfor("Parsing corefile...") as w:
