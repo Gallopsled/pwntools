@@ -99,7 +99,20 @@ prstatus_types = {
     'i386': elf_prstatus_i386,
     'amd64': elf_prstatus_amd64,
     'arm': elf_prstatus_arm,
-    'aarch64': elf_prstatus_aarch64
+    'aarch64': elf_prstatus_aarch64,
+    'mips': elf_prstatus_mips,
+    'mips64': elf_prstatus_mips64
+}
+
+# Prstatus structs parsed with the corefile's own byte order instead of
+# the host's, keyed by (arch, endian). A plain ctypes Structure follows
+# the host, which byte-swaps the registers of e.g. a big-endian MIPS
+# core read on a little-endian machine.
+prstatus_types_endian = {
+    ('mips', 'little'): elf_prstatus_mips_le,
+    ('mips', 'big'): elf_prstatus_mips_be,
+    ('mips64', 'little'): elf_prstatus_mips64_le,
+    ('mips64', 'big'): elf_prstatus_mips64_be
 }
 
 siginfo_types = {
@@ -516,6 +529,43 @@ class Corefile(ELF):
         True
         >>> core.fault_addr == core.sp
         True
+
+        MIPS corefiles are supported too, in both byte orders. The
+        checked-in corefiles in ``pwnlib/data/elf`` carry pid 1234,
+        signal 11, and registers 0x1000..0x101f in the kernel gregset
+        order (r0..r31, lo, hi, pc, badvaddr, status, cause). They are
+        synthetic files with one PT_LOAD mapping plus an NT_PRSTATUS
+        note: producing a real one takes a MIPS machine (or qemu-system)
+        to dump core on. The big-endian file must read back with the
+        same values: the register block is parsed with the corefile's
+        own byte order, not the host's.
+
+        >>> import pwnlib.data.elf
+        >>> for name in ('test-mips-core', 'test-mips-big-core', 'test-mips64-core'):
+        ...     core = Corefile(pwnlib.data.elf.get(name))
+        ...     assert core.pid == 1234, name
+        ...     assert hex(core.pc) == '0x400100', name
+        ...     assert core.sp == 0x1000 + 29, name
+        ...     assert core.v0 == 0x1002 and core.ra == 0x1000 + 31, name
+        ...     assert core.lo == 0x11111111 and core.hi == 0x22222222, name
+        ...     assert core.signal == 11, name
+        >>> assembly = '''
+        ... LOOP:
+        ...   mov dword ptr [esp], 0x41414141
+        ...   pop eax
+        ...   jmp LOOP
+        ... '''
+        >>> elf = ELF.from_assembly(assembly)
+        >>> io = elf.process()
+        >>> io.wait(2)
+        >>> core = io.corefile
+        >>> core.argc, core.argv, core.env
+        (0, [], {})
+        >>> core.stack.data.endswith(b'AAAA')
+        True
+        >>> core.fault_addr == core.sp
+        True
+
     """
 
     _fill_gaps = False
@@ -586,7 +636,7 @@ class Corefile(ELF):
         if self.arch not in prstatus_types:
             log.warn_once("%s does not use a supported corefile architecture, registers are unavailable" % self.path)
 
-        prstatus_type = prstatus_types.get(self.arch)
+        prstatus_type = prstatus_types_endian.get((self.arch, self.endian), prstatus_types.get(self.arch))
         siginfo_type = siginfo_types.get(self.bits)
 
         with log.waitfor("Parsing corefile...") as w:
