@@ -27,6 +27,7 @@ class Encoder:
 
         Implements an architecture-specific shellcode encoder
         """
+        self.blacklist = {ord(c) if isinstance(c, str) else c for c in self.blacklist}
         # i386 ascii_shellcode encoder has special requirements and has to be used explicitly.
         if self.arch is not None:
             Encoder._encoders[self.arch].append(self)
@@ -64,12 +65,14 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or '')
+    avoid = {ord(c) if isinstance(c, str) else c for c in (avoid or b'')}
 
     if expr:
+        if isinstance(expr, bytes):
+            expr = expr.decode('latin1')
         for char in all_chars:
             if re.search(expr, char):
-                avoid.add(char)
+                avoid.add(ord(char))
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
@@ -137,12 +140,31 @@ def line(raw_bytes, *a, **kw):
 
 @LocalContext
 def alphanumeric(raw_bytes, *a, **kw):
-    """alphanumeric(raw_bytes) -> str
+    r"""alphanumeric(raw_bytes) -> str
 
     Encode the shellcode ``raw_bytes`` such that it does not
     contain any bytes except for [A-Za-z0-9].
 
     Accepts the same arguments as :func:`encode`.
+
+    Example:
+
+        >>> context.clear(arch='amd64')
+        >>> b'\x00' in encoder.null(b'\x00\x01\x02\x03')
+        False
+        >>> encoder.alphanumeric(b'\x00\x01\x02\x03')
+        Traceback (most recent call last):
+        ...
+        pwnlib.exception.PwnlibException: No encoders for amd64 which can avoid '[^A-Za-z0-9]' for
+        00000000  00 01 02 03                                         │····│
+        00000004
+        >>> encoder.alphanumeric(b'\x00\x01\x02\x03', force=True)
+        Traceback (most recent call last):
+        ...
+        pwnlib.exception.PwnlibException: No encoders for amd64 which can avoid '[^A-Za-z0-9]' for
+        00000000  00 01 02 03                                         │····│
+        00000004
+        >>> context.clear()
     """
     return encode(raw_bytes, expr=re_alphanumeric, *a, **kw)
 
