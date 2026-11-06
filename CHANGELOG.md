@@ -76,6 +76,7 @@ The table below shows which release corresponds to each branch, and what date th
 ## 5.0.0 (`dev`)
 
 - [#2798][2798] fix(flag, adb): NameError in `submit_flag` with a flag file and in `Kernel.enable_uart`
+- [#2783][2783] feat(encoders): add capability-aware deterministic selection
 - [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
 - [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
 - [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
@@ -159,6 +160,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
 - [#2792][2792] Fix deprecation warning for not using `RLIM_INFINITY` in `resource.setrlimit` (Python 3.15)
 
+[2783]: https://github.com/Gallopsled/pwntools/pull/2783
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
 [2652]: https://github.com/Gallopsled/pwntools/pull/2652
