@@ -353,20 +353,35 @@ all_chars = list(chr(i) for i in range(256))
 re_alphanumeric = r'[^A-Za-z0-9]'
 re_printable = r'[^\x21-\x7e]'
 re_whitespace = r'\s'
-re_null = r'\\x00'
-re_line = r'[\s\\x00]'
+re_null = r'\x00'
+re_line = r'[\s\x00]'
 
 
 @LocalContext
 def null(raw_bytes, *a, **kw):
-    """Encode ``raw_bytes`` without NULL bytes."""
+    """Encode ``raw_bytes`` without NULL bytes.
+
+    Accepts the same arguments as :func:`encode`.
+
+        >>> context.clear(arch='i386', os='linux')
+        >>> b'\\x00' in null(b'\\x00\\x01\\x02\\x03')
+        False
+    """
     return encode(raw_bytes, expr=re_null, *a, **kw)
 
 
 @LocalContext
 def line(raw_bytes, *a, **kw):
-    """Encode ``raw_bytes`` without NULL bytes or whitespace."""
-    return encode(raw_bytes, expr=re_whitespace, *a, **kw)
+    """Encode ``raw_bytes`` without NULL bytes or whitespace.
+
+    Accepts the same arguments as :func:`encode`.
+
+        >>> context.clear(arch='i386', os='linux')
+        >>> encoded = line(b'\\x00\\x01 \\n\\x09')
+        >>> any(byte in b'\\x00 \\t\\n\\x0b\\x0c\\r' for byte in encoded)
+        False
+    """
+    return encode(raw_bytes, expr=re_line, *a, **kw)
 
 
 @LocalContext
