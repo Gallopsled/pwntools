@@ -31,7 +31,7 @@ class linux_dirent:
             char d_name[];
         };
         // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
-        // the 32version of linux_dirent stores d_type after d_name
+        // the 32-bit version of linux_dirent stores d_type after d_name
 
         struct linux_dirent64 {
             u64		d_ino;
@@ -70,15 +70,22 @@ class linux_dirent:
 
         self.d_ino = unpack(buf[0:size_t], size_t * 8)
         self.d_off = unpack(buf[size_t : 2 * size_t], size_t * 8)
-        self.d_reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
+        reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
+        # sizeof(struct linux_dirent/linux_dirent64) =
+        # sizeof(d_ino) + sizeof(d_off) + sizeof(d_reclen) + sizeof(d_type)
+        # And take minimum strlen (any char + '\0') into account
+        minlen = size_t * 2 + 2 + 1 + 2
+        if reclen < minlen:
+            raise ValueError(f'Invalid dirent: d_reclen = {reclen} < {minlen}')
 
         if is_dirent64:
             d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
-            d_name = buf[2 * size_t + 3 : self.d_reclen - 1]
+            d_name = buf[2 * size_t + 3 : reclen - 1]
         else:
-            d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
-            d_name = buf[2 * size_t + 2 : self.d_reclen - 1]
+            d_type = unpack(buf[reclen - 1 : reclen], 8)
+            d_name = buf[2 * size_t + 2 : reclen - 1]
 
+        self.d_reclen = reclen
         self.d_name = d_name.split(b'\x00', 1)[0].decode('utf-8')
         self.d_type = Dtype(d_type)
 
@@ -107,7 +114,7 @@ def dirents(buf: bytes) -> list[linux_dirent]:
         >>> with context.local(bytes = 4):
         ...     buf = bytes.fromhex('5e843600c120fc1a1400746573742e63000000085f8436001f347e3010002e00be36ba040d002c00ffffff7f10002e2e00000004')
         ...     print(dirents(buf))
-        ...     
+        ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
     """
 
@@ -115,14 +122,13 @@ def dirents(buf: bytes) -> list[linux_dirent]:
     buf_len = len(buf)
     entries = []
 
-    while bpos < buf_len:
-        try:
+    try:
+        while bpos < buf_len:
             dirent = linux_dirent(buf[bpos:], False)
             bpos += dirent.d_reclen
             entries.append(dirent)
-        except (ValueError, UnicodeDecodeError):
-            log.warning("Failed to parse struct linux_dirent at position %d", bpos)
-            break
+    except (ValueError, UnicodeDecodeError):
+        log.warning("Failed to parse struct linux_dirent at position %d", bpos)
     return entries
 
 def dirents64(buf: bytes) -> list[linux_dirent]:
@@ -140,20 +146,21 @@ def dirents64(buf: bytes) -> list[linux_dirent]:
         >>> with context.local(bytes = 8):
         ...     buf = bytes.fromhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
         ...     print(dirents64(buf))
-        ...     
+        ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
+        >>> dirents64(b'\\0' * 100) # Can not be parsed
+        []
     """
 
     bpos = 0
     buf_len = len(buf)
     entries = []
 
-    while bpos < buf_len:
-        try:
+    try:
+        while bpos < buf_len:
             dirent = linux_dirent(buf[bpos:], True)
             bpos += dirent.d_reclen
             entries.append(dirent)
-        except (ValueError, UnicodeDecodeError):
-            log.warning("Failed to parse struct linux_dirent64 at position %d", bpos)
-            break
+    except (ValueError, UnicodeDecodeError):
+        log.warning("Failed to parse struct linux_dirent64 at position %d", bpos)
     return entries
