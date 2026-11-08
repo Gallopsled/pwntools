@@ -83,6 +83,18 @@ class _defaultdict(dict):
 
 
     def __missing__(self, key):
+        # A few keys take their default from another context value rather than
+        # a fixed one: `bits` and `endian` follow `arch`, and `newline` follows
+        # `os`.  We compute those on demand here instead of storing them, so
+        # that changing e.g. `arch` a second time always recomputes `bits` and
+        # `endian`, see issue #2498.  A value the user set explicitly is simply
+        # a key that is present in the dict and never reaches here at all.
+        derived = _derived_defaults.get(key)
+        if derived is not None:
+            source_key, table = derived
+            implied = table.get(self[source_key], {})
+            if key in implied:
+                return implied[key]
         return self.default[key]
 
 class _DictStack(object):
@@ -302,7 +314,7 @@ class ContextType(object):
         >>> context.os == 'linux'
         True
         >>> context.arch = 'arm'
-        >>> vars(context) == {'arch': 'arm', 'bits': 32, 'endian': 'little', 'os': 'linux', 'newline': b'\n'}
+        >>> vars(context) == {'arch': 'arm', 'os': 'linux'}
         True
         >>> context.endian
         'little'
@@ -466,7 +478,7 @@ class ContextType(object):
 
             >>> context.clear()
             >>> context.os   = 'linux'
-            >>> vars(context) == {'os': 'linux', 'newline': b'\n'}
+            >>> vars(context) == {'os': 'linux'}
             True
         """
         return self._tls.copy()
@@ -774,7 +786,18 @@ class ContextType(object):
 
             >>> context.clear()
             >>> context.arch = 'powerpc64'
-            >>> vars(context) == {'arch': 'powerpc64', 'bits': 64, 'endian': 'big'}
+            >>> context.bits, context.endian
+            (64, 'big')
+
+            Setting :attr:`arch` multiple times correctly updates :attr:`bits`
+            and :attr:`endian` each time
+
+            >>> context.clear()
+            >>> context.arch = 'amd64'
+            >>> context.bits == 64
+            True
+            >>> context.arch = 'i386'
+            >>> context.bits == 32
             True
         """
         # Lowercase
@@ -798,15 +821,14 @@ class ContextType(object):
                 arch = v
                 break
 
-        try:
-            defaults = self.architectures[arch]
-        except KeyError:
+        if arch not in self.architectures:
             raise AttributeError('AttributeError: arch (%r) must be one of %r' % (arch, sorted(self.architectures)))
 
-        for k,v in defaults.items():
-            if k not in self._tls:
-                self._tls[k] = v
-
+        # We deliberately do not write the implied `bits`/`endian` here.  They
+        # are derived from `arch` on read (see `_defaultdict.__missing__` and
+        # `_derived_defaults`), so setting `arch` again always updates them,
+        # while a value the user set explicitly is left untouched because it is
+        # already present in the dict.
         return arch
 
     @_validator
@@ -855,6 +877,19 @@ class ContextType(object):
             Traceback (most recent call last):
             ...
             AttributeError: bits must be > 0 (-1)
+
+            Setting :attr:`bits` explicitly will not be overridden by a
+            subsequent change to :attr:`arch`, and deleting it restores the
+            architecture-derived default
+
+            >>> context.clear()
+            >>> context.bits = 24
+            >>> context.arch = 'amd64'
+            >>> context.bits == 24
+            True
+            >>> del context.bits
+            >>> context.bits == 64
+            True
         """
         bits = int(bits)
 
@@ -963,7 +998,6 @@ class ContextType(object):
             raise AttributeError("endian must be one of %r" % sorted(self.endiannesses))
 
         return self.endiannesses[endian]
-
 
     @_validator
     def log_level(self, value):
@@ -1169,24 +1203,25 @@ class ContextType(object):
             >>> context.newline == b'\n'
             True
 
-            Setting the os can override the default for :attr:`newline`
+            Setting :attr:`os` multiple times correctly updates :attr:`newline`
+            each time
 
             >>> context.clear()
             >>> context.os = 'windows'
-            >>> vars(context) == {'os': 'windows', 'newline': b'\r\n'}
+            >>> context.newline == b'\r\n'
+            True
+            >>> context.os = 'linux'
+            >>> context.newline == b'\n'
             True
         """
         os = os.lower()
 
-        try:
-            defaults = self.oses[os]
-        except KeyError:
+        if os not in self.oses:
             raise AttributeError("os must be one of %r" % sorted(self.oses))
 
-        for k,v in defaults.items():
-            if k not in self._tls:
-                self._tls[k] = v
-
+        # `newline` is derived from `os` on read (see `_defaultdict.__missing__`
+        # and `_derived_defaults`), so we do not store it here.  This keeps `os`
+        # switching correct and leaves any explicitly set `newline` untouched.
         return os
 
     @_validator
@@ -1661,6 +1696,19 @@ class ContextType(object):
         self.bits = value
 
     Thread = Thread
+
+
+#: Keys whose default is derived from another context value instead of a fixed
+#: default.  Maps ``key -> (source_key, lookup_table)``; when ``key`` has not
+#: been set explicitly, :meth:`_defaultdict.__missing__` looks up the current
+#: value of ``source_key`` in ``lookup_table`` and uses the ``key`` it implies.
+#: This is what lets ``bits``/``endian`` follow ``arch`` (and ``newline`` follow
+#: ``os``) every time it changes, without ever storing the derived value.
+_derived_defaults = {
+    'bits':    ('arch', ContextType.architectures),
+    'endian':  ('arch', ContextType.architectures),
+    'newline': ('os',   ContextType.oses),
+}
 
 
 #: Global :class:`.ContextType` object, used to store commonly-used pwntools settings.
