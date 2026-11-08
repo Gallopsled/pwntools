@@ -31,7 +31,7 @@ class linux_dirent:
             char d_name[];
         };
         // https://elixir.bootlin.com/linux/v6.14.4/source/fs/readdir.c#L244
-        // the 32version of linux_dirent stores d_type after d_name
+        // the 32-bit version of linux_dirent stores d_type after d_name
 
         struct linux_dirent64 {
             u64		d_ino;
@@ -70,15 +70,22 @@ class linux_dirent:
 
         self.d_ino = unpack(buf[0:size_t], size_t * 8)
         self.d_off = unpack(buf[size_t : 2 * size_t], size_t * 8)
-        self.d_reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
+        reclen = unpack(buf[2 * size_t : 2 * size_t + 2], 16)
+        # sizeof(struct linux_dirent/linux_dirent64) =
+        # sizeof(d_ino) + sizeof(d_off) + sizeof(d_reclen) + sizeof(d_type)
+        # And take minimum strlen (any char + '\0') into account
+        minlen = size_t * 2 + 2 + 1 + 2
+        if reclen < minlen:
+            raise ValueError(f'Invalid dirent: d_reclen = {reclen} < {minlen}')
 
         if is_dirent64:
             d_type = unpack(buf[2 * size_t + 2 : 2 * size_t + 3], 8)
-            d_name = buf[2 * size_t + 3 : self.d_reclen - 1]
+            d_name = buf[2 * size_t + 3 : reclen - 1]
         else:
-            d_type = unpack(buf[self.d_reclen - 1 : self.d_reclen], 8)
-            d_name = buf[2 * size_t + 2 : self.d_reclen - 1]
+            d_type = unpack(buf[reclen - 1 : reclen], 8)
+            d_name = buf[2 * size_t + 2 : reclen - 1]
 
+        self.d_reclen = reclen
         self.d_name = d_name.split(b'\x00', 1)[0].decode('utf-8')
         self.d_type = Dtype(d_type)
 
@@ -141,6 +148,8 @@ def dirents64(buf: bytes) -> list[linux_dirent]:
         ...     print(dirents64(buf))
         ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
+        >>> dirents64(b'\\0' * 100) # Can not be parsed
+        []
     """
 
     bpos = 0
