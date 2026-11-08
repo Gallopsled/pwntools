@@ -89,7 +89,7 @@ def get_docker_image_libraries():
             if not (libc and ld):
                 progress.failure("Could not find libraries")
                 return None, None
-            
+
             progress.status("Copying libraries to current directory")
             for filename, basename in zip((libc, ld), (libc_basename, ld_basename)):
                 cat_command = ["-c", "chroot %s /bin/sh -c '/bin/cat %s'" % (chroot_dir, filename)]
@@ -108,8 +108,9 @@ def get_docker_image_libraries():
                 write(basename, contents)
 
         except subprocess.CalledProcessError as e:
-            print(e.stderr.decode())
-            log.error("docker failed with status: %d" % e.returncode)
+            print(e.stderr.decode(), file=sys.stderr)
+            progress.failure("docker failed with status: %d" % e.returncode)
+            return None, None
 
         progress.success("Retrieved libraries from Docker image")
     return libc_basename, ld_basename

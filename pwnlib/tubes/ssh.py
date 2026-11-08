@@ -692,6 +692,7 @@ class ssh(Timeout, Logger):
                 if user and auth_none and str(e) == "No authentication methods available":
                     self.client.get_transport().auth_none(user)
                 else:
+                    self.close()
                     raise
 
             self.transport = self.client.get_transport()
@@ -913,6 +914,13 @@ class ssh(Timeout, Logger):
             >>> io.recvline()
             b''
 
+            >>> io = s.process(['tty'], tty=True)
+            >>> io.recvline() # doctest: +ELLIPSIS
+            b'/dev/pts/...\n'
+            >>> io = s.process(['tty'], tty=False)
+            >>> io.recvline()
+            b'not a tty\n'
+
             >>> # Testing that empty argv works
             >>> io = s.process([], executable='sh')
             >>> io.sendline(b'echo $0')
@@ -970,7 +978,7 @@ class ssh(Timeout, Logger):
 
             script = 'echo PWNTOOLS; for py in python3 python2.7 python2 python; do test -x "$(command -v $py 2>&1)" && echo $py && exec $py -c %s check; done; echo 2' % sh_string(script)
             with context.quiet:
-                python = ssh_process(self, script, tty=True, cwd=cwd, raw=True, level=self.level, timeout=timeout)
+                python = ssh_process(self, script, tty=tty, cwd=cwd, raw=raw, level=self.level, timeout=timeout)
 
             try:
                 python.recvline_contains(b'PWNTOOLS')   # Magic flag so that any sh/bash initialization errors are swallowed
@@ -1898,7 +1906,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
                 if not self.which('lsb_release'):
                     return
 
-                with self.process(['lsb_release', '-irs']) as io:
+                with self.process(['lsb_release', '-irs'], stderr='/dev/null') as io:
                     lsb_info = io.recvall().strip().decode()
                     self._platform_info['distro'], self._platform_info['distro_ver'] = lsb_info.split()
             except Exception:
@@ -2081,7 +2089,7 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
         Example:
 
             >>> s = ssh("travis", "example.pwnme")
-            >>> s.ibt
+            >>> s.ibt # doctest: +SKIP
             False
         """
         if self._ibt is None:

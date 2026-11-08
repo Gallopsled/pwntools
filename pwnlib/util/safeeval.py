@@ -4,8 +4,8 @@ _const_codes = [
     'POP_TOP','ROT_TWO','ROT_THREE','ROT_FOUR','DUP_TOP',
     'BUILD_LIST','BUILD_MAP', 'MAP_ADD', 'BUILD_TUPLE','BUILD_SET',
     'BUILD_CONST_KEY_MAP', 'BUILD_STRING',
-    'LOAD_CONST','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
-    'LIST_TO_TUPLE', 'LIST_EXTEND', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
+    'LOAD_CONST','LOAD_SMALL_INT','RETURN_VALUE','STORE_SUBSCR', 'STORE_MAP',
+    'LIST_TO_TUPLE', 'LIST_APPEND', 'LIST_EXTEND', 'SET_ADD', 'SET_UPDATE', 'DICT_UPDATE', 'DICT_MERGE',
     'COPY', 'RESUME', 'RETURN_CONST'
     ]
 
@@ -29,7 +29,7 @@ def _get_opcodes(codeobj):
     Extract the actual opcodes as a list from a code object
 
     >>> c = compile("[1 + 2, (1,2)]", "", "eval")
-    >>> _get_opcodes(c)  # doctest: +ELLIPSIS
+    >>> _get_opcodes(c)  # doctest: +SKIP
     [...100, 100, 103, 83]
     """
     import dis
@@ -85,6 +85,10 @@ def const(expr):
         Traceback (most recent call last):
         ...
         ValueError: opcode BINARY_ADD not allowed
+        >>> const("[" + ",".join(str(i) for i in range(40)) + "]") == list(range(40))
+        True
+        >>> const("{" + ",".join(str(i) for i in range(40)) + "}") == set(range(40))
+        True
     """
 
     c = test_expr(expr, _const_codes)

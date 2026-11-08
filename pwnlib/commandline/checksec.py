@@ -15,7 +15,6 @@ parser = common.parser_commands.add_parser(
 parser.add_argument(
     'elf',
     nargs='*',
-    type=argparse.FileType('rb'),
     help='Files to check'
 )
 parser.add_argument(
@@ -23,12 +22,11 @@ parser.add_argument(
     nargs='*',
     dest='elf2',
     metavar='elf',
-    type=argparse.FileType('rb'),
     help='File to check (for compatibility with checksec.sh)'
 )
 
 def main(args):
-    files  = args.elf or args.elf2 or []
+    files = args.elf or args.elf2 or []
 
     if not files:
         parser.print_usage()
@@ -36,9 +34,9 @@ def main(args):
 
     for f in files:
         try:
-            e = ELF(f.name)
+            e = ELF(f)
         except Exception as e:
-            print("{name}: {error}".format(name=f.name, error=e))
+            print("{name}: {error}".format(name=f, error=e))
 
 if __name__ == '__main__':
     common.main(__file__, main)
