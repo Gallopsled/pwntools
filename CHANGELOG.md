@@ -205,6 +205,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2609][2609] Fix log level of child remotes of `server` tube
 - [#2612][2612] Fix lookup of binutils for `mipsel` architecture
 - [#2624][2624] Fix regression: gdbserver can't handle command-line argument containing whitespace
+- [#2803][2803] fix(dirent): allow bytes with trailing 0 when parsing dirents
 
 [2508]: https://github.com/Gallopsled/pwntools/pull/2508
 [2471]: https://github.com/Gallopsled/pwntools/pull/2471
@@ -236,6 +237,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2609]: https://github.com/Gallopsled/pwntools/pull/2609
 [2612]: https://github.com/Gallopsled/pwntools/pull/2612
 [2624]: https://github.com/Gallopsled/pwntools/pull/2624
+[2803]: https://github.com/Gallopsled/pwntools/pull/2803
 
 ## 4.14.1
 
