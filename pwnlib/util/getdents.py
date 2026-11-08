@@ -107,7 +107,7 @@ def dirents(buf: bytes) -> list[linux_dirent]:
         >>> with context.local(bytes = 4):
         ...     buf = bytes.fromhex('5e843600c120fc1a1400746573742e63000000085f8436001f347e3010002e00be36ba040d002c00ffffff7f10002e2e00000004')
         ...     print(dirents(buf))
-        ...     
+        ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
     """
 
@@ -115,14 +115,13 @@ def dirents(buf: bytes) -> list[linux_dirent]:
     buf_len = len(buf)
     entries = []
 
-    while bpos < buf_len:
-        try:
+    try:
+        while bpos < buf_len:
             dirent = linux_dirent(buf[bpos:], False)
             bpos += dirent.d_reclen
             entries.append(dirent)
-        except (ValueError, UnicodeDecodeError):
-            log.warning("Failed to parse struct linux_dirent at position %d", bpos)
-            break
+    except (ValueError, UnicodeDecodeError):
+        log.warning("Failed to parse struct linux_dirent at position %d", bpos)
     return entries
 
 def dirents64(buf: bytes) -> list[linux_dirent]:
@@ -140,7 +139,7 @@ def dirents64(buf: bytes) -> list[linux_dirent]:
         >>> with context.local(bytes = 8):
         ...     buf = bytes.fromhex('223a2c0000000000786a631cc120fc1a200008746573742e63007464040000000d002c00000000004802ee451f347e301800042e0000000002002c0000000000ffffffffffffff7f1800042e2e000000')
         ...     print(dirents64(buf))
-        ...     
+        ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
     """
 
@@ -148,12 +147,11 @@ def dirents64(buf: bytes) -> list[linux_dirent]:
     buf_len = len(buf)
     entries = []
 
-    while bpos < buf_len:
-        try:
+    try:
+        while bpos < buf_len:
             dirent = linux_dirent(buf[bpos:], True)
             bpos += dirent.d_reclen
             entries.append(dirent)
-        except (ValueError, UnicodeDecodeError):
-            log.warning("Failed to parse struct linux_dirent64 at position %d", bpos)
-            break
+    except (ValueError, UnicodeDecodeError):
+        log.warning("Failed to parse struct linux_dirent64 at position %d", bpos)
     return entries
