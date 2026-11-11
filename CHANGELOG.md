@@ -77,6 +77,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 - [#2798][2798] fix(flag, adb): NameError in `submit_flag` with a flag file and in `Kernel.enable_uart`
 - [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
+- [#2783][2783] fix(encoders): compare avoid and blacklist entries as byte values
 - [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
 - [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
 - [#2762][2762] fix(srop): correct amd64 SigreturnFrame `uc_sigmask` offset
@@ -235,6 +236,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2768]: https://github.com/Gallopsled/pwntools/pull/2768
 [2769]: https://github.com/Gallopsled/pwntools/pull/2769
 [2780]: https://github.com/Gallopsled/pwntools/pull/2780
+[2783]: https://github.com/Gallopsled/pwntools/pull/2783
 [2789]: https://github.com/Gallopsled/pwntools/pull/2789
 [2750]: https://github.com/Gallopsled/pwntools/pull/2750
 [2761]: https://github.com/Gallopsled/pwntools/pull/2761
