@@ -46,6 +46,25 @@ class Encoder:
         raise NotImplementedError()
 
 
+def _byte_values(value):
+    """Return byte-valued input as a set of integers."""
+    if value is None:
+        return set()
+    if isinstance(value, str):
+        value = value.encode('latin-1')
+
+    result = set()
+    for item in value:
+        if isinstance(item, str):
+            item = ord(item)
+        elif isinstance(item, bytes):
+            if len(item) != 1:
+                raise ValueError("byte strings must have length one")
+            item = item[0]
+        result.add(item)
+    return result
+
+
 @LocalContext
 def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     """encode(raw_bytes, avoid, expr, force) -> str
@@ -61,15 +80,30 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
         force(bool):    Force re-encoding of the shellcode, even if it
                         doesn't contain any bytes in ``avoid``.
 
+    Examples:
+
+        Text and regular-expression exclusions are compared as byte values:
+
+        >>> context.clear(arch='i386')
+        >>> b'\\x00' in encode(b'\\x00', avoid='\\x00')
+        False
+        >>> b'\\x00' in encode(b'\\x00', expr=r'\\x00')
+        False
+
+        Legacy character blacklists normalize to the same representation:
+
+        >>> pwnlib.encoders.encoder._byte_values({'A', b'B', 0x43}) == {0x41, 0x42, 0x43}
+        True
+
     """
     orig_avoid = avoid
 
-    avoid = set(avoid or '')
+    avoid = _byte_values(avoid)
 
     if expr:
         for char in all_chars:
             if re.search(expr, char):
-                avoid.add(char)
+                avoid.add(ord(char))
 
     if not (force or avoid & set(raw_bytes)):
         return raw_bytes
@@ -78,7 +112,7 @@ def encode(raw_bytes, avoid=None, expr=None, force=0, pcreg=''):
     random.shuffle(encoders)
 
     for encoder in encoders:
-        if encoder.blacklist & avoid:
+        if _byte_values(encoder.blacklist) & avoid:
             continue
 
         try:
