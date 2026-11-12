@@ -630,6 +630,185 @@ class elf_prstatus_arm(ctypes.Structure):
 class elf_prstatus_aarch64(ctypes.Structure):
     _fields_ = generate_prstatus_common(64, user_regs_struct_aarch64)
 
+# See Linux arch/mips/include/asm/elf.h and the MIPS gregset used by
+# GDB: 32 general-purpose registers, then lo, hi, the exception program
+# counter, the faulting address, and the CP0 status and cause registers.
+# The numeric r0..r31 field names follow the arm/aarch64 structs above;
+# the usual MIPS ABI names are exposed as properties below, so both
+# core.r29 and core.sp (or core.ra) work.
+#
+# MIPS cores exist in both byte orders, and a ctypes Structure is
+# parsed with the *host's* byte order: on a little-endian host, a
+# big-endian corefile would read back byte-swapped. The register and
+# prstatus structs are therefore built once per byte order (plus the
+# native-order originals), and Corefile picks the variant matching
+# the corefile's own endianness.
+class _MipsRegNames:
+    """The MIPS ABI register names as views onto r0..r31."""
+
+    # The r0..r31 attributes themselves are the ctypes fields of the
+    # concrete register structs built by _mips_regs_struct below; they
+    # are declared here so the properties have visible members.
+    r0: int
+    r1: int
+    r2: int
+    r3: int
+    r4: int
+    r5: int
+    r6: int
+    r7: int
+    r8: int
+    r9: int
+    r10: int
+    r11: int
+    r12: int
+    r13: int
+    r14: int
+    r15: int
+    r16: int
+    r17: int
+    r18: int
+    r19: int
+    r20: int
+    r21: int
+    r22: int
+    r23: int
+    r24: int
+    r25: int
+    r26: int
+    r27: int
+    r28: int
+    r29: int
+    r30: int
+    r31: int
+
+    @property
+    def zero(self): return self.r0
+    @property
+    def at(self): return self.r1
+    @property
+    def v0(self): return self.r2
+    @property
+    def v1(self): return self.r3
+    @property
+    def a0(self): return self.r4
+    @property
+    def a1(self): return self.r5
+    @property
+    def a2(self): return self.r6
+    @property
+    def a3(self): return self.r7
+    @property
+    def t0(self): return self.r8
+    @property
+    def t1(self): return self.r9
+    @property
+    def t2(self): return self.r10
+    @property
+    def t3(self): return self.r11
+    @property
+    def t4(self): return self.r12
+    @property
+    def t5(self): return self.r13
+    @property
+    def t6(self): return self.r14
+    @property
+    def t7(self): return self.r15
+    @property
+    def s0(self): return self.r16
+    @property
+    def s1(self): return self.r17
+    @property
+    def s2(self): return self.r18
+    @property
+    def s3(self): return self.r19
+    @property
+    def s4(self): return self.r20
+    @property
+    def s5(self): return self.r21
+    @property
+    def s6(self): return self.r22
+    @property
+    def s7(self): return self.r23
+    @property
+    def t8(self): return self.r24
+    @property
+    def t9(self): return self.r25
+    @property
+    def k0(self): return self.r26
+    @property
+    def k1(self): return self.r27
+    @property
+    def gp(self): return self.r28
+    @property
+    def sp(self): return self.r29
+    @property
+    def fp(self): return self.r30
+    @property
+    def ra(self): return self.r31
+
+def _mips_regs_struct(name, base, word):
+    class regs(base, _MipsRegNames):
+        _fields_ = [('r%i' % i, word) for i in range(32)] \
+                 + [('lo', word),
+                    ('hi', word),
+                    ('pc', word),
+                    ('badvaddr', word),
+                    ('status', word),
+                    ('cause', word)]
+    regs.__name__ = name
+    regs.__qualname__ = name
+    return regs
+
+
+def _mips_prstatus_struct(name, base, size, regs):
+    class prstatus(base):
+        _fields_ = generate_prstatus_common(size, regs)
+    prstatus.__name__ = name
+    prstatus.__qualname__ = name
+    return prstatus
+
+
+user_regs_struct_mips = _mips_regs_struct(
+    'user_regs_struct_mips', ctypes.Structure, ctypes.c_uint32)
+user_regs_struct_mips_le = _mips_regs_struct(
+    'user_regs_struct_mips_le', ctypes.LittleEndianStructure, ctypes.c_uint32)
+user_regs_struct_mips_be = _mips_regs_struct(
+    'user_regs_struct_mips_be', ctypes.BigEndianStructure, ctypes.c_uint32)
+
+user_regs_struct_mips64 = _mips_regs_struct(
+    'user_regs_struct_mips64', ctypes.Structure, ctypes.c_uint64)
+user_regs_struct_mips64_le = _mips_regs_struct(
+    'user_regs_struct_mips64_le', ctypes.LittleEndianStructure, ctypes.c_uint64)
+user_regs_struct_mips64_be = _mips_regs_struct(
+    'user_regs_struct_mips64_be', ctypes.BigEndianStructure, ctypes.c_uint64)
+
+
+elf_prstatus_mips = _mips_prstatus_struct(
+    'elf_prstatus_mips', ctypes.Structure, 32, user_regs_struct_mips)
+elf_prstatus_mips_le = _mips_prstatus_struct(
+    'elf_prstatus_mips_le', ctypes.LittleEndianStructure, 32, user_regs_struct_mips_le)
+elf_prstatus_mips_be = _mips_prstatus_struct(
+    'elf_prstatus_mips_be', ctypes.BigEndianStructure, 32, user_regs_struct_mips_be)
+
+assert ctypes.sizeof(user_regs_struct_mips) == 0x98
+assert ctypes.sizeof(elf_prstatus_mips) == 0xe4
+assert ctypes.sizeof(user_regs_struct_mips_be) == 0x98
+assert ctypes.sizeof(elf_prstatus_mips_be) == 0xe4
+
+elf_prstatus_mips64 = _mips_prstatus_struct(
+    'elf_prstatus_mips64', ctypes.Structure, 64, user_regs_struct_mips64)
+elf_prstatus_mips64_le = _mips_prstatus_struct(
+    'elf_prstatus_mips64_le', ctypes.LittleEndianStructure, 64, user_regs_struct_mips64_le)
+elf_prstatus_mips64_be = _mips_prstatus_struct(
+    'elf_prstatus_mips64_be', ctypes.BigEndianStructure, 64, user_regs_struct_mips64_be)
+
+assert ctypes.sizeof(user_regs_struct_mips64) == 0x130
+assert ctypes.sizeof(elf_prstatus_mips64) == 0x1a8
+assert ctypes.sizeof(user_regs_struct_mips64_be) == 0x130
+assert ctypes.sizeof(elf_prstatus_mips64_be) == 0x1a8
+
+
 class Elf32_auxv_t(ctypes.Structure):
     _fields_ = [('a_type', ctypes.c_uint32),
                 ('a_val', ctypes.c_uint32),]
