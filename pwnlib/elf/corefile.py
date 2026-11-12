@@ -541,7 +541,7 @@ class Corefile(ELF):
         own byte order, not the host's.
 
         >>> import pwnlib.data.elf
-        >>> for name in ('test-mips-core', 'test-mips-big-core', 'test-mips64-core'):
+        >>> for name in ('mips-core', 'mips-big-core', 'mips64-core'):
         ...     core = Corefile(pwnlib.data.elf.get(name))
         ...     assert core.pid == 1234, name
         ...     assert hex(core.pc) == '0x400100', name

@@ -646,6 +646,42 @@ class elf_prstatus_aarch64(ctypes.Structure):
 class _MipsRegNames:
     """The MIPS ABI register names as views onto r0..r31."""
 
+    # The r0..r31 attributes themselves are the ctypes fields of the
+    # concrete register structs built by _mips_regs_struct below; they
+    # are declared here so the properties have visible members.
+    r0: int
+    r1: int
+    r2: int
+    r3: int
+    r4: int
+    r5: int
+    r6: int
+    r7: int
+    r8: int
+    r9: int
+    r10: int
+    r11: int
+    r12: int
+    r13: int
+    r14: int
+    r15: int
+    r16: int
+    r17: int
+    r18: int
+    r19: int
+    r20: int
+    r21: int
+    r22: int
+    r23: int
+    r24: int
+    r25: int
+    r26: int
+    r27: int
+    r28: int
+    r29: int
+    r30: int
+    r31: int
+
     @property
     def zero(self): return self.r0
     @property
