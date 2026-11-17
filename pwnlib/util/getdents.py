@@ -114,8 +114,11 @@ def dirents(buf: bytes) -> list[linux_dirent]:
         >>> with context.local(bytes = 4):
         ...     buf = bytes.fromhex('5e843600c120fc1a1400746573742e63000000085f8436001f347e3010002e00be36ba040d002c00ffffff7f10002e2e00000004')
         ...     print(dirents(buf))
+        ...     buf = bytes.fromhex('00' * 100)
+        ...     print(dirents(buf))
         ...
         [DT_REG  test.c, DT_DIR  ., DT_DIR  ..]
+        []
     """
 
     bpos = 0
