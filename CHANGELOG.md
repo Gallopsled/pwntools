@@ -75,6 +75,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2804][2804] fix(rop): robust VERSYM handling in ret2dlresolve (missing DT_VERSYM + non-zero version entry)
 - [#2798][2798] fix(flag, adb): NameError in `submit_flag` with a flag file and in `Kernel.enable_uart`
 - [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
 - [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
@@ -207,6 +208,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2761]: https://github.com/Gallopsled/pwntools/pull/2761
 [2727]: https://github.com/Gallopsled/pwntools/pull/2727
 [2798]: https://github.com/Gallopsled/pwntools/pull/2798
+[2804]: https://github.com/Gallopsled/pwntools/pull/2804
 
 ## 4.15.1
 

