@@ -10,7 +10,8 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-stable)  | `stable` | Oct 12, 2025
+| [4.15.1](#4151-stable) | `stable` | Nov 17, 2026
+| [4.15.0](#4150)  |          | Oct 12, 2025
 | [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
@@ -75,6 +76,16 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2798][2798] fix(flag, adb): NameError in `submit_flag` with a flag file and in `Kernel.enable_uart`
+- [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
+- [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
+- [#2784][2784] docs: put plain doctest blocks in the default group for Sphinx 9
+- [#2753][2753] docs(args): clarify reserved args (DEBUG/NOASLR) map to context, not args
+- [#2740][2740] setup: install docs to FHS-compliant share/doc/pwntools
+- [#2725][2725] feat(libcdb): add extra_mirrors arg + PWNLIB_EXTRA_LIBC_MIRRORS env to download_libraries
+- [#2675][2675] feat(term): add zellij support
+- [#2652][2652] Make setting the context.terminal to kitty more user friendly
+- [#2638][2638] feat: add disable_corefiles context option
 - [#2419][2419] riscv: avoid compressed instructions (if you need compressed, use .option rvc)
 - [#2551][2551] Detect when kitty is being used as terminal
 - [#2519][2519] Drop Python 2.7 support / Require Python 3.10
@@ -92,10 +103,50 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2590][2590] Add support for finding corefiles under WSL2
 - [#2496][2496] Add linux ko file search support
 - [#2542][2542] Decode `_IO_*` flags in `FileStructure` member
+- [#2606][2606] Improve error of `process.maps()` after the process exited
 - [#2608][2608] Abort on `libcdb file libc.so --unstrip` if eu-unstrip is not installed
 - [#2611][2611] Cleanup `pwnlib.lexer` exports and imports
 - [#2615][2615] tube/process: Fix redirecting stderr to stdout on Windows
+- [#2639][2639] ROP: Remove stdout and argv workaround in ROPgadget invocation
+- [#2630][2630] support `preexec_fn` in `debug()`
+- [#2641][2641] support preexec_args in process
+- [#2629][2629] Add `terminate()` method to process class that sends SIGTERM
+- [#2643][2643] Refactor getdents.py, add support for SYS_getdents64
+- [#2647][2647] packing: Add `overlap` to overlap structures easily
+- [#2673][2673] Add libc module for libc-related functions
+- [#2679][2679] Add type hints to parts of pwnlib.utils
+- [#2680][2680] Cleanup Python 2 legacy
+- [#2683][2683] libc: add atexit functions for glibc exploits
+- [#2687][2687] Add (un)pack shorthands for 40-56 bit numbers `u48()`/`p48()`
+- [#2682][2682] Fix `server.close()` not closing the listen socket
+- [#2671][2671] ssh: support raw string input for 'key' argument as documented
+- [#2686][2686] Add glibc safe-linking `glibc.reveal_ptr_same_page`
+- [#2706][2706] doc: Update `run_in_new_terminal` docstring with new overrides
+- [#2655][2655] Add `context.debugger` to select which debugger to use
+- [#2689][2689] Refactor zsh completion script and deprecate `-e` in `pwn asm`
+- [#2713][2713] Remove python-dateutil dependency
+- [#2720][2720] ssh: resolve PermissionError on Windows during SFTP upload
+- [#2702][2702] ssh: Don't cache username in ssh checksec output
+- [#2722][2722] safeeval: allow LIST_APPEND and SET_ADD opcodes (Python 3.14)
+- [#2730][2730] Fix atexception handlers in term mode
+- [#2732][2732] ssh: fix `ssh.which` returns None for POSIX paths when running on Windows
+- [#2733][2733] loongarch64: fix incorrect mov assembly template
+- [#2741][2741] memleak: add opt-in persistent leak cache
+- [#2743][2743] fix(adb): add missing import for remote to fix NameError hidden by bare except
+- [#2746][2746] elf: point people at libc_start_main_return when they look up __libc_start_main_ret
+- [#2734][2734] ROP: Add labels to reference addresses relative to your chain
+- [#2735][2735] Add support for debugging with x64dbg on Windows
+- [#2726][2726] feat(libcdb): use local debuginfod client cache before hitting servers
+- [#2768][2768] docs: Added the homebrew workaround in documentation needed for macOS users
+- [#2769][2769] Use standard library (PEP-784) for Zstandard decompression
+- [#2750][2750] Fix DeprecationWarning with remote(ssl=True), checking remote certificates now
+- [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
+- [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
 
+[2784]: https://github.com/Gallopsled/pwntools/pull/2784
+[2675]: https://github.com/Gallopsled/pwntools/pull/2675
+[2652]: https://github.com/Gallopsled/pwntools/pull/2652
+[2638]: https://github.com/Gallopsled/pwntools/pull/2638
 [2419]: https://github.com/Gallopsled/pwntools/pull/2419
 [2551]: https://github.com/Gallopsled/pwntools/pull/2551
 [2519]: https://github.com/Gallopsled/pwntools/pull/2519
@@ -113,11 +164,52 @@ The table below shows which release corresponds to each branch, and what date th
 [2590]: https://github.com/Gallopsled/pwntools/pull/2590
 [2496]: https://github.com/Gallopsled/pwntools/pull/2496
 [2542]: https://github.com/Gallopsled/pwntools/pull/2542
+[2606]: https://github.com/Gallopsled/pwntools/pull/2606
 [2608]: https://github.com/Gallopsled/pwntools/pull/2608
 [2611]: https://github.com/Gallopsled/pwntools/pull/2611
 [2615]: https://github.com/Gallopsled/pwntools/pull/2615
+[2639]: https://github.com/Gallopsled/pwntools/pull/2639
+[2630]: https://github.com/Gallopsled/pwntools/pull/2630
+[2641]: https://github.com/Gallopsled/pwntools/pull/2641
+[2629]: https://github.com/Gallopsled/pwntools/pull/2629
+[2643]: https://github.com/Gallopsled/pwntools/pull/2643
+[2647]: https://github.com/Gallopsled/pwntools/pull/2647
+[2673]: https://github.com/Gallopsled/pwntools/pull/2673
+[2679]: https://github.com/Gallopsled/pwntools/pull/2679
+[2680]: https://github.com/Gallopsled/pwntools/pull/2680
+[2683]: https://github.com/Gallopsled/pwntools/pull/2683
+[2687]: https://github.com/Gallopsled/pwntools/pull/2687
+[2682]: https://github.com/Gallopsled/pwntools/pull/2682
+[2671]: https://github.com/Gallopsled/pwntools/pull/2671
+[2686]: https://github.com/Gallopsled/pwntools/pull/2686
+[2655]: https://github.com/Gallopsled/pwntools/pull/2655
+[2689]: https://github.com/Gallopsled/pwntools/pull/2689
+[2713]: https://github.com/Gallopsled/pwntools/pull/2713
+[2720]: https://github.com/Gallopsled/pwntools/pull/2720
+[2702]: https://github.com/Gallopsled/pwntools/pull/2702
+[2722]: https://github.com/Gallopsled/pwntools/pull/2722
+[2725]: https://github.com/Gallopsled/pwntools/pull/2725
+[2730]: https://github.com/Gallopsled/pwntools/pull/2730
+[2732]: https://github.com/Gallopsled/pwntools/pull/2732
+[2733]: https://github.com/Gallopsled/pwntools/pull/2733
+[2740]: https://github.com/Gallopsled/pwntools/pull/2740
+[2741]: https://github.com/Gallopsled/pwntools/pull/2741
+[2743]: https://github.com/Gallopsled/pwntools/pull/2743
+[2746]: https://github.com/Gallopsled/pwntools/pull/2746
+[2734]: https://github.com/Gallopsled/pwntools/pull/2734
+[2735]: https://github.com/Gallopsled/pwntools/pull/2735
+[2753]: https://github.com/Gallopsled/pwntools/pull/2753
+[2726]: https://github.com/Gallopsled/pwntools/pull/2726
+[2768]: https://github.com/Gallopsled/pwntools/pull/2768
+[2769]: https://github.com/Gallopsled/pwntools/pull/2769
+[2780]: https://github.com/Gallopsled/pwntools/pull/2780
+[2789]: https://github.com/Gallopsled/pwntools/pull/2789
+[2750]: https://github.com/Gallopsled/pwntools/pull/2750
+[2761]: https://github.com/Gallopsled/pwntools/pull/2761
+[2727]: https://github.com/Gallopsled/pwntools/pull/2727
+[2798]: https://github.com/Gallopsled/pwntools/pull/2798
 
-## 4.15.1
+## 4.15.1 (`stable`)
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
@@ -145,7 +237,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2767][2767] Support paginated libc.rip API requests to include all search results
 - [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
 - [#2792][2792] Fix deprecation warning for not using `RLIM_INFINITY` in `resource.setrlimit` (Python 3.15)
-- [#2803][2803] fix(dirent): allow bytes with trailing 0 when parsing dirents
+- [#2803][2803] fix(dirent): allow bytes with trailing 0 when parsing dirents (and [#2802][2802] for dirents64)
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -174,8 +266,9 @@ The table below shows which release corresponds to each branch, and what date th
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2792]: https://github.com/Gallopsled/pwntools/pull/2792
 [2803]: https://github.com/Gallopsled/pwntools/pull/2803
+[2802]: https://github.com/Gallopsled/pwntools/pull/2802
 
-## 4.15.0 (`stable`)
+## 4.15.0
 
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
