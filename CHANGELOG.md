@@ -142,6 +142,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2750][2750] Fix DeprecationWarning with remote(ssl=True), checking remote certificates now
 - [#2761][2761] fix: don't truncate the last byte of `FileStructure.struntil`
 - [#2727][2727] feat(cli): add 'pwn errno --list' + perror-string lookup
+- [#2807][2807] elf: don't invert the zero-fill range when p_memsz < p_filesz
 
 [2784]: https://github.com/Gallopsled/pwntools/pull/2784
 [2675]: https://github.com/Gallopsled/pwntools/pull/2675
@@ -208,6 +209,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2761]: https://github.com/Gallopsled/pwntools/pull/2761
 [2727]: https://github.com/Gallopsled/pwntools/pull/2727
 [2798]: https://github.com/Gallopsled/pwntools/pull/2798
+[2807]: https://github.com/Gallopsled/pwntools/pull/2807
 
 ## 4.15.1 (`stable`)
 

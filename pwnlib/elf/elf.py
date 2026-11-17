@@ -1432,6 +1432,12 @@ class ELF(ELFFile):
             stop_data = start + segment.header.p_filesz
             stop_mem  = start + segment.header.p_memsz
 
+            # p_memsz < p_filesz is malformed (readelf warns but carries on).
+            # Clamping keeps the zero-fill range from inverting, which
+            # intervaltree refuses to store at all.
+            if stop_mem < stop_data:
+                stop_mem = stop_data
+
             # Chop any existing segments which cover the range described by
             # [vaddr, vaddr+filesz].
             #
