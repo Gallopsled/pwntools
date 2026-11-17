@@ -1079,9 +1079,9 @@ def walk_symlink_files(top):
         >>> with open(os.path.join(tmp, 'amd64', 'syscalls'), 'w') as fd:
         ...     _ = fd.write('../common/syscalls')
         >>> for root, dirs, files in walk_symlink_files(os.path.join(tmp, 'amd64')):
-        ...     print(os.path.relpath(root, tmp), sorted(dirs), sorted(files))
-        amd64 ['syscalls'] []
-        amd64/syscalls [] ['execve.asm']
+        ...     print('%s dirs=%s files=%s' % (os.path.relpath(root, tmp), ','.join(sorted(dirs)), ','.join(sorted(files))))
+        amd64 dirs=syscalls files=
+        amd64/syscalls dirs= files=execve.asm
     """
     stack = [(top, top)]
     while stack:
