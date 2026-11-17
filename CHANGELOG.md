@@ -145,6 +145,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2767][2767] Support paginated libc.rip API requests to include all search results
 - [#2739][2739] shellcraft: migrate lazy importer to find_spec for Python 3.12+
 - [#2792][2792] Fix deprecation warning for not using `RLIM_INFINITY` in `resource.setrlimit` (Python 3.15)
+- [#2803][2803] fix(dirent): allow bytes with trailing 0 when parsing dirents
 
 [2694]: https://github.com/Gallopsled/pwntools/pull/2694
 [2701]: https://github.com/Gallopsled/pwntools/pull/2701
@@ -172,6 +173,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2767]: https://github.com/Gallopsled/pwntools/pull/2767
 [2739]: https://github.com/Gallopsled/pwntools/pull/2739
 [2792]: https://github.com/Gallopsled/pwntools/pull/2792
+[2803]: https://github.com/Gallopsled/pwntools/pull/2803
 
 ## 4.15.0 (`stable`)
 
