@@ -11,6 +11,7 @@ from types import ModuleType
 from pwnlib import constants
 from pwnlib.context import context
 from pwnlib.shellcraft import internal
+from pwnlib.util import misc
 from pwnlib.util import packing
 
 
@@ -30,8 +31,10 @@ class module(ModuleType):
         # Save the shellcode directory
         self._dir = directory
 
-        # Find the absolute path of the directory
-        self._absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
+        # Find the absolute path of the directory.  Directory symlinks in the
+        # tree may be plain files holding the target (see misc.symlink_file_target).
+        self._absdir = misc.resolve_symlink_files(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'), self._dir)
 
         # Get the docstring
         with open(os.path.join(self._absdir, "__doc__")) as fd:
@@ -51,7 +54,7 @@ class module(ModuleType):
         self._shellcodes = {}
         for name in os.listdir(self._absdir):
             path = os.path.join(self._absdir, name)
-            if os.path.isdir(path):
+            if os.path.isdir(misc.resolve_symlink_files(self._absdir, name)):
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
             elif os.path.isfile(path) and name != '__doc__' and name[0] != '.':
                 funcname, _ext = os.path.splitext(name)
@@ -123,7 +126,7 @@ class module(ModuleType):
         template_dir = os.path.join(os.path.dirname(__file__), 'templates')
         templates    = []
 
-        for root, _, files in os.walk(template_dir, followlinks=True):
+        for root, _, files in misc.walk_symlink_files(template_dir):
             for file in filter(lambda x: x.endswith('.asm'), files):
                 value = os.path.splitext(file)[0]
                 value = os.path.join(root, value)

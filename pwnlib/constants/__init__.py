@@ -53,6 +53,7 @@ Example:
 from __future__ import absolute_import
 
 import importlib
+import os
 import sys
 from types import ModuleType
 
@@ -102,8 +103,12 @@ class ConstantsModule(ModuleType):
         # Attempt to import a module by the specified name.
         if key in self.possible_submodules:
             try:
-                mod = importlib.import_module('.' + key, self.__name__)
+                name = self._symlink_file_target(key)
+                mod = importlib.import_module('.' + (name or key), self.__name__)
                 mod = ConstantsModule(mod.__name__, mod)
+                if name:
+                    # Same as importing it through the real symlink
+                    mod.__dict__['__name__'] = self.__name__ + '.' + key
                 setattr(self, key, mod)
                 sys.modules[mod.__name__] = mod
                 return mod
@@ -115,6 +120,24 @@ class ConstantsModule(ModuleType):
                 return getattr(mod, key)
 
         raise AttributeError("'module' object has no attribute '%s'" % key)
+
+    def _symlink_file_target(self, key):
+        """If submodule ``key`` is a symlink stored as a plain file (see
+        :func:`pwnlib.util.misc.symlink_file_target`), return the name of the
+        sibling module it points to.  For example ``android`` -> ``linux``,
+        or ``cgc/amd64.py`` -> ``thumb``.
+        """
+        from pwnlib.util.misc import symlink_file_target
+
+        for directory in getattr(self, '__path__', None) or ():
+            for filename in (key, key + '.py'):
+                target = symlink_file_target(os.path.join(directory, filename))
+                if target and os.path.dirname(target) == os.path.normpath(directory):
+                    name = os.path.basename(target)
+                    if filename.endswith('.py') and name.endswith('.py'):
+                        name = name[:-3]
+                    return name
+        return None
 
     def eval(self, string):
         """eval(string) -> value

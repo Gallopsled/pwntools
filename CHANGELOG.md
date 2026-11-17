@@ -126,6 +126,7 @@ The table below shows which release corresponds to each branch, and what date th
 - [#2772][2772] fix(packing): `dd()` no longer crashes on a `bytearray` destination
 - [#2787][2787] gdb.corefile: Run gdb directly to prevent detach race
 - [#2795][2795] regsort: Fix self-assignment detection through register aliases
+- [#2809][2809] Follow symlinks stored as plain files, so shellcraft and constants work when installed from a `.zip` archive
 - [#2524][2524] Raise EOFError during `process.recv` when stdout closes on Windows
 - [#2530][2530] Do NOT error when passing directory arguments in `checksec` commandline tool.
 - [#2506][2506] ROP: fix `ROP(ELF(exe)).leave` is `None` in some ELF
@@ -154,6 +155,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2772]: https://github.com/Gallopsled/pwntools/pull/2772
 [2787]: https://github.com/Gallopsled/pwntools/pull/2787
 [2795]: https://github.com/Gallopsled/pwntools/pull/2795
+[2809]: https://github.com/Gallopsled/pwntools/pull/2809
 [2524]: https://github.com/Gallopsled/pwntools/pull/2524
 [2530]: https://github.com/Gallopsled/pwntools/pull/2530
 [2506]: https://github.com/Gallopsled/pwntools/pull/2506
