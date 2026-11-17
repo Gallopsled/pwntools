@@ -1424,6 +1424,18 @@ class ELF(ELFFile):
         return None
 
     def _populate_memory(self):
+        r"""Populates the memory mapping for all PT_LOAD segments.
+
+        Examples:
+
+            >>> # Malformed ELF where PT_LOAD p_memsz < p_filesz should not crash (#2805)
+            >>> import struct # doctest: -POSIX
+            >>> ehdr = b'\x7fELF' + bytes([2,1,1,0]) + bytes(8) + struct.pack('<HHIQQQIHHHHHH', 2, 0x3e, 1, 0x400000, 64, 0, 0, 64, 56, 1, 0, 0, 0) # doctest: -POSIX
+            >>> phdr = struct.pack('<IIQQQQQQ', 1, 5, 0, 0x400000, 0x400000, 120, 60, 0x1000) # doctest: -POSIX
+            >>> e = ELF(ehdr + phdr) # doctest: -POSIX
+            >>> hex(e.address) # doctest: -POSIX
+            '0x400000'
+        """
         load_segments = list(filter(lambda s: s.header.p_type == 'PT_LOAD', self.iter_segments()))
 
         # Map all of the segments
@@ -1449,7 +1461,7 @@ class ELF(ELFFile):
             if start != stop_data:
                 self.memory.addi(start, stop_data, segment)
 
-            if stop_data != stop_mem:
+            if stop_data < stop_mem:
                 self.memory.addi(stop_data, stop_mem, b'\x00')
 
             page_end = align(0x1000, stop_mem)
