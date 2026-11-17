@@ -10,7 +10,8 @@ The table below shows which release corresponds to each branch, and what date th
 | Version          | Branch   | Release Date           |
 | ---------------- | -------- | ---------------------- |
 | [5.0.0](#500-dev)  | `dev`    |
-| [4.15.0](#4150-stable) | `stable` | Oct 12, 2025
+| [4.15.1](#4151-stable) | `stable` | Nov 17, 2026
+| [4.15.0](#4150)  |          | Oct 12, 2025
 | [4.14.1](#4141)  |          | Mar 24, 2025
 | [4.14.0](#4140)  |          | Jan 15, 2025
 | [4.13.1](#4131)  |          | Sep 29, 2024
@@ -208,7 +209,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2727]: https://github.com/Gallopsled/pwntools/pull/2727
 [2798]: https://github.com/Gallopsled/pwntools/pull/2798
 
-## 4.15.1
+## 4.15.1 (`stable`)
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
 - [#2701][2701] Fix `adb._build_date()` crash on devices with non-standard locale date strings
@@ -267,7 +268,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2803]: https://github.com/Gallopsled/pwntools/pull/2803
 [2802]: https://github.com/Gallopsled/pwntools/pull/2802
 
-## 4.15.0 (`stable`)
+## 4.15.0
 
 - [#2508][2508] Ignore a warning when compiling with asm on nix
 - [#2471][2471] Properly close spawned kitty window
