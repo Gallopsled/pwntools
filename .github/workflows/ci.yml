@@ -235,11 +235,17 @@ jobs:
         path: dist/
         include-hidden-files: true
 
-    - uses: actions/upload-artifact@v7
+    - name: Coverage report
+      run: |
+        python -m coverage combine
+        python -m coverage xml
+
+    - uses: coverallsapp/github-action@v2
       with:
-        name: coverage-${{ matrix.python_version }}
-        path: .coverage*
-        include-hidden-files: true
+        files: coverage.xml
+        format: cobertura
+        flag-name: python-${{ matrix.python_version }}
+        parallel: true
 
     - name: Fix libcdb-cache permissions
       run: |
@@ -311,11 +317,17 @@ jobs:
         source .android.env
         PWNLIB_NOTERM=1 coverage run -m sphinx -b doctest docs/source docs/build/doctest docs/source/adb.rst
 
-    - uses: actions/upload-artifact@v7
+    - name: Coverage report
+      run: |
+        python -m coverage combine
+        python -m coverage xml
+
+    - uses: coverallsapp/github-action@v2
       with:
-        name: coverage-android
-        path: .coverage*
-        include-hidden-files: true
+        files: coverage.xml
+        format: cobertura
+        flag-name: android
+        parallel: true
 
   windows-test:
     runs-on: windows-latest
@@ -345,33 +357,25 @@ jobs:
       run: |
         python -bb -m coverage run -m sphinx -b doctest docs/source docs/build/doctest
 
-    - uses: actions/upload-artifact@v7
+    - name: Coverage report
+      run: |
+        python -m coverage combine
+        python -m coverage xml
+
+    - uses: coverallsapp/github-action@v2
       with:
-        name: coverage-windows
-        path: .coverage*
-        include-hidden-files: true
+        files: coverage.xml
+        format: cobertura
+        flag-name: windows
+        parallel: true
 
   upload-coverage:
     runs-on: ubuntu-latest
     needs: [test, android-test, windows-test]
     steps:
-    - uses: actions/checkout@v7
+    - uses: coverallsapp/github-action@v2
       with:
-        fetch-depth: 20
-
-    - uses: actions/download-artifact@v8
-      with:
-        pattern: coverage-*
-        merge-multiple: true
-
-    - name: Install coveralls
-      run: |
-        pip install --break-system-packages tomli coveralls || pip install tomli coveralls
-
-    - name: Upload coverage to coveralls.io
-      run: |
-        coverage combine
-        COVERALLS_REPO_TOKEN=PP20MEgztXIQJJTguQwe2jeCh6Bm4lkbv coveralls
+        parallel-finished: true
 
 
   staging-merge:
