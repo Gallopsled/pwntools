@@ -1326,7 +1326,11 @@ class ELF(ELFFile):
             zeroed = memsz - filesz
             offset = seg.header.p_offset
             data   = self.mmap[offset:offset+filesz]
-            data   += b'\x00' * zeroed
+            # p_memsz is file-controlled and can claim petabytes, while a
+            # needle with any non-zero byte can never match inside the
+            # zero-filled tail anyway.  Only build the tail when it could.
+            if zeroed > 0 and not needle.strip(b'\x00'):
+                data   += b'\x00' * zeroed
             offset = 0
             while True:
                 offset = data.find(needle, offset)
