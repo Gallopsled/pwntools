@@ -113,7 +113,7 @@ def print_binutils_instructions(util, context):
         >>> pwnlib.asm.print_binutils_instructions('as', context)
         Traceback (most recent call last):
         ...
-        PwnlibException: Could not find 'as' installed for ContextType(arch = 'amd64', bits = 64, endian = 'little')
+        PwnlibException: Could not find 'as' installed for ContextType(arch = 'amd64')
         Try installing binutils for this architecture:
         $ sudo apt-get install binutils
     """
