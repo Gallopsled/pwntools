@@ -65,7 +65,7 @@ from elftools.elf.enums import ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS, ENUM_P_TYP
 from elftools.elf.gnuversions import GNUVerDefSection
 from elftools.elf.relocation import RelocationSection, RelrRelocationSection
 from elftools.elf.sections import SymbolTableSection
-from elftools.elf.segments import InterpSegment
+from elftools.elf.segments import InterpSegment, Segment
 
 import intervaltree
 
@@ -603,6 +603,8 @@ class ELF(ELFFile):
                 continue
 
             offset = self.vaddr_to_offset(address)
+            if offset is None:
+                continue
 
             file_start = seg.header.p_offset
             file_stop  = seg.header.p_filesz + file_start
@@ -1499,19 +1501,37 @@ class ELF(ELFFile):
             0
             >>> bash.vaddr_to_offset(0) is None
             True
+
+            A zero-fill range is mapped, but its data is created when the
+            segment is loaded, so it has no offset in the file either.
+
+            >>> bash.vaddr_to_offset(bash.bss()) is None
+            True
         """
 
         for interval in self.memory[address]:
             segment = interval.data
 
-            # Convert the address back to how it was when the segment was loaded
-            address = (address - self.address) + self.load_addr
+            # Zero-fill ranges hold b'\x00' and unmapped pages hold None.
+            # Neither has any file data behind it, so there is no offset to
+            # translate to.
+            if not isinstance(segment, Segment):
+                continue
 
-            # Figure out the offset into the segment
-            offset = address - segment.header.p_vaddr
+            # Convert the address back to how it was when the segment was loaded
+            file_address = (address - self.address) + self.load_addr
+
+            # Figure out the offset into the segment. An address in the
+            # zero-fill tail of a segment is past p_filesz, where the file
+            # holds the next segment, not this one.
+            offset = file_address - segment.header.p_vaddr
+            if not 0 <= offset < segment.header.p_filesz:
+                continue
 
             # Add the segment-base offset to the offset-within-the-segment
             return segment.header.p_offset + offset
+
+        return None
 
     def read(self, address, count):
         r"""read(address, count) -> bytes
@@ -1648,6 +1668,13 @@ class ELF(ELFFile):
           >>> bash.write(bash.address, b"HELO")
           >>> bash.read(bash.address, 4)
           b'HELO'
+
+          An address with no file data behind it is left alone, rather than
+          raising: the zero-fill tail of a segment only exists in memory.
+
+          >>> bash.write(bash.bss(), b"HELO")
+          >>> bash.read(bash.bss(), 4)
+          b'\\x00\\x00\\x00\\x00'
         """
         offset = self.vaddr_to_offset(address)
 
