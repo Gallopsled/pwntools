@@ -1323,7 +1323,8 @@ class ELF(ELFFile):
             addr   = seg.header.p_vaddr
             memsz  = seg.header.p_memsz
             filesz = seg.header.p_filesz
-            zeroed = memsz - filesz
+            # speed up by limiting to sane upper bound
+            zeroed = min(memsz - filesz, len(needle))
             offset = seg.header.p_offset
             data   = self.mmap[offset:offset+filesz]
             data   += b'\x00' * zeroed
