@@ -507,41 +507,56 @@ class ssh_listener(sock):
         self.parent = parent
 
         self.host = parent.host
+        self.bind_address = bind_address
+        self.port_forwarding_requested = False
 
         try:
             self.port = parent.transport.request_port_forward(bind_address, port)
+            self.port_forwarding_requested = True
 
         except Exception:
-            h.failure('Failed create a port forwarding')
+            self.exception(f'Failed to create a port forwarding from {bind_address}:{port} via SSH listener to {self.host}')
             raise
 
         def accepter():
             msg = 'Waiting on port %d via SSH to %s' % (self.port, self.host)
             h   = self.waitfor(msg)
-            try:
-                self.sock = parent.transport.accept()
-                parent.transport.cancel_port_forward(bind_address, self.port)
-            except Exception:
-                self.sock = None
-                h.failure()
-                self.exception('Failed to get a connection')
-                return
+            t = Timeout(self.timeout)
+            with t.countdown():
+                while t.timeout:
+                    try:
+                        child_sock = parent.transport.accept(0.5)
+                        # If accept's timeout is reached, just try again.
+                        # This allows us to check if the port forwarding was cancelled in the meantime.
+                        if child_sock is None:
+                            if self.port_forwarding_requested:
+                                continue
+                            raise EOFError('Port forwarding was closed')
+                        self.sock = child_sock
 
-            self.rhost, self.rport = self.sock.origin_addr
-            h.success('Got connection from %s:%d' % (self.rhost, self.rport))
+                        parent.transport.cancel_port_forward(bind_address, self.port)
+                        self.port_forwarding_requested = False
+
+                        self.rhost, self.rport = self.sock.origin_addr
+                        h.success('Got connection from %s:%d' % (self.rhost, self.rport))
+                        return
+                    except Exception:
+                        break
+                self.sock = None
+                h.failure('Failed to get a connection')
 
         self._accepter = context.Thread(target = accepter)
         self._accepter.daemon = True
         self._accepter.start()
 
     def _close_msg(self):
-        self.info("Closed remote connection to %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
+        self.info("Closed remote connection from %s:%d via SSH listener on port %d via %s" % (self.rhost, self.rport, self.port, self.host))
 
     def spawn_process(self, *args, **kwargs):
         self.error("Cannot use spawn_process on an SSH channel.""")
 
     def wait_for_connection(self):
-        """Blocks until a connection has been established."""
+        """Blocks until a connection has been established or the timeout is reached."""
         _ = self.sock
         return self
 
@@ -553,11 +568,23 @@ class ssh_listener(sock):
             pass
         while self._accepter.is_alive():
             self._accepter.join(timeout=0.1)
-        return self.__dict__.get('sock')
+        sock = self.__dict__.get('sock')
+        if sock:
+            self.settimeout(self.timeout)
+        return sock
 
     @sock.setter
     def sock(self, s):
         self.__dict__['sock'] = s
+
+    def close(self):
+        if self.port_forwarding_requested:
+            self.parent.transport.cancel_port_forward(self.bind_address, self.port)
+            self.port_forwarding_requested = False
+        # The accepter thread could not be started if an exception was raised during the initialization of the server.
+        if hasattr(self, "_accepter") and self._accepter is not None:
+            self._accepter.join(timeout=self.timeout)
+        super().close()
 
 
 class ssh(Timeout, Logger):
@@ -1282,8 +1309,26 @@ from ctypes import *; libc = CDLL('libc.so.6'); print(libc.getenv(%r))
             >>> a = remote(s.host, l.port)
             >>> a=a; b = l.wait_for_connection()  # a=a; prevents hangs
             >>> a.sendline(b'Hello')
-            >>> print(repr(b.recvline()))
+            >>> b.recvline()
             b'Hello\n'
+            >>> b.close()
+
+            Listening can be aborted by closing the listener:
+
+            >>> l = s.listen_remote()
+            >>> l.close()
+            >>> l.sock is None
+            True
+
+            If no connection is made before the timeout, then :meth:`wait_for_connection` will
+            return a :class:`pwnlib.tubes.ssh.ssh_connecter` object which is not connected.
+            Calling :meth:`ssh_connecter.wait_for_connection` again on the same listener after the
+            timeout is a no-op. You have to create a new listener to accept new connections.
+
+            >>> l = s.listen_remote(timeout = 0.5)
+            >>> b = l.wait_for_connection()
+            >>> b.connected()
+            False
         """
 
         return ssh_listener(self, bind_address, port, timeout, level=self.level)
