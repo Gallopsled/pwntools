@@ -29,11 +29,16 @@ def main(args):
         parser.print_usage()
         return
 
+    ret = 0
     for f in files:
         try:
             e = ELF(f)
         except Exception as e:
             print(f"{f}: {e}")
+            ret = 1
+
+    if ret:
+        sys.exit(ret)
 
 if __name__ == '__main__':
     common.main(__file__, main)
