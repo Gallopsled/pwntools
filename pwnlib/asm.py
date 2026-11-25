@@ -59,6 +59,7 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util import misc
 from pwnlib.util.hashes import sha1sumhex
 from pwnlib.util.packing import _encode
 from pwnlib.version import __version__
@@ -341,9 +342,15 @@ def _include_header():
     arch = context.arch
     include = '%s/%s.h' % (os, arch)
 
-    if not include or not path.exists(path.join(_incdir, include)):
+    # Follow symlinks stored as plain files (see misc.symlink_file_target),
+    # e.g. android/amd64.h -> linux/amd64.h
+    header = misc.resolve_symlink_files(_incdir, include)
+    if not path.exists(header):
         log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
         return '\n'
+
+    if header != path.join(_incdir, include):
+        include = path.relpath(header, _incdir).replace(path.sep, '/')
 
     return '#include <%s>\n' % include
 

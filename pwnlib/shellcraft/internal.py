@@ -5,6 +5,7 @@ import os
 import sys
 
 from pwnlib.context import context
+from pwnlib.util import misc
 
 __all__ = ['make_function']
 
@@ -80,7 +81,14 @@ def lookup_template(filename):
     init_mako()
 
     if filename not in loaded:
-        loaded[filename] = lookup.get_template(filename)
+        # Follow symlinks stored as plain files (see misc.symlink_file_target),
+        # e.g. amd64/linux/syscalls/execve.asm -> common/linux/syscalls/execve.asm
+        uri = filename
+        templates = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+        path = misc.resolve_symlink_files(templates, filename)
+        if path != os.path.join(templates, filename):
+            uri = os.path.relpath(path, templates).replace(os.path.sep, '/')
+        loaded[filename] = lookup.get_template(uri)
 
     return loaded[filename]
 

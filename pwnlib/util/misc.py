@@ -937,3 +937,163 @@ raise OSError("execve failed")
     script = script.strip()
 
     return script
+
+
+def symlink_file_target(path):
+    r"""symlink_file_target(path) -> str or None
+
+    Pwntools uses git symlinks in its source tree (for example the
+    ``syscalls`` shellcraft templates).  Some ways of installing pwntools do
+    not keep them: a GitHub ``.zip`` archive, or a git checkout on Windows
+    without symlink support.  Each symlink then becomes a small text file that
+    holds the relative link target.
+
+    If ``path`` is such a file and the target exists, return the target path.
+    Otherwise (a real symlink, a directory, a normal file) return :const:`None`.
+
+    Example:
+
+        >>> tmp = tempfile.mkdtemp()
+        >>> os.mkdir(os.path.join(tmp, 'linux'))
+        >>> with open(os.path.join(tmp, 'android'), 'w') as fd:
+        ...     _ = fd.write('linux')
+        >>> symlink_file_target(os.path.join(tmp, 'android')) == os.path.join(tmp, 'linux')
+        True
+        >>> symlink_file_target(os.path.join(tmp, 'linux')) is None
+        True
+        >>> with open(os.path.join(tmp, 'notes'), 'w') as fd:
+        ...     _ = fd.write('linux is great')
+        >>> symlink_file_target(os.path.join(tmp, 'notes')) is None
+        True
+        >>> with open(os.path.join(tmp, 'dangling'), 'w') as fd:
+        ...     _ = fd.write('missing')
+        >>> symlink_file_target(os.path.join(tmp, 'dangling')) is None
+        True
+    """
+    if os.path.islink(path) or not os.path.isfile(path):
+        return None
+
+    try:
+        # Link targets in the pwntools tree are short paths
+        if os.path.getsize(path) > 256:
+            return None
+        with open(path, 'rb') as fd:
+            target = fd.read().decode('ascii')
+    except (IOError, OSError, UnicodeDecodeError):
+        return None
+
+    if not target or os.path.isabs(target) or any(c.isspace() for c in target):
+        return None
+
+    target = os.path.normpath(os.path.join(os.path.dirname(path), target))
+    if not os.path.exists(target):
+        return None
+    return target
+
+
+def _follow_symlink_files(path):
+    # Bounded, in case two placeholder files point at each other
+    for _ in range(40):
+        target = symlink_file_target(path)
+        if target is None:
+            break
+        path = target
+    return path
+
+
+def resolve_symlink_files(root, relpath):
+    r"""resolve_symlink_files(root, relpath) -> str
+
+    Join ``root`` and ``relpath`` like :func:`os.path.join`, but follow
+    every path component that is a symlink stored as a plain file (see
+    :func:`symlink_file_target`).  Real symlinks are left as they are, so with
+    a normal install this returns ``os.path.join(root, relpath)``.
+
+    Example:
+
+        >>> tmp = tempfile.mkdtemp()
+        >>> mkdir_p(os.path.join(tmp, 'common', 'linux', 'syscalls'))
+        >>> mkdir_p(os.path.join(tmp, 'amd64', 'linux'))
+        >>> with open(os.path.join(tmp, 'amd64', 'linux', 'syscalls'), 'w') as fd:
+        ...     _ = fd.write('../../common/linux/syscalls')
+        >>> path = resolve_symlink_files(tmp, 'amd64/linux/syscalls/execve.asm')
+        >>> path == os.path.join(tmp, 'common', 'linux', 'syscalls', 'execve.asm')
+        True
+        >>> resolve_symlink_files(tmp, 'amd64/linux') == os.path.join(tmp, 'amd64', 'linux')
+        True
+
+        This is what keeps shellcraft, constants and the assembler headers
+        working when every symlink of the pwntools tree is a plain file:
+
+        >>> import pwnlib, shutil, sys
+        >>> tmp = tempfile.mkdtemp()
+        >>> lib = os.path.join(tmp, 'pwnlib')
+        >>> _ = shutil.copytree(os.path.dirname(pwnlib.__file__), lib, symlinks=True)
+        >>> for root, dirs, files in os.walk(lib):
+        ...     for name in dirs + files:
+        ...         link = os.path.join(root, name)
+        ...         if os.path.islink(link):
+        ...             target = os.readlink(link)
+        ...             os.unlink(link)
+        ...             with open(link, 'w') as fd:
+        ...                 _ = fd.write(target)
+        >>> code = '''if 1:
+        ...     from pwnlib.context import context
+        ...     from pwnlib import asm, constants, shellcraft
+        ...     context.clear(arch='amd64', os='linux')
+        ...     print('SYS_execve' in shellcraft.sh())
+        ...     print(int(constants.cgc.amd64.SYS_allocate))
+        ...     with context.local(os='android'):
+        ...         print(int(constants.SYS_execve))
+        ...     print(asm.cpp('SYS_execve', os='android').strip())
+        ... '''
+        >>> env = dict(os.environ, PYTHONPATH=tmp, XDG_CACHE_HOME=tmp, PWNLIB_NOTERM='1')
+        >>> print(subprocess.check_output([sys.executable, '-c', code], cwd=tmp, env=env).decode())
+        True
+        5
+        59
+        59
+        <BLANKLINE>
+    """
+    path = root
+    for part in re.split(r'[\\/]', relpath):
+        if part:
+            path = _follow_symlink_files(os.path.join(path, part))
+    return path
+
+
+def walk_symlink_files(top):
+    r"""walk_symlink_files(top) -> iterator
+
+    Like ``os.walk(top, followlinks=True)``, but also walks into directories
+    whose symlink is stored as a plain file (see :func:`symlink_file_target`).
+    The yielded directory paths are the paths below ``top``, not the targets.
+
+    Example:
+
+        >>> tmp = tempfile.mkdtemp()
+        >>> mkdir_p(os.path.join(tmp, 'common', 'syscalls'))
+        >>> mkdir_p(os.path.join(tmp, 'amd64'))
+        >>> with open(os.path.join(tmp, 'common', 'syscalls', 'execve.asm'), 'w') as fd:
+        ...     _ = fd.write('/* execve */')
+        >>> with open(os.path.join(tmp, 'amd64', 'syscalls'), 'w') as fd:
+        ...     _ = fd.write('../common/syscalls')
+        >>> for root, dirs, files in walk_symlink_files(os.path.join(tmp, 'amd64')):
+        ...     print('%s dirs=%s files=%s' % (os.path.relpath(root, tmp), ','.join(sorted(dirs)), ','.join(sorted(files))))
+        amd64 dirs=syscalls files=
+        amd64/syscalls dirs= files=execve.asm
+    """
+    stack = [(top, top)]
+    while stack:
+        path, real = stack.pop()
+        dirs, files = [], []
+        for name in sorted(os.listdir(real)):
+            target = _follow_symlink_files(os.path.join(real, name))
+            if os.path.isdir(target):
+                dirs.append(name)
+            else:
+                files.append(name)
+        yield path, dirs, files
+        for name in reversed(dirs):
+            stack.append((os.path.join(path, name),
+                          _follow_symlink_files(os.path.join(real, name))))
