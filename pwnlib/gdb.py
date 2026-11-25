@@ -161,6 +161,7 @@ from pwnlib.timeout import Timeout
 from pwnlib.util import misc
 from pwnlib.util import packing
 from pwnlib.util import proc
+from pwnlib.util import resources
 
 log = getLogger(__name__)
 
@@ -1286,7 +1287,7 @@ def attach(target, gdbscript = '', exe = None, gdb_args = None, ssh = None, sysr
         # create a UNIX socket for talking to GDB
         socket_dir = tempfile.mkdtemp()
         socket_path = os.path.join(socket_dir, 'socket')
-        bridge = os.path.join(os.path.dirname(__file__), 'gdb_api_bridge.py')
+        bridge = resources.get_path('gdb_api_bridge.py')
 
         # inject the socket path and the GDB Python API bridge
         pre = 'python socket_path = ' + repr(socket_path) + '\n' + \

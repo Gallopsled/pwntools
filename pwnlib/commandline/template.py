@@ -1,6 +1,7 @@
 from pwn import *
 from pwnlib.commandline import common
 from pwnlib.data import path as data_path
+from pwnlib.util import resources
 from pwnlib.util.misc import which, parse_ldd_output, write
 
 from mako.lookup import TemplateLookup, Template
@@ -173,7 +174,7 @@ def main(args):
     lookup = TemplateLookup(
         directories      = [
             os.path.expanduser('~/.config/pwntools/templates/'),
-            os.path.join(pwnlib.data.path, 'templates')
+            resources.get_path('data/templates')
         ],
         module_directory = None
     )

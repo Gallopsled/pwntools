@@ -3,8 +3,9 @@ Database of >22,000 user agent strings
 """
 __all__ = ['getall', 'random']
 
-import os
 import random as randommod
+
+from pwnlib.util import resources
 
 _cache: set[str] | None = None
 
@@ -12,9 +13,7 @@ def _load() -> set[str]:
     global _cache
     if _cache is None:
         _cache = set()
-        with open(os.path.join(os.path.dirname(__file__),
-                               'data/useragents/useragents.txt'
-                               ), 'r') as fd:
+        with resources.get('data/useragents/useragents.txt').open(encoding='utf-8') as fd:
             for line in fd:
                 if line:
                     _cache.add(line.strip())

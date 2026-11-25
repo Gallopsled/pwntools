@@ -4,6 +4,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from pwnlib.context import context
+from pwnlib.util import resources
 
 __all__ = ['make_function']
 
@@ -15,6 +16,7 @@ lookup = None
 def init_mako():
     global lookup, render_global
     from mako.lookup import TemplateLookup
+    from mako.template import Template
     from mako.parsetree import Tag, Text
     from mako import ast
     import threading
@@ -44,11 +46,22 @@ def init_mako():
     if cache:
         cache = os.path.join(cache, 'mako')
 
-    curdir = os.path.dirname(os.path.abspath(__file__))
-    lookup = TemplateLookup(
-        directories      = [os.path.join(curdir, 'templates')],
-        module_directory = cache
-    )
+    templates = resources.get('shellcraft/templates')
+
+    if isinstance(templates, os.PathLike):
+        lookup = TemplateLookup(
+            directories      = [os.fspath(templates)],
+            module_directory = cache
+        )
+    else:
+        # Not on disk, e.g. imported from a zip archive
+        class ResourceLookup(TemplateLookup):
+            def get_template(self, uri):
+                uri = uri.replace(os.path.sep, '/')
+                source = resources.get('shellcraft/templates/' + uri)
+                return Template(source.read_text(encoding='utf-8'), uri=uri, lookup=self)
+
+        lookup = ResourceLookup()
 
     # The purpose of this definition is to create a new Tag.
     # The Tag has a metaclass, which saves this definition even

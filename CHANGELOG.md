@@ -76,6 +76,7 @@ The table below shows which release corresponds to each branch, and what date th
 
 ## 5.0.0 (`dev`)
 
+- [#2816][2816] Read data files through `importlib.resources`, so pwnlib works from a zip
 - [#2798][2798] fix(flag, adb): NameError in `submit_flag` with a flag file and in `Kernel.enable_uart`
 - [#2780][2780] fix(encoders): handle unavailable xor encodings and fallback
 - [#2789][2789] feat(errno): support `-c/--context` to look up errno values for other architectures
@@ -209,6 +210,7 @@ The table below shows which release corresponds to each branch, and what date th
 [2750]: https://github.com/Gallopsled/pwntools/pull/2750
 [2761]: https://github.com/Gallopsled/pwntools/pull/2761
 [2727]: https://github.com/Gallopsled/pwntools/pull/2727
+[2816]: https://github.com/Gallopsled/pwntools/pull/2816
 [2798]: https://github.com/Gallopsled/pwntools/pull/2798
 [2807]: https://github.com/Gallopsled/pwntools/pull/2807
 [2811]: https://github.com/Gallopsled/pwntools/pull/2811
