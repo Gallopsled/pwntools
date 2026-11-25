@@ -1,5 +1,6 @@
-import os
 import re
+
+from pwnlib.util import resources
 
 
 def generate() -> dict[str, dict[str, str | int | bool]]:
@@ -9,10 +10,7 @@ def generate() -> dict[str, dict[str, str | int | bool]]:
     See pwnlib/data/crcsum.txt for more information.
     """
 
-    curdir, _ = os.path.split(__file__)
-    path = os.path.join(curdir, '..', '..', 'data', 'crcsums.txt')
-    with open(path) as fd:
-        data = fd.read()
+    data = resources.get('data/crcsums.txt').read_text(encoding='utf-8')
     out: dict[str, dict[str, str | int | bool]] = {}
 
     def fixup(s: str) -> str | int | bool:

@@ -55,6 +55,7 @@ from pwnlib import shellcraft
 from pwnlib.context import LocalContext
 from pwnlib.context import context
 from pwnlib.log import getLogger
+from pwnlib.util import resources
 from pwnlib.util.fiddling import hexstr
 from pwnlib.util.hashes import sha1sumhex
 from pwnlib.util.packing import _encode
@@ -63,9 +64,6 @@ from pwnlib.version import __version__
 log = getLogger(__name__)
 
 __all__ = ['asm', 'cpp', 'disasm', 'make_elf', 'make_elf_from_assembly']
-
-_basedir = path.split(__file__)[0]
-_incdir  = path.join(_basedir, 'data', 'includes')
 
 def dpkg_search_for_binutils(arch, util):
     """Use dpkg to search for any available assemblers which will work.
@@ -341,7 +339,7 @@ def _include_header():
     arch = context.arch
     include = '%s/%s.h' % (os, arch)
 
-    if not include or not path.exists(path.join(_incdir, include)):
+    if not include or not resources.get('data/includes/' + include).is_file():
         log.warn_once("Could not find system include headers for %s-%s" % (arch,os))
         return '\n'
 
@@ -498,7 +496,7 @@ def cpp(shellcode):
         '-nostdinc',
         '-undef',
         '-P',
-        '-I' + _incdir,
+        '-I' + resources.get_path('data/includes'),
     ]
     return _run(cmd, code).strip('\n').rstrip() + '\n'
 

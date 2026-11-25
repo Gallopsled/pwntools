@@ -10,6 +10,7 @@ from pwnlib import constants
 from pwnlib.context import context
 from pwnlib.shellcraft import internal
 from pwnlib.util import packing
+from pwnlib.util import resources
 
 
 class module(ModuleType):
@@ -28,30 +29,31 @@ class module(ModuleType):
         # Save the shellcode directory
         self._dir = directory
 
-        # Find the absolute path of the directory
-        self._absdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', self._dir)
+        # Find the directory, which does not need to be on disk
+        self._resource = resources.get('shellcraft/templates')
+        for part in filter(None, self._dir.split(os.path.sep)):
+            self._resource = self._resource / part
 
         # Get the docstring
-        with open(os.path.join(self._absdir, "__doc__")) as fd:
-            self.__doc__ = fd.read()
+        self.__doc__ = (self._resource / '__doc__').read_text(encoding='utf-8')
 
         # Insert into the module list
         sys.modules[self.__name__] = self
 
     def _get_source(self, template):
         assert template in self.templates
-        return os.path.join(self._absdir, *template.split('.')) + '.asm'
+        return os.path.join(str(self._resource), *template.split('.')) + '.asm'
 
     def __lazyinit__(self):
 
         # Create a dictionary of submodules
         self._submodules = {}
         self._shellcodes = {}
-        for name in os.listdir(self._absdir):
-            path = os.path.join(self._absdir, name)
-            if os.path.isdir(path):
+        for path in self._resource.iterdir():
+            name = path.name
+            if path.is_dir():
                 self._submodules[name] = module(self.__name__ + '.' + name, os.path.join(self._dir, name))
-            elif os.path.isfile(path) and name != '__doc__' and name[0] != '.':
+            elif path.is_file() and name != '__doc__' and name[0] != '.':
                 funcname, _ext = os.path.splitext(name)
                 if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', funcname):
                     raise ValueError("found illegal filename, %r" % name)
@@ -118,19 +120,14 @@ class module(ModuleType):
         if self._templates:
             return self._templates
 
-        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-        templates    = []
+        def walk(directory, prefix):
+            for path in directory.iterdir():
+                if path.is_dir():
+                    yield from walk(path, prefix + path.name + '.')
+                elif path.name.endswith('.asm'):
+                    yield prefix + os.path.splitext(path.name)[0]
 
-        for root, _, files in os.walk(template_dir, followlinks=True):
-            for file in filter(lambda x: x.endswith('.asm'), files):
-                value = os.path.splitext(file)[0]
-                value = os.path.join(root, value)
-                value = value.replace(template_dir, '')
-                value = value.replace(os.path.sep, '.')
-                value = value.lstrip('.')
-                templates.append(value)
-
-        templates = sorted(templates)
+        templates = sorted(walk(resources.get('shellcraft/templates'), ''))
         self._templates = templates
         return templates
 
