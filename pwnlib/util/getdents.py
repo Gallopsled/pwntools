@@ -20,6 +20,15 @@ class linux_dirent(object):
 
         # Short
         self.d_reclen = unpack(buf[:2], 16)
+
+        # sizeof(struct linux_dirent) =
+        # sizeof(d_ino) + sizeof(d_off) + sizeof(d_reclen) + sizeof(d_type)
+        # And take minimum strlen (any char + '\0') into account
+        minlen = 2 * n + 2 + 1 + 2
+        if self.d_reclen < minlen:
+            raise ValueError("Invalid dirent: d_reclen = %i < %i" %
+                (self.d_reclen, minlen))
+
         buf=buf[2:]
 
         # Name
@@ -48,6 +57,10 @@ def dirents(buf):
         >>> data = unhex(data)
         >>> print(dirents(data))
         ['.', '..', 'fd', 'task']
+        >>> data = '00' * 100
+        >>> data = unhex(data)
+        >>> print(dirents(data))
+        []
     """
     d = []
 
