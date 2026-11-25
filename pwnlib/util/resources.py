@@ -84,7 +84,7 @@ def get_path(path: str) -> str:
         ...     print(resources.get_path('gdb_api_bridge.py').endswith('gdb_api_bridge.py'))
         ... '''
         >>> env = dict(os.environ, PYTHONPATH=archive, PWNLIB_NOTERM='1')
-        >>> print(subprocess.check_output([sys.executable, '-c', code], cwd=tmp, env=env).decode())
+        >>> print(subprocess.check_output([sys.executable, '-c', code], cwd=tmp, env=env, text=True))
         True
         True
         59
