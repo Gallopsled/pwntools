@@ -35,7 +35,11 @@ def emulate_plt_instructions(elf, got, address, data, targets):
         data = packing.unpack_many(data, bits=32, endian='little')
         data = packing.flat(data, bits=32, endian='big')
 
-    uc, ctx = prepare_unicorn_and_context(elf, got, address, data)
+    prepared = prepare_unicorn_and_context(elf, got, address, data)
+    if prepared is None:
+        return rv
+
+    uc, ctx = prepared
 
     # Brute force addresses, assume that PLT entry points are at 4-byte aligned
     # Do not emulate more than a handful of instructions.
@@ -104,7 +108,7 @@ def prepare_unicorn_and_context(elf, got, address, data):
 
     if arch is None:
         log.warn("Could not emulate PLT instructions for %r" % elf)
-        return {}
+        return None
 
     emulation_bits = elf.bits
 
