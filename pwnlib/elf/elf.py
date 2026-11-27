@@ -1087,6 +1087,14 @@ class ELF(ELFFile):
         ...     assert '__stack_chk_fail' in test.got, test
         ...     if test.arch != 'ppc':
         ...         assert '__stack_chk_fail' in test.plt, test
+
+        Architectures which can't be emulated have no PLT entries:
+
+        >>> from pwnlib.elf.plt import emulate_plt_instructions
+        >>> elf = ELF.from_assembly('nop', arch='powerpc')
+        >>> emulate_plt_instructions(elf, 0, elf.address, asm('nop', arch='powerpc'), {}) # doctest: +ELLIPSIS
+        [!] Could not emulate PLT instructions for ELF(...)
+        {}
         """
         if self.statically_linked:
             log.debug("%r is statically linked, skipping GOT/PLT symbols" % self.path)
