@@ -209,6 +209,12 @@ The table below shows which release corresponds to each branch, and what date th
 [2727]: https://github.com/Gallopsled/pwntools/pull/2727
 [2798]: https://github.com/Gallopsled/pwntools/pull/2798
 
+## 4.15.2
+
+- [#2817][2817] Fix PLT emulation on architectures Unicorn can't emulate
+
+[2817]: https://github.com/Gallopsled/pwntools/pull/2817
+
 ## 4.15.1 (`stable`)
 
 - [#2694][2694] fix: pad bytes fields to correct field size in FileStructure
